@@ -33,6 +33,7 @@ button { border: 0; cursor: pointer; }
 .card.active { border: 4px solid var(--accent, #38bdf8); transform: scale(1.01); }
 .card.triggered { border: 2px solid #d946ef; }
 .card-head { width: 100%; text-align: left; padding: 14px; background: transparent; color: inherit; display: flex; gap: 12px; align-items: flex-start; }
+.card-main { flex: 1; min-width: 0; padding: 0; border: 0; background: transparent; color: inherit; text-align: left; display: flex; gap: 12px; align-items: flex-start; }
 .avatar { width: 46px; height: 46px; border-radius: 16px; color: white; display: grid; place-items: center; font-weight: 900; flex: 0 0 auto; }
 .avatar.slate { background: #020617; } .avatar.red { background: #7f1d1d; } .avatar.orange { background: #c2410c; } .avatar.amber { background: #b45309; color:#111827; } .avatar.emerald { background: #047857; } .avatar.cyan { background: #0e7490; } .avatar.blue { background: #1e3a8a; } .avatar.violet { background: #4c1d95; } .avatar.pink { background: #9d174d; } .avatar.rose { background: #9f1239; }
 .info { min-width: 0; flex: 1; }
