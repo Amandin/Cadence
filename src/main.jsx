@@ -8,3 +8,8 @@ createRoot(document.getElementById('root')).render(
     <App />
   </React.StrictMode>,
 );
+
+const worker = navigator?.serviceWorker;
+if (worker && import.meta.env.PROD) {
+  window.addEventListener('load', () => worker.register('/service-worker.js'));
+}
