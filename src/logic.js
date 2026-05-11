@@ -13,14 +13,29 @@ export function isVisible(item) {
   return item.visible !== false;
 }
 
+function hasBound(value) {
+  return value !== null && value !== '' && value !== undefined;
+}
+
+function numberOr(value, fallback) {
+  const next = Number(value);
+  return Number.isFinite(next) ? next : fallback;
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(value, max));
+}
+
 export function isTriggeredClock(tracker) {
-  return tracker.type === 'clock' && Number(tracker.current) >= Number(tracker.max || 0);
+  return tracker.type === 'clock' && numberOr(tracker.current, 0) >= numberOr(tracker.max, 0);
 }
 
 export function hasTriggeredClock(participant) {
   return participant.trackers?.some(isTriggeredClock) || false;
 }
 
+// Factory unique des suivis. Garder les valeurs par défaut ici évite les divergences
+// entre l'ajout depuis l'interface, les tests et les futures migrations de sauvegarde.
 export function newTracker(type = 'bar') {
   const base = { id: uid('t'), type, visible: true };
   if (type === 'clock') return { ...base, name: 'Horloge', current: 0, max: 6, auto: true };
@@ -31,10 +46,14 @@ export function newTracker(type = 'bar') {
 }
 
 export function applyDelta(tracker, delta) {
-  let current = Number(tracker.current || 0) + Number(delta || 0);
-  if ((tracker.type === 'bar' || tracker.type === 'number') && tracker.minAbsolute && tracker.min !== null && tracker.min !== '') current = Math.max(current, Number(tracker.min));
-  if ((tracker.type === 'bar' || tracker.type === 'number') && tracker.maxAbsolute && tracker.max !== null && tracker.max !== '') current = Math.min(current, Number(tracker.max));
-  if (tracker.type === 'dots' || tracker.type === 'clock') current = Math.max(0, Math.min(current, Number(tracker.max || 0)));
+  let current = numberOr(tracker.current, 0) + numberOr(delta, 0);
+
+  // Barres et compteurs peuvent dépasser leurs bornes, sauf si une borne absolue
+  // est cochée. Les horloges et points restent toujours dans leur intervalle visuel.
+  if ((tracker.type === 'bar' || tracker.type === 'number') && tracker.minAbsolute && hasBound(tracker.min)) current = Math.max(current, Number(tracker.min));
+  if ((tracker.type === 'bar' || tracker.type === 'number') && tracker.maxAbsolute && hasBound(tracker.max)) current = Math.min(current, Number(tracker.max));
+  if (tracker.type === 'dots' || tracker.type === 'clock') current = clamp(current, 0, numberOr(tracker.max, 0));
+
   return { ...tracker, current };
 }
 
@@ -47,14 +66,15 @@ export function boxSymbol(mark, max) {
 }
 
 export function cycleBoxMark(mark, max) {
-  return (Number(mark || 0) + 1) % (Number(max || 1) + 1);
+  return (numberOr(mark, 0) + 1) % (numberOr(max, 1) + 1);
 }
 
-export function tickStatuses(statuses) {
+export function tickStatuses(statuses = []) {
   return statuses.flatMap((status) => {
     if (status.duration == null) return [status];
     if (status.expired) return status.loop ? [{ ...status, remaining: status.duration, expired: false }] : [];
-    const remaining = Math.max(0, Number(status.remaining ?? status.duration) - 1);
+
+    const remaining = Math.max(0, numberOr(status.remaining, status.duration) - 1);
     return [{ ...status, remaining, expired: remaining <= 0 }];
   });
 }
@@ -62,8 +82,8 @@ export function tickStatuses(statuses) {
 export function tickParticipant(participant) {
   return {
     ...participant,
-    statuses: tickStatuses(participant.statuses || []),
-    trackers: (participant.trackers || []).map((tracker) => tracker.type === 'clock' && tracker.auto ? { ...tracker, current: Number(tracker.current || 0) + 1 } : tracker),
+    statuses: tickStatuses(participant.statuses),
+    trackers: (participant.trackers || []).map((tracker) => tracker.type === 'clock' && tracker.auto ? { ...tracker, current: numberOr(tracker.current, 0) + 1 } : tracker),
   };
 }
 
@@ -71,7 +91,12 @@ export function nextTurnInfo(scene, blocked = false) {
   const participants = scene.participants || [];
   const currentIndex = Math.max(0, participants.findIndex((p) => p.id === scene.activeId));
   const nextIndex = participants.length ? (currentIndex + 1) % participants.length : 0;
-  return { currentIndex, nextIndex, nextStartsRound: participants.length > 0 && nextIndex === 0 && currentIndex !== 0 && !blocked };
+
+  return {
+    currentIndex,
+    nextIndex,
+    nextStartsRound: participants.length > 0 && nextIndex === 0 && currentIndex !== 0 && !blocked,
+  };
 }
 
 export function makeDefaultCampaign() {
