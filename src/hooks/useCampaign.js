@@ -64,6 +64,14 @@ export function useCampaign() {
       setSceneIndex,
       setDark,
       updateParticipant,
+      deleteParticipant(id) {
+        updateScene((s) => {
+          const participants = s.participants.filter((p) => p.id !== id);
+          const reserve = (s.reserve || []).filter((p) => p.id !== id);
+          const activeId = s.activeId === id ? participants[0]?.id || '' : s.activeId;
+          return { ...s, participants, reserve, activeId };
+        });
+      },
       trackerChange(pid, tid, next) {
         updateParticipant(pid, (p) => ({ ...p, trackers: p.trackers.map((t) => t.id === tid ? next : t) }));
       },
