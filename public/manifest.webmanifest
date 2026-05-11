@@ -1,0 +1,14 @@
+{
+  "name": "Cadence",
+  "short_name": "Cadence",
+  "description": "Gestion d’initiative, scènes et suivis pour jeu de rôle.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#020617",
+  "theme_color": "#020617",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "1024x1024", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
