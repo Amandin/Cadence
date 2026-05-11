@@ -15,15 +15,21 @@ function createBlankParticipant() {
   };
 }
 
-function promptStatus() {
-  const name = prompt('Nom de l’état ?', 'Nouveau');
+function makeStatus(data) {
+  const name = data?.name?.trim();
   if (!name) return null;
 
-  const raw = prompt('Durée en tours ? Vide = infini', '');
-  const duration = raw === '' ? null : Math.max(1, Number(raw));
-  const loop = duration != null && confirm('Renouveler en boucle ?');
+  const duration = data.duration == null ? null : Math.max(1, Number(data.duration));
+  if (duration !== null && !Number.isFinite(duration)) return null;
 
-  return { id: uid('s'), name, duration, remaining: duration, loop, expired: false };
+  return {
+    id: uid('s'),
+    name,
+    duration,
+    remaining: duration,
+    loop: duration !== null && !!data.loop,
+    expired: false,
+  };
 }
 
 export function createSceneActions({ scene, sceneIndex, blocked, setScenes, setRoundEffect }) {
@@ -46,8 +52,8 @@ export function createSceneActions({ scene, sceneIndex, blocked, setScenes, setR
     deleteTracker(pid, tid) {
       updateParticipant(pid, (p) => ({ ...p, trackers: p.trackers.filter((t) => t.id !== tid) }));
     },
-    addStatus(pid) {
-      const status = promptStatus();
+    addStatus(pid, data) {
+      const status = makeStatus(data);
       if (status) updateParticipant(pid, (p) => ({ ...p, statuses: [...(p.statuses || []), status] }));
     },
     removeStatus(pid, sid) {
@@ -81,9 +87,9 @@ export function createSceneActions({ scene, sceneIndex, blocked, setScenes, setR
         activeId: s.activeId === id ? s.participants.find((x) => x.id !== id)?.id || '' : s.activeId,
       }));
     },
-    joinInit(id) {
+    joinInit(id, initiativeValue) {
       const participant = scene.reserve.find((x) => x.id === id);
-      const initiative = Number(prompt('Initiative ?', participant?.initiative || 1));
+      const initiative = Number(initiativeValue);
       if (!participant || !Number.isFinite(initiative)) return;
 
       updateScene((s) => ({
