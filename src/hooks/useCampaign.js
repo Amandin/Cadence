@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { loadCampaign, saveCampaign } from '../storage.js';
 import { hasTriggeredClock, nextTurnInfo } from '../logic.js';
-import { createSceneActions } from './sceneActions.js';
-import { createCampaignActions } from './campaignActions.js';
+import { createSceneActions } from '../actions/sceneActions.js';
+import { createCampaignActions } from '../actions/campaignActions.js';
 
 export function useCampaign() {
   const [initialCampaign] = useState(loadCampaign);
