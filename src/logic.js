@@ -1,0 +1,95 @@
+export const symbols = ['●●', '⚔', '🗡', '🛡', '🪓', '🏹', '🔮', '🗝', '📜', '⏳', '⚙', '🔥', '☁', '🌳', '🐺', '☠', '✦', '🦴', '🧪', '🕯'];
+export const colors = ['slate', 'red', 'orange', 'amber', 'emerald', 'cyan', 'blue', 'violet', 'pink', 'rose'];
+
+export function uid(prefix = 'id') {
+  return `${prefix}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+export function clone(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+export function isVisible(item) {
+  return item.visible !== false;
+}
+
+export function isTriggeredClock(tracker) {
+  return tracker.type === 'clock' && Number(tracker.current) >= Number(tracker.max || 0);
+}
+
+export function hasTriggeredClock(participant) {
+  return participant.trackers?.some(isTriggeredClock) || false;
+}
+
+export function newTracker(type = 'bar') {
+  const base = { id: uid('t'), type, visible: true };
+  if (type === 'clock') return { ...base, name: 'Horloge', current: 0, max: 6, auto: true };
+  if (type === 'dots') return { ...base, name: 'Points', current: 0, max: 5, step: 1 };
+  if (type === 'boxes') return { ...base, name: 'Cases', fillLevels: 3, rows: [{ id: uid('r'), label: 'Ligne', marks: [0, 0, 0, 0] }] };
+  if (type === 'number') return { ...base, name: 'Compteur', current: 0, step: 1, min: null, max: null, minAbsolute: false, maxAbsolute: false };
+  return { ...base, name: 'PV', current: 10, min: 0, max: 20, step: 5, minAbsolute: true, maxAbsolute: false };
+}
+
+export function applyDelta(tracker, delta) {
+  let current = Number(tracker.current || 0) + Number(delta || 0);
+  if ((tracker.type === 'bar' || tracker.type === 'number') && tracker.minAbsolute && tracker.min !== null && tracker.min !== '') current = Math.max(current, Number(tracker.min));
+  if ((tracker.type === 'bar' || tracker.type === 'number') && tracker.maxAbsolute && tracker.max !== null && tracker.max !== '') current = Math.min(current, Number(tracker.max));
+  if (tracker.type === 'dots' || tracker.type === 'clock') current = Math.max(0, Math.min(current, Number(tracker.max || 0)));
+  return { ...tracker, current };
+}
+
+export function boxSymbol(mark, max) {
+  if (!mark) return '';
+  if (mark >= max) return '■';
+  if (mark === 1) return '✓';
+  if (mark === 2) return '×';
+  return '◆';
+}
+
+export function cycleBoxMark(mark, max) {
+  return (Number(mark || 0) + 1) % (Number(max || 1) + 1);
+}
+
+export function tickStatuses(statuses) {
+  return statuses.flatMap((status) => {
+    if (status.duration == null) return [status];
+    if (status.expired) return status.loop ? [{ ...status, remaining: status.duration, expired: false }] : [];
+    const remaining = Math.max(0, Number(status.remaining ?? status.duration) - 1);
+    return [{ ...status, remaining, expired: remaining <= 0 }];
+  });
+}
+
+export function tickParticipant(participant) {
+  return {
+    ...participant,
+    statuses: tickStatuses(participant.statuses || []),
+    trackers: (participant.trackers || []).map((tracker) => tracker.type === 'clock' && tracker.auto ? { ...tracker, current: Number(tracker.current || 0) + 1 } : tracker),
+  };
+}
+
+export function nextTurnInfo(scene, blocked = false) {
+  const participants = scene.participants || [];
+  const currentIndex = Math.max(0, participants.findIndex((p) => p.id === scene.activeId));
+  const nextIndex = participants.length ? (currentIndex + 1) % participants.length : 0;
+  return { currentIndex, nextIndex, nextStartsRound: participants.length > 0 && nextIndex === 0 && currentIndex !== 0 && !blocked };
+}
+
+export function makeDefaultCampaign() {
+  return {
+    version: '0.1.0',
+    scenes: [
+      {
+        id: 'entrepot', title: 'Entrepôt sous la pluie', type: 'Combat', round: 1, activeId: 'ombre', reserveOpen: true,
+        notes: 'Lumière clignotante, odeur d’ozone, quai de chargement et bureau vitré.',
+        reserve: [{ id: 'plan', name: 'Plan du lieu', kind: 'Autre', symbol: '📜', color: 'blue', description: 'Issues connues.' }],
+        participants: [
+          { id: 'ombre', name: 'Ombre de Lune', kind: 'PJ', symbol: '●●', color: 'slate', initiative: 8, description: 'Impulsive et rapide.', stats: ['Défense 3'], statuses: [{ id: 's1', name: 'À couvert', duration: null, remaining: null, loop: false, expired: false }], trackers: [{ id: 'b1', type: 'boxes', name: 'Blessures', visible: true, fillLevels: 3, rows: [{ id: 'r1', label: 'Superf.', marks: [1, 2, 0, 0] }, { id: 'r2', label: 'Graves', marks: [3, 0, 0] }] }, { id: 'rage', type: 'dots', name: 'Rage', visible: true, current: 3, max: 5 }] },
+          { id: 'vigile', name: 'Chef des vigiles', kind: 'Opposition', symbol: '⚔', color: 'red', initiative: 6, description: 'Peut appeler des renforts.', stats: ['Défense 2'], statuses: [], trackers: [{ id: 'pv', type: 'bar', name: 'PV', visible: true, current: 32, min: 0, max: 50, step: 5, minAbsolute: true, maxAbsolute: false }] },
+          { id: 'renforts', name: 'Renforts en approche', kind: 'Horloge', symbol: '⏳', color: 'amber', initiative: 3, description: 'À 6 segments, les renforts arrivent.', stats: [], statuses: [], trackers: [{ id: 'clock', type: 'clock', name: 'Arrivée', visible: true, current: 5, max: 6, auto: true }] },
+        ],
+      },
+      { id: 'bal', title: 'Bal masqué', type: 'Social', round: 1, activeId: 'elise', reserveOpen: true, notes: 'Tout le monde ment, mais pas forcément sur le même sujet.', reserve: [], participants: [{ id: 'elise', name: 'Élise aux Cent Visages', kind: 'PJ', symbol: '🔮', color: 'violet', initiative: 12, description: 'Spécialiste des faux-semblants.', stats: ['Social 4'], statuses: [], trackers: [{ id: 'stress', type: 'bar', name: 'Stress', visible: true, current: 18, min: 0, max: 40, step: 5, minAbsolute: true }] }] },
+      { id: 'crypte', title: 'Crypte mécanique', type: 'Piège', round: 1, activeId: 'nora', reserveOpen: true, notes: 'Dalles gravées et engrenages derrière les murs.', reserve: [], participants: [{ id: 'nora', name: 'Nora Main-Sûre', kind: 'PJ', symbol: '🗝', color: 'blue', initiative: 11, description: 'Voleuse prudente.', stats: ['Crochetage 5'], statuses: [], trackers: [{ id: 'outils', type: 'dots', name: 'Outils', visible: true, current: 3, max: 3 }] }] },
+    ],
+  };
+}
