@@ -4,7 +4,7 @@ import { makeDefaultCampaign } from './logic.js';
 export function loadCampaign() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if (saved?.scenes?.length) return saved;
+    if (isValidCampaign(saved)) return saved;
   } catch (error) {
     console.warn('Impossible de charger la campagne sauvegardée.', error);
   }
@@ -21,5 +21,5 @@ export function serializeCampaign(scenes, dark) {
 }
 
 export function isValidCampaign(data) {
-  return Array.isArray(data?.scenes);
+  return Array.isArray(data?.scenes) && data.scenes.length > 0;
 }
