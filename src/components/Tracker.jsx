@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { applyDelta, boxSymbol, cycleBoxMark, isTriggeredClock } from '../logic.js';
+import { applyDelta, boxVisualRank, cycleBoxMark, isTriggeredClock } from '../logic.js';
 
 export function Tracker({ tracker, onChange, onDelete }) {
   const [deltaOpen, setDeltaOpen] = useState(false);
@@ -11,7 +11,7 @@ export function Tracker({ tracker, onChange, onDelete }) {
   const step = (direction) => tracker.type !== 'boxes' && onChange(applyDelta(tracker, direction * Number(tracker.step || 1)));
   const openDelta = () => setDeltaOpen((open) => !open);
   const applyManual = () => { onChange(applyDelta(tracker, Number(delta))); setDelta(''); setDeltaOpen(false); };
-  const mark = (rowId, index) => patch({ rows: tracker.rows.map((row) => row.id !== rowId ? row : { ...row, marks: row.marks.map((v, i) => i === index ? cycleBoxMark(v, tracker.fillLevels || 3) : v) }) });
+  const mark = (rowId, index) => patch({ rows: tracker.rows.map((row) => row.id !== rowId ? row : { ...row, marks: row.marks.map((v, i) => i === index ? cycleBoxMark(v, tracker.fillLevels || 5) : v) }) });
 
   useEffect(() => {
     if (!deltaOpen) return;
@@ -22,7 +22,11 @@ export function Tracker({ tracker, onChange, onDelete }) {
     return <div className={`tracker ${triggered ? 'triggered' : ''}`}><div className="tracker-top with-clock"><span>{tracker.name}</span>{tracker.auto && <span className="chip">auto</span>}{triggered && <span className="chip hot">À résoudre</span>}<div className="clock-inline"><button onClick={() => step(-1)}>−</button><Clock tracker={tracker} onChange={patch} /><button onClick={() => step(1)}>+</button></div></div>{triggered && <div className="stack" style={{ marginTop: 8 }}><button className="primary" onClick={() => patch({ current: 0 })}>Relancer à 0</button><button className="danger-btn" onClick={onDelete}>Supprimer</button></div>}</div>;
   }
 
-  return <div className={`tracker ${triggered ? 'triggered' : ''}`}><div className="tracker-top"><span>{tracker.name}</span>{tracker.auto && <span className="chip">auto</span>}{triggered && <span className="chip hot">À résoudre</span>}</div>{canDelta && deltaOpen && <div className="delta-pop"><input ref={deltaInputRef} type="number" inputMode="numeric" value={delta} onChange={(e) => setDelta(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && applyManual()} placeholder="+50" /><button onClick={applyManual}>OK</button></div>}<div className="controls"><button onClick={() => step(-1)}>−</button><div>{tracker.type === 'bar' && <Bar tracker={tracker} onDelta={openDelta} />}{tracker.type === 'dots' && <Dots tracker={tracker} onChange={patch} />}{tracker.type === 'boxes' && <Boxes tracker={tracker} mark={mark} />}{tracker.type === 'number' && <><div className="delta"><button onClick={openDelta}>+/-</button></div><div className="panel" style={{ borderRadius: 14, padding: 10, textAlign: 'center', fontWeight: 900 }}>{tracker.current}</div></>}</div><button onClick={() => step(1)}>+</button></div>{triggered && <div className="stack" style={{ marginTop: 8 }}><button className="primary" onClick={() => patch({ current: 0 })}>Relancer à 0</button><button className="danger-btn" onClick={onDelete}>Supprimer</button></div>}</div>;
+  if (tracker.type === 'boxes') {
+    return <div className="tracker"><div className="tracker-top"><span>{tracker.name}</span></div><Boxes tracker={tracker} mark={mark} /></div>;
+  }
+
+  return <div className={`tracker ${triggered ? 'triggered' : ''}`}><div className="tracker-top"><span>{tracker.name}</span>{tracker.auto && <span className="chip">auto</span>}{triggered && <span className="chip hot">À résoudre</span>}</div>{canDelta && deltaOpen && <div className="delta-pop"><input ref={deltaInputRef} type="number" inputMode="numeric" value={delta} onChange={(e) => setDelta(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && applyManual()} placeholder="+50" /><button onClick={applyManual}>OK</button></div>}<div className="controls"><button onClick={() => step(-1)}>−</button><div>{tracker.type === 'bar' && <Bar tracker={tracker} onDelta={openDelta} />}{tracker.type === 'dots' && <Dots tracker={tracker} onChange={patch} />}{tracker.type === 'number' && <><div className="delta"><button onClick={openDelta}>+/-</button></div><div className="panel" style={{ borderRadius: 14, padding: 10, textAlign: 'center', fontWeight: 900 }}>{tracker.current}</div></>}</div><button onClick={() => step(1)}>+</button></div>{triggered && <div className="stack" style={{ marginTop: 8 }}><button className="primary" onClick={() => patch({ current: 0 })}>Relancer à 0</button><button className="danger-btn" onClick={onDelete}>Supprimer</button></div>}</div>;
 }
 
 function Bar({ tracker, onDelta }) {
@@ -52,6 +56,6 @@ function Clock({ tracker, onChange }) {
 }
 
 function Boxes({ tracker, mark }) {
-  const max = tracker.fillLevels || 3;
-  return <div className="boxes">{tracker.rows.map((row) => <div className="box-row" key={row.id}><div className="box-label">{row.label}</div><div className="boxes">{row.marks.map((value, i) => <button key={i} className={`box ${value >= max ? 'full' : ''}`} onClick={() => mark(row.id, i)}>{boxSymbol(value, max)}</button>)}</div></div>)}</div>;
+  const max = tracker.fillLevels || 5;
+  return <div className="boxes">{tracker.rows.map((row) => <div className="box-row" key={row.id}><div className="box-label">{row.label}</div><div className="boxes">{row.marks.map((value, i) => <button key={i} className={`box mark-${boxVisualRank(value, max)} ${boxVisualRank(value, max) >= 5 ? 'full' : ''}`} onClick={() => mark(row.id, i)} aria-label={`${row.label} case ${i + 1}`} />)}</div></div>)}</div>;
 }
