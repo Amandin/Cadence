@@ -1,17 +1,19 @@
-const CACHE_NAME = 'cadence-v1';
-const APP_SHELL = ['/', '/manifest.webmanifest', '/icon.svg'];
+// Service worker volontairement neutre pendant le développement actif de Cadence.
+// L'ancien cache PWA pouvait conserver un index.html obsolète pointant vers
+// d'anciens fichiers JS hashés, ce qui provoquait une page blanche après déploiement.
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)));
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key)))));
-  self.clients.claim();
+  event.waitUntil(
+    caches.keys()
+      .then((keys) => Promise.all(keys.map((key) => caches.delete(key))))
+      .then(() => self.clients.claim())
+  );
 });
 
-self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET') return;
-  event.respondWith(caches.match(event.request).then((cached) => cached || fetch(event.request).catch(() => caches.match('/'))));
+self.addEventListener('fetch', () => {
+  // Ne pas intercepter les requêtes : le navigateur et Cloudflare servent les fichiers frais.
 });
