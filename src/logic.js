@@ -40,7 +40,7 @@ export function newTracker(type = 'bar') {
   const base = { id: uid('t'), type, visible: true };
   if (type === 'clock') return { ...base, name: 'Horloge', current: 0, max: 6, auto: true };
   if (type === 'dots') return { ...base, name: 'Points', current: 0, max: 5, step: 1 };
-  if (type === 'boxes') return { ...base, name: 'Cases', fillLevels: 3, rows: [{ id: uid('r'), label: 'Ligne', marks: [0, 0, 0, 0] }] };
+  if (type === 'boxes') return { ...base, name: 'Cases', fillLevels: 5, rows: [{ id: uid('r'), label: 'Ligne', marks: [0, 0, 0, 0] }] };
   if (type === 'number') return { ...base, name: 'Compteur', current: 0, step: 1, min: null, max: null, minAbsolute: false, maxAbsolute: false };
   return { ...base, name: 'PV', current: 10, min: 0, max: 20, step: 5, minAbsolute: true, maxAbsolute: false };
 }
@@ -57,13 +57,21 @@ export function applyDelta(tracker, delta) {
   return { ...tracker, current };
 }
 
-export function boxSymbol(mark, max) {
+export function boxVisualRank(mark, max) {
   const value = numberOr(mark, 0);
-  const full = numberOr(max, 3);
-  if (!value) return '';
-  if (value >= full) return '■';
-  const symbolsByStep = ['✓', '×', '◆', '●', '▲'];
-  return symbolsByStep[value - 1] || String(value);
+  const levels = clamp(numberOr(max, 5), 1, 5);
+  if (!value) return 0;
+
+  // Ordre demandé : /, X, X+|, double X, noir.
+  // Si on utilise moins de 5 états, on retire les états 3, puis 4, puis 1 en priorité.
+  const ranksByLevel = {
+    1: [5],
+    2: [2, 5],
+    3: [1, 2, 5],
+    4: [1, 2, 4, 5],
+    5: [1, 2, 3, 4, 5],
+  };
+  return ranksByLevel[levels][Math.min(value, levels) - 1] || 5;
 }
 
 export function cycleBoxMark(mark, max) {
@@ -128,7 +136,7 @@ export function makeDefaultCampaign() {
         notes: 'Lumière clignotante, odeur d’ozone, quai de chargement et bureau vitré.',
         reserve: [{ id: 'plan', name: 'Plan du lieu', kind: 'Autre', symbol: '📜', color: 'blue', description: 'Issues connues.' }],
         participants: [
-          { id: 'ombre', name: 'Ombre de Lune', kind: 'PJ', symbol: '●●', color: 'slate', initiative: 8, description: 'Impulsive et rapide.', stats: ['Défense 3'], statuses: [{ id: 's1', name: 'À couvert', duration: null, remaining: null, loop: false, expired: false }], trackers: [{ id: 'b1', type: 'boxes', name: 'Blessures', visible: true, fillLevels: 3, rows: [{ id: 'r1', label: 'Superf.', marks: [1, 2, 0, 0] }, { id: 'r2', label: 'Graves', marks: [3, 0, 0] }] }, { id: 'rage', type: 'dots', name: 'Rage', visible: true, current: 3, max: 5 }] },
+          { id: 'ombre', name: 'Ombre de Lune', kind: 'PJ', symbol: '●●', color: 'slate', initiative: 8, description: 'Impulsive et rapide.', stats: ['Défense 3'], statuses: [{ id: 's1', name: 'À couvert', duration: null, remaining: null, loop: false, expired: false }], trackers: [{ id: 'b1', type: 'boxes', name: 'Blessures', visible: true, fillLevels: 5, rows: [{ id: 'r1', label: 'Superf.', marks: [1, 2, 0, 0] }, { id: 'r2', label: 'Graves', marks: [5, 0, 0] }] }, { id: 'rage', type: 'dots', name: 'Rage', visible: true, current: 3, max: 5 }] },
           { id: 'vigile', name: 'Chef des vigiles', kind: 'Opposition', symbol: '⚔', color: 'red', initiative: 6, description: 'Peut appeler des renforts.', stats: ['Défense 2'], statuses: [], trackers: [{ id: 'pv', type: 'bar', name: 'PV', visible: true, current: 32, min: 0, max: 50, step: 5, minAbsolute: true, maxAbsolute: false }] },
           { id: 'renforts', name: 'Renforts en approche', kind: 'Horloge', symbol: '⏳', color: 'amber', initiative: 3, description: 'À 6 segments, les renforts arrivent.', stats: [], statuses: [], trackers: [{ id: 'clock', type: 'clock', name: 'Arrivée', visible: true, current: 5, max: 6, auto: true }] },
         ],
