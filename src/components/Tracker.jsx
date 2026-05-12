@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { applyDelta, boxVisualRank, cycleBoxMark, isTriggeredClock } from '../logic.js';
 
-export function Tracker({ tracker, onChange, onDelete }) {
+function TrackerTitle({ title, beforeTitle }) {
+  return <span className="tracker-title">{beforeTitle}{title}</span>;
+}
+
+export function Tracker({ tracker, onChange, onDelete, beforeTitle = null }) {
   const [deltaOpen, setDeltaOpen] = useState(false);
   const [delta, setDelta] = useState('');
   const deltaInputRef = useRef(null);
@@ -19,14 +23,14 @@ export function Tracker({ tracker, onChange, onDelete }) {
   }, [deltaOpen]);
 
   if (tracker.type === 'clock') {
-    return <div className={`tracker ${triggered ? 'triggered' : ''}`}><div className="tracker-top with-clock"><span>{tracker.name}</span>{tracker.auto && <span className="chip">auto</span>}{triggered && <span className="chip hot">À résoudre</span>}<div className="clock-inline"><button onClick={() => step(-1)}>−</button><Clock tracker={tracker} /><button onClick={() => step(1)}>+</button></div></div>{triggered && <div className="stack" style={{ marginTop: 8 }}><button className="primary" onClick={() => patch({ current: 0 })}>Relancer à 0</button><button className="danger-btn" onClick={onDelete}>Supprimer</button></div>}</div>;
+    return <div className={`tracker ${triggered ? 'triggered' : ''}`}><div className="tracker-top with-clock"><TrackerTitle title={tracker.name} beforeTitle={beforeTitle} />{tracker.auto && <span className="chip">auto</span>}{triggered && <span className="chip hot">À résoudre</span>}<div className="clock-inline"><button onClick={() => step(-1)}>−</button><Clock tracker={tracker} /><button onClick={() => step(1)}>+</button></div></div>{triggered && <div className="stack" style={{ marginTop: 8 }}><button className="primary" onClick={() => patch({ current: 0 })}>Relancer à 0</button><button className="danger-btn" onClick={onDelete}>Supprimer</button></div>}</div>;
   }
 
   if (tracker.type === 'boxes') {
-    return <div className="tracker"><div className="tracker-top"><span>{tracker.name}</span></div><Boxes tracker={tracker} mark={mark} /></div>;
+    return <div className="tracker"><div className="tracker-top"><TrackerTitle title={tracker.name} beforeTitle={beforeTitle} /></div><Boxes tracker={tracker} mark={mark} /></div>;
   }
 
-  return <div className={`tracker ${triggered ? 'triggered' : ''}`}><div className="tracker-top"><span>{tracker.name}</span>{tracker.auto && <span className="chip">auto</span>}{triggered && <span className="chip hot">À résoudre</span>}</div>{canDelta && deltaOpen && <div className="delta-pop"><input ref={deltaInputRef} type="number" inputMode="numeric" value={delta} onChange={(e) => setDelta(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && applyManual()} placeholder="+50" /><button onClick={applyManual}>OK</button></div>}<div className="controls"><button onClick={() => step(-1)}>−</button><div>{tracker.type === 'bar' && <Bar tracker={tracker} onDelta={openDelta} />}{tracker.type === 'dots' && <Dots tracker={tracker} onChange={patch} />}{tracker.type === 'number' && <><div className="delta"><button onClick={openDelta}>+/-</button></div><div className="panel" style={{ borderRadius: 14, padding: 10, textAlign: 'center', fontWeight: 900 }}>{tracker.current}</div></>}</div><button onClick={() => step(1)}>+</button></div>{triggered && <div className="stack" style={{ marginTop: 8 }}><button className="primary" onClick={() => patch({ current: 0 })}>Relancer à 0</button><button className="danger-btn" onClick={onDelete}>Supprimer</button></div>}</div>;
+  return <div className={`tracker ${triggered ? 'triggered' : ''}`}><div className="tracker-top"><TrackerTitle title={tracker.name} beforeTitle={beforeTitle} />{tracker.auto && <span className="chip">auto</span>}{triggered && <span className="chip hot">À résoudre</span>}</div>{canDelta && deltaOpen && <div className="delta-pop"><input ref={deltaInputRef} type="number" inputMode="numeric" value={delta} onChange={(e) => setDelta(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && applyManual()} placeholder="+50" /><button onClick={applyManual}>OK</button></div>}<div className="controls"><button onClick={() => step(-1)}>−</button><div>{tracker.type === 'bar' && <Bar tracker={tracker} onDelta={openDelta} />}{tracker.type === 'dots' && <Dots tracker={tracker} onChange={patch} />}{tracker.type === 'number' && <><div className="delta"><button onClick={openDelta}>+/-</button></div><div className="panel" style={{ borderRadius: 14, padding: 10, textAlign: 'center', fontWeight: 900 }}>{tracker.current}</div></>}</div><button onClick={() => step(1)}>+</button></div>{triggered && <div className="stack" style={{ marginTop: 8 }}><button className="primary" onClick={() => patch({ current: 0 })}>Relancer à 0</button><button className="danger-btn" onClick={onDelete}>Supprimer</button></div>}</div>;
 }
 
 function Bar({ tracker, onDelta }) {
