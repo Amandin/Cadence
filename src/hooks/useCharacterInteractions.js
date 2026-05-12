@@ -49,6 +49,11 @@ export function useCharacterInteractions(scene, actions) {
     if (status) updateCharacter(participantId, (participant) => ({ ...participant, statuses: [...(participant.statuses || []), status] }));
   };
 
+  const addParticipantToInit = (participant) => {
+    if (!participant) return;
+    actions.updateSceneField('participants', [...scene.participants, participant]);
+  };
+
   const saveStatus = (data) => {
     if (!statusTargetId) return;
     addCharacterStatus(statusTargetId, data);
@@ -94,6 +99,7 @@ export function useCharacterInteractions(scene, actions) {
     updateCharacterTracker,
     deleteCharacterTracker,
     removeCharacterStatus,
+    addParticipantToInit,
     saveStatus,
     joinInit,
     leaveInit,
