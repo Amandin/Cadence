@@ -3,19 +3,27 @@ import { colorNames, participantKinds, trackerTypeLabels } from '../constants.js
 import { clone, colors, isVisible, newTracker, symbols, uid } from '../logic.js';
 import { Sheet } from './common.jsx';
 
+function safePositiveNumber(value, fallback = 1) {
+  if (value === '') return '';
+  const next = Number(value);
+  return Number.isFinite(next) ? Math.max(1, next) : fallback;
+}
+
 function resizeMarks(marks = [], count) {
+  if (count === '') return marks;
   const nextCount = Math.max(1, Number(count) || 1);
   return Array.from({ length: nextCount }, (_, index) => marks[index] || 0);
 }
 
 function BoxesEditor({ tracker, onChange }) {
   const rows = tracker.rows?.length ? tracker.rows : [{ id: uid('r'), label: 'Ligne', marks: [0, 0, 0, 0] }];
+  const fillLevelsValue = tracker.fillLevels === '' ? '' : tracker.fillLevels || 3;
   const patch = (value) => onChange({ ...tracker, ...value, rows });
   const updateRow = (rowId, updater) => onChange({ ...tracker, rows: rows.map((row) => row.id === rowId ? updater(row) : row) });
   const addRow = () => onChange({ ...tracker, rows: [...rows, { id: uid('r'), label: `Ligne ${rows.length + 1}`, marks: [0, 0, 0, 0] }] });
   const removeRow = (rowId) => onChange({ ...tracker, rows: rows.length > 1 ? rows.filter((row) => row.id !== rowId) : rows });
 
-  return <div className="box-editor"><div className="grid2"><label className="field">Niveaux de remplissage<input type="number" inputMode="numeric" min="1" max="6" value={tracker.fillLevels || 3} onChange={(e) => patch({ fillLevels: Math.max(1, Number(e.target.value) || 1) })} /></label><label className="field">Lignes<input type="number" inputMode="numeric" value={rows.length} readOnly /></label></div><div className="stack">{rows.map((row) => <div className="box-edit-row" key={row.id}><label className="field">Nom de ligne<input value={row.label} onChange={(e) => updateRow(row.id, (current) => ({ ...current, label: e.target.value }))} /></label><label className="field">Cases<input type="number" inputMode="numeric" min="1" value={row.marks?.length || 1} onChange={(e) => updateRow(row.id, (current) => ({ ...current, marks: resizeMarks(current.marks, e.target.value) }))} /></label><div className="grid2"><button className="small-btn" onClick={() => updateRow(row.id, (current) => ({ ...current, marks: current.marks.map(() => 0) }))}>Vider</button><button className="danger-btn" onClick={() => removeRow(row.id)} disabled={rows.length <= 1}>Supprimer</button></div></div>)}</div><button className="small-btn" style={{ width:'100%', marginTop: 8 }} onClick={addRow}>Ajouter une ligne</button></div>;
+  return <div className="box-editor"><button className="primary add-row-btn" onClick={addRow}>+ Ajouter une ligne de cases</button><div className="grid2"><label className="field">États par case<input type="number" inputMode="numeric" min="1" max="6" value={fillLevelsValue} onChange={(e) => patch({ fillLevels: safePositiveNumber(e.target.value, 3) })} onBlur={() => fillLevelsValue === '' && patch({ fillLevels: 1 })} /></label><label className="field">Nombre de lignes<input type="number" inputMode="numeric" value={rows.length} readOnly /></label></div><p className="muted" style={{ marginTop: -4, fontSize: 12 }}>États par case = nombre de clics nécessaires pour remplir complètement une case.</p><div className="stack">{rows.map((row) => <div className="box-edit-row" key={row.id}><label className="field">Nom de ligne<input value={row.label} onChange={(e) => updateRow(row.id, (current) => ({ ...current, label: e.target.value }))} /></label><label className="field">Nombre de cases<input type="number" inputMode="numeric" min="1" value={row.marks?.length === '' ? '' : row.marks?.length || 1} onChange={(e) => updateRow(row.id, (current) => ({ ...current, marks: resizeMarks(current.marks, e.target.value) }))} /></label><div className="grid2"><button className="small-btn" onClick={() => updateRow(row.id, (current) => ({ ...current, marks: current.marks.map(() => 0) }))}>Vider</button><button className="small-btn subtle-danger" onClick={() => removeRow(row.id)} disabled={rows.length <= 1}>Supprimer la ligne</button></div></div>)}</div></div>;
 }
 
 function TrackerEditor({ tracker, onChange, onDelete }) {
