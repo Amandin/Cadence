@@ -22,12 +22,8 @@ function numberOr(value, fallback) {
 
 function stepGlobalTracker(tracker, delta) {
   if (!tracker?.enabled || !tracker?.auto) return tracker;
-  const max = Math.max(1, numberOr(tracker.max, 10));
   const next = Math.max(0, numberOr(tracker.current, 0) + delta);
-  return {
-    ...tracker,
-    current: tracker.mode === 'clock' ? Math.min(max, next) : next,
-  };
+  return { ...tracker, current: next };
 }
 
 function createRestorePoint(scene) {
