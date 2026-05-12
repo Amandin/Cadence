@@ -34,13 +34,14 @@ export function createCampaignActions({ scenes, dark, setScenes, setSceneIndex, 
     async importCampaign(file) {
       try {
         const data = JSON.parse(await file.text());
-        if (!isValidCampaign(data)) return alert('Fichier invalide');
+        if (!isValidCampaign(data)) return { ok: false, message: 'Le fichier choisi n’est pas une campagne Cadence valide.' };
 
         setScenes(data.scenes);
         setDark(data.settings?.dark || false);
         setSceneIndex(0);
+        return { ok: true };
       } catch {
-        alert('Impossible de lire ce fichier JSON.');
+        return { ok: false, message: 'Impossible de lire ce fichier JSON.' };
       }
     },
     resetDemo() {
