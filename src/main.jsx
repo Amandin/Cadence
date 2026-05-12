@@ -12,8 +12,3 @@ createRoot(document.getElementById('root')).render(
     </ErrorBoundary>
   </React.StrictMode>,
 );
-
-const worker = navigator?.serviceWorker;
-if (worker && import.meta.env.PROD) {
-  window.addEventListener('load', () => worker.register('/service-worker.js'));
-}
