@@ -35,8 +35,13 @@ function Dots({ tracker, onChange }) {
 }
 
 function Clock({ tracker, onChange }) {
+  const max = Math.max(1, Number(tracker.max || 1));
+  const current = Math.max(0, Number(tracker.current || 0));
   const triggered = isTriggeredClock(tracker);
-  return <div className="clock">{Array.from({ length: tracker.max }).map((_, i) => <button key={i} className={`seg ${i < tracker.current ? 'on' : ''} ${triggered ? 'triggered' : ''}`} onClick={() => onChange({ current: i + 1 === tracker.current ? i : i + 1 })} />)}</div>;
+  const progress = Math.max(0, Math.min(1, current / max));
+  const nextValue = current >= max ? max - 1 : current + 1;
+
+  return <button className={`clock-face ${triggered ? 'triggered' : ''}`} style={{ '--clock-progress': `${progress * 360}deg` }} onClick={() => onChange({ current: nextValue })}><span>{current}</span><small>/{max}</small></button>;
 }
 
 function Boxes({ tracker, mark }) {
