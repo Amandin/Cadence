@@ -19,7 +19,7 @@ export function Tracker({ tracker, onChange, onDelete }) {
   }, [deltaOpen]);
 
   if (tracker.type === 'clock') {
-    return <div className={`tracker ${triggered ? 'triggered' : ''}`}><div className="tracker-top with-clock"><span>{tracker.name}</span>{tracker.auto && <span className="chip">auto</span>}{triggered && <span className="chip hot">À résoudre</span>}<div className="clock-inline"><button onClick={() => step(-1)}>−</button><Clock tracker={tracker} onChange={patch} /><button onClick={() => step(1)}>+</button></div></div>{triggered && <div className="stack" style={{ marginTop: 8 }}><button className="primary" onClick={() => patch({ current: 0 })}>Relancer à 0</button><button className="danger-btn" onClick={onDelete}>Supprimer</button></div>}</div>;
+    return <div className={`tracker ${triggered ? 'triggered' : ''}`}><div className="tracker-top with-clock"><span>{tracker.name}</span>{tracker.auto && <span className="chip">auto</span>}{triggered && <span className="chip hot">À résoudre</span>}<div className="clock-inline"><button onClick={() => step(-1)}>−</button><Clock tracker={tracker} /><button onClick={() => step(1)}>+</button></div></div>{triggered && <div className="stack" style={{ marginTop: 8 }}><button className="primary" onClick={() => patch({ current: 0 })}>Relancer à 0</button><button className="danger-btn" onClick={onDelete}>Supprimer</button></div>}</div>;
   }
 
   if (tracker.type === 'boxes') {
@@ -42,7 +42,7 @@ function Dots({ tracker, onChange }) {
   return <div className="dots">{Array.from({ length: tracker.max }).map((_, i) => <button key={i} className={`dot ${i < tracker.current ? 'on' : ''}`} onClick={() => onChange({ current: i + 1 === tracker.current ? i : i + 1 })} />)}</div>;
 }
 
-function Clock({ tracker, onChange }) {
+function Clock({ tracker }) {
   const max = Math.max(1, Number(tracker.max || 1));
   const current = Math.max(0, Number(tracker.current || 0));
   const triggered = isTriggeredClock(tracker);
@@ -50,9 +50,8 @@ function Clock({ tracker, onChange }) {
   const warning = !triggered && ratio >= .5;
   const near = !triggered && ratio >= .75;
   const progress = Math.max(0, Math.min(1, ratio));
-  const nextValue = current >= max ? max - 1 : current + 1;
 
-  return <button className={`clock-face ${warning ? 'warning' : ''} ${near ? 'near' : ''} ${triggered ? 'triggered' : ''}`} style={{ '--clock-progress': `${progress * 360}deg` }} onClick={() => onChange({ current: nextValue })}><span>{current}</span><small>/{max}</small></button>;
+  return <div className={`clock-face ${warning ? 'warning' : ''} ${near ? 'near' : ''} ${triggered ? 'triggered' : ''}`} style={{ '--clock-progress': `${progress * 360}deg` }}><span>{current}</span><small>/{max}</small></div>;
 }
 
 function Boxes({ tracker, mark }) {
