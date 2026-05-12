@@ -1,4 +1,4 @@
-import { newTracker, tickParticipant, uid } from '../logic.js';
+import { clone, newTracker, tickParticipant, uid } from '../logic.js';
 
 function createBlankParticipant() {
   return {
@@ -32,9 +32,10 @@ function makeStatus(data) {
   };
 }
 
-export function createSceneActions({ scene, sceneIndex, blocked, setScenes, setRoundEffect }) {
+export function createSceneActions({ scene, sceneIndex, blocked, sceneHistory, setScenes, setSceneHistory, setRoundEffect }) {
   const updateScene = (updater) => setScenes((list) => list.map((s, i) => i === sceneIndex ? updater(s) : s));
   const updateParticipant = (id, updater) => updateScene((s) => ({ ...s, participants: s.participants.map((p) => p.id === id ? updater(p) : p) }));
+  const pushSceneHistory = () => setSceneHistory((history) => ({ ...history, [scene.id]: [...(history[scene.id] || []), clone(scene)].slice(-50) }));
 
   return {
     updateParticipant,
@@ -60,20 +61,33 @@ export function createSceneActions({ scene, sceneIndex, blocked, setScenes, setR
       updateParticipant(pid, (p) => ({ ...p, statuses: (p.statuses || []).filter((s) => s.id !== sid) }));
     },
     nextTurn(direction = 1) {
-      if (direction > 0 && blocked.length) return;
       const participants = scene.participants;
       if (!participants.length) return;
 
-      const currentIndex = Math.max(0, participants.findIndex((p) => p.id === scene.activeId));
-      const nextIndex = (currentIndex + direction + participants.length) % participants.length;
-      const roundDelta = direction > 0 && nextIndex === 0 && currentIndex !== 0 ? 1 : 0;
+      if (direction < 0) {
+        const history = sceneHistory[scene.id] || [];
+        const previousScene = history.at(-1);
+        if (!previousScene) return;
 
+        setRoundEffect(null);
+        setSceneHistory((allHistory) => ({ ...allHistory, [scene.id]: (allHistory[scene.id] || []).slice(0, -1) }));
+        updateScene(() => previousScene);
+        return;
+      }
+
+      if (blocked.length) return;
+
+      const currentIndex = Math.max(0, participants.findIndex((p) => p.id === scene.activeId));
+      const nextIndex = (currentIndex + 1) % participants.length;
+      const roundDelta = nextIndex === 0 && currentIndex !== 0 ? 1 : 0;
+
+      pushSceneHistory();
       setRoundEffect(roundDelta > 0 ? 'next' : null);
       updateScene((s) => ({
         ...s,
         activeId: s.participants[nextIndex].id,
         round: Math.max(1, s.round + roundDelta),
-        participants: direction > 0 ? s.participants.map((p, i) => i === nextIndex ? tickParticipant(p) : p) : s.participants,
+        participants: s.participants.map((p, i) => i === nextIndex ? tickParticipant(p) : p),
       }));
     },
     leaveInit(id) {
