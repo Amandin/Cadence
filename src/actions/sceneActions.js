@@ -66,7 +66,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, setScenes, setR
 
       const currentIndex = Math.max(0, participants.findIndex((p) => p.id === scene.activeId));
       const nextIndex = (currentIndex + direction + participants.length) % participants.length;
-      const roundDelta = direction > 0 && nextIndex === 0 && currentIndex !== 0 ? 1 : direction < 0 && currentIndex === 0 ? -1 : 0;
+      const roundDelta = direction > 0 && nextIndex === 0 && currentIndex !== 0 ? 1 : 0;
 
       setRoundEffect(roundDelta > 0 ? 'next' : null);
       updateScene((s) => ({
