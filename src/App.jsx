@@ -15,14 +15,14 @@ function GlobalTracker({ tracker, onStep, onOpen, tick }) {
   if (!tracker?.enabled) return null;
   const max = Math.max(1, Number(tracker.max || 10));
   const current = Math.max(0, Number(tracker.current || 0));
-  const progress = Math.min(1, current / max);
-  const maxed = current >= max;
   const overflowing = current > max;
   const overflow = Math.max(0, current - max);
   const overflowRemainder = overflow % max;
   const overflowRatio = overflowing ? (overflowRemainder === 0 ? 1 : overflowRemainder / max) : 0;
   const completedCycles = overflowing ? Math.floor(current / max) : 0;
-  return <div className={`global-mini ${tracker.auto ? 'auto-active' : ''} ${tick ? 'auto-tick' : ''} ${maxed ? 'maxed' : ''} ${overflowing ? 'overflowing' : ''}`}><button onClick={(e) => { e.stopPropagation(); onStep(-1); }}>−</button><div className="global-mini-main"><span>{tracker.name || 'Menace'}</span><button className={`clock-face global-clock ${tracker.mode === 'counter' ? 'counter-mode' : ''} ${maxed ? 'triggered' : ''} ${overflowing ? 'overflowing' : ''}`} style={{ '--clock-progress': `${progress * 360}deg`, '--overflow-progress': `${overflowRatio * 360}deg` }} onClick={onOpen} aria-label="Gérer le compteur de scène"><span>{current}</span>{tracker.mode === 'clock' && <small>/{max}</small>}</button>{overflowing && <em className="overflow-badge">×{completedCycles}</em>}{tick && <em className="auto-plus">+1</em>}</div><button onClick={(e) => { e.stopPropagation(); onStep(1); }}>+</button></div>;
+  const fullCycle = current >= max && current % max === 0;
+  const progress = overflowing ? 1 : Math.min(1, current / max);
+  return <div className={`global-mini ${tracker.auto ? 'auto-active' : ''} ${tick ? 'auto-tick' : ''} ${fullCycle ? 'maxed' : ''} ${overflowing ? 'overflowing' : ''}`}><button onClick={(e) => { e.stopPropagation(); onStep(-1); }}>−</button><div className="global-mini-main"><span>{tracker.name || 'Menace'}</span><button className={`clock-face global-clock ${tracker.mode === 'counter' ? 'counter-mode' : ''} ${fullCycle ? 'triggered' : ''} ${overflowing ? 'overflowing' : ''}`} style={{ '--clock-progress': `${progress * 360}deg`, '--overflow-progress': `${overflowRatio * 360}deg` }} onClick={onOpen} aria-label="Gérer le compteur de scène"><span>{current}</span>{tracker.mode === 'clock' && <small>/{max}</small>}</button>{overflowing && <em className="overflow-badge">×{completedCycles}</em>}{tick && <em className="auto-plus">+1</em>}</div><button onClick={(e) => { e.stopPropagation(); onStep(1); }}>+</button></div>;
 }
 
 function GlobalTrackerSheet({ tracker, onChange, onStep, onClose }) {
