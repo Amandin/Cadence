@@ -10,9 +10,9 @@ export function Avatar({ participant }) {
 
 function statusLabel(status) {
   if (status.duration == null) return '∞';
-  if (status.expired && status.loop) return 'cycle fini';
-  if (status.expired) return 'terminé';
-  return `${status.remaining}/${status.duration}`;
+  if (status.expired && status.loop) return '↻ 0';
+  if (status.expired) return '✕ 0';
+  return `⏳ ${status.remaining}`;
 }
 
 function statusKind(status) {
