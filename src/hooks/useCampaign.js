@@ -8,6 +8,7 @@ export function useCampaign() {
   const [initialCampaign] = useState(loadCampaign);
   const [scenes, setScenes] = useState(initialCampaign.scenes);
   const [sceneIndex, setSceneIndex] = useState(0);
+  const [sceneHistory, setSceneHistory] = useState({});
   const [dark, setDark] = useState(initialCampaign.settings?.dark || false);
   const [roundEffect, setRoundEffect] = useState(null);
 
@@ -19,7 +20,7 @@ export function useCampaign() {
 
   useEffect(() => saveCampaign(scenes, dark), [scenes, dark]);
 
-  const sceneActions = useMemo(() => createSceneActions({ scene, sceneIndex, blocked, setScenes, setRoundEffect }), [blocked, scene, sceneIndex]);
+  const sceneActions = useMemo(() => createSceneActions({ scene, sceneIndex, blocked, sceneHistory, setScenes, setSceneHistory, setRoundEffect }), [blocked, scene, sceneHistory, sceneIndex]);
   const campaignActions = useMemo(() => createCampaignActions({ scenes, dark, setScenes, setSceneIndex, setDark }), [dark, scenes]);
 
   return {
