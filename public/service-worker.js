@@ -1,8 +1,7 @@
-// Service worker volontairement neutre pendant le développement actif de Cadence.
-// L'ancien cache PWA pouvait conserver un index.html obsolète pointant vers
-// d'anciens fichiers JS hashés, ce qui provoquait une page blanche après déploiement.
+// Cadence est en développement actif : on désactive volontairement la PWA.
+// Ce service worker ne doit rien intercepter. Il nettoie les anciens caches puis se désinstalle.
 
-self.addEventListener('install', (event) => {
+self.addEventListener('install', () => {
   self.skipWaiting();
 });
 
@@ -10,10 +9,8 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys()
       .then((keys) => Promise.all(keys.map((key) => caches.delete(key))))
-      .then(() => self.clients.claim())
+      .then(() => self.registration.unregister())
+      .then(() => self.clients.matchAll())
+      .then((clients) => clients.forEach((client) => client.navigate(client.url)))
   );
-});
-
-self.addEventListener('fetch', () => {
-  // Ne pas intercepter les requêtes : le navigateur et Cloudflare servent les fichiers frais.
 });
