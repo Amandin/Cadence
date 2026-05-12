@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Avatar, RoundBadge, Sheet } from './components/common.jsx';
+import { Avatar, RoundBadge, Sheet, Status } from './components/common.jsx';
 import { ClockResolutionModal } from './components/ClockResolutionModal.jsx';
 import { ParticipantCard } from './components/ParticipantCard.jsx';
 import { ParticipantSheet } from './components/ParticipantSheet.jsx';
@@ -10,6 +10,18 @@ import { NoticeModal } from './components/NoticeModal.jsx';
 import { StatusSheet } from './components/StatusSheet.jsx';
 import { Tracker } from './components/Tracker.jsx';
 import { useCampaign } from './hooks/useCampaign.js';
+
+function localId(prefix = 'id') {
+  return `${prefix}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+function makeLocalStatus(data) {
+  const name = data?.name?.trim();
+  if (!name) return null;
+  const duration = data.duration == null ? null : Math.max(1, Number(data.duration));
+  if (duration !== null && !Number.isFinite(duration)) return null;
+  return { id: localId('s'), name, duration, remaining: duration, loop: duration !== null && !!data.loop, expired: false };
+}
 
 function GlobalTracker({ tracker, onStep, onOpen, tick }) {
   if (!tracker?.enabled) return null;
@@ -33,7 +45,7 @@ function GlobalTrackerSheet({ tracker, onChange, onStep, onClose }) {
 
 function ReserveCard({ participant, onJoin, onOpen, onTracker, onDeleteTracker, onAddStatus, onRemoveStatus }) {
   const [collapsed, setCollapsed] = useState(false);
-  return <div className={`card reserve-card ${collapsed ? 'collapsed' : ''}`} data-participant-id={participant.id}><div className="card-head"><button className="icon-btn collapse-btn" onClick={() => setCollapsed((value) => !value)} aria-label={collapsed ? 'Dérouler la fichette' : 'Enrouler la fichette'}>{collapsed ? '⌄' : '⌃'}</button><button className="card-main" onClick={onOpen}><Avatar participant={participant} /><div className="info"><strong>{participant.name}</strong><div className="muted">{participant.description}</div></div></button><button className="small-btn" onClick={onJoin}>Rejoindre init</button></div>{!collapsed && <div className="trackers">{participant.trackers?.map((tracker) => <Tracker key={tracker.id} tracker={tracker} onChange={(next) => onTracker(tracker.id, next)} onDelete={() => onDeleteTracker(tracker.id)} />)}<div className="statuses">{participant.statuses?.map((s) => <span className={`status ${s.duration == null ? 'permanent' : s.loop ? 'loop' : 'temporary'} ${s.expired ? 'expired' : ''}`} key={s.id}>{s.name}</span>)}<button className="small-btn" onClick={onAddStatus}>+ état</button></div></div>}</div>;
+  return <div className={`card reserve-card ${collapsed ? 'collapsed' : ''}`} data-participant-id={participant.id}><div className="card-head"><button className="icon-btn collapse-btn" onClick={() => setCollapsed((value) => !value)} aria-label={collapsed ? 'Dérouler la fichette' : 'Enrouler la fichette'}>{collapsed ? '⌄' : '⌃'}</button><button className="card-main" onClick={onOpen}><Avatar participant={participant} /><div className="info"><strong>{participant.name}</strong><div className="muted">{participant.description}</div></div></button><button className="small-btn" onClick={onJoin}>Rejoindre init</button></div>{!collapsed && <div className="trackers">{participant.trackers?.map((tracker) => <Tracker key={tracker.id} tracker={tracker} onChange={(next) => onTracker(tracker.id, next)} onDelete={() => onDeleteTracker(tracker.id)} />)}<div className="statuses">{participant.statuses?.map((s) => <Status key={s.id} status={s} onRemove={() => onRemoveStatus(s.id)} />)}<button className="small-btn" onClick={onAddStatus}>+ état</button></div></div>}</div>;
 }
 
 export default function App() {
@@ -68,6 +80,19 @@ export default function App() {
 
   const closeCharacterPanels = () => { setSelectedId(null); setEditingId(null); };
   const leaveInit = (id) => { actions.leaveInit(id); closeCharacterPanels(); };
+  const isInInit = (id) => scene.participants.some((p) => p.id === id);
+  const updateReserve = (updater) => actions.updateSceneField('reserve', updater(scene.reserve || []));
+  const updateCharacter = (id, updater) => {
+    if (isInInit(id)) actions.updateParticipant(id, updater);
+    else updateReserve((reserve) => reserve.map((p) => p.id === id ? updater(p) : p));
+  };
+  const updateCharacterTracker = (pid, tid, next) => updateCharacter(pid, (p) => ({ ...p, trackers: (p.trackers || []).map((t) => t.id === tid ? next : t) }));
+  const deleteCharacterTracker = (pid, tid) => updateCharacter(pid, (p) => ({ ...p, trackers: (p.trackers || []).filter((t) => t.id !== tid) }));
+  const removeCharacterStatus = (pid, sid) => updateCharacter(pid, (p) => ({ ...p, statuses: (p.statuses || []).filter((s) => s.id !== sid) }));
+  const addCharacterStatus = (pid, data) => {
+    const status = makeLocalStatus(data);
+    if (status) updateCharacter(pid, (p) => ({ ...p, statuses: [...(p.statuses || []), status] }));
+  };
 
   const nextTurn = (direction) => {
     if (direction > 0) setShowNotes(false);
@@ -84,18 +109,10 @@ export default function App() {
   };
   const resetDemo = () => { actions.resetDemo(); setOpenMenu(false); closeCharacterPanels(); };
   const restoreScene = (pointId) => { actions.restoreScene(pointId); setOpenMenu(false); closeCharacterPanels(); };
-  const saveStatus = (data) => { if (!statusTargetId) return; actions.addStatus(statusTargetId, data); setStatusTargetId(null); };
+  const saveStatus = (data) => { if (!statusTargetId) return; addCharacterStatus(statusTargetId, data); setStatusTargetId(null); };
   const joinInit = (initiative) => { if (!joinTargetId) return; actions.joinInit(joinTargetId, initiative); setJoinTargetId(null); };
 
-  const saveCharacter = (draft) => {
-    const inInit = scene.participants.some((p) => p.id === draft.id);
-    if (inInit) actions.updateParticipant(draft.id, () => draft);
-    else actions.updateSceneField('reserve', (scene.reserve || []).map((p) => p.id === draft.id ? draft : p));
-    setEditingId(null);
-  };
-
-  const updateReserveTracker = (pid, tid, next) => actions.updateSceneField('reserve', (scene.reserve || []).map((p) => p.id === pid ? { ...p, trackers: p.trackers.map((t) => t.id === tid ? next : t) } : p));
-  const deleteReserveTracker = (pid, tid) => actions.updateSceneField('reserve', (scene.reserve || []).map((p) => p.id === pid ? { ...p, trackers: p.trackers.filter((t) => t.id !== tid) } : p));
+  const saveCharacter = (draft) => { updateCharacter(draft.id, () => draft); setEditingId(null); };
   const deleteCharacter = (id) => { actions.deleteParticipant(id); closeCharacterPanels(); };
 
   const resetClock = (participantId, trackerId) => {
@@ -108,5 +125,5 @@ export default function App() {
   const deleteClock = (participantId, trackerId) => { actions.deleteTracker(participantId, trackerId); setClockModalOpen(false); };
   const nextLabel = blocked.length ? 'Gérer horloge bloquante' : nextStartsRound ? 'Nouveau round' : 'Participant suivant';
 
-  return <div className={`app ${dark ? 'dark' : ''}`}><div className="shell"><header className="top compact"><div className="scene-head"><button className="icon-btn" onClick={() => setShowNotes(!showNotes)}>{showNotes ? '⌃' : '⌄'}</button><div><h1>{scene.title}</h1><div className="muted">{scene.type} · {scene.participants.length} en initiative</div></div><RoundBadge round={scene.round} effect={roundEffect} /></div>{showNotes && <div className="scene-notes panel">{scene.notes}</div>}<div className="turn-row"><button className="turn-btn" onClick={() => nextTurn(-1)} aria-label="Participant précédent">↶</button><div className="active-box panel"><div className="turn-active-line"><div className="active-name"><div className="muted">{blocked.length ? 'Horloge à gérer' : 'Tour actif'}</div><strong>{blocked.length ? blocked.map((p) => p.name).join(', ') : active?.name || 'Aucun participant'}</strong></div><GlobalTracker tracker={scene.globalTracker} onStep={actions.stepGlobal} onOpen={() => setGlobalSheetOpen(true)} tick={globalAutoTick} /></div></div><button className={`turn-btn next ${nextClass}`} onClick={() => nextTurn(1)} aria-label={nextLabel}>{blocked.length ? '⏸' : '➜'}</button></div></header><main>{scene.participants.map((p) => <ParticipantCard key={p.id} participant={p} active={p.id === scene.activeId} onOpen={() => setSelectedId(p.id)} onTracker={(tid, next) => actions.trackerChange(p.id, tid, next)} onDeleteTracker={(tid) => actions.deleteTracker(p.id, tid)} onAddStatus={() => setStatusTargetId(p.id)} onRemoveStatus={(sid) => actions.removeStatus(p.id, sid)} onLeaveInit={() => leaveInit(p.id)} />)}{scene.reserve?.length > 0 && <section className="reserve"><h3>Hors initiative</h3>{scene.reserve.map((p) => <ReserveCard key={p.id} participant={p} onOpen={() => setSelectedId(p.id)} onJoin={() => setJoinTargetId(p.id)} onTracker={(tid, next) => updateReserveTracker(p.id, tid, next)} onDeleteTracker={(tid) => deleteReserveTracker(p.id, tid)} onAddStatus={() => setStatusTargetId(p.id)} onRemoveStatus={() => {}} />)}<label className="field reserve-notes">Notes hors initiative<textarea value={scene.reserveNotes || ''} onChange={(e) => actions.updateSceneField('reserveNotes', e.target.value)} placeholder="Notes, PNJ en attente, effets hors ordre de tour…" /></label></section>}</main></div><div className="bottom"><button className="turn-btn compact" onClick={() => nextTurn(-1)} aria-label="Participant précédent">↶</button><button className={`primary ${nextClass}`} onClick={() => nextTurn(1)}>{blocked.length ? 'Horloge' : nextStartsRound ? `Nouveau round · R${scene.round + 1}` : `Suivant · R${scene.round}`}</button><button className="small-btn" onClick={addParticipant}>+</button><button className="small-btn" onClick={() => setOpenMenu(true)}>☰</button></div>{selected && <ParticipantSheet participant={selected} onClose={() => setSelectedId(null)} onEdit={() => setEditingId(selected.id)} onTracker={(tid, next) => actions.trackerChange(selected.id, tid, next)} onDeleteTracker={(tid) => actions.deleteTracker(selected.id, tid)} onAddStatus={() => setStatusTargetId(selected.id)} onRemoveStatus={(sid) => actions.removeStatus(selected.id, sid)} onNote={(note) => actions.updateParticipant(selected.id, (p) => ({ ...p, note }))} />}{editing && <EditSheet participant={editing} onClose={() => setEditingId(null)} onSave={saveCharacter} onDelete={() => deleteCharacter(editing.id)} />}{statusTarget && <StatusSheet participant={statusTarget} onClose={() => setStatusTargetId(null)} onSave={saveStatus} />}{joinTarget && <JoinInitSheet participant={joinTarget} onClose={() => setJoinTargetId(null)} onSave={joinInit} />}{globalSheetOpen && <GlobalTrackerSheet tracker={scene.globalTracker} onChange={actions.updateGlobalTracker} onStep={actions.stepGlobal} onClose={() => setGlobalSheetOpen(false)} />}{clockModalOpen && <ClockResolutionModal participants={blocked} onClose={() => setClockModalOpen(false)} onResetClock={resetClock} onDeleteClock={deleteClock} />}{notice && <NoticeModal title={notice.title} message={notice.message} onClose={() => setNotice(null)} />}{openMenu && <Menu scenes={scenes} scene={scene} restorePoints={restorePoints} onRestore={restoreScene} onClose={() => setOpenMenu(false)} setSceneIndex={actions.setSceneIndex} dark={dark} setDark={actions.setDark} onAddParticipant={addParticipant} onNewScene={newScene} onExport={actions.exportCampaign} onImport={importCampaign} onReset={resetDemo} onGlobalTracker={actions.updateGlobalTracker} />}</div>;
+  return <div className={`app ${dark ? 'dark' : ''}`}><div className="shell"><header className="top compact"><div className="scene-head"><button className="icon-btn" onClick={() => setShowNotes(!showNotes)}>{showNotes ? '⌃' : '⌄'}</button><div><h1>{scene.title}</h1><div className="muted">{scene.type} · {scene.participants.length} en initiative</div></div><RoundBadge round={scene.round} effect={roundEffect} /></div>{showNotes && <div className="scene-notes panel">{scene.notes}</div>}<div className="turn-row"><button className="turn-btn" onClick={() => nextTurn(-1)} aria-label="Participant précédent">↶</button><div className="active-box panel"><div className="turn-active-line"><div className="active-name"><div className="muted">{blocked.length ? 'Horloge à gérer' : 'Tour actif'}</div><strong>{blocked.length ? blocked.map((p) => p.name).join(', ') : active?.name || 'Aucun participant'}</strong></div><GlobalTracker tracker={scene.globalTracker} onStep={actions.stepGlobal} onOpen={() => setGlobalSheetOpen(true)} tick={globalAutoTick} /></div></div><button className={`turn-btn next ${nextClass}`} onClick={() => nextTurn(1)} aria-label={nextLabel}>{blocked.length ? '⏸' : '➜'}</button></div></header><main>{scene.participants.map((p) => <ParticipantCard key={p.id} participant={p} active={p.id === scene.activeId} onOpen={() => setSelectedId(p.id)} onTracker={(tid, next) => updateCharacterTracker(p.id, tid, next)} onDeleteTracker={(tid) => deleteCharacterTracker(p.id, tid)} onAddStatus={() => setStatusTargetId(p.id)} onRemoveStatus={(sid) => removeCharacterStatus(p.id, sid)} onLeaveInit={() => leaveInit(p.id)} />)}{scene.reserve?.length > 0 && <section className="reserve"><h3>Hors initiative</h3>{scene.reserve.map((p) => <ReserveCard key={p.id} participant={p} onOpen={() => setSelectedId(p.id)} onJoin={() => setJoinTargetId(p.id)} onTracker={(tid, next) => updateCharacterTracker(p.id, tid, next)} onDeleteTracker={(tid) => deleteCharacterTracker(p.id, tid)} onAddStatus={() => setStatusTargetId(p.id)} onRemoveStatus={(sid) => removeCharacterStatus(p.id, sid)} />)}<label className="field reserve-notes">Notes hors initiative<textarea value={scene.reserveNotes || ''} onChange={(e) => actions.updateSceneField('reserveNotes', e.target.value)} placeholder="Notes, PNJ en attente, effets hors ordre de tour…" /></label></section>}</main></div><div className="bottom"><button className="turn-btn compact" onClick={() => nextTurn(-1)} aria-label="Participant précédent">↶</button><button className={`primary ${nextClass}`} onClick={() => nextTurn(1)}>{blocked.length ? 'Horloge' : nextStartsRound ? `Nouveau round · R${scene.round + 1}` : `Suivant · R${scene.round}`}</button><button className="small-btn" onClick={addParticipant}>+</button><button className="small-btn" onClick={() => setOpenMenu(true)}>☰</button></div>{selected && <ParticipantSheet participant={selected} onClose={() => setSelectedId(null)} onEdit={() => setEditingId(selected.id)} onTracker={(tid, next) => updateCharacterTracker(selected.id, tid, next)} onDeleteTracker={(tid) => deleteCharacterTracker(selected.id, tid)} onAddStatus={() => setStatusTargetId(selected.id)} onRemoveStatus={(sid) => removeCharacterStatus(selected.id, sid)} onNote={(note) => updateCharacter(selected.id, (p) => ({ ...p, note }))} />}{editing && <EditSheet participant={editing} onClose={() => setEditingId(null)} onSave={saveCharacter} onDelete={() => deleteCharacter(editing.id)} />}{statusTarget && <StatusSheet participant={statusTarget} onClose={() => setStatusTargetId(null)} onSave={saveStatus} />}{joinTarget && <JoinInitSheet participant={joinTarget} onClose={() => setJoinTargetId(null)} onSave={joinInit} />}{globalSheetOpen && <GlobalTrackerSheet tracker={scene.globalTracker} onChange={actions.updateGlobalTracker} onStep={actions.stepGlobal} onClose={() => setGlobalSheetOpen(false)} />}{clockModalOpen && <ClockResolutionModal participants={blocked} onClose={() => setClockModalOpen(false)} onResetClock={resetClock} onDeleteClock={deleteClock} />}{notice && <NoticeModal title={notice.title} message={notice.message} onClose={() => setNotice(null)} />}{openMenu && <Menu scenes={scenes} scene={scene} restorePoints={restorePoints} onRestore={restoreScene} onClose={() => setOpenMenu(false)} setSceneIndex={actions.setSceneIndex} dark={dark} setDark={actions.setDark} onAddParticipant={addParticipant} onNewScene={newScene} onExport={actions.exportCampaign} onImport={importCampaign} onReset={resetDemo} onGlobalTracker={actions.updateGlobalTracker} />}</div>;
 }
