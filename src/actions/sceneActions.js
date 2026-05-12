@@ -15,6 +15,21 @@ function createBlankParticipant() {
   };
 }
 
+function numberOr(value, fallback) {
+  const next = Number(value);
+  return Number.isFinite(next) ? next : fallback;
+}
+
+function stepGlobalTracker(tracker, delta) {
+  if (!tracker?.enabled || !tracker?.auto) return tracker;
+  const max = Math.max(1, numberOr(tracker.max, 10));
+  const next = Math.max(0, numberOr(tracker.current, 0) + delta);
+  return {
+    ...tracker,
+    current: tracker.mode === 'clock' ? Math.min(max, next) : next,
+  };
+}
+
 function createRestorePoint(scene) {
   return {
     id: uid('restore'),
@@ -97,6 +112,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
           ...s,
           activeId: s.participants[nextIndex].id,
           round: Math.max(1, s.round + roundDelta),
+          globalTracker: roundDelta < 0 ? stepGlobalTracker(s.globalTracker, -1) : s.globalTracker,
           participants: s.participants.map((p, i) => i === currentIndex ? untickParticipant(p) : p),
         }));
         return;
@@ -112,6 +128,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
           ...s,
           activeId: s.participants[nextIndex].id,
           round: Math.max(1, s.round + roundDelta),
+          globalTracker: roundDelta > 0 ? stepGlobalTracker(s.globalTracker, 1) : s.globalTracker,
           participants: s.participants.map((p, i) => i === nextIndex ? tickParticipant(p) : p),
         };
 
