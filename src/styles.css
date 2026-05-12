@@ -108,10 +108,16 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .dark .clock-face::before { background:#0f172a; }
 .seg { width: 28px; height: 24px; border-radius: 8px; border:1px solid #64748b; background:white; }
 .seg.on { background:#020617; } .seg.triggered.on { background:#d946ef; border-color:#f0abfc; }
-.box-row { display:flex; gap:8px; align-items:flex-start; width:100%; }
-.box-label { width:70px; font-size:10px; font-weight:900; color:#64748b; padding-top:5px; }
-.box { width:26px; height:26px; border-radius:4px; border:2px solid #64748b; background:white; display:grid; place-items:center; font-size:12px; font-weight:900; }
-.box.full { background:#020617; color:white; border-color:#020617; }
+.box-row { display:grid; grid-template-columns: minmax(56px, .35fr) 1fr; gap:8px; align-items:center; width:100%; }
+.box-label { font-size:10px; font-weight:900; color:#64748b; padding:5px 0; text-transform:uppercase; letter-spacing:.04em; }
+.box { width:28px; height:28px; border-radius:3px; border:2px solid #475569; background:linear-gradient(180deg,#fff,#f1f5f9); display:grid; place-items:center; font-size:13px; font-weight:900; box-shadow: inset 0 0 0 2px rgba(255,255,255,.8); }
+.box.full { background:#020617; color:white; border-color:#020617; box-shadow: inset 0 0 0 2px rgba(255,255,255,.14); }
+.dark .box { background:#0f172a; border-color:#94a3b8; color:#e2e8f0; box-shadow: inset 0 0 0 2px rgba(148,163,184,.14); }
+.dark .box.full { background:#38bdf8; border-color:#7dd3fc; color:#082f49; }
+.box-editor { margin-top: 8px; padding: 10px; border-radius: 18px; background: rgba(148,163,184,.12); }
+.box-edit-row { padding: 10px; border-radius: 16px; background: rgba(255,255,255,.65); border: 1px solid rgba(148,163,184,.3); }
+.dark .box-editor { background: rgba(15,23,42,.4); }
+.dark .box-edit-row { background: rgba(2,6,23,.45); border-color: rgba(148,163,184,.25); }
 .statuses { display:flex; flex-wrap:wrap; gap:6px; }
 .status { border-radius: 999px; padding: 5px 9px; font-size: 11px; font-weight:900; color:white; }
 .status.permanent { background:#020617; }
