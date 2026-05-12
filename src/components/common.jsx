@@ -10,7 +10,7 @@ export function Avatar({ participant }) {
 
 function statusLabel(status) {
   if (status.duration == null) return '∞';
-  if (status.expired && status.loop) return 'à renouveler';
+  if (status.expired && status.loop) return 'cycle fini';
   if (status.expired) return 'terminé';
   return `${status.remaining}/${status.duration}`;
 }
