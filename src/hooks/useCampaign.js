@@ -8,7 +8,7 @@ export function useCampaign() {
   const [initialCampaign] = useState(loadCampaign);
   const [scenes, setScenes] = useState(initialCampaign.scenes);
   const [sceneIndex, setSceneIndex] = useState(0);
-  const [sceneHistory, setSceneHistory] = useState({});
+  const [restorePoints, setRestorePoints] = useState({});
   const [dark, setDark] = useState(initialCampaign.settings?.dark || false);
   const [roundEffect, setRoundEffect] = useState(null);
 
@@ -20,13 +20,14 @@ export function useCampaign() {
 
   useEffect(() => saveCampaign(scenes, dark), [scenes, dark]);
 
-  const sceneActions = useMemo(() => createSceneActions({ scene, sceneIndex, blocked, sceneHistory, setScenes, setSceneHistory, setRoundEffect }), [blocked, scene, sceneHistory, sceneIndex]);
+  const sceneActions = useMemo(() => createSceneActions({ scene, sceneIndex, blocked, restorePoints, setScenes, setRestorePoints, setRoundEffect }), [blocked, scene, restorePoints, sceneIndex]);
   const campaignActions = useMemo(() => createCampaignActions({ scenes, dark, setScenes, setSceneIndex, setDark }), [dark, scenes]);
 
   return {
     scenes,
     scene,
     sceneIndex,
+    restorePoints: restorePoints[scene.id] || [],
     dark,
     active,
     blocked,
