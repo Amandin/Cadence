@@ -33,14 +33,16 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .menu-theme { display:flex; justify-content:flex-end; margin-bottom:8px; }
 .theme-toggle { position: relative; width: 92px; height: 42px; border-radius: 999px; padding: 0 5px; display: flex; align-items: center; justify-content: space-between; background: #f8fafc; border: 1px solid #cbd5e1; box-shadow: inset 0 1px 4px rgba(15,23,42,.12), 0 6px 18px rgba(15,23,42,.12); color: #64748b; font-weight: 900; overflow: hidden; }
 .theme-toggle span { position: relative; z-index: 2; width: 34px; height: 34px; display: grid; place-items: center; line-height: 1; text-align: center; }
-.theme-toggle span:last-of-type { transform: translate(-1px, 1px); }
+.theme-toggle span:last-of-type { transform: translate(1px, 1px); }
 .theme-toggle i { position: absolute; z-index: 1; top: 4px; left: 4px; width: 34px; height: 34px; border-radius: 999px; background: #fbbf24; box-shadow: 0 4px 12px rgba(15,23,42,.28); transition: transform .2s, background .2s; }
 .theme-toggle.dark-on { background: #111827; border-color: #475569; color: #e2e8f0; }
 .theme-toggle.dark-on i { transform: translateX(50px); background: #60a5fa; }
 .restore-row { display:grid; grid-template-columns: auto 1fr auto; gap:8px; align-items:center; margin-top:12px; padding:8px; border-radius:20px; background:rgba(148,163,184,.12); }
+.restore-row.discreet { margin-top:16px; opacity:.86; background:transparent; border-top:1px solid rgba(148,163,184,.25); border-radius:0; padding:12px 0 0; }
 .restore-row label { font-size:12px; font-weight:900; color:#64748b; }
 .restore-row select { min-width:0; border-radius:14px; border:1px solid #cbd5e1; padding:8px 10px; background:white; color:#0f172a; font-weight:800; }
 .dark .restore-row { background:rgba(15,23,42,.45); }
+.dark .restore-row.discreet { background:transparent; }
 .dark .restore-row select { background:#020617; color:#e2e8f0; border-color:#475569; }
 .scene-notes { border-radius: 22px; padding: 10px 12px; margin-bottom: 8px; line-height: 1.45; }
 .turn-row { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; }
@@ -73,10 +75,10 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .tracker-top { display:flex; justify-content: space-between; gap: 8px; align-items: center; font-size: 12px; font-weight: 900; margin-bottom: 8px; }
 .tracker-top.with-clock { min-height:52px; margin-bottom:0; }
 .tracker-top.with-clock > span:first-child { flex:1; min-width:0; }
+.clock-inline { display:flex; align-items:center; gap:5px; flex:0 0 auto; }
+.clock-inline button:not(.clock-face) { width:28px; height:28px; border-radius:999px; background:white; border:1px solid #cbd5e1; font-weight:900; }
+.dark .clock-inline button:not(.clock-face) { background:#0f172a; color:#e2e8f0; border-color:#475569; }
 .controls { display:grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items:center; }
-.tracker-top.with-clock + .controls { margin-top:4px; }
-.tracker-top.with-clock + .controls > div:empty { display:none; }
-.tracker-top.with-clock + .controls { grid-template-columns:auto 0 auto; }
 .controls button { width: 34px; height: 34px; border-radius: 999px; background: white; border: 1px solid #cbd5e1; font-weight: 900; }
 .dark .controls button { background:#0f172a; color:#e2e8f0; border-color:#475569; }
 .delta { display: flex; justify-content:center; margin-bottom: 4px; }
@@ -92,14 +94,16 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .dot { width: 22px; height: 22px; border-radius: 999px; border:1px solid #64748b; background:white; }
 .dot.on { background:#020617; }
 .dark .dot { background:#0f172a; } .dark .dot.on { background:#38bdf8; }
-.clock-face { width: 50px !important; height: 50px !important; border-radius: 999px !important; display:grid !important; place-items:center !important; grid-template-rows: 1fr auto; padding:8px 0 6px !important; background: conic-gradient(#0f172a var(--clock-progress), #e2e8f0 0) !important; border: 2px solid #64748b !important; color:#0f172a; position:relative; overflow:hidden; flex:0 0 auto; }
-.clock-face::before { content:""; position:absolute; inset:7px; border-radius:999px; background:white; }
+.clock-face { width: 46px !important; height: 46px !important; border-radius: 999px !important; display:grid !important; place-items:center !important; grid-template-rows: 1fr auto; padding:7px 0 5px !important; background: conic-gradient(#0f172a var(--clock-progress), #e2e8f0 0) !important; border: 2px solid #64748b !important; color:#0f172a; position:relative; overflow:hidden; flex:0 0 auto; }
+.clock-face::before { content:""; position:absolute; inset:6px; border-radius:999px; background:white; }
 .clock-face span, .clock-face small { position:relative; z-index:1; line-height:1; }
-.clock-face span { font-size:16px; font-weight:900; align-self:end; }
-.clock-face small { font-size:9px; font-weight:900; color:#64748b; }
-.clock-face.near { background: conic-gradient(#f59e0b var(--clock-progress), #fde68a 0) !important; border-color:#f59e0b !important; box-shadow:0 0 0 3px rgba(245,158,11,.16); }
+.clock-face span { font-size:15px; font-weight:900; align-self:end; }
+.clock-face small { font-size:8px; font-weight:900; color:#64748b; }
+.clock-face.warning { background: conic-gradient(#ca8a04 var(--clock-progress), #fef3c7 0) !important; border-color:#eab308 !important; box-shadow:0 0 0 2px rgba(234,179,8,.11); }
+.clock-face.near { background: conic-gradient(#f59e0b var(--clock-progress), #fed7aa 0) !important; border-color:#f59e0b !important; box-shadow:0 0 0 3px rgba(245,158,11,.18), 0 0 12px rgba(245,158,11,.24); }
 .clock-face.triggered { background: conic-gradient(#d946ef var(--clock-progress), #f5d0fe 0) !important; border-color:#d946ef !important; animation: statusPulse 1.2s ease-in-out infinite; }
 .dark .clock-face { background: conic-gradient(#38bdf8 var(--clock-progress), #334155 0) !important; border-color:#94a3b8 !important; color:#e2e8f0; }
+.dark .clock-face.warning { background: conic-gradient(#ca8a04 var(--clock-progress), #422006 0) !important; border-color:#eab308 !important; }
 .dark .clock-face.near { background: conic-gradient(#f59e0b var(--clock-progress), #78350f 0) !important; border-color:#fbbf24 !important; }
 .dark .clock-face::before { background:#0f172a; }
 .seg { width: 28px; height: 24px; border-radius: 8px; border:1px solid #64748b; background:white; }
