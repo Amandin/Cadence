@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { loadCampaign, saveCampaign } from '../storage.js';
-import { hasTriggeredClock, nextTurnInfo } from '../logic.js';
+import { clone, hasTriggeredClock, nextTurnInfo, uid } from '../logic.js';
 import { createSceneActions } from '../actions/sceneActions.js';
 import { createCampaignActions } from '../actions/campaignActions.js';
 
@@ -17,11 +17,18 @@ function normalizeScene(scene) {
   };
 }
 
+function initialRestorePoints(scenes) {
+  return Object.fromEntries((scenes || []).map((rawScene) => {
+    const scene = normalizeScene(rawScene);
+    return [scene.id, [{ id: uid('restore'), round: scene.round || 1, activeId: scene.activeId, title: `Début R${scene.round || 1}`, scene: clone(scene) }]];
+  }));
+}
+
 export function useCampaign() {
   const [initialCampaign] = useState(loadCampaign);
   const [scenes, setScenes] = useState(initialCampaign.scenes);
   const [sceneIndex, setSceneIndex] = useState(0);
-  const [restorePoints, setRestorePoints] = useState({});
+  const [restorePoints, setRestorePoints] = useState(() => initialRestorePoints(initialCampaign.scenes));
   const [dark, setDark] = useState(initialCampaign.settings?.dark || false);
   const [roundEffect, setRoundEffect] = useState(null);
 
