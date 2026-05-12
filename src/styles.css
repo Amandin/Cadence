@@ -57,7 +57,7 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .primary.next-round { background: #059669; box-shadow: 0 0 16px rgba(16,185,129,.35); }
 .primary.blocked { background: #a21caf; }
 .active-box { border-radius: 22px; padding: 9px 12px; }
-.card { border-radius: 28px; overflow: hidden; margin: 12px 0; transition: .2s; scroll-margin: 92px 0 100px; }
+.card { border-radius: 28px; overflow: hidden; margin: 12px 0; transition: .2s; scroll-margin: 124px 0 100px; }
 .card.active { border: 4px solid var(--accent, #38bdf8); transform: scale(1.01); }
 .card.triggered { border: 2px solid #d946ef; }
 .card.collapsed .trackers { display:none; }
@@ -113,7 +113,7 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .dark .clock-face::before { background:#0f172a; }
 .box-row { display:grid; grid-template-columns: minmax(56px, .35fr) 1fr; gap:8px; align-items:center; width:100%; }
 .box-label { font-size:10px; font-weight:900; color:#64748b; padding:5px 0; text-transform:uppercase; letter-spacing:.04em; }
-.controls .box, .box { width:30px; height:30px; border-radius:2px; border:2px solid #475569; background:#f8fafc; display:grid; place-items:center; position:relative; box-shadow: inset 0 0 0 2px rgba(255,255,255,.8); }
+.controls .box, .box { width:30px; height:30px; border-radius:2px; border:2px solid #475569; background:#f8fafc; display:grid; place-items:center; position:relative; box-shadow: inset 0 0 0 2px rgba(255,255,255,.8); overflow:hidden; }
 .box.mark-1::after { content:""; position:absolute; width:2px; height:34px; background:currentColor; transform:rotate(45deg); }
 .box.mark-2::before, .box.mark-2::after, .box.mark-3::before, .box.mark-3::after, .box.mark-4::before, .box.mark-4::after { content:""; position:absolute; width:2px; height:34px; background:currentColor; }
 .box.mark-2::before, .box.mark-3::before, .box.mark-4::before { transform:rotate(45deg); }
@@ -125,15 +125,18 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .dark .box.full, .dark .box.mark-5 { background:#e2e8f0; border-color:#f8fafc; color:#e2e8f0; }
 .box.preview { pointer-events:none; width:22px; height:22px; }
 .box.preview.mark-1::after, .box.preview.mark-2::before, .box.preview.mark-2::after, .box.preview.mark-3::before, .box.preview.mark-3::after, .box.preview.mark-4::before, .box.preview.mark-4::after { height:25px; }
-.box-editor { margin-top: 8px; padding: 10px; border-radius: 18px; background: rgba(148,163,184,.12); }
-.box-edit-row { padding: 10px; border-radius: 16px; background: rgba(255,255,255,.65); border: 1px solid rgba(148,163,184,.3); }
-.line-count-row, .box-count-row { display:flex; gap:8px; align-items:center; margin-bottom:8px; }
-.line-count-row label, .box-count-row span { font-size:12px; font-weight:900; color:#64748b; text-transform:uppercase; }
+.box-editor { margin-top: 8px; padding: 8px; border-radius: 18px; background: rgba(148,163,184,.12); }
+.box-edit-row { padding: 8px; border-radius: 14px; background: rgba(255,255,255,.65); border: 1px solid rgba(148,163,184,.3); display:grid; gap:6px; }
+.line-count-row, .box-count-row, .box-level-row, .box-line-name { display:flex; gap:8px; align-items:center; margin-bottom:4px; }
+.box-level-row { margin-bottom:6px; }
+.line-count-row label, .box-count-row span, .box-level-row span, .box-line-name label { font-size:12px; font-weight:900; color:#64748b; text-transform:uppercase; white-space:nowrap; }
 .line-count-row strong { margin-right:auto; }
-.boxes-preview { display:flex; gap:4px; flex-wrap:wrap; flex:1; }
+.box-line-name input { min-width:0; flex:1; border-radius:14px; border:1px solid #cbd5e1; padding:8px 10px; }
+.boxes-preview, .levels-preview { display:flex; gap:4px; flex-wrap:wrap; flex:1; }
 .subtle-danger { color:#991b1b; border-color:#fecaca; background:#fff7ed; }
 .dark .box-editor { background: rgba(15,23,42,.4); }
 .dark .box-edit-row { background: rgba(2,6,23,.45); border-color: rgba(148,163,184,.25); }
+.dark .box-line-name input { background:#020617; color:#e2e8f0; border-color:#475569; }
 .dark .subtle-danger { color:#fecaca; border-color:#7f1d1d; background:#450a0a; }
 .statuses { display:flex; flex-wrap:wrap; gap:6px; }
 .status { border-radius: 999px; padding: 5px 9px; font-size: 11px; font-weight:900; color:white; }
