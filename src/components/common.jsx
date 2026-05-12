@@ -8,10 +8,21 @@ export function Avatar({ participant }) {
   return <div className={`avatar ${participant.color || 'slate'}`}>{participant.symbol || '●'}</div>;
 }
 
-export function Status({ status, onRemove }) {
-  const label = status.duration == null ? '∞' : status.expired ? 'écoulé' : `${status.remaining}/${status.duration}`;
+function statusLabel(status) {
+  if (status.duration == null) return '∞';
+  if (status.expired && status.loop) return 'à renouveler';
+  if (status.expired) return 'terminé';
+  return `${status.remaining}/${status.duration}`;
+}
 
-  return <span className={`status ${status.expired ? 'expired' : ''} ${status.loop ? 'loop' : ''}`}>{status.name} · {label}<button onClick={onRemove}>×</button></span>;
+function statusKind(status) {
+  if (status.duration == null) return 'permanent';
+  if (status.loop) return 'loop';
+  return 'temporary';
+}
+
+export function Status({ status, onRemove }) {
+  return <span className={`status ${statusKind(status)} ${status.expired ? 'expired' : ''}`}>{status.name} · {statusLabel(status)}<button onClick={onRemove}>×</button></span>;
 }
 
 export function RoundBadge({ round, effect }) {
