@@ -79,11 +79,30 @@ export function tickStatuses(statuses = []) {
   });
 }
 
+export function untickStatuses(statuses = []) {
+  return statuses.map((status) => {
+    if (status.duration == null) return status;
+    if (status.expired) return { ...status, remaining: 1, expired: false };
+    if (status.loop && numberOr(status.remaining, status.duration) >= numberOr(status.duration, 1)) return { ...status, remaining: 0, expired: true };
+
+    const remaining = Math.min(numberOr(status.duration, 1), numberOr(status.remaining, status.duration) + 1);
+    return { ...status, remaining, expired: false };
+  });
+}
+
 export function tickParticipant(participant) {
   return {
     ...participant,
     statuses: tickStatuses(participant.statuses),
     trackers: (participant.trackers || []).map((tracker) => tracker.type === 'clock' && tracker.auto ? { ...tracker, current: numberOr(tracker.current, 0) + 1 } : tracker),
+  };
+}
+
+export function untickParticipant(participant) {
+  return {
+    ...participant,
+    statuses: untickStatuses(participant.statuses),
+    trackers: (participant.trackers || []).map((tracker) => tracker.type === 'clock' && tracker.auto ? { ...tracker, current: Math.max(0, numberOr(tracker.current, 0) - 1) } : tracker),
   };
 }
 
