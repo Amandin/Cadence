@@ -4,5 +4,9 @@
 .compact-option-title{display:flex;align-items:center;justify-content:space-between;gap:8px}.compact-option-title h3{margin:0}
 .global-mini{position:relative}.global-mini.auto-active .global-mini-main{box-shadow:0 0 0 2px rgba(52,211,153,.18),0 0 12px rgba(52,211,153,.22);border-color:rgba(52,211,153,.45)}
 .global-mini.auto-tick .global-mini-main{animation:globalTick .75s ease-out}.auto-plus{position:absolute;right:-8px;top:-12px;font-size:11px;font-weight:900;color:#059669;background:#ecfdf5;border:1px solid #6ee7b7;border-radius:999px;padding:1px 4px;animation:autoPlus .9s ease-out both;pointer-events:none}.dark .auto-plus{background:#064e3b;color:#a7f3d0;border-color:#10b981}
+.global-clock.counter-mode{grid-template-rows:1fr!important;padding:0!important}.global-clock.counter-mode span{align-self:center!important;transform:translateY(-1px);font-size:14px!important}
+.global-mini.maxed .global-mini-main{border-color:#d946ef;box-shadow:0 0 0 3px rgba(217,70,239,.18),0 0 16px rgba(217,70,239,.32)}
+.global-mini.maxed .global-clock{border-color:#d946ef!important;animation:statusPulse 1.2s ease-in-out infinite}
+.dark .global-mini.maxed .global-mini-main{border-color:#f0abfc;box-shadow:0 0 0 3px rgba(240,171,252,.18),0 0 16px rgba(240,171,252,.28)}
 @keyframes globalTick{0%{transform:scale(1);filter:brightness(1)}35%{transform:scale(1.08);filter:brightness(1.2)}100%{transform:scale(1);filter:brightness(1)}}
 @keyframes autoPlus{0%{transform:translateY(4px) scale(.8);opacity:0}25%{opacity:1}100%{transform:translateY(-12px) scale(1);opacity:0}}
