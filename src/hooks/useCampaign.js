@@ -12,6 +12,8 @@ function normalizeScene(scene) {
     round: scene?.round || 1,
     activeId: scene?.activeId || '',
     notes: scene?.notes || '',
+    reserveNotes: scene?.reserveNotes || '',
+    globalTracker: scene?.globalTracker || { enabled: false, name: 'Menace', mode: 'counter', current: 0, max: 6, auto: false },
     reserve: Array.isArray(scene?.reserve) ? scene.reserve : [],
     participants: Array.isArray(scene?.participants) ? scene.participants : [],
   };
