@@ -3,10 +3,8 @@ import { APP_VERSION } from '../constants.js';
 import { Sheet } from './common.jsx';
 
 function GlobalTrackerOptions({ tracker, onChange }) {
-  const current = tracker || { enabled: false, name: 'Menace', mode: 'counter', current: 0, max: 6, auto: false };
-  const patch = (value) => onChange({ ...current, ...value });
-
-  return <div className="scene-options compact-options"><div className="compact-option-title"><h3>Compteur de scène</h3><label className="switch-line"><input type="checkbox" checked={!!current.enabled} onChange={(e) => patch({ enabled: e.target.checked })} /> actif</label></div>{current.enabled && <div className="compact-option-grid"><input className="compact-name" value={current.name || ''} onChange={(e) => patch({ name: e.target.value })} placeholder="Menace" aria-label="Nom du compteur" /><select value={current.mode || 'counter'} onChange={(e) => patch({ mode: e.target.value })} aria-label="Type du compteur"><option value="counter">Compteur</option><option value="clock">Horloge</option></select><input type="number" inputMode="numeric" value={current.current ?? 0} onChange={(e) => patch({ current: e.target.value === '' ? 0 : Number(e.target.value) })} aria-label="Valeur" />{current.mode === 'clock' && <input type="number" inputMode="numeric" min="1" value={current.max ?? 6} onChange={(e) => patch({ max: Math.max(1, Number(e.target.value) || 1) })} aria-label="Maximum" />}<label className="switch-line auto-round"><input type="checkbox" checked={!!current.auto} onChange={(e) => patch({ auto: e.target.checked })} /> auto/round</label></div>}</div>;
+  const current = tracker || { enabled: false, name: 'Menace', mode: 'clock', current: 0, max: 10, auto: false };
+  return <div className="scene-options compact-options"><div className="compact-option-title"><h3>Compteur de scène</h3><button className={`theme-toggle mini-switch ${current.enabled ? 'dark-on' : 'light-on'}`} onClick={() => onChange({ ...current, enabled: !current.enabled })} aria-label="Activer ou désactiver le compteur de scène"><span>○</span><span>●</span><i /></button></div><p className="muted" style={{ marginTop: 4, fontSize: 12 }}>Tape l’horloge dans l’entête pour la configurer.</p></div>;
 }
 
 export function Menu({ scenes, scene, restorePoints = [], onRestore, onClose, setSceneIndex, dark, setDark, onAddParticipant, onNewScene, onExport, onImport, onReset, onGlobalTracker }) {
