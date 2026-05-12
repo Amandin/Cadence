@@ -1,4 +1,4 @@
-import { clone, newTracker, tickParticipant, uid } from '../logic.js';
+import { clone, newTracker, tickParticipant, untickParticipant, uid } from '../logic.js';
 
 function createBlankParticipant() {
   return {
@@ -12,6 +12,16 @@ function createBlankParticipant() {
     stats: [],
     statuses: [],
     trackers: [newTracker('bar')],
+  };
+}
+
+function createRestorePoint(scene) {
+  return {
+    id: uid('restore'),
+    round: scene.round,
+    activeId: scene.activeId,
+    title: `Round ${scene.round}`,
+    scene: clone(scene),
   };
 }
 
@@ -32,13 +42,19 @@ function makeStatus(data) {
   };
 }
 
-export function createSceneActions({ scene, sceneIndex, blocked, sceneHistory, setScenes, setSceneHistory, setRoundEffect }) {
+export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, setScenes, setRestorePoints, setRoundEffect }) {
   const updateScene = (updater) => setScenes((list) => list.map((s, i) => i === sceneIndex ? updater(s) : s));
   const updateParticipant = (id, updater) => updateScene((s) => ({ ...s, participants: s.participants.map((p) => p.id === id ? updater(p) : p) }));
-  const pushSceneHistory = () => setSceneHistory((history) => ({ ...history, [scene.id]: [...(history[scene.id] || []), clone(scene)].slice(-50) }));
+  const saveRoundRestorePoint = () => setRestorePoints((points) => ({ ...points, [scene.id]: [...(points[scene.id] || []), createRestorePoint(scene)].slice(-20) }));
 
   return {
     updateParticipant,
+    restoreScene(pointId) {
+      const point = (restorePoints[scene.id] || []).find((item) => item.id === pointId);
+      if (!point) return;
+      setRoundEffect(null);
+      updateScene(() => clone(point.scene));
+    },
     deleteParticipant(id) {
       updateScene((s) => {
         const participants = s.participants.filter((p) => p.id !== id);
@@ -64,24 +80,28 @@ export function createSceneActions({ scene, sceneIndex, blocked, sceneHistory, s
       const participants = scene.participants;
       if (!participants.length) return;
 
-      if (direction < 0) {
-        const history = sceneHistory[scene.id] || [];
-        const previousScene = history.at(-1);
-        if (!previousScene) return;
+      const currentIndex = Math.max(0, participants.findIndex((p) => p.id === scene.activeId));
+      const nextIndex = direction > 0
+        ? (currentIndex + 1) % participants.length
+        : (currentIndex - 1 + participants.length) % participants.length;
 
+      if (direction < 0) {
+        const roundDelta = currentIndex === 0 ? -1 : 0;
         setRoundEffect(null);
-        setSceneHistory((allHistory) => ({ ...allHistory, [scene.id]: (allHistory[scene.id] || []).slice(0, -1) }));
-        updateScene(() => previousScene);
+        updateScene((s) => ({
+          ...s,
+          activeId: s.participants[nextIndex].id,
+          round: Math.max(1, s.round + roundDelta),
+          participants: s.participants.map((p, i) => i === currentIndex ? untickParticipant(p) : p),
+        }));
         return;
       }
 
       if (blocked.length) return;
 
-      const currentIndex = Math.max(0, participants.findIndex((p) => p.id === scene.activeId));
-      const nextIndex = (currentIndex + 1) % participants.length;
       const roundDelta = nextIndex === 0 && currentIndex !== 0 ? 1 : 0;
+      if (roundDelta > 0) saveRoundRestorePoint();
 
-      pushSceneHistory();
       setRoundEffect(roundDelta > 0 ? 'next' : null);
       updateScene((s) => ({
         ...s,
