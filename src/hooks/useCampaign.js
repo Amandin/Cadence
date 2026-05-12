@@ -4,6 +4,19 @@ import { hasTriggeredClock, nextTurnInfo } from '../logic.js';
 import { createSceneActions } from '../actions/sceneActions.js';
 import { createCampaignActions } from '../actions/campaignActions.js';
 
+function normalizeScene(scene) {
+  return {
+    id: scene?.id || 'scene-secours',
+    title: scene?.title || 'Scène',
+    type: scene?.type || 'Scène',
+    round: scene?.round || 1,
+    activeId: scene?.activeId || '',
+    notes: scene?.notes || '',
+    reserve: Array.isArray(scene?.reserve) ? scene.reserve : [],
+    participants: Array.isArray(scene?.participants) ? scene.participants : [],
+  };
+}
+
 export function useCampaign() {
   const [initialCampaign] = useState(loadCampaign);
   const [scenes, setScenes] = useState(initialCampaign.scenes);
@@ -12,9 +25,11 @@ export function useCampaign() {
   const [dark, setDark] = useState(initialCampaign.settings?.dark || false);
   const [roundEffect, setRoundEffect] = useState(null);
 
-  const scene = scenes[sceneIndex] || scenes[0];
-  const active = scene.participants.find((p) => p.id === scene.activeId);
-  const blocked = scene.participants.filter(hasTriggeredClock);
+  const rawScene = scenes[sceneIndex] || scenes[0];
+  const scene = normalizeScene(rawScene);
+  const participants = scene.participants;
+  const active = participants.find((p) => p.id === scene.activeId);
+  const blocked = participants.filter(hasTriggeredClock);
   const { nextStartsRound } = nextTurnInfo(scene, blocked.length > 0);
   const nextClass = blocked.length ? 'blocked' : nextStartsRound ? 'next-round' : '';
 
