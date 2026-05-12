@@ -45,15 +45,22 @@ function BoxPreview({ marks, levels }) {
   return <div className="boxes-preview">{marks.map((value, index) => <span key={index} className={`box preview mark-${boxVisualRank(value, max)} ${boxVisualRank(value, max) >= 5 ? 'full' : ''}`} />)}</div>;
 }
 
+function LevelsPreview({ levels }) {
+  const max = toPositive(levels, 5);
+  const marks = Array.from({ length: max }, (_, index) => index + 1);
+  return <div className="levels-preview">{marks.map((value) => <span key={value} className={`box preview mark-${boxVisualRank(value, max)} ${boxVisualRank(value, max) >= 5 ? 'full' : ''}`} />)}</div>;
+}
+
 function BoxesEditor({ tracker, onChange }) {
   const rows = tracker.rows?.length ? tracker.rows : [{ id: uid('r'), label: 'Ligne', marks: [0, 0, 0, 0] }];
-  const fillLevelsValue = tracker.fillLevels === '' ? '' : tracker.fillLevels || 5;
+  const fillLevelsValue = toPositive(tracker.fillLevels, 5);
   const patch = (value) => onChange({ ...tracker, ...value, rows });
   const updateRow = (rowId, updater) => onChange({ ...tracker, rows: rows.map((row) => row.id === rowId ? updater(row) : row) });
   const addRow = () => onChange({ ...tracker, rows: [...rows, { id: uid('r'), label: `Ligne ${rows.length + 1}`, marks: [0, 0, 0, 0] }] });
   const removeRow = (rowId) => onChange({ ...tracker, rows: rows.length > 1 ? rows.filter((row) => row.id !== rowId) : rows });
+  const changeLevels = (delta) => patch({ fillLevels: Math.max(1, Math.min(5, fillLevelsValue + delta)) });
 
-  return <div className="box-editor"><div className="line-count-row"><label>Nombre de lignes</label><strong>{rows.length}</strong><button className="small-btn" onClick={addRow}>+ ligne</button></div><label className="field">États par case<input type="number" inputMode="numeric" min="1" max="5" value={fillLevelsValue} onChange={(e) => patch({ fillLevels: e.target.value === '' ? '' : Math.min(5, toPositive(e.target.value, 5)) })} onBlur={() => fillLevelsValue === '' && patch({ fillLevels: 5 })} /></label><p className="muted" style={{ marginTop: -4, fontSize: 12 }}>États par case : 1=/, 2=×, 3=×|, 4=double ×, 5=noir. Les niveaux retirés disparaissent dans l’ordre 3, 4, puis 1.</p><div className="stack">{rows.map((row) => <div className="box-edit-row" key={row.id}><label className="field">Nom de ligne<input value={row.label} onChange={(e) => updateRow(row.id, (current) => ({ ...current, label: e.target.value }))} /></label><div className="box-count-row"><span>Cases</span><button className="small-btn" onClick={() => updateRow(row.id, (current) => ({ ...current, marks: shrinkMarks(current.marks || []) }))} disabled={(row.marks || []).length <= 1}>−</button><BoxPreview marks={row.marks || []} levels={fillLevelsValue || 5} /><button className="small-btn" onClick={() => updateRow(row.id, (current) => ({ ...current, marks: growMarks(current.marks || []) }))}>+</button></div><div className="grid2"><button className="small-btn" onClick={() => updateRow(row.id, (current) => ({ ...current, marks: current.marks.map(() => 0) }))}>Vider</button><button className="small-btn subtle-danger" onClick={() => removeRow(row.id)} disabled={rows.length <= 1}>Supprimer la ligne</button></div></div>)}</div></div>;
+  return <div className="box-editor"><div className="line-count-row"><label>Lignes</label><strong>{rows.length}</strong><button className="small-btn" onClick={addRow}>+ ligne</button></div><div className="box-level-row"><span>États par case</span><button className="small-btn" onClick={() => changeLevels(-1)} disabled={fillLevelsValue <= 1}>−</button><LevelsPreview levels={fillLevelsValue} /><button className="small-btn" onClick={() => changeLevels(1)} disabled={fillLevelsValue >= 5}>+</button></div><p className="muted" style={{ marginTop: -2, fontSize: 12 }}>Les niveaux retirés disparaissent dans l’ordre 3, 4, puis 1.</p><div className="stack">{rows.map((row) => <div className="box-edit-row" key={row.id}><div className="box-line-name"><label>Nom de ligne</label><input value={row.label} onChange={(e) => updateRow(row.id, (current) => ({ ...current, label: e.target.value }))} /><button className="small-btn subtle-danger" onClick={() => removeRow(row.id)} disabled={rows.length <= 1}>Suppr.</button></div><div className="box-count-row"><span>Cases</span><button className="small-btn" onClick={() => updateRow(row.id, (current) => ({ ...current, marks: shrinkMarks(current.marks || []) }))} disabled={(row.marks || []).length <= 1}>−</button><BoxPreview marks={row.marks || []} levels={fillLevelsValue} /><button className="small-btn" onClick={() => updateRow(row.id, (current) => ({ ...current, marks: growMarks(current.marks || []) }))}>+</button></div></div>)}</div></div>;
 }
 
 function NumberField({ label, value, onChange, allowBlank = false }) {
