@@ -10,27 +10,19 @@ import { ParticipantSheet } from './components/ParticipantSheet.jsx';
 import { ReserveCard } from './components/ReserveCard.jsx';
 import { RoundBadge } from './components/common.jsx';
 import { StatusSheet } from './components/StatusSheet.jsx';
-import { createStatus } from './domain/statuses.js';
 import { useCampaign } from './hooks/useCampaign.js';
+import { useCharacterInteractions } from './hooks/useCharacterInteractions.js';
 
 export default function App() {
   const campaign = useCampaign();
   const { scenes, scene, restorePoints, dark, active, blocked, nextStartsRound, nextClass, roundEffect, actions } = campaign;
+  const characters = useCharacterInteractions(scene, actions);
   const [openMenu, setOpenMenu] = useState(false);
-  const [selectedId, setSelectedId] = useState(null);
-  const [editingId, setEditingId] = useState(null);
-  const [statusTargetId, setStatusTargetId] = useState(null);
-  const [joinTargetId, setJoinTargetId] = useState(null);
   const [notice, setNotice] = useState(null);
   const [showNotes, setShowNotes] = useState(true);
   const [clockModalOpen, setClockModalOpen] = useState(false);
   const [globalSheetOpen, setGlobalSheetOpen] = useState(false);
 
-  const allCharacters = [...scene.participants, ...(scene.reserve || [])];
-  const selected = allCharacters.find((participant) => participant.id === selectedId);
-  const editing = allCharacters.find((participant) => participant.id === editingId);
-  const statusTarget = allCharacters.find((participant) => participant.id === statusTargetId);
-  const joinTarget = (scene.reserve || []).find((participant) => participant.id === joinTargetId);
   const globalAutoTick = roundEffect === 'next' && !!scene.globalTracker?.enabled && !!scene.globalTracker?.auto;
 
   useEffect(() => {
@@ -42,26 +34,6 @@ export default function App() {
   useEffect(() => {
     if (clockModalOpen && blocked.length === 0) setClockModalOpen(false);
   }, [blocked.length, clockModalOpen]);
-
-  const closeCharacterPanels = () => {
-    setSelectedId(null);
-    setEditingId(null);
-  };
-
-  const isInInit = (id) => scene.participants.some((participant) => participant.id === id);
-  const updateReserve = (updater) => actions.updateSceneField('reserve', updater(scene.reserve || []));
-  const updateCharacter = (id, updater) => {
-    if (isInInit(id)) actions.updateParticipant(id, updater);
-    else updateReserve((reserve) => reserve.map((participant) => participant.id === id ? updater(participant) : participant));
-  };
-
-  const updateCharacterTracker = (participantId, trackerId, next) => updateCharacter(participantId, (participant) => ({ ...participant, trackers: (participant.trackers || []).map((tracker) => tracker.id === trackerId ? next : tracker) }));
-  const deleteCharacterTracker = (participantId, trackerId) => updateCharacter(participantId, (participant) => ({ ...participant, trackers: (participant.trackers || []).filter((tracker) => tracker.id !== trackerId) }));
-  const removeCharacterStatus = (participantId, statusId) => updateCharacter(participantId, (participant) => ({ ...participant, statuses: (participant.statuses || []).filter((status) => status.id !== statusId) }));
-  const addCharacterStatus = (participantId, data) => {
-    const status = createStatus(data);
-    if (status) updateCharacter(participantId, (participant) => ({ ...participant, statuses: [...(participant.statuses || []), status] }));
-  };
 
   const nextTurn = (direction) => {
     if (direction > 0) setShowNotes(false);
@@ -87,40 +59,17 @@ export default function App() {
       return;
     }
     setOpenMenu(false);
-    closeCharacterPanels();
+    characters.closeCharacterPanels();
   };
   const resetDemo = () => {
     actions.resetDemo();
     setOpenMenu(false);
-    closeCharacterPanels();
+    characters.closeCharacterPanels();
   };
   const restoreScene = (pointId) => {
     actions.restoreScene(pointId);
     setOpenMenu(false);
-    closeCharacterPanels();
-  };
-  const saveStatus = (data) => {
-    if (!statusTargetId) return;
-    addCharacterStatus(statusTargetId, data);
-    setStatusTargetId(null);
-  };
-  const joinInit = (initiative) => {
-    if (!joinTargetId) return;
-    actions.joinInit(joinTargetId, initiative);
-    setJoinTargetId(null);
-  };
-
-  const leaveInit = (id) => {
-    actions.leaveInit(id);
-    closeCharacterPanels();
-  };
-  const saveCharacter = (draft) => {
-    updateCharacter(draft.id, () => draft);
-    setEditingId(null);
-  };
-  const deleteCharacter = (id) => {
-    actions.deleteParticipant(id);
-    closeCharacterPanels();
+    characters.closeCharacterPanels();
   };
 
   const resetClock = (participantId, trackerId) => {
@@ -170,12 +119,12 @@ export default function App() {
               key={participant.id}
               participant={participant}
               active={participant.id === scene.activeId}
-              onOpen={() => setSelectedId(participant.id)}
-              onTracker={(trackerId, next) => updateCharacterTracker(participant.id, trackerId, next)}
-              onDeleteTracker={(trackerId) => deleteCharacterTracker(participant.id, trackerId)}
-              onAddStatus={() => setStatusTargetId(participant.id)}
-              onRemoveStatus={(statusId) => removeCharacterStatus(participant.id, statusId)}
-              onLeaveInit={() => leaveInit(participant.id)}
+              onOpen={() => characters.openCharacter(participant.id)}
+              onTracker={(trackerId, next) => characters.updateCharacterTracker(participant.id, trackerId, next)}
+              onDeleteTracker={(trackerId) => characters.deleteCharacterTracker(participant.id, trackerId)}
+              onAddStatus={() => characters.requestStatus(participant.id)}
+              onRemoveStatus={(statusId) => characters.removeCharacterStatus(participant.id, statusId)}
+              onLeaveInit={() => characters.leaveInit(participant.id)}
             />
           ))}
           {scene.reserve?.length > 0 && (
@@ -185,12 +134,12 @@ export default function App() {
                 <ReserveCard
                   key={participant.id}
                   participant={participant}
-                  onOpen={() => setSelectedId(participant.id)}
-                  onJoin={() => setJoinTargetId(participant.id)}
-                  onTracker={(trackerId, next) => updateCharacterTracker(participant.id, trackerId, next)}
-                  onDeleteTracker={(trackerId) => deleteCharacterTracker(participant.id, trackerId)}
-                  onAddStatus={() => setStatusTargetId(participant.id)}
-                  onRemoveStatus={(statusId) => removeCharacterStatus(participant.id, statusId)}
+                  onOpen={() => characters.openCharacter(participant.id)}
+                  onJoin={() => characters.requestJoin(participant.id)}
+                  onTracker={(trackerId, next) => characters.updateCharacterTracker(participant.id, trackerId, next)}
+                  onDeleteTracker={(trackerId) => characters.deleteCharacterTracker(participant.id, trackerId)}
+                  onAddStatus={() => characters.requestStatus(participant.id)}
+                  onRemoveStatus={(statusId) => characters.removeCharacterStatus(participant.id, statusId)}
                 />
               ))}
               <label className="field reserve-notes">Notes hors initiative<textarea value={scene.reserveNotes || ''} onChange={(event) => actions.updateSceneField('reserveNotes', event.target.value)} placeholder="Notes, PNJ en attente, effets hors ordre de tour…" /></label>
@@ -206,10 +155,10 @@ export default function App() {
         <button className="small-btn" onClick={() => setOpenMenu(true)}>☰</button>
       </div>
 
-      {selected && <ParticipantSheet participant={selected} onClose={() => setSelectedId(null)} onEdit={() => setEditingId(selected.id)} onTracker={(trackerId, next) => updateCharacterTracker(selected.id, trackerId, next)} onDeleteTracker={(trackerId) => deleteCharacterTracker(selected.id, trackerId)} onAddStatus={() => setStatusTargetId(selected.id)} onRemoveStatus={(statusId) => removeCharacterStatus(selected.id, statusId)} onNote={(note) => updateCharacter(selected.id, (participant) => ({ ...participant, note }))} />}
-      {editing && <EditSheet participant={editing} onClose={() => setEditingId(null)} onSave={saveCharacter} onDelete={() => deleteCharacter(editing.id)} />}
-      {statusTarget && <StatusSheet participant={statusTarget} onClose={() => setStatusTargetId(null)} onSave={saveStatus} />}
-      {joinTarget && <JoinInitSheet participant={joinTarget} onClose={() => setJoinTargetId(null)} onSave={joinInit} />}
+      {characters.selected && <ParticipantSheet participant={characters.selected} onClose={characters.closeCharacter} onEdit={() => characters.editCharacter(characters.selected.id)} onTracker={(trackerId, next) => characters.updateCharacterTracker(characters.selected.id, trackerId, next)} onDeleteTracker={(trackerId) => characters.deleteCharacterTracker(characters.selected.id, trackerId)} onAddStatus={() => characters.requestStatus(characters.selected.id)} onRemoveStatus={(statusId) => characters.removeCharacterStatus(characters.selected.id, statusId)} onNote={(note) => characters.updateCharacter(characters.selected.id, (participant) => ({ ...participant, note }))} />}
+      {characters.editing && <EditSheet participant={characters.editing} onClose={characters.closeEditor} onSave={characters.saveCharacter} onDelete={() => characters.deleteCharacter(characters.editing.id)} />}
+      {characters.statusTarget && <StatusSheet participant={characters.statusTarget} onClose={characters.cancelStatus} onSave={characters.saveStatus} />}
+      {characters.joinTarget && <JoinInitSheet participant={characters.joinTarget} onClose={characters.cancelJoin} onSave={characters.joinInit} />}
       {globalSheetOpen && <GlobalTrackerSheet tracker={scene.globalTracker} onChange={actions.updateGlobalTracker} onStep={actions.stepGlobal} onClose={() => setGlobalSheetOpen(false)} />}
       {clockModalOpen && <ClockResolutionModal participants={blocked} onClose={() => setClockModalOpen(false)} onResetClock={resetClock} onDeleteClock={deleteClock} />}
       {notice && <NoticeModal title={notice.title} message={notice.message} onClose={() => setNotice(null)} />}
