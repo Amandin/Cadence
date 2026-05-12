@@ -1,4 +1,4 @@
-export const APP_VERSION = '0.1.0';
+export const APP_VERSION = '0.1.1';
 export const STORAGE_KEY = 'cadence:campaign:v1';
 
 export const participantKinds = ['PJ', 'Allié', 'Opposition', 'Horloge', 'Autre'];
