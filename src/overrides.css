@@ -5,20 +5,11 @@
 .global-mini{position:relative}.global-mini.auto-active .global-mini-main{box-shadow:0 0 0 2px rgba(52,211,153,.18),0 0 12px rgba(52,211,153,.22);border-color:rgba(52,211,153,.45)}
 .global-mini.auto-tick .global-mini-main{animation:globalTick .75s ease-out}.auto-plus{position:absolute;right:-8px;top:-12px;font-size:11px;font-weight:900;color:#059669;background:#ecfdf5;border:1px solid #6ee7b7;border-radius:999px;padding:1px 4px;animation:autoPlus .9s ease-out both;pointer-events:none}.dark .auto-plus{background:#064e3b;color:#a7f3d0;border-color:#10b981}
 .global-clock.counter-mode{grid-template-rows:1fr!important;padding:0!important}.global-clock.counter-mode span{align-self:center!important;transform:translateY(-1px);font-size:14px!important}
-.global-mini.cycle-complete .global-mini-main{border-color:#d946ef;box-shadow:0 0 0 3px rgba(217,70,239,.2),0 0 16px rgba(217,70,239,.34)}
+.global-mini.overflowing .global-mini-main{box-shadow:none;border-color:rgba(148,163,184,.28)}
+.global-mini.overflowing .global-clock{border-color:#f59e0b!important;animation:none!important}
+.global-mini.cycle-complete .global-mini-main{border-color:#d946ef;box-shadow:0 0 0 3px rgba(217,70,239,.18),0 0 14px rgba(217,70,239,.25)}
 .global-mini.cycle-complete .global-clock{border-color:#d946ef!important;animation:cycleCompletePulse 1.15s ease-in-out infinite}
-.dark .global-mini.cycle-complete .global-mini-main{border-color:#f0abfc;box-shadow:0 0 0 3px rgba(240,171,252,.18),0 0 16px rgba(240,171,252,.3)}
-.global-mini.overflowing:not(.cycle-complete) .global-mini-main{border-color:rgba(148,163,184,.22);box-shadow:none}
-.dark .global-mini.overflowing:not(.cycle-complete) .global-mini-main{border-color:rgba(148,163,184,.22);box-shadow:none}
-.global-mini.overflowing:not(.cycle-complete) .global-clock{overflow:visible!important;border-color:rgba(100,116,139,.55)!important;background:conic-gradient(rgba(15,23,42,.12) var(--clock-progress),rgba(226,232,240,.55) 0)!important;animation:none!important}
-.dark .global-mini.overflowing:not(.cycle-complete) .global-clock{background:conic-gradient(rgba(56,189,248,.16) var(--clock-progress),rgba(51,65,85,.72) 0)!important;border-color:rgba(148,163,184,.55)!important}
-.global-mini.overflowing .global-clock{overflow:visible!important}
-.global-mini.overflowing .global-clock::before{inset:9px;opacity:1;z-index:2}
-.global-mini.overflowing .global-clock span,.global-mini.overflowing .global-clock small{z-index:6}
-.global-clock.overflowing::after{content:"";position:absolute;inset:-8px;border-radius:999px;background:conic-gradient(#f97316 var(--overflow-progress),rgba(249,115,22,.06) 0);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 7px),#000 calc(100% - 6px));mask:radial-gradient(farthest-side,transparent calc(100% - 7px),#000 calc(100% - 6px));z-index:5;filter:drop-shadow(0 0 8px rgba(249,115,22,.85));animation:overflowRingIn .25s ease-out;pointer-events:none}
-.dark .global-clock.overflowing::after{background:conic-gradient(#facc15 var(--overflow-progress),rgba(250,204,21,.08) 0);filter:drop-shadow(0 0 9px rgba(250,204,21,.82))}
-.overflow-badge{position:absolute;right:14px;top:-13px;border-radius:999px;padding:1px 5px;font-size:10px;font-weight:900;color:#7c2d12;background:#ffedd5;border:1px solid #fb923c;box-shadow:0 2px 10px rgba(249,115,22,.35);z-index:7;pointer-events:none}.dark .overflow-badge{color:#fef3c7;background:#78350f;border-color:#facc15}
-@keyframes overflowRingIn{from{opacity:0;transform:scale(.88)}to{opacity:1;transform:scale(1)}}
-@keyframes cycleCompletePulse{0%,100%{filter:brightness(1);transform:scale(1)}50%{filter:brightness(1.18);transform:scale(1.06)}}
+.overflow-badge{position:absolute;right:14px;top:-13px;border-radius:999px;padding:1px 5px;font-size:10px;font-weight:900;color:#7c2d12;background:#ffedd5;border:1px solid #fb923c;box-shadow:0 2px 10px rgba(249,115,22,.25);z-index:5;pointer-events:none}.dark .overflow-badge{color:#fef3c7;background:#78350f;border-color:#facc15}
+@keyframes cycleCompletePulse{0%,100%{filter:brightness(1);transform:scale(1)}50%{filter:brightness(1.15);transform:scale(1.05)}}
 @keyframes globalTick{0%{transform:scale(1);filter:brightness(1)}35%{transform:scale(1.08);filter:brightness(1.2)}100%{transform:scale(1)}}
 @keyframes autoPlus{0%{transform:translateY(4px) scale(.8);opacity:0}25%{opacity:1}100%{transform:translateY(-12px) scale(1);opacity:0}}
