@@ -1,3 +1,5 @@
+import { stepAutoGlobalTracker } from '../domain/globalTracker.js';
+import { createStatus } from '../domain/statuses.js';
 import { clone, newTracker, tickParticipant, untickParticipant, uid } from '../logic.js';
 
 function createBlankParticipant() {
@@ -15,17 +17,6 @@ function createBlankParticipant() {
   };
 }
 
-function numberOr(value, fallback) {
-  const next = Number(value);
-  return Number.isFinite(next) ? next : fallback;
-}
-
-function stepGlobalTracker(tracker, delta) {
-  if (!tracker?.enabled || !tracker?.auto) return tracker;
-  const next = Math.max(0, numberOr(tracker.current, 0) + delta);
-  return { ...tracker, current: next };
-}
-
 function createRestorePoint(scene) {
   return {
     id: uid('restore'),
@@ -40,23 +31,6 @@ function addRestorePoint(points, sceneId, nextScene) {
   const current = points[sceneId] || [];
   if (current.some((point) => point.round === nextScene.round)) return points;
   return { ...points, [sceneId]: [...current, createRestorePoint(nextScene)].slice(-50) };
-}
-
-function makeStatus(data) {
-  const name = data?.name?.trim();
-  if (!name) return null;
-
-  const duration = data.duration == null ? null : Math.max(1, Number(data.duration));
-  if (duration !== null && !Number.isFinite(duration)) return null;
-
-  return {
-    id: uid('s'),
-    name,
-    duration,
-    remaining: duration,
-    loop: duration !== null && !!data.loop,
-    expired: false,
-  };
 }
 
 export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, setScenes, setRestorePoints, setRoundEffect }) {
@@ -86,7 +60,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
       updateParticipant(pid, (p) => ({ ...p, trackers: p.trackers.filter((t) => t.id !== tid) }));
     },
     addStatus(pid, data) {
-      const status = makeStatus(data);
+      const status = createStatus(data);
       if (status) updateParticipant(pid, (p) => ({ ...p, statuses: [...(p.statuses || []), status] }));
     },
     removeStatus(pid, sid) {
@@ -108,7 +82,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
           ...s,
           activeId: s.participants[nextIndex].id,
           round: Math.max(1, s.round + roundDelta),
-          globalTracker: roundDelta < 0 ? stepGlobalTracker(s.globalTracker, -1) : s.globalTracker,
+          globalTracker: roundDelta < 0 ? stepAutoGlobalTracker(s.globalTracker, -1) : s.globalTracker,
           participants: s.participants.map((p, i) => i === currentIndex ? untickParticipant(p) : p),
         }));
         return;
@@ -124,7 +98,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
           ...s,
           activeId: s.participants[nextIndex].id,
           round: Math.max(1, s.round + roundDelta),
-          globalTracker: roundDelta > 0 ? stepGlobalTracker(s.globalTracker, 1) : s.globalTracker,
+          globalTracker: roundDelta > 0 ? stepAutoGlobalTracker(s.globalTracker, 1) : s.globalTracker,
           participants: s.participants.map((p, i) => i === nextIndex ? tickParticipant(p) : p),
         };
 
