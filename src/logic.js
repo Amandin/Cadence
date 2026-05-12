@@ -58,11 +58,12 @@ export function applyDelta(tracker, delta) {
 }
 
 export function boxSymbol(mark, max) {
-  if (!mark) return '';
-  if (mark >= max) return '■';
-  if (mark === 1) return '✓';
-  if (mark === 2) return '×';
-  return '◆';
+  const value = numberOr(mark, 0);
+  const full = numberOr(max, 3);
+  if (!value) return '';
+  if (value >= full) return '■';
+  const symbolsByStep = ['✓', '×', '◆', '●', '▲'];
+  return symbolsByStep[value - 1] || String(value);
 }
 
 export function cycleBoxMark(mark, max) {
