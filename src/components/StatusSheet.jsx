@@ -9,20 +9,26 @@ const durationOptions = [
   { label: '4', value: '4' },
   { label: '5', value: '5' },
   { label: '6', value: '6' },
+  { label: 'Perso', value: 'custom' },
 ];
 
 export function StatusSheet({ participant, onClose, onSave }) {
   const [name, setName] = useState('Nouveau');
   const [duration, setDuration] = useState('infinite');
+  const [customDuration, setCustomDuration] = useState('8');
   const [loop, setLoop] = useState(false);
 
   const finite = duration !== 'infinite';
+  const durationValue = duration === 'custom' ? Number(customDuration) : Number(duration);
+  const validDuration = !finite || (Number.isFinite(durationValue) && durationValue >= 1);
+  const canSave = name.trim() && validDuration;
+
   const save = () => {
     const cleanName = name.trim();
-    if (!cleanName) return;
+    if (!cleanName || !validDuration) return;
 
-    onSave({ name: cleanName, duration: finite ? Number(duration) : null, loop: finite && loop });
+    onSave({ name: cleanName, duration: finite ? durationValue : null, loop: finite && loop });
   };
 
-  return <Sheet title={`Ajouter un état · ${participant.name}`} onClose={onClose}><label className="field">Nom<input value={name} onChange={(e) => setName(e.target.value)} autoFocus /></label><div className="field">Durée<div className="choice-row">{durationOptions.map((option) => <button key={option.value} className={`choice ${duration === option.value ? 'selected' : ''}`} onClick={() => setDuration(option.value)}>{option.label}</button>)}</div></div>{finite && <label className="row"><input type="checkbox" checked={loop} onChange={(e) => setLoop(e.target.checked)} /> renouveler en boucle</label>}<div className="grid2" style={{ marginTop: 12 }}><button className="primary" onClick={save} disabled={!name.trim()}>Ajouter</button><button className="small-btn" onClick={onClose}>Annuler</button></div></Sheet>;
+  return <Sheet title={`Ajouter un état · ${participant.name}`} onClose={onClose}><label className="field">Nom<input value={name} onChange={(e) => setName(e.target.value)} autoFocus /></label><div className="field">Durée<div className="choice-row status-duration-row">{durationOptions.map((option) => <button key={option.value} className={`choice ${duration === option.value ? 'selected' : ''}`} onClick={() => setDuration(option.value)}>{option.label}</button>)}</div></div>{duration === 'custom' && <label className="field">Durée personnalisée<input type="number" inputMode="numeric" min="1" value={customDuration} onChange={(e) => setCustomDuration(e.target.value)} /></label>}{finite && <label className="row"><input type="checkbox" checked={loop} onChange={(e) => setLoop(e.target.checked)} /> renouveler en boucle</label>}<div className="grid2" style={{ marginTop: 12 }}><button className="primary" onClick={save} disabled={!canSave}>Ajouter</button><button className="small-btn" onClick={onClose}>Annuler</button></div></Sheet>;
 }
