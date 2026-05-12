@@ -1,23 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { loadCampaign, saveCampaign } from '../storage.js';
-import { clone, hasTriggeredClock, nextTurnInfo, uid } from '../logic.js';
-import { createSceneActions } from '../actions/sceneActions.js';
 import { createCampaignActions } from '../actions/campaignActions.js';
-
-function defaultGlobalTracker() {
-  return { enabled: false, name: 'Menace', mode: 'counter', current: 0, max: 6, auto: false };
-}
-
-function normalizeGlobalTracker(tracker) {
-  const safe = { ...defaultGlobalTracker(), ...(tracker || {}) };
-  const current = Number(safe.current);
-  const max = Number(safe.max);
-  return {
-    ...safe,
-    current: Number.isFinite(current) ? Math.max(0, current) : 0,
-    max: Number.isFinite(max) ? Math.max(1, max) : 6,
-  };
-}
+import { createSceneActions } from '../actions/sceneActions.js';
+import { normalizeGlobalTracker, stepGlobalTracker } from '../domain/globalTracker.js';
+import { clone, hasTriggeredClock, nextTurnInfo, uid } from '../logic.js';
+import { loadCampaign, saveCampaign } from '../storage.js';
 
 function normalizeScene(scene) {
   return {
@@ -39,12 +25,6 @@ function initialRestorePoints(scenes) {
     const scene = normalizeScene(rawScene);
     return [scene.id, [{ id: uid('restore'), round: scene.round || 1, activeId: scene.activeId, title: `Début R${scene.round || 1}`, scene: clone(scene) }]];
   }));
-}
-
-function stepGlobalTracker(tracker, delta) {
-  const safe = normalizeGlobalTracker(tracker);
-  const current = safe.current + delta;
-  return { ...safe, current: Math.max(0, current) };
 }
 
 export function useCampaign() {
@@ -73,7 +53,7 @@ export function useCampaign() {
       setScenes((list) => list.map((s, i) => i === sceneIndex ? { ...s, [key]: value } : s));
     },
     updateGlobalTracker(patch) {
-      setScenes((list) => list.map((s, i) => i === sceneIndex ? { ...s, globalTracker: normalizeGlobalTracker({ ...(s.globalTracker || defaultGlobalTracker()), ...patch }) } : s));
+      setScenes((list) => list.map((s, i) => i === sceneIndex ? { ...s, globalTracker: normalizeGlobalTracker({ ...(s.globalTracker || {}), ...patch }) } : s));
     },
     stepGlobal(delta) {
       setScenes((list) => list.map((s, i) => i === sceneIndex ? { ...s, globalTracker: stepGlobalTracker(s.globalTracker, delta) } : s));
