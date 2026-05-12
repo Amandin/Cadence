@@ -20,9 +20,15 @@ function createRestorePoint(scene) {
     id: uid('restore'),
     round: scene.round,
     activeId: scene.activeId,
-    title: `Round ${scene.round}`,
+    title: `Début R${scene.round}`,
     scene: clone(scene),
   };
+}
+
+function addRestorePoint(points, sceneId, nextScene) {
+  const current = points[sceneId] || [];
+  if (current.some((point) => point.round === nextScene.round)) return points;
+  return { ...points, [sceneId]: [...current, createRestorePoint(nextScene)].slice(-50) };
 }
 
 function makeStatus(data) {
@@ -45,7 +51,6 @@ function makeStatus(data) {
 export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, setScenes, setRestorePoints, setRoundEffect }) {
   const updateScene = (updater) => setScenes((list) => list.map((s, i) => i === sceneIndex ? updater(s) : s));
   const updateParticipant = (id, updater) => updateScene((s) => ({ ...s, participants: s.participants.map((p) => p.id === id ? updater(p) : p) }));
-  const saveRoundRestorePoint = () => setRestorePoints((points) => ({ ...points, [scene.id]: [...(points[scene.id] || []), createRestorePoint(scene)].slice(-20) }));
 
   return {
     updateParticipant,
@@ -100,15 +105,19 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
       if (blocked.length) return;
 
       const roundDelta = nextIndex === 0 && currentIndex !== 0 ? 1 : 0;
-      if (roundDelta > 0) saveRoundRestorePoint();
 
       setRoundEffect(roundDelta > 0 ? 'next' : null);
-      updateScene((s) => ({
-        ...s,
-        activeId: s.participants[nextIndex].id,
-        round: Math.max(1, s.round + roundDelta),
-        participants: s.participants.map((p, i) => i === nextIndex ? tickParticipant(p) : p),
-      }));
+      updateScene((s) => {
+        const nextScene = {
+          ...s,
+          activeId: s.participants[nextIndex].id,
+          round: Math.max(1, s.round + roundDelta),
+          participants: s.participants.map((p, i) => i === nextIndex ? tickParticipant(p) : p),
+        };
+
+        if (roundDelta > 0) setRestorePoints((points) => addRestorePoint(points, s.id, nextScene));
+        return nextScene;
+      });
     },
     leaveInit(id) {
       const participant = scene.participants.find((x) => x.id === id);
