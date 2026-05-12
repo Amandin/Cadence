@@ -44,7 +44,7 @@ function initialRestorePoints(scenes) {
 function stepGlobalTracker(tracker, delta) {
   const safe = normalizeGlobalTracker(tracker);
   const current = safe.current + delta;
-  return { ...safe, current: safe.mode === 'clock' ? Math.max(0, Math.min(safe.max, current)) : Math.max(0, current) };
+  return { ...safe, current: Math.max(0, current) };
 }
 
 export function useCampaign() {
