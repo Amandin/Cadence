@@ -1,5 +1,4 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="96" fill="#e9d8c9"/>
   <g fill="none" stroke="#33153a" stroke-linecap="round" stroke-linejoin="round">
     <path d="M140 396 A180 180 0 0 1 138 116" stroke-width="16"/>
     <path d="M138 116 l18 7 l-14 13" stroke-width="12"/>
@@ -7,9 +6,13 @@
     <path d="M374 396 l-18-7 l14-13" stroke-width="12"/>
     <path d="M256 135 364 198v116L256 377 148 314V198Z" stroke-width="18"/>
     <path d="M256 135v242M148 198l108 64 108-64M148 314l108-52 108 52M202 168l54 94 54-94M202 346l54-84 54 84" stroke-width="8"/>
+    <circle cx="126" cy="160" r="27" stroke-width="7"/><circle cx="126" cy="150" r="7" fill="#33153a" stroke="none"/><path d="M111 174c3-15 27-15 30 0" fill="#33153a" stroke="none"/>
+    <circle cx="256" cy="72" r="27" stroke-width="7"/><circle cx="256" cy="62" r="7" fill="#33153a" stroke="none"/><path d="M241 86c3-15 27-15 30 0" fill="#33153a" stroke="none"/>
+    <circle cx="386" cy="160" r="27" stroke-width="7"/><circle cx="386" cy="150" r="7" fill="#33153a" stroke="none"/><path d="M371 174c3-15 27-15 30 0" fill="#33153a" stroke="none"/>
+    <circle cx="93" cy="312" r="27" stroke-width="7"/><circle cx="93" cy="302" r="7" fill="#33153a" stroke="none"/><path d="M78 326c3-15 27-15 30 0" fill="#33153a" stroke="none"/>
   </g>
   <text x="256" y="286" text-anchor="middle" font-family="Georgia,serif" font-size="44" font-weight="700" fill="#33153a">20</text>
-  <circle cx="256" cy="424" r="44" fill="#e9d8c9" stroke="#d45c13" stroke-width="10"/>
+  <circle cx="256" cy="424" r="44" fill="none" stroke="#d45c13" stroke-width="10"/>
   <circle cx="256" cy="424" r="30" fill="none" stroke="#d45c13" stroke-width="5"/>
   <circle cx="256" cy="411" r="9" fill="#d45c13"/>
   <path d="M239 437c4-16 30-16 34 0" fill="#d45c13"/>
