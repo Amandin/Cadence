@@ -42,28 +42,51 @@ function trierParInitiative(participants = []) {
   return [...participants].sort((a, b) => valeurInitiative(b) - valeurInitiative(a));
 }
 
-function garderTourActifParInitiative(scene, participantsTries) {
+function trouverTourActifParInitiative(scene, participantsTries) {
   const actifAvant = scene.participants.find((participant) => participant.id === scene.activeId);
-  if (!actifAvant) return scene.activeId;
+  if (!actifAvant) return { activeId: scene.activeId, nouveauRound: false };
 
   const initiativeActive = valeurInitiative(actifAvant);
   const actifMemeOuPlusBas = participantsTries.find((participant) => valeurInitiative(participant) <= initiativeActive);
-  return actifMemeOuPlusBas?.id || participantsTries[0]?.id || scene.activeId;
+  if (actifMemeOuPlusBas) return { activeId: actifMemeOuPlusBas.id, nouveauRound: false };
+
+  return { activeId: participantsTries[0]?.id || scene.activeId, nouveauRound: participantsTries.length > 0 };
+}
+
+function appliquerDebutNouveauRound(scene, activeId) {
+  return {
+    ...scene,
+    activeId,
+    round: Math.max(1, scene.round + 1),
+    globalTracker: stepAutoGlobalTracker(scene.globalTracker, 1),
+    participants: scene.participants.map((participant) => participant.id === activeId ? tickParticipant(participant) : participant),
+    reserve: (scene.reserve || []).map(tickParticipant),
+  };
 }
 
 function modifierParticipantDansScene(scene, participantId, updater) {
   const participants = trierParInitiative(scene.participants.map((p) => p.id === participantId ? updater(p) : p));
-  return {
+  const { activeId, nouveauRound } = trouverTourActifParInitiative(scene, participants);
+  const sceneSuivante = {
     ...scene,
     participants,
-    activeId: garderTourActifParInitiative(scene, participants),
+    activeId,
     reserve: (scene.reserve || []).map((p) => p.id === participantId ? updater(p) : p),
   };
+
+  return nouveauRound ? appliquerDebutNouveauRound(sceneSuivante, activeId) : sceneSuivante;
 }
 
 export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, setScenes, setRestorePoints, setRoundEffect }) {
   const updateScene = (updater) => setScenes((list) => list.map((s, i) => i === sceneIndex ? updater(s) : s));
-  const updateParticipant = (id, updater) => updateScene((s) => modifierParticipantDansScene(s, id, updater));
+  const updateParticipant = (id, updater) => updateScene((s) => {
+    const nextScene = modifierParticipantDansScene(s, id, updater);
+    if (nextScene.round > s.round) {
+      setRoundEffect('next');
+      setRestorePoints((points) => addRestorePoint(points, s.id, nextScene));
+    }
+    return nextScene;
+  });
 
   return {
     updateParticipant,
