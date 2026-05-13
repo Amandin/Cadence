@@ -1,4 +1,4 @@
-import { Sheet } from '../../components/common.jsx';
+import { Fenetre } from '../commun/ComposantsCommuns.jsx';
 
 const COMPTEUR_GLOBAL_PAR_DEFAUT = {
   enabled: false,
@@ -59,7 +59,7 @@ export function FenetreCompteurGlobal({ compteur, onModifier, onChanger, onFerme
   const modifier = (valeur) => onModifier({ ...courant, ...valeur });
 
   return (
-    <Sheet title="Compteur de scène" onClose={onFermer}>
+    <Fenetre title="Compteur de scène" onClose={onFermer}>
       <div className="stack">
         <label className="row"><input type="checkbox" checked={!!courant.enabled} onChange={(event) => modifier({ enabled: event.target.checked })} /> actif dans l’entête</label>
         <label className="field">Nom<input value={courant.name || ''} onChange={(event) => modifier({ name: event.target.value })} placeholder="Menace" /></label>
@@ -71,6 +71,6 @@ export function FenetreCompteurGlobal({ compteur, onModifier, onChanger, onFerme
         <label className="row"><input type="checkbox" checked={!!courant.auto} onChange={(event) => modifier({ auto: event.target.checked })} /> avance automatiquement à chaque nouveau round</label>
         <div className="grid2"><button className="small-btn" onClick={() => onChanger(-1)}>−1</button><button className="small-btn" onClick={() => onChanger(1)}>+1</button></div>
       </div>
-    </Sheet>
+    </Fenetre>
   );
 }

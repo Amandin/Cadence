@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Sheet } from '../../components/common.jsx';
+import { Fenetre } from '../commun/ComposantsCommuns.jsx';
 
 function trierTemplates(templates) {
   return [...templates].sort((a, b) => `${a.category}/${a.name}`.localeCompare(`${b.category}/${b.name}`));
@@ -35,7 +35,7 @@ export function FenetreAjoutPersonnage({ templates = [], onFermer, onCreerVierge
   };
 
   return (
-    <Sheet title="Ajouter un personnage" onClose={onFermer}>
+    <Fenetre title="Ajouter un personnage" onClose={onFermer}>
       <div className="stack">
         <div className="grid2">
           <button className={`choice ${mode === 'blank' ? 'selected' : ''}`} onClick={() => setMode('blank')}>Fiche vierge</button>
@@ -56,6 +56,6 @@ export function FenetreAjoutPersonnage({ templates = [], onFermer, onCreerVierge
           <button className="small-btn" onClick={onFermer}>Annuler</button>
         </div>
       </div>
-    </Sheet>
+    </Fenetre>
   );
 }

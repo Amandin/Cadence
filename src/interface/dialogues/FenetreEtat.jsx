@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Sheet } from '../../components/common.jsx';
+import { Fenetre } from '../commun/ComposantsCommuns.jsx';
 
 const optionsDuree = [
   { label: '∞', value: 'infinite' },
@@ -29,5 +29,5 @@ export function FenetreEtat({ participant, onFermer, onValider }) {
     onValider({ name: nomNettoye, duration: dureeFinie ? valeurDuree : null, loop: dureeFinie && boucle });
   };
 
-  return <Sheet title={`Ajouter un état · ${participant.name}`} onClose={onFermer}><label className="field">Nom<input value={nom} onChange={(event) => setNom(event.target.value)} autoFocus /></label><div className="field">Durée<div className="choice-row status-duration-row">{optionsDuree.map((option) => <button key={option.value} className={`choice ${duree === option.value ? 'selected' : ''}`} onClick={() => setDuree(option.value)}>{option.label}</button>)}</div></div>{duree === 'custom' && <label className="field">Durée personnalisée<input type="number" inputMode="numeric" min="1" value={dureePersonnalisee} onChange={(event) => setDureePersonnalisee(event.target.value)} /></label>}{dureeFinie && <label className="row"><input type="checkbox" checked={boucle} onChange={(event) => setBoucle(event.target.checked)} /> renouveler en boucle</label>}<div className="grid2" style={{ marginTop: 12 }}><button className="primary" onClick={enregistrer} disabled={!peutEnregistrer}>Ajouter</button><button className="small-btn" onClick={onFermer}>Annuler</button></div></Sheet>;
+  return <Fenetre title={`Ajouter un état · ${participant.name}`} onClose={onFermer}><label className="field">Nom<input value={nom} onChange={(event) => setNom(event.target.value)} autoFocus /></label><div className="field">Durée<div className="choice-row status-duration-row">{optionsDuree.map((option) => <button key={option.value} className={`choice ${duree === option.value ? 'selected' : ''}`} onClick={() => setDuree(option.value)}>{option.label}</button>)}</div></div>{duree === 'custom' && <label className="field">Durée personnalisée<input type="number" inputMode="numeric" min="1" value={dureePersonnalisee} onChange={(event) => setDureePersonnalisee(event.target.value)} /></label>}{dureeFinie && <label className="row"><input type="checkbox" checked={boucle} onChange={(event) => setBoucle(event.target.checked)} /> renouveler en boucle</label>}<div className="grid2" style={{ marginTop: 12 }}><button className="primary" onClick={enregistrer} disabled={!peutEnregistrer}>Ajouter</button><button className="small-btn" onClick={onFermer}>Annuler</button></div></Fenetre>;
 }

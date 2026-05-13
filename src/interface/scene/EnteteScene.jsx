@@ -1,5 +1,5 @@
+import { BadgeRound } from '../commun/ComposantsCommuns.jsx';
 import { CompteurGlobal } from '../suivis/CompteurGlobal.jsx';
-import { RoundBadge } from '../../components/common.jsx';
 
 export function EnteteScene(props) {
   const {
@@ -28,7 +28,7 @@ export function EnteteScene(props) {
           <h1>{scene.title}</h1>
           <div className="muted">{scene.type} · {scene.participants.length} en initiative</div>
         </div>
-        <RoundBadge round={scene.round} effect={effetRound} />
+        <BadgeRound round={scene.round} effect={effetRound} />
       </div>
       {notesVisibles && <div className="scene-notes panel">{scene.notes}</div>}
       <div className="turn-row">

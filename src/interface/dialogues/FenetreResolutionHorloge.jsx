@@ -1,5 +1,5 @@
 import { isTriggeredClock } from '../../logic.js';
-import { Sheet } from '../../components/common.jsx';
+import { Fenetre } from '../commun/ComposantsCommuns.jsx';
 
 export function FenetreResolutionHorloge({ participants, onFermer, onRelancerHorloge, onSupprimerHorloge }) {
   const horloges = participants.flatMap((participant) => (
@@ -9,7 +9,7 @@ export function FenetreResolutionHorloge({ participants, onFermer, onRelancerHor
   ));
 
   return (
-    <Sheet title="Horloge à résoudre" onClose={onFermer}>
+    <Fenetre title="Horloge à résoudre" onClose={onFermer}>
       <p className="muted" style={{ marginTop: 0 }}>
         Une horloge est arrivée à son terme. Résous-la avant de continuer le tour.
       </p>
@@ -29,6 +29,6 @@ export function FenetreResolutionHorloge({ participants, onFermer, onRelancerHor
         ))}
       </div>
       <button className="small-btn" style={{ width: '100%', marginTop: 12 }} onClick={onFermer}>Fermer</button>
-    </Sheet>
+    </Fenetre>
   );
 }

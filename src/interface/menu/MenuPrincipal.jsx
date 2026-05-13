@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { APP_VERSION } from '../../constants.js';
-import { Sheet } from '../../components/common.jsx';
+import { Fenetre } from '../commun/ComposantsCommuns.jsx';
 
 function LogoMenu({ sombre }) {
   const logo = sombre ? '/branding/logo-cadence-dark.svg' : '/branding/logo-cadence-light.svg';
@@ -106,7 +106,7 @@ export function MenuPrincipal({ scenes, scene, restorePoints = [], onRestore, on
   const [pointRestaurationId, setPointRestaurationId] = useState(pointsRestauration.at(-1)?.id || '');
 
   return (
-    <Sheet title="Menu" onClose={onClose}>
+    <Fenetre title="Menu" onClose={onClose}>
       <LogoMenu sombre={dark} />
       <LigneVersionEtTheme sombre={dark} onChangerTheme={setDark} />
       <ListeScenes scenes={scenes} onChoisirScene={setSceneIndex} onFermer={onClose} />
@@ -114,6 +114,6 @@ export function MenuPrincipal({ scenes, scene, restorePoints = [], onRestore, on
       <ActionsScene onAjouterParticipant={onAddParticipant} onNouvelleScene={onNewScene} />
       <ActionsSauvegarde onExporter={onExport} onImporter={onImport} onReinitialiser={onReset} />
       <RestaurationScene points={pointsRestauration} pointActif={pointRestaurationId} onChoisirPoint={setPointRestaurationId} onRestaurer={onRestore} />
-    </Sheet>
+    </Fenetre>
   );
 }
