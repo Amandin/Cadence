@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { AddCharacterSheet } from './components/AddCharacterSheet.jsx';
 import { ClockResolutionModal } from './components/ClockResolutionModal.jsx';
 import { EditSheet } from './components/EditSheet.jsx';
 import { GlobalTracker, GlobalTrackerSheet } from './components/GlobalTracker.jsx';
@@ -14,6 +15,7 @@ import { TemplateSaveSheet } from './components/TemplateSaveSheet.jsx';
 import { useCampaign } from './hooks/useCampaign.js';
 import { useCharacterInteractions } from './hooks/useCharacterInteractions.js';
 import { useTemplates } from './hooks/useTemplates.js';
+import { createBlankParticipant } from './templates.js';
 
 export default function App() {
   const campaign = useCampaign();
@@ -21,11 +23,13 @@ export default function App() {
   const characters = useCharacterInteractions(scene, actions);
   const templates = useTemplates();
   const [openMenu, setOpenMenu] = useState(false);
+  const [addSheetOpen, setAddSheetOpen] = useState(false);
   const [notice, setNotice] = useState(null);
   const [showNotes, setShowNotes] = useState(true);
   const [clockModalOpen, setClockModalOpen] = useState(false);
   const [globalSheetOpen, setGlobalSheetOpen] = useState(false);
   const [templateTarget, setTemplateTarget] = useState(null);
+  const [templateError, setTemplateError] = useState('');
 
   const globalAutoTick = roundEffect === 'next' && !!scene.globalTracker?.enabled && !!scene.globalTracker?.auto;
 
@@ -48,16 +52,19 @@ export default function App() {
     actions.nextTurn(direction);
   };
 
-  const addParticipant = () => {
-    actions.addParticipant();
+  const openAddCharacter = () => {
     setOpenMenu(false);
+    setAddSheetOpen(true);
   };
-  const addFromTemplate = (templateId) => {
+  const createBlankCharacter = (options) => {
+    characters.addCharacter(createBlankParticipant(), options);
+    setAddSheetOpen(false);
+  };
+  const createFromTemplate = (templateId, options) => {
     const participant = templates.createParticipantFromTemplate(templateId);
     if (!participant) return;
-    characters.addParticipantToInit(participant);
-    setOpenMenu(false);
-    setNotice({ title: 'Template ajouté', message: `${participant.name} a été ajouté à l’initiative.` });
+    characters.addCharacter(participant, options);
+    setAddSheetOpen(false);
   };
   const newScene = () => {
     actions.newScene();
@@ -82,11 +89,20 @@ export default function App() {
     setOpenMenu(false);
     characters.closeCharacterPanels();
   };
-  const saveTemplate = (category) => {
+  const openTemplateSave = (participant) => {
+    setTemplateTarget(participant);
+    setTemplateError('');
+  };
+  const saveTemplate = (data) => {
     if (!templateTarget) return;
-    const template = templates.saveParticipantAsTemplate(templateTarget, category);
+    const result = templates.saveParticipantAsTemplate(templateTarget, data);
+    if (!result.ok) {
+      setTemplateError(result.message);
+      return;
+    }
     setTemplateTarget(null);
-    setNotice({ title: 'Template enregistré', message: `${template.name} est disponible dans la catégorie ${template.category}.` });
+    setTemplateError('');
+    setNotice({ title: 'Template enregistré', message: `${result.template.name} est disponible dans la catégorie ${result.template.category}.` });
   };
 
   const resetClock = (participantId, trackerId) => {
@@ -168,19 +184,20 @@ export default function App() {
       <div className="bottom">
         <button className="turn-btn compact" onClick={() => nextTurn(-1)} aria-label="Participant précédent">↶</button>
         <button className={`primary ${nextClass}`} onClick={() => nextTurn(1)}>{blocked.length ? 'Horloge' : nextStartsRound ? `Nouveau round · R${scene.round + 1}` : `Suivant · R${scene.round}`}</button>
-        <button className="small-btn" onClick={addParticipant}>+</button>
+        <button className="small-btn" onClick={openAddCharacter}>+</button>
         <button className="small-btn" onClick={() => setOpenMenu(true)}>☰</button>
       </div>
 
-      {characters.selected && <ParticipantSheet participant={characters.selected} onClose={characters.closeCharacter} onEdit={() => characters.editCharacter(characters.selected.id)} onSaveTemplate={() => setTemplateTarget(characters.selected)} onTracker={(trackerId, next) => characters.updateCharacterTracker(characters.selected.id, trackerId, next)} onDeleteTracker={(trackerId) => characters.deleteCharacterTracker(characters.selected.id, trackerId)} onAddStatus={() => characters.requestStatus(characters.selected.id)} onRemoveStatus={(statusId) => characters.removeCharacterStatus(characters.selected.id, statusId)} onNote={(note) => characters.updateCharacter(characters.selected.id, (participant) => ({ ...participant, note }))} />}
-      {characters.editing && <EditSheet participant={characters.editing} onClose={characters.closeEditor} onSave={characters.saveCharacter} onDelete={() => characters.deleteCharacter(characters.editing.id)} />}
+      {characters.selected && <ParticipantSheet participant={characters.selected} inInitiative={characters.isInInit(characters.selected.id)} onClose={characters.closeCharacter} onEdit={() => characters.editCharacter(characters.selected.id)} onJoinInit={() => characters.requestJoin(characters.selected.id)} onLeaveInit={() => characters.leaveInit(characters.selected.id)} onTracker={(trackerId, next) => characters.updateCharacterTracker(characters.selected.id, trackerId, next)} onDeleteTracker={(trackerId) => characters.deleteCharacterTracker(characters.selected.id, trackerId)} onAddStatus={() => characters.requestStatus(characters.selected.id)} onRemoveStatus={(statusId) => characters.removeCharacterStatus(characters.selected.id, statusId)} onNote={(note) => characters.updateCharacter(characters.selected.id, (participant) => ({ ...participant, note }))} />}
+      {characters.editing && <EditSheet participant={characters.editing} onClose={characters.closeEditor} onSave={characters.saveCharacter} onDelete={() => characters.deleteCharacter(characters.editing.id)} onSaveTemplate={openTemplateSave} />}
       {characters.statusTarget && <StatusSheet participant={characters.statusTarget} onClose={characters.cancelStatus} onSave={characters.saveStatus} />}
       {characters.joinTarget && <JoinInitSheet participant={characters.joinTarget} onClose={characters.cancelJoin} onSave={characters.joinInit} />}
-      {templateTarget && <TemplateSaveSheet participant={templateTarget} onClose={() => setTemplateTarget(null)} onSave={saveTemplate} />}
+      {addSheetOpen && <AddCharacterSheet templates={templates.templates} onClose={() => setAddSheetOpen(false)} onCreateBlank={createBlankCharacter} onCreateFromTemplate={createFromTemplate} />}
+      {templateTarget && <TemplateSaveSheet participant={templateTarget} categories={templates.categories} error={templateError} onClose={() => setTemplateTarget(null)} onSave={saveTemplate} />}
       {globalSheetOpen && <GlobalTrackerSheet tracker={scene.globalTracker} onChange={actions.updateGlobalTracker} onStep={actions.stepGlobal} onClose={() => setGlobalSheetOpen(false)} />}
       {clockModalOpen && <ClockResolutionModal participants={blocked} onClose={() => setClockModalOpen(false)} onResetClock={resetClock} onDeleteClock={deleteClock} />}
       {notice && <NoticeModal title={notice.title} message={notice.message} onClose={() => setNotice(null)} />}
-      {openMenu && <Menu scenes={scenes} scene={scene} restorePoints={restorePoints} templates={templates.templates} onRestore={restoreScene} onClose={() => setOpenMenu(false)} setSceneIndex={actions.setSceneIndex} dark={dark} setDark={actions.setDark} onAddParticipant={addParticipant} onAddFromTemplate={addFromTemplate} onNewScene={newScene} onExport={actions.exportCampaign} onImport={importCampaign} onReset={resetDemo} onGlobalTracker={actions.updateGlobalTracker} />}
+      {openMenu && <Menu scenes={scenes} scene={scene} restorePoints={restorePoints} onRestore={restoreScene} onClose={() => setOpenMenu(false)} setSceneIndex={actions.setSceneIndex} dark={dark} setDark={actions.setDark} onAddParticipant={openAddCharacter} onNewScene={newScene} onExport={actions.exportCampaign} onImport={importCampaign} onReset={resetDemo} onGlobalTracker={actions.updateGlobalTracker} />}
     </div>
   );
 }
