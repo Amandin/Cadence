@@ -35,6 +35,8 @@ export default function App() {
     if (clockModalOpen && blocked.length === 0) setClockModalOpen(false);
   }, [blocked.length, clockModalOpen]);
 
+  // Une horloge bloquante interrompt volontairement le passage au tour suivant :
+  // elle doit être résolue avant que les états/horloges avancent.
   const nextTurn = (direction) => {
     if (direction > 0) setShowNotes(false);
     if (direction > 0 && blocked.length) {
@@ -97,9 +99,12 @@ export default function App() {
     setNotice({ title: result.overwritten ? 'Template remplacé' : 'Template enregistré', message: `${result.template.name} est disponible dans la catégorie ${result.template.category}.` });
   };
 
+  const findClock = (participantId, trackerId) => {
+    const participant = [...scene.participants, ...(scene.reserve || [])].find((item) => item.id === participantId);
+    return participant?.trackers.find((item) => item.id === trackerId);
+  };
   const resetClock = (participantId, trackerId) => {
-    const participant = scene.participants.find((item) => item.id === participantId);
-    const tracker = participant?.trackers.find((item) => item.id === trackerId);
+    const tracker = findClock(participantId, trackerId);
     if (!tracker) return;
     actions.trackerChange(participantId, trackerId, { ...tracker, current: 0 });
     setClockModalOpen(false);
