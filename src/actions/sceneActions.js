@@ -42,10 +42,21 @@ function trierParInitiative(participants = []) {
   return [...participants].sort((a, b) => valeurInitiative(b) - valeurInitiative(a));
 }
 
+function garderTourActifParInitiative(scene, participantsTries) {
+  const actifAvant = scene.participants.find((participant) => participant.id === scene.activeId);
+  if (!actifAvant) return scene.activeId;
+
+  const initiativeActive = valeurInitiative(actifAvant);
+  const actifMemeInitiative = participantsTries.find((participant) => valeurInitiative(participant) === initiativeActive);
+  return actifMemeInitiative?.id || scene.activeId;
+}
+
 function modifierParticipantDansScene(scene, participantId, updater) {
+  const participants = trierParInitiative(scene.participants.map((p) => p.id === participantId ? updater(p) : p));
   return {
     ...scene,
-    participants: trierParInitiative(scene.participants.map((p) => p.id === participantId ? updater(p) : p)),
+    participants,
+    activeId: garderTourActifParInitiative(scene, participants),
     reserve: (scene.reserve || []).map((p) => p.id === participantId ? updater(p) : p),
   };
 }
@@ -141,19 +152,25 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
       const initiative = Number(initiativeValue);
       if (!participant || !Number.isFinite(initiative)) return;
 
-      updateScene((s) => ({
-        ...s,
-        reserve: s.reserve.filter((x) => x.id !== id),
-        participants: trierParInitiative([...s.participants, { ...participant, initiative }]),
-        activeId: s.activeId || participant.id,
-      }));
+      updateScene((s) => {
+        const participants = trierParInitiative([...s.participants, { ...participant, initiative }]);
+        return {
+          ...s,
+          reserve: s.reserve.filter((x) => x.id !== id),
+          participants,
+          activeId: s.activeId || participant.id,
+        };
+      });
     },
     addParticipant(participant = createBlankParticipant(), placement = 'init') {
       if (placement === 'reserve') {
         updateScene((s) => ({ ...s, reserve: [...(s.reserve || []), participant] }));
         return;
       }
-      updateScene((s) => ({ ...s, participants: trierParInitiative([...s.participants, participant]), activeId: s.activeId || participant.id }));
+      updateScene((s) => {
+        const participants = trierParInitiative([...s.participants, participant]);
+        return { ...s, participants, activeId: s.activeId || participant.id };
+      });
     },
   };
 }
