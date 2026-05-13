@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { GlobalTrackerSheet } from './components/GlobalTracker.jsx';
 import { FenetreEtat } from './interface/dialogues/FenetreEtat.jsx';
 import { FenetreInformation } from './interface/dialogues/FenetreInformation.jsx';
 import { FenetreRejoindreInitiative } from './interface/dialogues/FenetreRejoindreInitiative.jsx';
@@ -13,6 +12,7 @@ import { BarreActionBas } from './interface/scene/BarreActionBas.jsx';
 import { EnteteScene } from './interface/scene/EnteteScene.jsx';
 import { ListeInitiative } from './interface/scene/ListeInitiative.jsx';
 import { ReserveHorsInitiative } from './interface/scene/ReserveHorsInitiative.jsx';
+import { FenetreCompteurGlobal } from './interface/suivis/CompteurGlobal.jsx';
 import { useCampaign } from './hooks/useCampaign.js';
 import { useCharacterInteractions } from './hooks/useCharacterInteractions.js';
 import { useTemplates } from './hooks/useTemplates.js';
@@ -161,7 +161,7 @@ export default function App() {
       {characters.joinTarget && <FenetreRejoindreInitiative participant={characters.joinTarget} onFermer={characters.cancelJoin} onValider={characters.joinInit} />}
       {addSheetOpen && <FenetreAjoutPersonnage templates={templates.templates} onFermer={() => setAddSheetOpen(false)} onCreerVierge={createBlankCharacter} onCreerDepuisTemplate={createFromTemplate} />}
       {templateTarget && <FenetreSauvegardeTemplate participant={templateTarget} categories={templates.categories} erreur={templateError} onFermer={() => setTemplateTarget(null)} onEnregistrer={saveTemplate} />}
-      {globalSheetOpen && <GlobalTrackerSheet tracker={scene.globalTracker} onChange={actions.updateGlobalTracker} onStep={actions.stepGlobal} onClose={() => setGlobalSheetOpen(false)} />}
+      {globalSheetOpen && <FenetreCompteurGlobal compteur={scene.globalTracker} onModifier={actions.updateGlobalTracker} onChanger={actions.stepGlobal} onFermer={() => setGlobalSheetOpen(false)} />}
       {clockModalOpen && <FenetreResolutionHorloge participants={blocked} onFermer={() => setClockModalOpen(false)} onRelancerHorloge={resetClock} onSupprimerHorloge={deleteClock} />}
       {notice && <FenetreInformation titre={notice.title} message={notice.message} onFermer={() => setNotice(null)} />}
       {openMenu && <MenuPrincipal scenes={scenes} scene={scene} restorePoints={restorePoints} onRestore={restoreScene} onClose={() => setOpenMenu(false)} setSceneIndex={actions.setSceneIndex} dark={dark} setDark={actions.setDark} onAddParticipant={openAddCharacter} onNewScene={newScene} onExport={actions.exportCampaign} onImport={importCampaign} onReset={resetDemo} onGlobalTracker={actions.updateGlobalTracker} />}
