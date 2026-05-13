@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Sheet } from '../../components/common.jsx';
+import { Fenetre } from '../commun/ComposantsCommuns.jsx';
 
 const NOUVELLE_CATEGORIE = '__new__';
 
@@ -24,7 +24,7 @@ export function FenetreSauvegardeTemplate({ participant, categories = [], erreur
   });
 
   return (
-    <Sheet title="Enregistrer comme template" onClose={onFermer}>
+    <Fenetre title="Enregistrer comme template" onClose={onFermer}>
       <p className="muted" style={{ marginTop: 0 }}>
         Le template gardera la fiche et ses suivis. Les états temporaires ne seront pas appliqués quand tu l’ajouteras à une scène.
       </p>
@@ -36,6 +36,6 @@ export function FenetreSauvegardeTemplate({ participant, categories = [], erreur
         <button className="primary" onClick={() => enregistrer(false)}>Enregistrer</button>
         <button className="small-btn" onClick={onFermer}>Annuler</button>
       </div>
-    </Sheet>
+    </Fenetre>
   );
 }
