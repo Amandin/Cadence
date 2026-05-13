@@ -33,9 +33,17 @@ function addRestorePoint(points, sceneId, nextScene) {
   return { ...points, [sceneId]: [...current, createRestorePoint(nextScene)].slice(-50) };
 }
 
+function modifierParticipantDansScene(scene, participantId, updater) {
+  return {
+    ...scene,
+    participants: scene.participants.map((p) => p.id === participantId ? updater(p) : p),
+    reserve: (scene.reserve || []).map((p) => p.id === participantId ? updater(p) : p),
+  };
+}
+
 export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, setScenes, setRestorePoints, setRoundEffect }) {
   const updateScene = (updater) => setScenes((list) => list.map((s, i) => i === sceneIndex ? updater(s) : s));
-  const updateParticipant = (id, updater) => updateScene((s) => ({ ...s, participants: s.participants.map((p) => p.id === id ? updater(p) : p) }));
+  const updateParticipant = (id, updater) => updateScene((s) => modifierParticipantDansScene(s, id, updater));
 
   return {
     updateParticipant,
