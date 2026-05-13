@@ -1,4 +1,4 @@
-import { GlobalTracker } from '../../components/GlobalTracker.jsx';
+import { CompteurGlobal } from '../suivis/CompteurGlobal.jsx';
 import { RoundBadge } from '../../components/common.jsx';
 
 export function EnteteScene(props) {
@@ -39,7 +39,7 @@ export function EnteteScene(props) {
               <div className="muted">{horlogeABloquee ? 'Horloge à gérer' : 'Tour actif'}</div>
               <strong>{nomTourActif}</strong>
             </div>
-            <GlobalTracker tracker={scene.globalTracker} onStep={onModifierCompteurGlobal} onOpen={onOuvrirCompteurGlobal} tick={compteurGlobalAuto} />
+            <CompteurGlobal compteur={scene.globalTracker} onChanger={onModifierCompteurGlobal} onOuvrir={onOuvrirCompteurGlobal} animationTick={compteurGlobalAuto} />
           </div>
         </div>
         <button className={`turn-btn next ${classeSuivant}`} onClick={onTourSuivant} aria-label={libelleSuivant}>{horlogeABloquee ? '⏸' : '➜'}</button>
