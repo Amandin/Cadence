@@ -23,7 +23,7 @@ export function Suivi({ suivi, onModifier, onSupprimer, avantTitre = null }) {
   }, [deltaOuvert]);
 
   if (suivi.type === 'clock') {
-    return <div className={`tracker ${declenche ? 'triggered' : ''}`}><div className="tracker-top with-clock"><TitreSuivi titre={suivi.name} avantTitre={avantTitre} />{suivi.auto && <span className="chip">auto</span>}{declenche && <span className="chip hot">À résoudre</span>}<div className="clock-inline"><button onClick={() => appliquerPas(-1)}>−</button><HorlogeSuivi suivi={suivi} /><button onClick={() => appliquerPas(1)}>+</button></div></div>{declenche && <div className="stack" style={{ marginTop: 8 }}><button className="primary" onClick={() => modifier({ current: 0 })}>Relancer à 0</button><button className="danger-btn" onClick={onSupprimer}>Supprimer</button></div>}</div>;
+    return <div className={`tracker ${declenche ? 'triggered' : ''} ${suivi.frozen ? 'frozen' : ''}`}><div className="tracker-top with-clock"><TitreSuivi titre={suivi.name} avantTitre={avantTitre} />{suivi.auto && <span className="chip">auto</span>}{suivi.frozen && <span className="chip">figé</span>}<button className={`freeze-btn ${suivi.frozen ? 'active' : ''}`} onClick={() => modifier({ frozen: !suivi.frozen })} title={suivi.frozen ? 'Dégeler cette horloge' : 'Figer cette horloge'} aria-label={suivi.frozen ? 'Dégeler cette horloge' : 'Figer cette horloge'}>{suivi.frozen ? '◆' : '◇'}</button>{declenche && <span className="chip hot">À résoudre</span>}<div className="clock-inline"><button onClick={() => appliquerPas(-1)}>−</button><HorlogeSuivi suivi={suivi} /><button onClick={() => appliquerPas(1)}>+</button></div></div>{declenche && <div className="stack" style={{ marginTop: 8 }}><button className="primary" onClick={() => modifier({ current: 0 })}>Relancer à 0</button><button className="danger-btn" onClick={onSupprimer}>Supprimer</button></div>}</div>;
   }
 
   if (suivi.type === 'boxes') {
@@ -55,7 +55,7 @@ function HorlogeSuivi({ suivi }) {
   const proche = !declenche && ratio >= .75;
   const progression = Math.max(0, Math.min(1, ratio));
 
-  return <div className={`clock-face ${attention ? 'warning' : ''} ${proche ? 'near' : ''} ${declenche ? 'triggered' : ''}`} style={{ '--clock-progress': `${progression * 360}deg` }}><span>{courant}</span><small>/{max}</small></div>;
+  return <div className={`clock-face ${attention ? 'warning' : ''} ${proche ? 'near' : ''} ${declenche ? 'triggered' : ''} ${suivi.frozen ? 'frozen' : ''}`} style={{ '--clock-progress': `${progression * 360}deg` }}><span>{courant}</span><small>/{max}</small></div>;
 }
 
 function CasesSuivi({ suivi, cocher }) {
