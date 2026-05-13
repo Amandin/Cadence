@@ -36,7 +36,7 @@ export function hasTriggeredClock(participant) {
 
 export function newTracker(type = 'bar') {
   const base = { id: uid('t'), type, visible: true };
-  if (type === 'clock') return { ...base, name: 'Horloge', current: 0, max: 6, auto: true };
+  if (type === 'clock') return { ...base, name: 'Horloge', current: 0, max: 6, auto: true, frozen: false };
   if (type === 'dots') return { ...base, name: 'Points', current: 0, max: 5, step: 1 };
   if (type === 'boxes') return { ...base, name: 'Cases', fillLevels: 5, rows: [{ id: uid('r'), label: 'Ligne', marks: [0, 0, 0, 0] }] };
   if (type === 'number') return { ...base, name: 'Compteur', current: 0, step: 1, min: null, max: null, minAbsolute: false, maxAbsolute: false };
@@ -83,11 +83,11 @@ export function untickStatuses(statuses = []) {
 }
 
 export function tickParticipant(participant) {
-  return { ...participant, statuses: tickStatuses(participant.statuses), trackers: (participant.trackers || []).map((tracker) => tracker.type === 'clock' && tracker.auto ? { ...tracker, current: numberOr(tracker.current, 0) + 1 } : tracker) };
+  return { ...participant, statuses: tickStatuses(participant.statuses), trackers: (participant.trackers || []).map((tracker) => tracker.type === 'clock' && tracker.auto && !tracker.frozen ? { ...tracker, current: numberOr(tracker.current, 0) + 1 } : tracker) };
 }
 
 export function untickParticipant(participant) {
-  return { ...participant, statuses: untickStatuses(participant.statuses), trackers: (participant.trackers || []).map((tracker) => tracker.type === 'clock' && tracker.auto ? { ...tracker, current: Math.max(0, numberOr(tracker.current, 0) - 1) } : tracker) };
+  return { ...participant, statuses: untickStatuses(participant.statuses), trackers: (participant.trackers || []).map((tracker) => tracker.type === 'clock' && tracker.auto && !tracker.frozen ? { ...tracker, current: Math.max(0, numberOr(tracker.current, 0) - 1) } : tracker) };
 }
 
 export function nextTurnInfo(scene, blocked = false) {
