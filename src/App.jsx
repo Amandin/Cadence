@@ -29,7 +29,7 @@ export default function App() {
   const [clockModalOpen, setClockModalOpen] = useState(false);
   const [globalSheetOpen, setGlobalSheetOpen] = useState(false);
   const [templateTarget, setTemplateTarget] = useState(null);
-  const [templateError, setTemplateError] = useState('');
+  const [templateError, setTemplateError] = useState(null);
 
   const globalAutoTick = roundEffect === 'next' && !!scene.globalTracker?.enabled && !!scene.globalTracker?.auto;
 
@@ -91,18 +91,18 @@ export default function App() {
   };
   const openTemplateSave = (participant) => {
     setTemplateTarget(participant);
-    setTemplateError('');
+    setTemplateError(null);
   };
   const saveTemplate = (data) => {
     if (!templateTarget) return;
     const result = templates.saveParticipantAsTemplate(templateTarget, data);
     if (!result.ok) {
-      setTemplateError(result.message);
+      setTemplateError({ kind: result.kind, message: result.message });
       return;
     }
     setTemplateTarget(null);
-    setTemplateError('');
-    setNotice({ title: 'Template enregistré', message: `${result.template.name} est disponible dans la catégorie ${result.template.category}.` });
+    setTemplateError(null);
+    setNotice({ title: result.overwritten ? 'Template remplacé' : 'Template enregistré', message: `${result.template.name} est disponible dans la catégorie ${result.template.category}.` });
   };
 
   const resetClock = (participantId, trackerId) => {
