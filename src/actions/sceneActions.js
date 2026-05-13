@@ -33,10 +33,19 @@ function addRestorePoint(points, sceneId, nextScene) {
   return { ...points, [sceneId]: [...current, createRestorePoint(nextScene)].slice(-50) };
 }
 
+function valeurInitiative(participant) {
+  const initiative = Number(participant?.initiative);
+  return Number.isFinite(initiative) ? initiative : 0;
+}
+
+function trierParInitiative(participants = []) {
+  return [...participants].sort((a, b) => valeurInitiative(b) - valeurInitiative(a));
+}
+
 function modifierParticipantDansScene(scene, participantId, updater) {
   return {
     ...scene,
-    participants: scene.participants.map((p) => p.id === participantId ? updater(p) : p),
+    participants: trierParInitiative(scene.participants.map((p) => p.id === participantId ? updater(p) : p)),
     reserve: (scene.reserve || []).map((p) => p.id === participantId ? updater(p) : p),
   };
 }
@@ -135,13 +144,13 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
       updateScene((s) => ({
         ...s,
         reserve: s.reserve.filter((x) => x.id !== id),
-        participants: [...s.participants, { ...participant, initiative }],
+        participants: trierParInitiative([...s.participants, { ...participant, initiative }]),
         activeId: s.activeId || participant.id,
       }));
     },
     addParticipant() {
       const participant = createBlankParticipant();
-      updateScene((s) => ({ ...s, participants: [...s.participants, participant], activeId: s.activeId || participant.id }));
+      updateScene((s) => ({ ...s, participants: trierParInitiative([...s.participants, participant]), activeId: s.activeId || participant.id }));
     },
   };
 }
