@@ -5,12 +5,12 @@ function TitreSuivi({ titre, avantTitre }) {
   return <span className="tracker-title">{avantTitre}{titre}</span>;
 }
 
-function IconeMetronome({ actif }) {
+function IconeMetronome() {
   return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className={`metronome-icon ${actif ? 'active' : 'inactive'}`}>
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="metronome-icon">
       <path d="M8 21h8l-2.4-14h-3.2L8 21Z" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
       <path d="M12 7V3" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-      <path className="metronome-needle" d={actif ? 'M12 12l4-3' : 'M12 13V7'} fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" />
+      <path d="M12 12l4-3" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
       <path d="M9.4 18h5.2" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
     </svg>
   );
@@ -34,8 +34,7 @@ export function Suivi({ suivi, onModifier, onSupprimer, avantTitre = null }) {
   }, [deltaOuvert]);
 
   if (suivi.type === 'clock') {
-    const horlogeActive = !suivi.frozen;
-    return <div className={`tracker ${declenche ? 'triggered' : ''} ${suivi.frozen ? 'frozen' : ''}`}><div className="tracker-top clock-top"><div className="clock-title-zone"><TitreSuivi titre={suivi.name} avantTitre={avantTitre} />{suivi.auto && <span className="chip">auto</span>}{suivi.frozen && <span className="chip">figé</span>}{declenche && <span className="chip hot">À résoudre</span>}</div><div className="clock-inline"><button onClick={() => appliquerPas(-1)}>−</button><HorlogeSuivi suivi={suivi} /><button onClick={() => appliquerPas(1)}>+</button></div><button className={`freeze-btn ${suivi.frozen ? 'active' : ''}`} onClick={() => modifier({ frozen: !suivi.frozen })} title={suivi.frozen ? 'Dégeler cette horloge' : 'Figer cette horloge'} aria-label={suivi.frozen ? 'Dégeler cette horloge' : 'Figer cette horloge'}><IconeMetronome actif={horlogeActive} /></button></div>{declenche && <div className="stack" style={{ marginTop: 8 }}><button className="primary" onClick={() => modifier({ current: 0 })}>Relancer à 0</button><button className="danger-btn" onClick={onSupprimer}>Supprimer</button></div>}</div>;
+    return <div className={`tracker ${declenche ? 'triggered' : ''} ${suivi.frozen ? 'frozen' : ''}`}><div className="tracker-top clock-top"><div className="clock-title-zone"><TitreSuivi titre={suivi.name} avantTitre={avantTitre} />{suivi.auto && <span className="chip">auto</span>}{suivi.frozen && <span className="chip">figé</span>}{declenche && <span className="chip hot">À résoudre</span>}</div><div className="clock-inline"><button onClick={() => appliquerPas(-1)}>−</button><HorlogeSuivi suivi={suivi} /><button onClick={() => appliquerPas(1)}>+</button></div><button className={`freeze-btn ${suivi.frozen ? 'active' : ''}`} onClick={() => modifier({ frozen: !suivi.frozen })} title={suivi.frozen ? 'Dégeler cette horloge' : 'Figer cette horloge'} aria-label={suivi.frozen ? 'Dégeler cette horloge' : 'Figer cette horloge'}><IconeMetronome /></button></div>{declenche && <div className="stack" style={{ marginTop: 8 }}><button className="primary" onClick={() => modifier({ current: 0 })}>Relancer à 0</button><button className="danger-btn" onClick={onSupprimer}>Supprimer</button></div>}</div>;
   }
 
   if (suivi.type === 'boxes') {
