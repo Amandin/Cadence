@@ -223,6 +223,8 @@ body { background: var(--theme-light-bg); color: var(--theme-light-text); }
 .dark .overlay { background: rgba(8, 3, 10, .72); }
 
 .sheet-action-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; align-items: stretch; }
+.sheet-action-row.without-init-counter { grid-template-columns: 1fr 2fr; }
+.sheet-action-row.without-init-counter .join-init-wide { width: 100%; min-height: 44px; }
 .mini-init-counter { display: grid; grid-template-columns: 34px minmax(56px,1fr) 34px; gap: 5px; align-items: center; min-width: 0; padding: 4px; border-radius: 16px; border: 1px solid rgba(49, 18, 54, .14); background: rgba(255, 250, 245, .72); }
 .mini-init-counter .small-btn { min-width: 0; padding: 0; height: 34px; border-radius: 12px; font-size: 16px; }
 .mini-init-counter .init-value,.mini-init-counter input { min-width: 0; width: 100%; height: 34px; padding: 0 4px; display: grid; place-items: center; line-height: 1; border: 0; border-radius: 12px; background: transparent; color: var(--theme-light-text); text-align: center; cursor: pointer; }
