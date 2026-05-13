@@ -1,1 +1,3 @@
-test
+export function TestScene() {
+  return null;
+}
