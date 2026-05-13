@@ -187,6 +187,8 @@ body { background: var(--theme-light-bg); color: var(--theme-light-text); }
 .dark .clock-face.warning { background: conic-gradient(var(--theme-orange) var(--clock-progress), #3b1245 0)!important; border-color: var(--theme-orange)!important; }
 .dark .clock-face.near { background: conic-gradient(var(--theme-orange-deep) var(--clock-progress), #3b1245 0)!important; border-color: var(--theme-orange)!important; }
 .dark .clock-face.triggered { background: conic-gradient(var(--theme-orange-deep) var(--clock-progress), #3b1245 0)!important; border-color: var(--theme-orange)!important; }
+.clock-face.frozen { filter: saturate(.45) brightness(.9); }
+.clock-face.frozen::after { content: ""; position: absolute; inset: 9px; border-radius: 999px; border: 1px dashed currentColor; opacity: .38; z-index: 4; pointer-events: none; }
 
 .box { border-color: rgba(49, 18, 54, .5); background: #fffaf5; color: var(--theme-purple-deep); }
 .box.full,.box.mark-5 { background: var(--theme-purple-deep); border-color: var(--theme-purple-deep); color: var(--theme-purple-deep); }
@@ -219,6 +221,19 @@ body { background: var(--theme-light-bg); color: var(--theme-light-text); }
 
 .overlay { background: rgba(18, 9, 7, .58); }
 .dark .overlay { background: rgba(8, 3, 10, .72); }
+
+.sheet-action-row { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: stretch; }
+.mini-init-counter { display: grid; grid-template-columns: 28px auto 28px; gap: 4px; align-items: center; min-width: 92px; padding: 3px; border-radius: 16px; border: 1px solid rgba(49, 18, 54, .14); background: rgba(255, 250, 245, .72); }
+.mini-init-counter .small-btn { min-width: 0; padding: 0; height: 28px; border-radius: 12px; }
+.mini-init-counter span { display: grid; place-items: center; line-height: 1; }
+.mini-init-counter small { font-size: 9px; font-weight: 800; color: var(--theme-light-muted); }
+.mini-init-counter strong { font-size: 15px; }
+.dark .mini-init-counter { background: rgba(16, 7, 19, .48); border-color: rgba(210, 164, 86, .22); }
+.dark .mini-init-counter small { color: var(--theme-dark-muted); }
+.freeze-btn { width: 24px; height: 22px; display: grid; place-items: center; padding: 0; border-radius: 999px; border: 1px solid rgba(49, 18, 54, .16); background: transparent; color: currentColor; opacity: .74; font-size: 13px; cursor: pointer; }
+.freeze-btn.active { opacity: 1; background: rgba(199, 94, 25, .16); border-color: var(--theme-orange); color: var(--theme-orange); }
+.dark .freeze-btn { border-color: rgba(210, 164, 86, .24); }
+.dark .freeze-btn.active { background: rgba(199, 94, 25, .18); border-color: var(--theme-orange); color: var(--theme-gold); }
 
 /* Surcharge spécifique : overrides.css contient encore des règles `.dark .bottom`
    historiques plus fortes que le thème global. Ces règles gardent la barre basse
