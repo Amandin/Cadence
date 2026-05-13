@@ -1,0 +1,13 @@
+/* Ajustements ciblés au-dessus du thème principal. */
+
+.sheet-action-row.without-init-counter { grid-template-columns: 1fr 2fr; }
+.sheet-action-row.without-init-counter .join-init-wide { width: 100%; min-height: 44px; }
+
+.metronome-icon .metronome-needle { opacity: 1; filter: drop-shadow(0 0 3px rgba(199, 94, 25, .35)); }
+.metronome-icon.inactive .metronome-needle { opacity: .65; filter: none; }
+.freeze-btn:not(.active) .metronome-icon.active .metronome-needle { stroke-width: 2.7; }
+.dark .freeze-btn:not(.active) .metronome-icon.active .metronome-needle { filter: drop-shadow(0 0 4px rgba(210, 164, 86, .42)); }
+
+.resolve-action { transition: transform .12s ease, filter .12s ease, box-shadow .12s ease; }
+.resolve-action.clicked { transform: scale(.96); filter: brightness(1.18); box-shadow: 0 0 0 3px rgba(210, 164, 86, .28), 0 0 18px rgba(199, 94, 25, .32)!important; }
+.dark .resolve-action.clicked { box-shadow: 0 0 0 3px rgba(210, 164, 86, .24), 0 0 20px rgba(210, 164, 86, .22)!important; }
