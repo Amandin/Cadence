@@ -1,12 +1,19 @@
+import { useState } from 'react';
 import { isTriggeredClock } from '../../logic.js';
 import { Fenetre } from '../commun/ComposantsCommuns.jsx';
 
 export function FenetreResolutionHorloge({ participants, onFermer, onRelancerHorloge, onSupprimerHorloge }) {
+  const [action, setAction] = useState(null);
   const horloges = participants.flatMap((participant) => (
     participant.trackers
       .filter(isTriggeredClock)
       .map((suivi) => ({ participant, suivi }))
   ));
+
+  const marquerAction = (type, participantId, suiviId, callback) => {
+    setAction(`${type}-${participantId}-${suiviId}`);
+    window.setTimeout(callback, 140);
+  };
 
   return (
     <Fenetre title="Horloge à résoudre" onClose={onFermer}>
@@ -22,8 +29,8 @@ export function FenetreResolutionHorloge({ participants, onFermer, onRelancerHor
             </div>
             <p style={{ margin: '4px 0 10px' }}>{suivi.current}/{suivi.max} segments</p>
             <div className="grid2">
-              <button className="primary" onClick={() => onRelancerHorloge(participant.id, suivi.id)}>Relancer à 0</button>
-              <button className="danger-btn" onClick={() => onSupprimerHorloge(participant.id, suivi.id)}>Supprimer</button>
+              <button className={`primary resolve-action ${action === `reset-${participant.id}-${suivi.id}` ? 'clicked' : ''}`} onClick={() => marquerAction('reset', participant.id, suivi.id, () => onRelancerHorloge(participant.id, suivi.id))}>Relancer à 0</button>
+              <button className={`danger-btn resolve-action ${action === `delete-${participant.id}-${suivi.id}` ? 'clicked' : ''}`} onClick={() => marquerAction('delete', participant.id, suivi.id, () => onSupprimerHorloge(participant.id, suivi.id))}>Supprimer</button>
             </div>
           </div>
         ))}
