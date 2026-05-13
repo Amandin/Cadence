@@ -39,7 +39,7 @@ export function useCampaign() {
   const scene = normalizeScene(rawScene);
   const participants = scene.participants;
   const active = participants.find((p) => p.id === scene.activeId);
-  const blocked = participants.filter(hasTriggeredClock);
+  const blocked = [...participants, ...(scene.reserve || [])].filter(hasTriggeredClock);
   const { nextStartsRound } = nextTurnInfo(scene, blocked.length > 0);
   const nextClass = blocked.length ? 'blocked' : nextStartsRound ? 'next-round' : '';
 
