@@ -23,13 +23,8 @@ function calculerEtatCompteur(compteur) {
   return { maximum, valeur, deborde, ratioDebordement, cyclesComplets, cycleExact, progression };
 }
 
-function BoutonsCompteurGlobal({ onChanger }) {
-  return (
-    <>
-      <button onClick={(event) => { event.stopPropagation(); onChanger(-1); }}>−</button>
-      <button onClick={(event) => { event.stopPropagation(); onChanger(1); }}>+</button>
-    </>
-  );
+function BoutonPasCompteur({ pas, onChanger, children }) {
+  return <button onClick={(event) => { event.stopPropagation(); onChanger(pas); }}>{children}</button>;
 }
 
 export function CompteurGlobal({ compteur, onChanger, onOuvrir, animationTick }) {
@@ -39,7 +34,7 @@ export function CompteurGlobal({ compteur, onChanger, onOuvrir, animationTick })
 
   return (
     <div className={`global-mini ${compteur.auto ? 'auto-active' : ''} ${animationTick ? 'auto-tick' : ''} ${cycleExact ? 'cycle-complete' : ''} ${deborde ? 'overflowing' : ''}`}>
-      <BoutonsCompteurGlobal onChanger={onChanger} />
+      <BoutonPasCompteur pas={-1} onChanger={onChanger}>−</BoutonPasCompteur>
       <div className="global-mini-main">
         <span>{compteur.name || 'Menace'}</span>
         <button
@@ -54,6 +49,7 @@ export function CompteurGlobal({ compteur, onChanger, onOuvrir, animationTick })
         {deborde && <em className="overflow-badge">×{cyclesComplets}</em>}
         {animationTick && <em className="auto-plus">+1</em>}
       </div>
+      <BoutonPasCompteur pas={1} onChanger={onChanger}>+</BoutonPasCompteur>
     </div>
   );
 }
