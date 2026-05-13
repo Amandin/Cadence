@@ -148,8 +148,11 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
         activeId: s.activeId || participant.id,
       }));
     },
-    addParticipant() {
-      const participant = createBlankParticipant();
+    addParticipant(participant = createBlankParticipant(), placement = 'init') {
+      if (placement === 'reserve') {
+        updateScene((s) => ({ ...s, reserve: [...(s.reserve || []), participant] }));
+        return;
+      }
       updateScene((s) => ({ ...s, participants: trierParInitiative([...s.participants, participant]), activeId: s.activeId || participant.id }));
     },
   };
