@@ -84,6 +84,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
           round: Math.max(1, s.round + roundDelta),
           globalTracker: roundDelta < 0 ? stepAutoGlobalTracker(s.globalTracker, -1) : s.globalTracker,
           participants: s.participants.map((p, i) => i === currentIndex ? untickParticipant(p) : p),
+          reserve: roundDelta < 0 ? (s.reserve || []).map(untickParticipant) : (s.reserve || []),
         }));
         return;
       }
@@ -100,6 +101,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
           round: Math.max(1, s.round + roundDelta),
           globalTracker: roundDelta > 0 ? stepAutoGlobalTracker(s.globalTracker, 1) : s.globalTracker,
           participants: s.participants.map((p, i) => i === nextIndex ? tickParticipant(p) : p),
+          reserve: roundDelta > 0 ? (s.reserve || []).map(tickParticipant) : (s.reserve || []),
         };
 
         if (roundDelta > 0) setRestorePoints((points) => addRestorePoint(points, s.id, nextScene));
