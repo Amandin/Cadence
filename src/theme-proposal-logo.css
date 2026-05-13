@@ -7,11 +7,11 @@
 */
 
 :root {
-  --theme-light-bg: #e9d8c9;
-  --theme-light-bg-soft: #f5eadf;
-  --theme-light-surface: rgba(255, 247, 237, .94);
-  --theme-light-surface-strong: #fff7ed;
-  --theme-light-border: rgba(49, 18, 54, .18);
+  --theme-light-bg: #f1e3d6;
+  --theme-light-bg-soft: #faefe5;
+  --theme-light-surface: rgba(255, 250, 245, .95);
+  --theme-light-surface-strong: #fffaf5;
+  --theme-light-border: rgba(49, 18, 54, .16);
   --theme-light-text: #311236;
   --theme-light-muted: #7c5a67;
 
@@ -39,7 +39,7 @@
 }
 
 body { background: var(--theme-light-bg); color: var(--theme-light-text); }
-.app { background: radial-gradient(circle at top left, #fff7ed 0, var(--theme-light-bg-soft) 34%, var(--theme-light-bg) 100%); color: var(--theme-light-text); }
+.app { background: radial-gradient(circle at top left, #fffdf9 0, var(--theme-light-bg-soft) 36%, var(--theme-light-bg) 100%); color: var(--theme-light-text); }
 .app.dark { background: radial-gradient(circle at top left, #51165a 0, var(--theme-dark-bg) 38%, var(--theme-dark-bg-deep) 100%); color: var(--theme-dark-text); }
 
 .brand,.card,.panel,.bottom,.sheet {
@@ -220,5 +220,42 @@ body { background: var(--theme-light-bg); color: var(--theme-light-text); }
 
 .overlay { background: rgba(18, 9, 7, .58); }
 .dark .overlay { background: rgba(8, 3, 10, .72); }
+
+/* Surcharge volontairement spécifique : l'ancien overrides.css contient des règles
+   `.dark .bottom ...` plus fortes que le thème global. Ces règles-ci reprennent
+   la barre basse pour la rendre cohérente avec le mode sombre violet. */
+.dark .bottom {
+  background: linear-gradient(180deg, rgba(49, 18, 54, .98), rgba(28, 11, 32, .98));
+  border-color: rgba(210, 164, 86, .28);
+  box-shadow: 0 0 0 1px rgba(164, 90, 177, .18), 0 18px 42px rgba(0, 0, 0, .56), 0 -2px 18px rgba(164, 90, 177, .12);
+}
+.dark .bottom .small-btn {
+  background: #301437;
+  border-color: rgba(210, 164, 86, .34);
+  color: var(--theme-dark-text);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .30);
+}
+.dark .bottom .turn-btn {
+  background: #211025;
+  border-color: rgba(210, 164, 86, .34);
+  color: var(--theme-dark-text);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .30);
+}
+.dark .bottom .primary {
+  background: var(--theme-purple-soft);
+  border: 1px solid rgba(210, 164, 86, .38);
+  color: var(--theme-dark-text);
+  box-shadow: 0 0 0 1px rgba(164, 90, 177, .18), 0 4px 16px rgba(0, 0, 0, .34);
+}
+.dark .bottom .primary.next-round {
+  background: var(--theme-orange-deep);
+  border-color: rgba(210, 164, 86, .46);
+  box-shadow: 0 0 0 2px rgba(199, 94, 25, .18), 0 4px 18px rgba(199, 94, 25, .22);
+}
+.dark .bottom .primary.blocked {
+  background: #3b1245;
+  border-color: var(--theme-orange);
+  box-shadow: 0 0 0 2px rgba(199, 94, 25, .14), 0 4px 18px rgba(81, 22, 90, .34);
+}
 
 /* Fin proposition thème global */
