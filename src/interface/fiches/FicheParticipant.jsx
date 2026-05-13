@@ -1,13 +1,22 @@
+import { useState } from 'react';
 import { EtiquetteEtat, Fenetre } from '../commun/ComposantsCommuns.jsx';
 import { Suivi } from '../suivis/Suivi.jsx';
 import { IconeOeilMystiqueOuvert, IconeOeilMystiqueFerme } from '../icones/IconesOeilMystique.jsx';
 
 function MiniCompteurInitiative({ initiative, onChanger }) {
   const valeur = Number.isFinite(Number(initiative)) ? Number(initiative) : 0;
+  const [edition, setEdition] = useState(false);
+  const [saisie, setSaisie] = useState(String(valeur));
+  const valider = () => {
+    const nombre = Number(saisie);
+    if (Number.isFinite(nombre)) onChanger(nombre);
+    setEdition(false);
+  };
+
   return (
     <div className="mini-init-counter" aria-label="Initiative">
       <button className="small-btn" onClick={() => onChanger(valeur - 1)} aria-label="Réduire l’initiative">−</button>
-      <span><small>Init</small><strong>{valeur}</strong></span>
+      {edition ? <input value={saisie} type="number" inputMode="numeric" autoFocus onChange={(event) => setSaisie(event.target.value)} onBlur={valider} onKeyDown={(event) => { if (event.key === 'Enter') valider(); if (event.key === 'Escape') setEdition(false); }} aria-label="Valeur d’initiative" /> : <button className="init-value" onClick={() => { setSaisie(String(valeur)); setEdition(true); }}><small>Init</small><strong>{valeur}</strong></button>}
       <button className="small-btn" onClick={() => onChanger(valeur + 1)} aria-label="Augmenter l’initiative">+</button>
     </div>
   );
