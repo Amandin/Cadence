@@ -1,8 +1,8 @@
-import { Sheet } from '../../components/common.jsx';
+import { Fenetre } from '../commun/ComposantsCommuns.jsx';
 
 export function FenetreConfirmationSuppression({ nom, onAnnuler, onConfirmer }) {
   return (
-    <Sheet title="Supprimer la fiche ?" onClose={onAnnuler}>
+    <Fenetre title="Supprimer la fiche ?" onClose={onAnnuler}>
       <div className="stack">
         <p style={{ marginTop: 0 }}>
           Tu es sur le point de supprimer <strong>{nom}</strong> de la scène.
@@ -15,6 +15,6 @@ export function FenetreConfirmationSuppression({ nom, onAnnuler, onConfirmer }) 
           <button className="danger-btn" onClick={onConfirmer}>Supprimer définitivement</button>
         </div>
       </div>
-    </Sheet>
+    </Fenetre>
   );
 }
