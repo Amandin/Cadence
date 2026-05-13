@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { isVisible } from '../../logic.js';
 import { Avatar, Status } from '../../components/common.jsx';
-import { Tracker } from '../../components/Tracker.jsx';
+import { Suivi } from '../suivis/Suivi.jsx';
 
 export function FichetteReserve({ participant, onRejoindre, onOuvrir, onSuivi, onSupprimerSuivi, onAjouterEtat, onRetirerEtat }) {
   const [repliee, setRepliee] = useState(false);
@@ -23,7 +23,7 @@ export function FichetteReserve({ participant, onRejoindre, onOuvrir, onSuivi, o
       {!repliee && (
         <div className="trackers">
           {suivisVisibles.map((suivi) => (
-            <Tracker key={suivi.id} tracker={suivi} onChange={(suivant) => onSuivi(suivi.id, suivant)} onDelete={() => onSupprimerSuivi(suivi.id)} />
+            <Suivi key={suivi.id} suivi={suivi} onModifier={(suivant) => onSuivi(suivi.id, suivant)} onSupprimer={() => onSupprimerSuivi(suivi.id)} />
           ))}
           <div className="statuses">
             {participant.statuses?.map((etat) => <Status key={etat.id} status={etat} onRemove={() => onRetirerEtat(etat.id)} />)}
