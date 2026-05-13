@@ -1,17 +1,17 @@
 import { useEffect, useState } from 'react';
-import { AddCharacterSheet } from './components/AddCharacterSheet.jsx';
 import { ClockResolutionModal } from './components/ClockResolutionModal.jsx';
-import { EditSheet } from './components/EditSheet.jsx';
 import { GlobalTracker, GlobalTrackerSheet } from './components/GlobalTracker.jsx';
 import { JoinInitSheet } from './components/JoinInitSheet.jsx';
 import { Menu } from './components/Menu.jsx';
 import { NoticeModal } from './components/NoticeModal.jsx';
-import { ParticipantCard } from './components/ParticipantCard.jsx';
-import { ParticipantSheet } from './components/ParticipantSheet.jsx';
-import { ReserveCard } from './components/ReserveCard.jsx';
 import { RoundBadge } from './components/common.jsx';
 import { StatusSheet } from './components/StatusSheet.jsx';
 import { TemplateSaveSheet } from './components/TemplateSaveSheet.jsx';
+import { FenetreAjoutPersonnage } from './interface/fiches/FenetreAjoutPersonnage.jsx';
+import { FenetreEditionFiche } from './interface/fiches/FenetreEditionFiche.jsx';
+import { FicheParticipant } from './interface/fiches/FicheParticipant.jsx';
+import { FichetteInitiative } from './interface/fiches/FichetteInitiative.jsx';
+import { FichetteReserve } from './interface/fiches/FichetteReserve.jsx';
 import { useCampaign } from './hooks/useCampaign.js';
 import { useCharacterInteractions } from './hooks/useCharacterInteractions.js';
 import { useTemplates } from './hooks/useTemplates.js';
@@ -148,31 +148,31 @@ export default function App() {
 
         <main>
           {scene.participants.map((participant) => (
-            <ParticipantCard
+            <FichetteInitiative
               key={participant.id}
               participant={participant}
-              active={participant.id === scene.activeId}
-              onOpen={() => characters.openCharacter(participant.id)}
-              onTracker={(trackerId, next) => characters.updateCharacterTracker(participant.id, trackerId, next)}
-              onDeleteTracker={(trackerId) => characters.deleteCharacterTracker(participant.id, trackerId)}
-              onAddStatus={() => characters.requestStatus(participant.id)}
-              onRemoveStatus={(statusId) => characters.removeCharacterStatus(participant.id, statusId)}
-              onLeaveInit={() => characters.leaveInit(participant.id)}
+              actif={participant.id === scene.activeId}
+              onOuvrir={() => characters.openCharacter(participant.id)}
+              onSuivi={(trackerId, next) => characters.updateCharacterTracker(participant.id, trackerId, next)}
+              onSupprimerSuivi={(trackerId) => characters.deleteCharacterTracker(participant.id, trackerId)}
+              onAjouterEtat={() => characters.requestStatus(participant.id)}
+              onRetirerEtat={(statusId) => characters.removeCharacterStatus(participant.id, statusId)}
+              onQuitterInitiative={() => characters.leaveInit(participant.id)}
             />
           ))}
           {scene.reserve?.length > 0 && (
             <section className="reserve">
               <h3>Hors initiative</h3>
               {scene.reserve.map((participant) => (
-                <ReserveCard
+                <FichetteReserve
                   key={participant.id}
                   participant={participant}
-                  onOpen={() => characters.openCharacter(participant.id)}
-                  onJoin={() => characters.requestJoin(participant.id)}
-                  onTracker={(trackerId, next) => characters.updateCharacterTracker(participant.id, trackerId, next)}
-                  onDeleteTracker={(trackerId) => characters.deleteCharacterTracker(participant.id, trackerId)}
-                  onAddStatus={() => characters.requestStatus(participant.id)}
-                  onRemoveStatus={(statusId) => characters.removeCharacterStatus(participant.id, statusId)}
+                  onOuvrir={() => characters.openCharacter(participant.id)}
+                  onRejoindre={() => characters.requestJoin(participant.id)}
+                  onSuivi={(trackerId, next) => characters.updateCharacterTracker(participant.id, trackerId, next)}
+                  onSupprimerSuivi={(trackerId) => characters.deleteCharacterTracker(participant.id, trackerId)}
+                  onAjouterEtat={() => characters.requestStatus(participant.id)}
+                  onRetirerEtat={(statusId) => characters.removeCharacterStatus(participant.id, statusId)}
                 />
               ))}
               <label className="field reserve-notes">Notes hors initiative<textarea value={scene.reserveNotes || ''} onChange={(event) => actions.updateSceneField('reserveNotes', event.target.value)} placeholder="Notes, PNJ en attente, effets hors ordre de tour…" /></label>
@@ -188,11 +188,11 @@ export default function App() {
         <button className="small-btn" onClick={() => setOpenMenu(true)}>☰</button>
       </div>
 
-      {characters.selected && <ParticipantSheet participant={characters.selected} inInitiative={characters.isInInit(characters.selected.id)} onClose={characters.closeCharacter} onEdit={() => characters.editCharacter(characters.selected.id)} onJoinInit={() => characters.requestJoin(characters.selected.id)} onLeaveInit={() => characters.leaveInit(characters.selected.id)} onTracker={(trackerId, next) => characters.updateCharacterTracker(characters.selected.id, trackerId, next)} onDeleteTracker={(trackerId) => characters.deleteCharacterTracker(characters.selected.id, trackerId)} onAddStatus={() => characters.requestStatus(characters.selected.id)} onRemoveStatus={(statusId) => characters.removeCharacterStatus(characters.selected.id, statusId)} onNote={(note) => characters.updateCharacter(characters.selected.id, (participant) => ({ ...participant, note }))} />}
-      {characters.editing && <EditSheet participant={characters.editing} onClose={characters.closeEditor} onSave={characters.saveCharacter} onDelete={() => characters.deleteCharacter(characters.editing.id)} onSaveTemplate={openTemplateSave} />}
+      {characters.selected && <FicheParticipant participant={characters.selected} enInitiative={characters.isInInit(characters.selected.id)} onFermer={characters.closeCharacter} onModifier={() => characters.editCharacter(characters.selected.id)} onRejoindreInitiative={() => characters.requestJoin(characters.selected.id)} onQuitterInitiative={() => characters.leaveInit(characters.selected.id)} onSuivi={(trackerId, next) => characters.updateCharacterTracker(characters.selected.id, trackerId, next)} onSupprimerSuivi={(trackerId) => characters.deleteCharacterTracker(characters.selected.id, trackerId)} onAjouterEtat={() => characters.requestStatus(characters.selected.id)} onRetirerEtat={(statusId) => characters.removeCharacterStatus(characters.selected.id, statusId)} onNote={(note) => characters.updateCharacter(characters.selected.id, (participant) => ({ ...participant, note }))} />}
+      {characters.editing && <FenetreEditionFiche participant={characters.editing} onClose={characters.closeEditor} onSave={characters.saveCharacter} onDelete={() => characters.deleteCharacter(characters.editing.id)} onSaveTemplate={openTemplateSave} />}
       {characters.statusTarget && <StatusSheet participant={characters.statusTarget} onClose={characters.cancelStatus} onSave={characters.saveStatus} />}
       {characters.joinTarget && <JoinInitSheet participant={characters.joinTarget} onClose={characters.cancelJoin} onSave={characters.joinInit} />}
-      {addSheetOpen && <AddCharacterSheet templates={templates.templates} onClose={() => setAddSheetOpen(false)} onCreateBlank={createBlankCharacter} onCreateFromTemplate={createFromTemplate} />}
+      {addSheetOpen && <FenetreAjoutPersonnage templates={templates.templates} onFermer={() => setAddSheetOpen(false)} onCreerVierge={createBlankCharacter} onCreerDepuisTemplate={createFromTemplate} />}
       {templateTarget && <TemplateSaveSheet participant={templateTarget} categories={templates.categories} error={templateError} onClose={() => setTemplateTarget(null)} onSave={saveTemplate} />}
       {globalSheetOpen && <GlobalTrackerSheet tracker={scene.globalTracker} onChange={actions.updateGlobalTracker} onStep={actions.stepGlobal} onClose={() => setGlobalSheetOpen(false)} />}
       {clockModalOpen && <ClockResolutionModal participants={blocked} onClose={() => setClockModalOpen(false)} onResetClock={resetClock} onDeleteClock={deleteClock} />}
