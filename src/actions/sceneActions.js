@@ -47,8 +47,8 @@ function garderTourActifParInitiative(scene, participantsTries) {
   if (!actifAvant) return scene.activeId;
 
   const initiativeActive = valeurInitiative(actifAvant);
-  const actifMemeInitiative = participantsTries.find((participant) => valeurInitiative(participant) === initiativeActive);
-  return actifMemeInitiative?.id || scene.activeId;
+  const actifMemeOuPlusBas = participantsTries.find((participant) => valeurInitiative(participant) <= initiativeActive);
+  return actifMemeOuPlusBas?.id || participantsTries[0]?.id || scene.activeId;
 }
 
 function modifierParticipantDansScene(scene, participantId, updater) {
