@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AddCharacterSheet } from './components/AddCharacterSheet.jsx';
 import { ClockResolutionModal } from './components/ClockResolutionModal.jsx';
-import { EditSheet } from './components/EditSheet.jsx';
 import { GlobalTracker, GlobalTrackerSheet } from './components/GlobalTracker.jsx';
 import { JoinInitSheet } from './components/JoinInitSheet.jsx';
 import { Menu } from './components/Menu.jsx';
@@ -12,6 +11,7 @@ import { ReserveCard } from './components/ReserveCard.jsx';
 import { RoundBadge } from './components/common.jsx';
 import { StatusSheet } from './components/StatusSheet.jsx';
 import { TemplateSaveSheet } from './components/TemplateSaveSheet.jsx';
+import { FenetreEditionFiche } from './interface/fiches/FenetreEditionFiche.jsx';
 import { useCampaign } from './hooks/useCampaign.js';
 import { useCharacterInteractions } from './hooks/useCharacterInteractions.js';
 import { useTemplates } from './hooks/useTemplates.js';
@@ -189,7 +189,7 @@ export default function App() {
       </div>
 
       {characters.selected && <ParticipantSheet participant={characters.selected} inInitiative={characters.isInInit(characters.selected.id)} onClose={characters.closeCharacter} onEdit={() => characters.editCharacter(characters.selected.id)} onJoinInit={() => characters.requestJoin(characters.selected.id)} onLeaveInit={() => characters.leaveInit(characters.selected.id)} onTracker={(trackerId, next) => characters.updateCharacterTracker(characters.selected.id, trackerId, next)} onDeleteTracker={(trackerId) => characters.deleteCharacterTracker(characters.selected.id, trackerId)} onAddStatus={() => characters.requestStatus(characters.selected.id)} onRemoveStatus={(statusId) => characters.removeCharacterStatus(characters.selected.id, statusId)} onNote={(note) => characters.updateCharacter(characters.selected.id, (participant) => ({ ...participant, note }))} />}
-      {characters.editing && <EditSheet participant={characters.editing} onClose={characters.closeEditor} onSave={characters.saveCharacter} onDelete={() => characters.deleteCharacter(characters.editing.id)} onSaveTemplate={openTemplateSave} />}
+      {characters.editing && <FenetreEditionFiche participant={characters.editing} onClose={characters.closeEditor} onSave={characters.saveCharacter} onDelete={() => characters.deleteCharacter(characters.editing.id)} onSaveTemplate={openTemplateSave} />}
       {characters.statusTarget && <StatusSheet participant={characters.statusTarget} onClose={characters.cancelStatus} onSave={characters.saveStatus} />}
       {characters.joinTarget && <JoinInitSheet participant={characters.joinTarget} onClose={characters.cancelJoin} onSave={characters.joinInit} />}
       {addSheetOpen && <AddCharacterSheet templates={templates.templates} onClose={() => setAddSheetOpen(false)} onCreateBlank={createBlankCharacter} onCreateFromTemplate={createFromTemplate} />}
