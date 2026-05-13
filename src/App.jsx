@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { GlobalTrackerSheet } from './components/GlobalTracker.jsx';
-import { Menu } from './components/Menu.jsx';
 import { FenetreEtat } from './interface/dialogues/FenetreEtat.jsx';
 import { FenetreInformation } from './interface/dialogues/FenetreInformation.jsx';
 import { FenetreRejoindreInitiative } from './interface/dialogues/FenetreRejoindreInitiative.jsx';
@@ -9,6 +8,7 @@ import { FenetreSauvegardeTemplate } from './interface/dialogues/FenetreSauvegar
 import { FenetreAjoutPersonnage } from './interface/fiches/FenetreAjoutPersonnage.jsx';
 import { FenetreEditionFiche } from './interface/fiches/FenetreEditionFiche.jsx';
 import { FicheParticipant } from './interface/fiches/FicheParticipant.jsx';
+import { MenuPrincipal } from './interface/menu/MenuPrincipal.jsx';
 import { BarreActionBas } from './interface/scene/BarreActionBas.jsx';
 import { EnteteScene } from './interface/scene/EnteteScene.jsx';
 import { ListeInitiative } from './interface/scene/ListeInitiative.jsx';
@@ -164,7 +164,7 @@ export default function App() {
       {globalSheetOpen && <GlobalTrackerSheet tracker={scene.globalTracker} onChange={actions.updateGlobalTracker} onStep={actions.stepGlobal} onClose={() => setGlobalSheetOpen(false)} />}
       {clockModalOpen && <FenetreResolutionHorloge participants={blocked} onFermer={() => setClockModalOpen(false)} onRelancerHorloge={resetClock} onSupprimerHorloge={deleteClock} />}
       {notice && <FenetreInformation titre={notice.title} message={notice.message} onFermer={() => setNotice(null)} />}
-      {openMenu && <Menu scenes={scenes} scene={scene} restorePoints={restorePoints} onRestore={restoreScene} onClose={() => setOpenMenu(false)} setSceneIndex={actions.setSceneIndex} dark={dark} setDark={actions.setDark} onAddParticipant={openAddCharacter} onNewScene={newScene} onExport={actions.exportCampaign} onImport={importCampaign} onReset={resetDemo} onGlobalTracker={actions.updateGlobalTracker} />}
+      {openMenu && <MenuPrincipal scenes={scenes} scene={scene} restorePoints={restorePoints} onRestore={restoreScene} onClose={() => setOpenMenu(false)} setSceneIndex={actions.setSceneIndex} dark={dark} setDark={actions.setDark} onAddParticipant={openAddCharacter} onNewScene={newScene} onExport={actions.exportCampaign} onImport={importCampaign} onReset={resetDemo} onGlobalTracker={actions.updateGlobalTracker} />}
     </div>
   );
 }
