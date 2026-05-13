@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { AddCharacterSheet } from './components/AddCharacterSheet.jsx';
 import { ClockResolutionModal } from './components/ClockResolutionModal.jsx';
 import { GlobalTracker, GlobalTrackerSheet } from './components/GlobalTracker.jsx';
 import { JoinInitSheet } from './components/JoinInitSheet.jsx';
@@ -11,6 +10,7 @@ import { ReserveCard } from './components/ReserveCard.jsx';
 import { RoundBadge } from './components/common.jsx';
 import { StatusSheet } from './components/StatusSheet.jsx';
 import { TemplateSaveSheet } from './components/TemplateSaveSheet.jsx';
+import { FenetreAjoutPersonnage } from './interface/fiches/FenetreAjoutPersonnage.jsx';
 import { FenetreEditionFiche } from './interface/fiches/FenetreEditionFiche.jsx';
 import { useCampaign } from './hooks/useCampaign.js';
 import { useCharacterInteractions } from './hooks/useCharacterInteractions.js';
@@ -192,7 +192,7 @@ export default function App() {
       {characters.editing && <FenetreEditionFiche participant={characters.editing} onClose={characters.closeEditor} onSave={characters.saveCharacter} onDelete={() => characters.deleteCharacter(characters.editing.id)} onSaveTemplate={openTemplateSave} />}
       {characters.statusTarget && <StatusSheet participant={characters.statusTarget} onClose={characters.cancelStatus} onSave={characters.saveStatus} />}
       {characters.joinTarget && <JoinInitSheet participant={characters.joinTarget} onClose={characters.cancelJoin} onSave={characters.joinInit} />}
-      {addSheetOpen && <AddCharacterSheet templates={templates.templates} onClose={() => setAddSheetOpen(false)} onCreateBlank={createBlankCharacter} onCreateFromTemplate={createFromTemplate} />}
+      {addSheetOpen && <FenetreAjoutPersonnage templates={templates.templates} onFermer={() => setAddSheetOpen(false)} onCreerVierge={createBlankCharacter} onCreerDepuisTemplate={createFromTemplate} />}
       {templateTarget && <TemplateSaveSheet participant={templateTarget} categories={templates.categories} error={templateError} onClose={() => setTemplateTarget(null)} onSave={saveTemplate} />}
       {globalSheetOpen && <GlobalTrackerSheet tracker={scene.globalTracker} onChange={actions.updateGlobalTracker} onStep={actions.stepGlobal} onClose={() => setGlobalSheetOpen(false)} />}
       {clockModalOpen && <ClockResolutionModal participants={blocked} onClose={() => setClockModalOpen(false)} onResetClock={resetClock} onDeleteClock={deleteClock} />}
