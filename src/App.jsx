@@ -107,11 +107,9 @@ export default function App() {
     const tracker = findClock(participantId, trackerId);
     if (!tracker) return;
     actions.trackerChange(participantId, trackerId, { ...tracker, current: 0 });
-    setClockModalOpen(false);
   };
   const deleteClock = (participantId, trackerId) => {
     actions.deleteTracker(participantId, trackerId);
-    setClockModalOpen(false);
   };
   const nextLabel = blocked.length ? 'Gérer horloge bloquante' : nextStartsRound ? 'Nouveau round' : 'Participant suivant';
 
