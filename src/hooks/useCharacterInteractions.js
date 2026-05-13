@@ -49,9 +49,13 @@ export function useCharacterInteractions(scene, actions) {
     if (status) updateCharacter(participantId, (participant) => ({ ...participant, statuses: [...(participant.statuses || []), status] }));
   };
 
-  const addParticipantToInit = (participant) => {
+  const addCharacter = (participant, { placement = 'init', initiative = 1 } = {}) => {
     if (!participant) return;
-    actions.updateSceneField('participants', [...scene.participants, participant]);
+    const nextParticipant = placement === 'init' ? { ...participant, initiative: Number.isFinite(Number(initiative)) ? Number(initiative) : participant.initiative } : participant;
+    if (placement === 'reserve') actions.updateSceneField('reserve', [...(scene.reserve || []), nextParticipant]);
+    else actions.updateSceneField('participants', [...scene.participants, nextParticipant]);
+    setEditingId(nextParticipant.id);
+    setSelectedId(null);
   };
 
   const saveStatus = (data) => {
@@ -99,7 +103,7 @@ export function useCharacterInteractions(scene, actions) {
     updateCharacterTracker,
     deleteCharacterTracker,
     removeCharacterStatus,
-    addParticipantToInit,
+    addCharacter,
     saveStatus,
     joinInit,
     leaveInit,
