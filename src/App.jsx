@@ -1,18 +1,9 @@
 import { useEffect, useState } from 'react';
-import { FenetreEtat } from './interface/dialogues/FenetreEtat.jsx';
-import { FenetreInformation } from './interface/dialogues/FenetreInformation.jsx';
-import { FenetreRejoindreInitiative } from './interface/dialogues/FenetreRejoindreInitiative.jsx';
-import { FenetreResolutionHorloge } from './interface/dialogues/FenetreResolutionHorloge.jsx';
-import { FenetreSauvegardeTemplate } from './interface/dialogues/FenetreSauvegardeTemplate.jsx';
-import { FenetreAjoutPersonnage } from './interface/fiches/FenetreAjoutPersonnage.jsx';
-import { FenetreEditionFiche } from './interface/fiches/FenetreEditionFiche.jsx';
-import { FicheParticipant } from './interface/fiches/FicheParticipant.jsx';
-import { MenuPrincipal } from './interface/menu/MenuPrincipal.jsx';
+import { FenetresSuperposees } from './interface/app/FenetresSuperposees.jsx';
 import { BarreActionBas } from './interface/scene/BarreActionBas.jsx';
 import { EnteteScene } from './interface/scene/EnteteScene.jsx';
 import { ListeInitiative } from './interface/scene/ListeInitiative.jsx';
 import { ReserveHorsInitiative } from './interface/scene/ReserveHorsInitiative.jsx';
-import { FenetreCompteurGlobal } from './interface/suivis/CompteurGlobal.jsx';
 import { useCampaign } from './hooks/useCampaign.js';
 import { useCharacterInteractions } from './hooks/useCharacterInteractions.js';
 import { useTemplates } from './hooks/useTemplates.js';
@@ -155,16 +146,34 @@ export default function App() {
         onOuvrirMenu={() => setOpenMenu(true)}
       />
 
-      {characters.selected && <FicheParticipant participant={characters.selected} enInitiative={characters.isInInit(characters.selected.id)} onFermer={characters.closeCharacter} onModifier={() => characters.editCharacter(characters.selected.id)} onRejoindreInitiative={() => characters.requestJoin(characters.selected.id)} onQuitterInitiative={() => characters.leaveInit(characters.selected.id)} onSuivi={(trackerId, next) => characters.updateCharacterTracker(characters.selected.id, trackerId, next)} onSupprimerSuivi={(trackerId) => characters.deleteCharacterTracker(characters.selected.id, trackerId)} onAjouterEtat={() => characters.requestStatus(characters.selected.id)} onRetirerEtat={(statusId) => characters.removeCharacterStatus(characters.selected.id, statusId)} onNote={(note) => characters.updateCharacter(characters.selected.id, (participant) => ({ ...participant, note }))} />}
-      {characters.editing && <FenetreEditionFiche participant={characters.editing} onClose={characters.closeEditor} onSave={characters.saveCharacter} onDelete={() => characters.deleteCharacter(characters.editing.id)} onSaveTemplate={openTemplateSave} />}
-      {characters.statusTarget && <FenetreEtat participant={characters.statusTarget} onFermer={characters.cancelStatus} onValider={characters.saveStatus} />}
-      {characters.joinTarget && <FenetreRejoindreInitiative participant={characters.joinTarget} onFermer={characters.cancelJoin} onValider={characters.joinInit} />}
-      {addSheetOpen && <FenetreAjoutPersonnage templates={templates.templates} onFermer={() => setAddSheetOpen(false)} onCreerVierge={createBlankCharacter} onCreerDepuisTemplate={createFromTemplate} />}
-      {templateTarget && <FenetreSauvegardeTemplate participant={templateTarget} categories={templates.categories} erreur={templateError} onFermer={() => setTemplateTarget(null)} onEnregistrer={saveTemplate} />}
-      {globalSheetOpen && <FenetreCompteurGlobal compteur={scene.globalTracker} onModifier={actions.updateGlobalTracker} onChanger={actions.stepGlobal} onFermer={() => setGlobalSheetOpen(false)} />}
-      {clockModalOpen && <FenetreResolutionHorloge participants={blocked} onFermer={() => setClockModalOpen(false)} onRelancerHorloge={resetClock} onSupprimerHorloge={deleteClock} />}
-      {notice && <FenetreInformation titre={notice.title} message={notice.message} onFermer={() => setNotice(null)} />}
-      {openMenu && <MenuPrincipal scenes={scenes} scene={scene} restorePoints={restorePoints} onRestore={restoreScene} onClose={() => setOpenMenu(false)} setSceneIndex={actions.setSceneIndex} dark={dark} setDark={actions.setDark} onAddParticipant={openAddCharacter} onNewScene={newScene} onExport={actions.exportCampaign} onImport={importCampaign} onReset={resetDemo} onGlobalTracker={actions.updateGlobalTracker} />}
+      <FenetresSuperposees
+        scene={scene}
+        scenes={scenes}
+        restorePoints={restorePoints}
+        dark={dark}
+        characters={characters}
+        templates={templates}
+        actions={actions}
+        etatInterface={{ addSheetOpen, openMenu, notice, globalSheetOpen, clockModalOpen }}
+        commandesInterface={{
+          ouvrirAjoutPersonnage: openAddCharacter,
+          fermerAjoutPersonnage: () => setAddSheetOpen(false),
+          fermerMenu: () => setOpenMenu(false),
+          fermerNotice: () => setNotice(null),
+          fermerCompteurGlobal: () => setGlobalSheetOpen(false),
+          fermerResolutionHorloge: () => setClockModalOpen(false),
+          ouvrirSauvegardeTemplate: openTemplateSave,
+          creerPersonnageVierge: createBlankCharacter,
+          creerDepuisTemplate: createFromTemplate,
+          nouvelleScene: newScene,
+          importerCampagne: importCampaign,
+          reinitialiserDemo: resetDemo,
+          restaurerScene: restoreScene,
+        }}
+        compteurGlobal={{ horlogesBloquantes: blocked }}
+        resolutionHorloge={{ resetClock, deleteClock }}
+        templatesUi={{ templateTarget, templateError, fermerSauvegardeTemplate: () => setTemplateTarget(null), enregistrerTemplate: saveTemplate }}
+      />
     </div>
   );
 }
