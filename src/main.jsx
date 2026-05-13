@@ -4,7 +4,7 @@ import App from './App.jsx';
 import { ErrorBoundary } from './components/ErrorBoundary.jsx';
 import './styles.css';
 import './overrides.css';
-import './theme-proposal-logo.css';
+import './theme-cadence.css';
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
