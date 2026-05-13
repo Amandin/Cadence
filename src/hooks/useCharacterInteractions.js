@@ -52,8 +52,12 @@ export function useCharacterInteractions(scene, actions) {
   const addCharacter = (participant, { placement = 'init', initiative = 1 } = {}) => {
     if (!participant) return;
     const nextParticipant = placement === 'init' ? { ...participant, initiative: Number.isFinite(Number(initiative)) ? Number(initiative) : participant.initiative } : participant;
-    if (placement === 'reserve') actions.updateSceneField('reserve', [...(scene.reserve || []), nextParticipant]);
-    else actions.updateSceneField('participants', [...scene.participants, nextParticipant]);
+    if (placement === 'reserve') {
+      actions.updateSceneField('reserve', [...(scene.reserve || []), nextParticipant]);
+    } else {
+      actions.updateSceneField('participants', [...scene.participants, nextParticipant]);
+      if (!scene.activeId) actions.updateSceneField('activeId', nextParticipant.id);
+    }
     setEditingId(nextParticipant.id);
     setSelectedId(null);
   };
@@ -90,6 +94,7 @@ export function useCharacterInteractions(scene, actions) {
     editing,
     statusTarget,
     joinTarget,
+    isInInit,
     openCharacter: setSelectedId,
     closeCharacter: () => setSelectedId(null),
     editCharacter: setEditingId,
