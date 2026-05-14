@@ -47,7 +47,7 @@ export function FenetreAjoutPersonnage({ templates = [], onFermer, onCreerVierge
         </div>}
         <div className="grid2">
           <button className={`choice ${placement === 'init' ? 'selected' : ''}`} onClick={() => setPlacement('init')}>En initiative</button>
-          <button className={`choice ${placement === 'reserve' ? 'selected' : ''}`} onClick={() => setPlacement('reserve')}>Hors initiative</button>
+          <button className={`choice ${placement === 'reserve' ? 'selected' : ''}`} onClick={() => setPlacement('reserve')}>En réserve</button>
         </div>
         {placement === 'init' && <label className="field">Initiative<input type="number" inputMode="numeric" value={initiative} onChange={(event) => setInitiative(event.target.value)} /></label>}
         <p className="muted" style={{ margin: 0, fontSize: 12 }}>La fiche s’ouvrira ensuite pour ajuster les détails avant de continuer la scène.</p>
