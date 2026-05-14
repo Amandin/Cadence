@@ -29,26 +29,6 @@ function LigneVersionEtTheme({ sombre, onChangerTheme }) {
   );
 }
 
-function ChampNomCampagne({ nom, onRenommer }) {
-  const [valeur, setValeur] = useState(nom || '');
-
-  return (
-    <label className="field compact-campaign-name">
-      Nom de campagne
-      <input
-        type="text"
-        value={valeur}
-        placeholder="Campagne Cadence"
-        onChange={(event) => setValeur(event.target.value)}
-        onBlur={() => onRenommer(valeur)}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter') event.currentTarget.blur();
-        }}
-      />
-    </label>
-  );
-}
-
 function ListeScenes({ scenes, onChoisirScene, onFermer }) {
   return (
     <>
@@ -214,7 +194,7 @@ function ActionsSauvegarde({ onExporter, onImporter, onReinitialiser }) {
         <button className="small-btn" onClick={choisirFichier}>Importer</button>
         <input ref={importInputRef} type="file" accept=".cad,.json,application/json" style={{ display: 'none' }} onChange={importerFichier} />
       </div>
-      <p className="muted compact-help" style={{ marginTop: 6 }}>L’export crée un fichier .cad. Les anciens exports .json restent importables s’ils viennent de Cadence.</p>
+      <p className="muted compact-help" style={{ marginTop: 6 }}>L’export propose le nom du fichier avant d’ouvrir l’enregistrement ou le partage selon le navigateur.</p>
       <button className="danger-btn" style={{ marginTop: 8, width: '100%' }} onClick={onReinitialiser}>Réinitialiser la démo</button>
     </>
   );
@@ -234,7 +214,7 @@ function RestaurationScene({ points, pointActif, onChoisirPoint, onRestaurer }) 
   );
 }
 
-export function MenuPrincipal({ campaignName, scenes, scene, restorePoints = [], onRestore, onClose, setSceneIndex, dark, setDark, onRenameCampaign, onAddParticipant, onNewScene, onExport, onImport, onReset, onGlobalTracker, onOpenAdvancedRules, onOpenInitiativeRoller }) {
+export function MenuPrincipal({ scenes, scene, restorePoints = [], onRestore, onClose, setSceneIndex, dark, setDark, onAddParticipant, onNewScene, onExport, onImport, onReset, onGlobalTracker, onOpenAdvancedRules, onOpenInitiativeRoller }) {
   const pointsRestauration = [...restorePoints].sort((a, b) => a.round - b.round);
   const [pointRestaurationId, setPointRestaurationId] = useState(pointsRestauration.at(-1)?.id || '');
 
@@ -242,7 +222,6 @@ export function MenuPrincipal({ campaignName, scenes, scene, restorePoints = [],
     <Fenetre title="Menu" onClose={onClose}>
       <LogoMenu sombre={dark} />
       <LigneVersionEtTheme sombre={dark} onChangerTheme={setDark} />
-      <ChampNomCampagne nom={campaignName} onRenommer={onRenameCampaign} />
       <ListeScenes scenes={scenes} onChoisirScene={setSceneIndex} onFermer={onClose} />
       <OptionsCompteurScene compteur={scene?.globalTracker} onModifier={onGlobalTracker} />
       <ActionsScene onAjouterParticipant={onAddParticipant} onSaisirInitiatives={onOpenInitiativeRoller} onNouvelleScene={onNewScene} onReglesAvancees={onOpenAdvancedRules} />
