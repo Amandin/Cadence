@@ -71,6 +71,10 @@ function participantsPhase(scene, phase = scene.phase || 1) {
   return participantsPourPhase(scene.participants || [], phase, scene.phaseDecrement || 10, optionsTri(scene));
 }
 
+function premierParticipantPhase(scene) {
+  return participantsPhase(scene)[0]?.id || '';
+}
+
 function appliquerDebutNouveauRound(scene, activeId) {
   return {
     ...scene,
@@ -96,7 +100,7 @@ function appliquerNouveauRoundSouple(scene) {
 }
 
 function appliquerNouveauRoundPhases(scene) {
-  return {
+  const sceneSuivante = {
     ...scene,
     activeId: '',
     phase: 1,
@@ -105,6 +109,8 @@ function appliquerNouveauRoundPhases(scene) {
     participants: (scene.participants || []).map(tickParticipant),
     reserve: (scene.reserve || []).map(tickParticipant),
   };
+
+  return { ...sceneSuivante, activeId: premierParticipantPhase(sceneSuivante) };
 }
 
 function modifierParticipantDansScene(scene, participantId, updater) {
@@ -175,14 +181,19 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
       }));
     },
     updateTemporality(temporalite) {
-      updateScene((s) => ({
-        ...s,
-        temporalite,
-        phase: temporalite === temporalityModes.PHASES ? (s.phase || 1) : 1,
-        activeId: temporalite === temporalityModes.FLEXIBLE ? '' : s.activeId,
-        jouesSouples: temporalite === temporalityModes.FLEXIBLE ? (s.jouesSouples || []) : [],
-        historiqueSouple: temporalite === temporalityModes.FLEXIBLE ? (s.historiqueSouple || []) : [],
-      }));
+      updateScene((s) => {
+        const sceneSuivante = {
+          ...s,
+          temporalite,
+          phase: temporalite === temporalityModes.PHASES ? (s.phase || 1) : 1,
+          activeId: temporalite === temporalityModes.FLEXIBLE ? '' : s.activeId,
+          jouesSouples: temporalite === temporalityModes.FLEXIBLE ? (s.jouesSouples || []) : [],
+          historiqueSouple: temporalite === temporalityModes.FLEXIBLE ? (s.historiqueSouple || []) : [],
+        };
+        return temporalite === temporalityModes.PHASES && !participantsPhase(sceneSuivante).some((participant) => participant.id === sceneSuivante.activeId)
+          ? { ...sceneSuivante, activeId: premierParticipantPhase(sceneSuivante) }
+          : sceneSuivante;
+      });
     },
     updatePhaseDecrement(phaseDecrement) {
       const valeur = Math.max(1, Number(phaseDecrement) || 10);
@@ -215,7 +226,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
       updateScene((s) => {
         const sortants = (s.participants || []).filter((participant) => idsSet.has(participant.id));
         const participants = (s.participants || []).filter((participant) => !idsSet.has(participant.id));
-        return {
+        const sceneSuivante = {
           ...s,
           participants,
           reserve: [...(s.reserve || []), ...sortants],
@@ -223,6 +234,9 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
           jouesSouples: (s.jouesSouples || []).filter((id) => !idsSet.has(id)),
           historiqueSouple: (s.historiqueSouple || []).filter((id) => !idsSet.has(id)),
         };
+        return estModePhases(sceneSuivante) && !participantsPhase(sceneSuivante).some((participant) => participant.id === sceneSuivante.activeId)
+          ? { ...sceneSuivante, activeId: premierParticipantPhase(sceneSuivante) }
+          : sceneSuivante;
       });
     },
     markFlexiblePlayed(participantId) {
@@ -256,15 +270,17 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
       updateScene((s) => {
         const participants = s.participants.filter((p) => p.id !== id);
         const reserve = (s.reserve || []).filter((p) => p.id !== id);
-        const activeId = s.activeId === id ? participants[0]?.id || '' : s.activeId;
-        return {
+        const sceneSuivante = {
           ...s,
           participants,
           reserve,
-          activeId,
+          activeId: s.activeId === id ? participants[0]?.id || '' : s.activeId,
           jouesSouples: retirerJoueSouple(s, id),
           historiqueSouple: retirerHistoriqueSouple(s, id),
         };
+        return estModePhases(sceneSuivante) && !participantsPhase(sceneSuivante).some((participant) => participant.id === sceneSuivante.activeId)
+          ? { ...sceneSuivante, activeId: premierParticipantPhase(sceneSuivante) }
+          : sceneSuivante;
       });
     },
     trackerChange(pid, tid, next) {
@@ -297,7 +313,11 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
       if (estModePhases(scene)) {
         const phaseParticipants = participantsPhase(scene);
         if (!phaseParticipants.length) return;
-        const currentIndex = Math.max(0, phaseParticipants.findIndex((p) => p.id === scene.activeId));
+        const currentIndex = phaseParticipants.findIndex((p) => p.id === scene.activeId);
+        if (currentIndex < 0) {
+          updateScene((s) => ({ ...s, activeId: phaseParticipants[0]?.id || s.activeId }));
+          return;
+        }
         if (direction < 0) {
           const previousIndex = Math.max(0, currentIndex - 1);
           updateScene((s) => ({ ...s, activeId: phaseParticipants[previousIndex]?.id || s.activeId }));
@@ -371,14 +391,19 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
       const participant = scene.participants.find((x) => x.id === id);
       if (!participant) return;
 
-      updateScene((s) => ({
-        ...s,
-        participants: s.participants.filter((x) => x.id !== id),
-        reserve: [...(s.reserve || []), participant],
-        activeId: s.activeId === id ? s.participants.find((x) => x.id !== id)?.id || '' : s.activeId,
-        jouesSouples: retirerJoueSouple(s, id),
-        historiqueSouple: retirerHistoriqueSouple(s, id),
-      }));
+      updateScene((s) => {
+        const sceneSuivante = {
+          ...s,
+          participants: s.participants.filter((x) => x.id !== id),
+          reserve: [...(s.reserve || []), participant],
+          activeId: s.activeId === id ? s.participants.find((x) => x.id !== id)?.id || '' : s.activeId,
+          jouesSouples: retirerJoueSouple(s, id),
+          historiqueSouple: retirerHistoriqueSouple(s, id),
+        };
+        return estModePhases(sceneSuivante) && !participantsPhase(sceneSuivante).some((item) => item.id === sceneSuivante.activeId)
+          ? { ...sceneSuivante, activeId: premierParticipantPhase(sceneSuivante) }
+          : sceneSuivante;
+      });
     },
     joinInit(id, initiativeValue) {
       const participant = scene.reserve.find((x) => x.id === id);
@@ -387,12 +412,15 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
 
       updateScene((s) => {
         const participants = trierParInitiative([...s.participants, { ...participant, initiative }], optionsTri(s));
-        return {
+        const sceneSuivante = {
           ...s,
           reserve: s.reserve.filter((x) => x.id !== id),
           participants,
           activeId: s.activeId || participant.id,
         };
+        return estModePhases(sceneSuivante) && !participantsPhase(sceneSuivante).some((item) => item.id === sceneSuivante.activeId)
+          ? { ...sceneSuivante, activeId: premierParticipantPhase(sceneSuivante) }
+          : sceneSuivante;
       });
     },
     addParticipant(participant = createBlankParticipant(), placement = 'init') {
@@ -402,7 +430,10 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
       }
       updateScene((s) => {
         const participants = trierParInitiative([...s.participants, participant], optionsTri(s));
-        return { ...s, participants, activeId: s.activeId || participant.id };
+        const sceneSuivante = { ...s, participants, activeId: s.activeId || participant.id };
+        return estModePhases(sceneSuivante) && !participantsPhase(sceneSuivante).some((item) => item.id === sceneSuivante.activeId)
+          ? { ...sceneSuivante, activeId: premierParticipantPhase(sceneSuivante) }
+          : sceneSuivante;
       });
     },
   };
