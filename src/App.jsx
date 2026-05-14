@@ -3,6 +3,7 @@ import { defaultCategoryOrder, defaultEqualityRule, temporalityModes } from './c
 import { groupeEgalitePourParticipant, participantsPourPhase, phaseSuivanteExiste } from './domain/initiative.js';
 import { FenetresSuperposees } from './interface/app/FenetresSuperposees.jsx';
 import { HubCampagne } from './interface/campaign/HubCampagne.jsx';
+import { FenetreExportCampagne } from './interface/dialogues/FenetreExportCampagne.jsx';
 import { BarreActionBas } from './interface/scene/BarreActionBas.jsx';
 import { EnteteScene } from './interface/scene/EnteteScene.jsx';
 import { ListeInitiative } from './interface/scene/ListeInitiative.jsx';
@@ -207,6 +208,40 @@ export default function App() {
             : `Suivant · P${scene.phase}`
       : undefined;
 
+  const fenetresCommunes = (
+    <>
+      <FenetresSuperposees
+        campaignName={campaignName}
+        scene={scene}
+        restorePoints={restorePoints}
+        dark={dark}
+        characters={characters}
+        templates={templates}
+        actions={actions}
+        etatInterface={{ addSheetOpen, openMenu: currentView === 'scene' && openMenu, notice, globalSheetOpen, clockModalOpen, initiativeEntryOpen: currentView === 'scene' && initiativeEntryOpen }}
+        commandesInterface={{
+          ouvrirAjoutPersonnage: openAddCharacter,
+          ouvrirSaisieInitiatives: openInitiativeEntry,
+          ouvrirHubCampagne: () => setCurrentView('hub'),
+          fermerAjoutPersonnage: () => setAddSheetOpen(false),
+          fermerMenu: () => setOpenMenu(false),
+          fermerNotice: () => setNotice(null),
+          fermerCompteurGlobal: () => setGlobalSheetOpen(false),
+          fermerResolutionHorloge: () => setClockModalOpen(false),
+          fermerSaisieInitiatives: () => setInitiativeEntryOpen(false),
+          ouvrirSauvegardeTemplate: openTemplateSave,
+          creerPersonnageVierge: createBlankCharacter,
+          creerDepuisTemplate: createFromTemplate,
+          restaurerScene: restoreScene,
+        }}
+        compteurGlobal={{ horlogesBloquantes: blocked }}
+        resolutionHorloge={{ resetClock, deleteClock }}
+        templatesUi={{ templateTarget, templateError, fermerSauvegardeTemplate: () => setTemplateTarget(null), enregistrerTemplate: saveTemplate }}
+      />
+      {exportOpen && <FenetreExportCampagne nomInitial={campaignName} onFermer={() => setExportOpen(false)} onExporter={actions.exportCampaign} />}
+    </>
+  );
+
   if (currentView === 'hub') {
     return (
       <div className={`app ${dark ? 'dark' : ''}`}>
@@ -226,48 +261,7 @@ export default function App() {
           onAjouterDepuisTemplate={(templateId) => createFromTemplate(templateId, { placement: 'reserve' })}
           onSupprimerTemplate={templates.deleteTemplate}
         />
-        <FenetresSuperposees
-          campaignName={campaignName}
-          scene={scene}
-          restorePoints={restorePoints}
-          dark={dark}
-          characters={characters}
-          templates={templates}
-          actions={actions}
-          etatInterface={{ addSheetOpen, openMenu: false, notice, globalSheetOpen, clockModalOpen, initiativeEntryOpen: false }}
-          commandesInterface={{
-            ouvrirAjoutPersonnage: openAddCharacter,
-            ouvrirSaisieInitiatives: openInitiativeEntry,
-            ouvrirHubCampagne: () => setCurrentView('hub'),
-            fermerAjoutPersonnage: () => setAddSheetOpen(false),
-            fermerMenu: () => setOpenMenu(false),
-            fermerNotice: () => setNotice(null),
-            fermerCompteurGlobal: () => setGlobalSheetOpen(false),
-            fermerResolutionHorloge: () => setClockModalOpen(false),
-            fermerSaisieInitiatives: () => setInitiativeEntryOpen(false),
-            ouvrirSauvegardeTemplate: openTemplateSave,
-            creerPersonnageVierge: createBlankCharacter,
-            creerDepuisTemplate: createFromTemplate,
-            restaurerScene: restoreScene,
-          }}
-          compteurGlobal={{ horlogesBloquantes: blocked }}
-          resolutionHorloge={{ resetClock, deleteClock }}
-          templatesUi={{ templateTarget, templateError, fermerSauvegardeTemplate: () => setTemplateTarget(null), enregistrerTemplate: saveTemplate }}
-        />
-        {exportOpen && <FenetresSuperposees
-          campaignName={campaignName}
-          scene={scene}
-          restorePoints={restorePoints}
-          dark={dark}
-          characters={characters}
-          templates={templates}
-          actions={actions}
-          etatInterface={{ addSheetOpen: false, openMenu: false, notice: null, globalSheetOpen: false, clockModalOpen: false, initiativeEntryOpen: false }}
-          commandesInterface={{ fermerNotice: () => {}, fermerAjoutPersonnage: () => {}, fermerMenu: () => {}, fermerCompteurGlobal: () => {}, fermerResolutionHorloge: () => {}, fermerSaisieInitiatives: () => {}, ouvrirSauvegardeTemplate: openTemplateSave, creerPersonnageVierge: createBlankCharacter, creerDepuisTemplate: createFromTemplate, restaurerScene: restoreScene }}
-          compteurGlobal={{ horlogesBloquantes: blocked }}
-          resolutionHorloge={{ resetClock, deleteClock }}
-          templatesUi={{ templateTarget: null, templateError: null, fermerSauvegardeTemplate: () => {}, enregistrerTemplate: saveTemplate }}
-        />}
+        {fenetresCommunes}
       </div>
     );
   }
@@ -315,34 +309,7 @@ export default function App() {
         onOuvrirMenu={() => setOpenMenu(true)}
       />
 
-      <FenetresSuperposees
-        campaignName={campaignName}
-        scene={scene}
-        restorePoints={restorePoints}
-        dark={dark}
-        characters={characters}
-        templates={templates}
-        actions={actions}
-        etatInterface={{ addSheetOpen, openMenu, notice, globalSheetOpen, clockModalOpen, initiativeEntryOpen }}
-        commandesInterface={{
-          ouvrirAjoutPersonnage: openAddCharacter,
-          ouvrirSaisieInitiatives: openInitiativeEntry,
-          ouvrirHubCampagne: () => setCurrentView('hub'),
-          fermerAjoutPersonnage: () => setAddSheetOpen(false),
-          fermerMenu: () => setOpenMenu(false),
-          fermerNotice: () => setNotice(null),
-          fermerCompteurGlobal: () => setGlobalSheetOpen(false),
-          fermerResolutionHorloge: () => setClockModalOpen(false),
-          fermerSaisieInitiatives: () => setInitiativeEntryOpen(false),
-          ouvrirSauvegardeTemplate: openTemplateSave,
-          creerPersonnageVierge: createBlankCharacter,
-          creerDepuisTemplate: createFromTemplate,
-          restaurerScene: restoreScene,
-        }}
-        compteurGlobal={{ horlogesBloquantes: blocked }}
-        resolutionHorloge={{ resetClock, deleteClock }}
-        templatesUi={{ templateTarget, templateError, fermerSauvegardeTemplate: () => setTemplateTarget(null), enregistrerTemplate: saveTemplate }}
-      />
+      {fenetresCommunes}
     </div>
   );
 }
