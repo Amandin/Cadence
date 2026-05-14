@@ -4,7 +4,7 @@ import { createSceneActions } from '../actions/sceneActions.js';
 import { normalizeGlobalTracker, stepGlobalTracker } from '../domain/globalTracker.js';
 import { clone, hasTriggeredClock, nextTurnInfo, uid } from '../logic.js';
 import { loadCampaign, saveCampaign } from '../storage.js';
-import { defaultCategoryOrder, defaultEqualityRule, defaultPhaseDecrement, defaultTemporalityMode, legacyParticipantKinds } from '../constants.js';
+import { defaultCategoryOrder, defaultEqualityRule, defaultPhaseDecrement, defaultPhaseRerollEachRound, defaultTemporalityMode, legacyParticipantKinds } from '../constants.js';
 
 function normalizeKind(kind) {
   return legacyParticipantKinds[kind] || kind;
@@ -25,6 +25,7 @@ function normalizeScene(scene) {
     round: scene?.round || 1,
     phase: Math.max(1, Number(scene?.phase) || 1),
     phaseDecrement: Math.max(1, Number(scene?.phaseDecrement) || defaultPhaseDecrement),
+    phaseRerollEachRound: scene?.phaseRerollEachRound ?? defaultPhaseRerollEachRound,
     activeId: scene?.activeId || '',
     notes: scene?.notes || '',
     reserveNotes: scene?.reserveNotes || '',
