@@ -26,6 +26,7 @@ export default function App() {
   const [templateError, setTemplateError] = useState(null);
 
   const temporaliteSouple = scene.temporalite === temporalityModes.FLEXIBLE;
+  const toutLeMondeAJoueSouple = temporaliteSouple && scene.participants.length > 0 && scene.participants.every((participant) => (scene.jouesSouples || []).includes(participant.id));
   const globalAutoTick = roundEffect === 'next' && !!scene.globalTracker?.enabled && !!scene.globalTracker?.auto;
   const activeGroup = !temporaliteSouple && scene.activeId ? groupeEgalitePourParticipant(scene.participants, scene.activeId, { categoryOrder: scene.categoryOrder || defaultCategoryOrder, equalityRule: scene.equalityRule || defaultEqualityRule }) : [];
 
@@ -42,7 +43,7 @@ export default function App() {
   // Une horloge bloquante interrompt volontairement le passage au tour suivant :
   // elle doit être résolue avant que les états/horloges avancent.
   const nextTurn = (direction) => {
-    if (temporaliteSouple && direction > 0) return;
+    if (temporaliteSouple && direction > 0 && !toutLeMondeAJoueSouple) return;
     if (direction > 0) setShowNotes(false);
     if (direction > 0 && blocked.length) {
       setClockModalOpen(true);
@@ -126,7 +127,10 @@ export default function App() {
   const deleteClock = (participantId, trackerId) => {
     actions.deleteTracker(participantId, trackerId);
   };
-  const nextLabel = temporaliteSouple ? 'Mode souple : choisir dans la liste' : blocked.length ? 'Gérer horloge bloquante' : nextStartsRound ? 'Nouveau round' : 'Participant suivant';
+  const nextLabel = temporaliteSouple
+    ? toutLeMondeAJoueSouple ? 'Nouveau round' : 'Mode souple : choisir dans la liste'
+    : blocked.length ? 'Gérer horloge bloquante' : nextStartsRound ? 'Nouveau round' : 'Participant suivant';
+  const classeSuivantEffective = temporaliteSouple && toutLeMondeAJoueSouple ? 'next-round' : nextClass;
 
   return (
     <div className={`app ${dark ? 'dark' : ''}`}>
@@ -139,9 +143,10 @@ export default function App() {
           effetRound={roundEffect}
           compteurGlobalAuto={globalAutoTick}
           notesVisibles={showNotes}
-          classeSuivant={nextClass}
+          classeSuivant={classeSuivantEffective}
           libelleSuivant={nextLabel}
           temporaliteSouple={temporaliteSouple}
+          suivantDesactive={temporaliteSouple && !toutLeMondeAJoueSouple}
           onBasculerNotes={() => setShowNotes(!showNotes)}
           onTourPrecedent={() => nextTurn(-1)}
           onTourSuivant={() => nextTurn(1)}
@@ -156,12 +161,12 @@ export default function App() {
       </div>
 
       <BarreActionBas
-        classeSuivant={nextClass}
-        prochainRound={nextStartsRound}
+        classeSuivant={classeSuivantEffective}
+        prochainRound={temporaliteSouple ? toutLeMondeAJoueSouple : nextStartsRound}
         round={scene.round}
         horlogeBloquee={blocked.length > 0}
-        suivantDesactive={temporaliteSouple}
-        libelleSuivant={temporaliteSouple ? 'Choisir' : undefined}
+        suivantDesactive={temporaliteSouple && !toutLeMondeAJoueSouple}
+        libelleSuivant={temporaliteSouple ? toutLeMondeAJoueSouple ? `Nouveau round · R${scene.round + 1}` : 'Choisir' : undefined}
         onTourPrecedent={() => nextTurn(-1)}
         onTourSuivant={() => nextTurn(1)}
         onAjouterPersonnage={openAddCharacter}
