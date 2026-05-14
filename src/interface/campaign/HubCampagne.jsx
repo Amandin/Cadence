@@ -207,13 +207,28 @@ function OngletSauvegarde({ onExporter, onImporter, onReinitialiser }) {
   );
 }
 
-function OngletTemplates({ templates = [], onAjouterDepuisTemplate, onSupprimerTemplate }) {
+function OngletTemplates({ templates = [], onAjouterDepuisTemplate, onSupprimerTemplate, onImporterTemplates }) {
   const groupes = useMemo(() => grouperTemplates(templates), [templates]);
+  const importInputRef = useRef(null);
+  const choisirFichier = () => importInputRef.current?.click();
+  const importerFichier = (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (file) onImporterTemplates(file);
+  };
+
+  const entete = (
+    <div className="hub-section-head">
+      <h3>Templates</h3>
+      <button className="small-btn" onClick={choisirFichier}>Importer depuis une autre campagne</button>
+      <input ref={importInputRef} type="file" accept=".cad,.json,application/json" style={{ display: 'none' }} onChange={importerFichier} />
+    </div>
+  );
 
   if (templates.length === 0) {
     return (
       <div className="stack hub-section panel">
-        <h3>Templates</h3>
+        {entete}
         <div className="empty-section panel">Aucun template enregistré. Ouvre une fiche personnage puis utilise “Enregistrer comme template”.</div>
       </div>
     );
@@ -221,7 +236,7 @@ function OngletTemplates({ templates = [], onAjouterDepuisTemplate, onSupprimerT
 
   return (
     <div className="stack hub-section panel">
-      <h3>Templates</h3>
+      {entete}
       <p className="muted compact-help">Ajoute rapidement un template à la scène courante ou supprime les fiches devenues inutiles.</p>
       {groupes.map((groupe) => (
         <section className="hub-template-group" key={groupe.categorie}>
@@ -258,6 +273,7 @@ export function HubCampagne({
   onReinitialiser,
   onAjouterDepuisTemplate,
   onSupprimerTemplate,
+  onImporterTemplates,
 }) {
   const [onglet, setOnglet] = useState('scenes');
 
@@ -269,7 +285,7 @@ export function HubCampagne({
         {onglet === 'scenes' && <OngletScenes scenes={scenes} sceneActiveId={scene?.id} onChoisirScene={onChoisirScene} onNouvelleScene={onNouvelleScene} />}
         {onglet === 'regles' && <OngletRegles scene={scene} onModifierRegles={onModifierReglesInitiative} />}
         {onglet === 'sauvegarde' && <OngletSauvegarde onExporter={onExporter} onImporter={onImporter} onReinitialiser={onReinitialiser} />}
-        {onglet === 'templates' && <OngletTemplates templates={templates} onAjouterDepuisTemplate={onAjouterDepuisTemplate} onSupprimerTemplate={onSupprimerTemplate} />}
+        {onglet === 'templates' && <OngletTemplates templates={templates} onAjouterDepuisTemplate={onAjouterDepuisTemplate} onSupprimerTemplate={onSupprimerTemplate} onImporterTemplates={onImporterTemplates} />}
       </main>
     </div>
   );
