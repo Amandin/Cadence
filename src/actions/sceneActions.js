@@ -47,6 +47,11 @@ function estModeSouple(scene) {
   return scene.temporalite === temporalityModes.FLEXIBLE;
 }
 
+function toutLeMondeAJoueSouple(scene) {
+  const idsJoues = new Set(scene.jouesSouples || []);
+  return (scene.participants || []).length > 0 && scene.participants.every((participant) => idsJoues.has(participant.id));
+}
+
 function trouverTourActifParInitiative(scene, participantsTries) {
   const actifAvant = scene.participants.find((participant) => participant.id === scene.activeId);
   if (!actifAvant) return { activeId: scene.activeId, nouveauRound: false };
@@ -66,6 +71,19 @@ function appliquerDebutNouveauRound(scene, activeId) {
     globalTracker: stepAutoGlobalTracker(scene.globalTracker, 1),
     participants: scene.participants.map((participant) => participant.id === activeId ? tickParticipant(participant) : participant),
     reserve: (scene.reserve || []).map(tickParticipant),
+  };
+}
+
+function appliquerNouveauRoundSouple(scene) {
+  return {
+    ...scene,
+    activeId: '',
+    round: Math.max(1, scene.round + 1),
+    globalTracker: stepAutoGlobalTracker(scene.globalTracker, 1),
+    participants: (scene.participants || []).map(tickParticipant),
+    reserve: (scene.reserve || []).map(tickParticipant),
+    jouesSouples: [],
+    historiqueSouple: [],
   };
 }
 
@@ -205,6 +223,14 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
     nextTurn(direction = 1) {
       if (estModeSouple(scene)) {
         if (direction < 0) updateScene(annulerDernierJoueSouple);
+        if (direction > 0 && !blocked.length && toutLeMondeAJoueSouple(scene)) {
+          setRoundEffect('next');
+          updateScene((s) => {
+            const nextScene = appliquerNouveauRoundSouple(s);
+            setRestorePoints((points) => addRestorePoint(points, s.id, nextScene));
+            return nextScene;
+          });
+        }
         return;
       }
 
