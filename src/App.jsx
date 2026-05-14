@@ -27,7 +27,7 @@ export default function App() {
 
   const temporaliteSouple = scene.temporalite === temporalityModes.FLEXIBLE;
   const globalAutoTick = roundEffect === 'next' && !!scene.globalTracker?.enabled && !!scene.globalTracker?.auto;
-  const activeGroup = scene.activeId ? groupeEgalitePourParticipant(scene.participants, scene.activeId, { categoryOrder: scene.categoryOrder || defaultCategoryOrder, equalityRule: scene.equalityRule || defaultEqualityRule }) : [];
+  const activeGroup = !temporaliteSouple && scene.activeId ? groupeEgalitePourParticipant(scene.participants, scene.activeId, { categoryOrder: scene.categoryOrder || defaultCategoryOrder, equalityRule: scene.equalityRule || defaultEqualityRule }) : [];
 
   useEffect(() => {
     if (!scene.activeId) return;
@@ -42,6 +42,7 @@ export default function App() {
   // Une horloge bloquante interrompt volontairement le passage au tour suivant :
   // elle doit être résolue avant que les états/horloges avancent.
   const nextTurn = (direction) => {
+    if (temporaliteSouple && direction > 0) return;
     if (direction > 0) setShowNotes(false);
     if (direction > 0 && blocked.length) {
       setClockModalOpen(true);
@@ -120,7 +121,7 @@ export default function App() {
   const deleteClock = (participantId, trackerId) => {
     actions.deleteTracker(participantId, trackerId);
   };
-  const nextLabel = blocked.length ? 'Gérer horloge bloquante' : nextStartsRound ? 'Nouveau round' : 'Participant suivant';
+  const nextLabel = temporaliteSouple ? 'Mode souple : choisir dans la liste' : blocked.length ? 'Gérer horloge bloquante' : nextStartsRound ? 'Nouveau round' : 'Participant suivant';
 
   return (
     <div className={`app ${dark ? 'dark' : ''}`}>
@@ -154,6 +155,8 @@ export default function App() {
         prochainRound={nextStartsRound}
         round={scene.round}
         horlogeBloquee={blocked.length > 0}
+        suivantDesactive={temporaliteSouple}
+        libelleSuivant={temporaliteSouple ? 'Choisir' : undefined}
         onTourPrecedent={() => nextTurn(-1)}
         onTourSuivant={() => nextTurn(1)}
         onAjouterPersonnage={openAddCharacter}
