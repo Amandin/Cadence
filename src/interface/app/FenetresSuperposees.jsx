@@ -72,7 +72,7 @@ export function FenetresSuperposees({
       {clockModalOpen && <FenetreResolutionHorloge participants={compteurGlobal.horlogesBloquantes} onFermer={fermerResolutionHorloge} onRelancerHorloge={resetClock} onSupprimerHorloge={deleteClock} />}
       {notice && <FenetreInformation titre={notice.title} message={notice.message} onFermer={fermerNotice} />}
       {openMenu && <MenuPrincipal scenes={scenes} scene={scene} restorePoints={restorePoints} onRestore={restaurerScene} onClose={fermerMenu} setSceneIndex={actions.setSceneIndex} dark={dark} setDark={actions.setDark} onAddParticipant={commandesInterface.ouvrirAjoutPersonnage} onNewScene={nouvelleScene} onExport={actions.exportCampaign} onImport={importerCampagne} onReset={reinitialiserDemo} onGlobalTracker={actions.updateGlobalTracker} onOpenAdvancedRules={() => setReglesAvanceesOuvertes(true)} onOpenInitiativeRoller={commandesInterface.ouvrirSaisieInitiatives} />}
-      {reglesAvanceesOuvertes && <FenetreReglesAvancees scene={scene} onFermer={() => setReglesAvanceesOuvertes(false)} onUpdateCategoryOrder={actions.updateCategoryOrder} onUpdateEqualityRule={actions.updateEqualityRule} onUpdateTemporality={actions.updateTemporality} />}
+      {reglesAvanceesOuvertes && <FenetreReglesAvancees scene={scene} onFermer={() => setReglesAvanceesOuvertes(false)} onUpdateCategoryOrder={actions.updateCategoryOrder} onUpdateEqualityRule={actions.updateEqualityRule} onUpdateTemporality={actions.updateTemporality} onUpdatePhaseDecrement={actions.updatePhaseDecrement} />}
       {initiativeEntryOpen && <FenetreLancerInitiatives participants={scene.participants} onFermer={fermerSaisieInitiatives} onValider={actions.applyInitiativeRolls} onPasserHorsInitiative={actions.moveParticipantsToReserve} />}
     </>
   );
