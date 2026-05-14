@@ -25,8 +25,14 @@ export function EtiquetteEtat({ etat, onRetirer }) {
   return <span className={`status ${typeEtat(etat)} ${etat.inactive ? 'inactive-status' : ''} ${etat.expired ? 'expired' : ''}`}>{etat.name} · {etat.inactive ? '⏸ ' : ''}{libelleEtat(etat)}<button onClick={onRetirer}>×</button></span>;
 }
 
-export function BadgeRound({ round, effect }) {
-  return <div className={`round ${effect === 'next' ? 'new' : ''}`}><small>{effect === 'next' ? 'Nouveau round' : 'Round'}</small>{round}</div>;
+export function BadgeRound({ round, effect, phase }) {
+  return (
+    <div className={`round ${effect === 'next' ? 'new' : ''} ${phase ? 'phase-aware' : ''}`}>
+      <small>{effect === 'next' ? 'Nouveau round' : 'Round'}</small>
+      <strong>{round}</strong>
+      {phase ? <span>Phase {phase}</span> : null}
+    </div>
+  );
 }
 
 export function Fenetre({ title, children, onClose }) {
