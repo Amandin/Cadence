@@ -1,5 +1,5 @@
 import { defaultCategoryOrder, defaultEqualityRule } from '../../constants.js';
-import { grouperAffichageParticipants, grouperParInitiative } from '../../domain/initiative.js';
+import { grouperAffichageParticipants, grouperParInitiative, participantsEnAttentePhase, participantsPourPhase } from '../../domain/initiative.js';
 import { FichetteInitiative } from '../fiches/FichetteInitiative.jsx';
 
 function optionsEgalite(scene) {
@@ -89,7 +89,27 @@ function EnteteSectionSouple({ titre, compteur, variant }) {
   );
 }
 
-export function ListeInitiative({ scene, participants, actifId, interactions, temporaliteSouple, onMarquerAJoue, onAnnulerAJoue }) {
+export function ListeInitiative({ scene, participants, actifId, interactions, temporaliteSouple, temporalitePhases, onMarquerAJoue, onAnnulerAJoue }) {
+  if (temporalitePhases) {
+    const actifs = participantsPourPhase(participants, scene.phase, scene.phaseDecrement, optionsEgalite(scene));
+    const attente = participantsEnAttentePhase(participants, scene.phase, scene.phaseDecrement);
+
+    return (
+      <div className="initiative-list flexible-list phase-list">
+        <section className="flexible-section phase-section">
+          <EnteteSectionSouple titre={`Phase ${scene.phase || 1}`} compteur={actifs.length} />
+          {actifs.length > 0
+            ? <ListeParPaliers scene={scene} participants={actifs} actifId={actifId} interactions={interactions} />
+            : <div className="empty-section panel">Aucun participant ne peut agir dans cette phase.</div>}
+        </section>
+        {attente.length > 0 && <section className="flexible-section already-played-section phase-waiting-section">
+          <EnteteSectionSouple titre="En attente du prochain round" compteur={attente.length} variant="played" />
+          <ListeParPaliers scene={scene} participants={attente} actifId="" interactions={interactions} />
+        </section>}
+      </div>
+    );
+  }
+
   if (!temporaliteSouple) {
     return (
       <div className="initiative-list">
