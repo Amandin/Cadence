@@ -38,6 +38,16 @@
   filter: saturate(.75);
 }
 
+.card.soft-pj-highlight {
+  border-color: rgba(199, 94, 25, .24);
+  box-shadow: inset 3px 0 0 rgba(199, 94, 25, .34), 0 10px 24px rgba(49, 18, 54, .08);
+}
+
+.dark .card.soft-pj-highlight {
+  border-color: rgba(210, 164, 86, .26);
+  box-shadow: inset 3px 0 0 rgba(210, 164, 86, .34), 0 18px 36px rgba(0, 0, 0, .30);
+}
+
 .chip.inactive-chip,
 .status.inactive-status {
   background: rgba(49, 18, 54, .12);
