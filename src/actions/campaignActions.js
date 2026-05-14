@@ -1,4 +1,4 @@
-import { isValidCampaign, serializeCampaign } from '../storage.js';
+import { campaignNameFromPayload, isValidCampaign, normalizeCampaignName, serializeCampaign } from '../storage.js';
 import { makeDefaultCampaign, uid } from '../logic.js';
 
 function createBlankScene() {
@@ -14,9 +14,19 @@ function createBlankScene() {
   };
 }
 
-function campaignExportFileName() {
+function slugifyFilePart(value) {
+  const normalized = normalizeCampaignName(value)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return normalized || 'campagne-cadence';
+}
+
+function campaignExportFileName(campaignName) {
   const date = new Date().toISOString().slice(0, 10);
-  return `campagne-cadence-${date}.cad`;
+  return `${slugifyFilePart(campaignName)}-${date}.cad`;
 }
 
 function downloadBlob(blob, fileName) {
@@ -28,8 +38,8 @@ function downloadBlob(blob, fileName) {
   URL.revokeObjectURL(url);
 }
 
-async function shareOrDownloadCampaign(content) {
-  const fileName = campaignExportFileName();
+async function shareOrDownloadCampaign(content, campaignName) {
+  const fileName = campaignExportFileName(campaignName);
   const blob = new Blob([content], { type: 'application/json' });
 
   if (typeof File !== 'undefined' && navigator.canShare && navigator.share) {
@@ -38,7 +48,7 @@ async function shareOrDownloadCampaign(content) {
       try {
         await navigator.share({
           files: [file],
-          title: 'Campagne Cadence',
+          title: normalizeCampaignName(campaignName),
           text: 'Export de campagne Cadence',
         });
         return;
@@ -52,16 +62,19 @@ async function shareOrDownloadCampaign(content) {
   downloadBlob(blob, fileName);
 }
 
-export function createCampaignActions({ scenes, dark, setScenes, setSceneIndex, setDark }) {
+export function createCampaignActions({ scenes, dark, campaignName, setScenes, setSceneIndex, setDark, setCampaignName }) {
   return {
     setSceneIndex,
     setDark,
+    setCampaignName(name) {
+      setCampaignName(normalizeCampaignName(name));
+    },
     newScene() {
       setScenes((currentScenes) => [...currentScenes, createBlankScene()]);
       setSceneIndex(scenes.length);
     },
     async exportCampaign() {
-      await shareOrDownloadCampaign(serializeCampaign(scenes, dark));
+      await shareOrDownloadCampaign(serializeCampaign(scenes, dark, campaignName), campaignName);
     },
     async importCampaign(file) {
       try {
@@ -70,6 +83,7 @@ export function createCampaignActions({ scenes, dark, setScenes, setSceneIndex, 
 
         setScenes(data.scenes);
         setDark(data.settings?.dark || false);
+        setCampaignName(campaignNameFromPayload(data));
         setSceneIndex(0);
         return { ok: true };
       } catch {
@@ -79,6 +93,7 @@ export function createCampaignActions({ scenes, dark, setScenes, setSceneIndex, 
     resetDemo() {
       const fresh = makeDefaultCampaign();
       setScenes(fresh.scenes);
+      setCampaignName(campaignNameFromPayload(fresh));
       setSceneIndex(0);
     },
   };
