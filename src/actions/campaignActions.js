@@ -1,16 +1,55 @@
+import { defaultCategoryOrder, defaultEqualityRule, defaultPhaseDecrement, defaultPhaseRerollEachRound, defaultTemporalityMode, temporalityModes } from '../constants.js';
 import { campaignNameFromPayload, isValidCampaign, normalizeCampaignName, serializeCampaign } from '../storage.js';
 import { makeDefaultCampaign, uid } from '../logic.js';
 
-function createBlankScene() {
+function initiativeRulesFromScene(scene = {}) {
+  return {
+    temporalite: scene.temporalite || defaultTemporalityMode,
+    phaseDecrement: Math.max(1, Number(scene.phaseDecrement) || defaultPhaseDecrement),
+    phaseRerollEachRound: scene.phaseRerollEachRound ?? defaultPhaseRerollEachRound,
+    equalityRule: scene.equalityRule || defaultEqualityRule,
+    categoryOrder: Array.isArray(scene.categoryOrder) && scene.categoryOrder.length ? scene.categoryOrder : defaultCategoryOrder,
+  };
+}
+
+function applyTemporality(scene, temporalite) {
+  return {
+    ...scene,
+    temporalite,
+    phase: temporalite === temporalityModes.PHASES ? (scene.phase || 1) : 1,
+    activeId: temporalite === temporalityModes.FLEXIBLE ? '' : scene.activeId,
+    jouesSouples: temporalite === temporalityModes.FLEXIBLE ? (scene.jouesSouples || []) : [],
+    historiqueSouple: temporalite === temporalityModes.FLEXIBLE ? (scene.historiqueSouple || []) : [],
+  };
+}
+
+function applyInitiativeRules(scene, patch = {}) {
+  const current = initiativeRulesFromScene(scene);
+  const next = { ...current, ...patch };
+  const sceneWithTemporality = patch.temporalite ? applyTemporality(scene, next.temporalite) : scene;
+
+  return {
+    ...sceneWithTemporality,
+    temporalite: next.temporalite,
+    phaseDecrement: Math.max(1, Number(next.phaseDecrement) || defaultPhaseDecrement),
+    phaseRerollEachRound: !!next.phaseRerollEachRound,
+    equalityRule: next.equalityRule || defaultEqualityRule,
+    categoryOrder: Array.isArray(next.categoryOrder) && next.categoryOrder.length ? next.categoryOrder : defaultCategoryOrder,
+  };
+}
+
+function createBlankScene(rules = {}) {
   return {
     id: uid('scene'),
     title: 'Nouvelle scène',
     type: 'Scène',
     round: 1,
+    phase: 1,
     activeId: '',
     notes: '',
     reserve: [],
     participants: [],
+    ...initiativeRulesFromScene(rules),
   };
 }
 
@@ -92,7 +131,7 @@ async function shareOrDownloadCampaign(content, campaignName) {
   return { ok: true, method: 'download' };
 }
 
-export function createCampaignActions({ scenes, dark, campaignName, setScenes, setSceneIndex, setDark, setCampaignNameState }) {
+export function createCampaignActions({ scenes, sceneIndex, dark, campaignName, setScenes, setSceneIndex, setDark, setCampaignNameState }) {
   return {
     setSceneIndex,
     setDark,
@@ -100,8 +139,12 @@ export function createCampaignActions({ scenes, dark, campaignName, setScenes, s
       setCampaignNameState(normalizeCampaignName(name));
     },
     newScene() {
-      setScenes((currentScenes) => [...currentScenes, createBlankScene()]);
+      const sourceRules = initiativeRulesFromScene(scenes[sceneIndex] || scenes[0]);
+      setScenes((currentScenes) => [...currentScenes, createBlankScene(sourceRules)]);
       setSceneIndex(scenes.length);
+    },
+    updateCampaignInitiativeRules(patch) {
+      setScenes((currentScenes) => currentScenes.map((scene) => applyInitiativeRules(scene, patch)));
     },
     async exportCampaign(name = campaignName) {
       const exportName = normalizeCampaignName(name);
