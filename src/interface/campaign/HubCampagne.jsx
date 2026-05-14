@@ -1,5 +1,18 @@
 import { useMemo, useRef, useState } from 'react';
-import { APP_VERSION } from '../../constants.js';
+import {
+  APP_VERSION,
+  defaultCategoryOrder,
+  defaultEqualityRule,
+  defaultPhaseDecrement,
+  defaultPhaseRerollEachRound,
+  defaultTemporalityMode,
+  equalityRuleDescriptions,
+  equalityRuleLabels,
+  equalityRules,
+  temporalityDescriptions,
+  temporalityLabels,
+  temporalityModes,
+} from '../../constants.js';
 
 function grouperTemplates(templates = []) {
   return [...templates]
@@ -15,15 +28,16 @@ function grouperTemplates(templates = []) {
 
 function OngletsHub({ onglet, setOnglet }) {
   return (
-    <div className="grid3 hub-tabs">
+    <div className="grid4 hub-tabs">
       <button className={`choice ${onglet === 'scenes' ? 'selected' : ''}`} onClick={() => setOnglet('scenes')}>Scènes</button>
+      <button className={`choice ${onglet === 'regles' ? 'selected' : ''}`} onClick={() => setOnglet('regles')}>Règles</button>
       <button className={`choice ${onglet === 'sauvegarde' ? 'selected' : ''}`} onClick={() => setOnglet('sauvegarde')}>Sauvegarde</button>
       <button className={`choice ${onglet === 'templates' ? 'selected' : ''}`} onClick={() => setOnglet('templates')}>Templates</button>
     </div>
   );
 }
 
-function EnteteHub({ campaignName, sombre, onChangerTheme, onOuvrirScene }) {
+function EnteteHub({ campaignName, sombre, onChangerTheme }) {
   const logo = sombre ? '/branding/logo-cadence-dark.svg' : '/branding/logo-cadence-light.svg';
 
   return (
@@ -35,14 +49,11 @@ function EnteteHub({ campaignName, sombre, onChangerTheme, onOuvrirScene }) {
           <span className="muted">Cadence · v{APP_VERSION}</span>
         </div>
       </div>
-      <div className="hub-header-actions">
-        <button className="small-btn" onClick={onOuvrirScene}>Ouvrir la scène</button>
-        <button className={`theme-toggle ${sombre ? 'dark-on' : 'light-on'}`} onClick={() => onChangerTheme(!sombre)} aria-label="Basculer thème clair ou sombre">
-          <span>☀</span>
-          <span>☾</span>
-          <i />
-        </button>
-      </div>
+      <button className={`theme-toggle ${sombre ? 'dark-on' : 'light-on'}`} onClick={() => onChangerTheme(!sombre)} aria-label="Basculer thème clair ou sombre">
+        <span>☀</span>
+        <span>☾</span>
+        <i />
+      </button>
     </header>
   );
 }
@@ -66,6 +77,109 @@ function OngletScenes({ scenes, sceneActiveId, onChoisirScene, onNouvelleScene }
           </button>
         ))}
       </div>
+    </div>
+  );
+}
+
+function OptionsTemporaliteCampagne({ temporalite = defaultTemporalityMode, onModifier }) {
+  return (
+    <div className="scene-options compact-options advanced-rule-block">
+      <h3>Temporalité</h3>
+      <p className="muted compact-help">Règle appliquée aux scènes de la campagne.</p>
+      <div className="advanced-radio-list">
+        {Object.values(temporalityModes).map((mode) => (
+          <label className={`advanced-radio ${temporalite === mode ? 'selected' : ''}`} key={mode}>
+            <input type="radio" name="campaign-temporality-mode" value={mode} checked={temporalite === mode} onChange={(event) => onModifier({ temporalite: event.target.value })} />
+            <span><strong>{temporalityLabels[mode]}</strong><small>{temporalityDescriptions[mode]}</small></span>
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function OptionsPhasesCampagne({ scene, onModifier }) {
+  return (
+    <div className="scene-options compact-options advanced-rule-block phase-options">
+      <h3>Phases</h3>
+      <p className="muted compact-help">Paramètres des phases d’initiative pour la campagne.</p>
+      <label className="field">
+        Décrément
+        <input type="number" min="1" step="1" value={scene?.phaseDecrement || defaultPhaseDecrement} onChange={(event) => onModifier({ phaseDecrement: event.target.value })} />
+      </label>
+      <div className="advanced-radio-list">
+        <label className={`advanced-radio ${!(scene?.phaseRerollEachRound ?? defaultPhaseRerollEachRound) ? 'selected' : ''}`}>
+          <input type="radio" name="campaign-phase-round-init" checked={!(scene?.phaseRerollEachRound ?? defaultPhaseRerollEachRound)} onChange={() => onModifier({ phaseRerollEachRound: false })} />
+          <span><strong>Reprendre les anciennes initiatives</strong><small>Au nouveau round, Cadence repart en phase 1 avec les mêmes valeurs.</small></span>
+        </label>
+        <label className={`advanced-radio ${(scene?.phaseRerollEachRound ?? defaultPhaseRerollEachRound) ? 'selected' : ''}`}>
+          <input type="radio" name="campaign-phase-round-init" checked={scene?.phaseRerollEachRound ?? defaultPhaseRerollEachRound} onChange={() => onModifier({ phaseRerollEachRound: true })} />
+          <span><strong>Relancer l’initiative</strong><small>Au nouveau round, Cadence attend une nouvelle saisie d’initiative.</small></span>
+        </label>
+      </div>
+    </div>
+  );
+}
+
+function OptionsEgalitesCampagne({ scene, onModifier }) {
+  const equalityRule = scene?.equalityRule || defaultEqualityRule;
+  return (
+    <div className="scene-options compact-options advanced-rule-block">
+      <h3>Synchronisation</h3>
+      <p className="muted compact-help">Définit quand deux participants partagent vraiment le même tour.</p>
+      <div className="advanced-radio-list">
+        {Object.values(equalityRules).map((rule) => (
+          <label className={`advanced-radio ${equalityRule === rule ? 'selected' : ''}`} key={rule}>
+            <input type="radio" name="campaign-equality-rule" value={rule} checked={equalityRule === rule} onChange={(event) => onModifier({ equalityRule: event.target.value })} />
+            <span><strong>{equalityRuleLabels[rule]}</strong><small>{equalityRuleDescriptions[rule]}</small></span>
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function OptionsOrdreCategoriesCampagne({ scene, onModifier }) {
+  const order = scene?.categoryOrder || defaultCategoryOrder;
+  const deplacer = (index, delta) => {
+    const target = index + delta;
+    if (target < 0 || target >= order.length) return;
+    const suivant = [...order];
+    [suivant[index], suivant[target]] = [suivant[target], suivant[index]];
+    onModifier({ categoryOrder: suivant });
+  };
+
+  return (
+    <div className="scene-options compact-options advanced-rule-block">
+      <h3>Priorités</h3>
+      <p className="muted compact-help">Ordre utilisé quand le type départage encore les égalités.</p>
+      <div className="stack compact-category-order">
+        {order.map((categorie, index) => (
+          <div className="restore-row discreet" key={categorie}>
+            <strong>{categorie}</strong>
+            <div className="compact-arrows">
+              <button className="small-btn" onClick={() => deplacer(index, -1)} disabled={index <= 0}>↑</button>
+              <button className="small-btn" onClick={() => deplacer(index, 1)} disabled={index >= order.length - 1}>↓</button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function OngletRegles({ scene, onModifierRegles }) {
+  const temporalite = scene?.temporalite || defaultTemporalityMode;
+  return (
+    <div className="stack hub-section panel">
+      <div>
+        <h3>Règles d’initiative</h3>
+        <p className="muted compact-help">Ces réglages sont appliqués à toutes les scènes de la campagne et servent de base aux nouvelles scènes.</p>
+      </div>
+      <OptionsTemporaliteCampagne temporalite={temporalite} onModifier={onModifierRegles} />
+      {temporalite === temporalityModes.PHASES && <OptionsPhasesCampagne scene={scene} onModifier={onModifierRegles} />}
+      <OptionsEgalitesCampagne scene={scene} onModifier={onModifierRegles} />
+      <OptionsOrdreCategoriesCampagne scene={scene} onModifier={onModifierRegles} />
     </div>
   );
 }
@@ -136,9 +250,9 @@ export function HubCampagne({
   templates,
   dark,
   onChangerTheme,
-  onOuvrirScene,
   onChoisirScene,
   onNouvelleScene,
+  onModifierReglesInitiative,
   onExporter,
   onImporter,
   onReinitialiser,
@@ -149,10 +263,11 @@ export function HubCampagne({
 
   return (
     <div className="campaign-page shell">
-      <EnteteHub campaignName={campaignName} sombre={dark} onChangerTheme={onChangerTheme} onOuvrirScene={onOuvrirScene} />
+      <EnteteHub campaignName={campaignName} sombre={dark} onChangerTheme={onChangerTheme} />
       <main className="campaign-hub-page">
         <OngletsHub onglet={onglet} setOnglet={setOnglet} />
         {onglet === 'scenes' && <OngletScenes scenes={scenes} sceneActiveId={scene?.id} onChoisirScene={onChoisirScene} onNouvelleScene={onNouvelleScene} />}
+        {onglet === 'regles' && <OngletRegles scene={scene} onModifierRegles={onModifierReglesInitiative} />}
         {onglet === 'sauvegarde' && <OngletSauvegarde onExporter={onExporter} onImporter={onImporter} onReinitialiser={onReinitialiser} />}
         {onglet === 'templates' && <OngletTemplates templates={templates} onAjouterDepuisTemplate={onAjouterDepuisTemplate} onSupprimerTemplate={onSupprimerTemplate} />}
       </main>
