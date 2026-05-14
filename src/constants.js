@@ -1,4 +1,4 @@
-export const APP_VERSION = '0.1.45';
+export const APP_VERSION = '0.1.46';
 export const STORAGE_KEY = 'cadence:campaign:v1';
 export const TEMPLATE_STORAGE_KEY = 'cadence:templates:v1';
 
@@ -11,6 +11,23 @@ export const legacyParticipantKinds = {
 };
 
 export const defaultCategoryOrder = ['PJ', 'Opposant', 'Allié', 'Environnement'];
+
+export const temporalityModes = {
+  CLASSIC: 'classique',
+  FLEXIBLE: 'souple',
+};
+
+export const defaultTemporalityMode = temporalityModes.CLASSIC;
+
+export const temporalityLabels = {
+  [temporalityModes.CLASSIC]: 'Classique',
+  [temporalityModes.FLEXIBLE]: 'Souple',
+};
+
+export const temporalityDescriptions = {
+  [temporalityModes.CLASSIC]: 'Cadence suit l’ordre d’initiative et avance au participant suivant.',
+  [temporalityModes.FLEXIBLE]: 'Le MJ choisit librement le prochain élément actif depuis la liste.',
+};
 
 export const equalityRules = {
   NEVER: 'never',
