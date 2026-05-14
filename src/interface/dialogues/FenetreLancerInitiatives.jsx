@@ -16,7 +16,7 @@ function participantsParType(participants) {
 export function FenetreLancerInitiatives({ participants = [], onFermer, onValider }) {
   const personnages = useMemo(() => participants.filter(estPersonnage), [participants]);
   const groupes = useMemo(() => participantsParType(personnages), [personnages]);
-  const [valeurs, setValeurs] = useState(() => Object.fromEntries(personnages.map((participant) => [participant.id, participant.initiative === '' || participant.initiative == null ? '' : String(participant.initiative)])));
+  const [valeurs, setValeurs] = useState(() => Object.fromEntries(personnages.map((participant) => [participant.id, ''])));
 
   const changerValeur = (id, valeur) => setValeurs((courant) => ({ ...courant, [id]: valeur }));
 
