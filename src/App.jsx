@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { defaultCategoryOrder, defaultEqualityRule } from './constants.js';
+import { defaultCategoryOrder, defaultEqualityRule, temporalityModes } from './constants.js';
 import { groupeEgalitePourParticipant } from './domain/initiative.js';
 import { FenetresSuperposees } from './interface/app/FenetresSuperposees.jsx';
 import { BarreActionBas } from './interface/scene/BarreActionBas.jsx';
@@ -25,6 +25,7 @@ export default function App() {
   const [templateTarget, setTemplateTarget] = useState(null);
   const [templateError, setTemplateError] = useState(null);
 
+  const temporaliteSouple = scene.temporalite === temporalityModes.FLEXIBLE;
   const globalAutoTick = roundEffect === 'next' && !!scene.globalTracker?.enabled && !!scene.globalTracker?.auto;
   const activeGroup = scene.activeId ? groupeEgalitePourParticipant(scene.participants, scene.activeId, { categoryOrder: scene.categoryOrder || defaultCategoryOrder, equalityRule: scene.equalityRule || defaultEqualityRule }) : [];
 
@@ -47,6 +48,11 @@ export default function App() {
       return;
     }
     actions.nextTurn(direction);
+  };
+
+  const choisirActif = (participantId) => {
+    actions.setActiveParticipant(participantId);
+    setShowNotes(false);
   };
 
   const openAddCharacter = () => {
@@ -129,6 +135,7 @@ export default function App() {
           notesVisibles={showNotes}
           classeSuivant={nextClass}
           libelleSuivant={nextLabel}
+          temporaliteSouple={temporaliteSouple}
           onBasculerNotes={() => setShowNotes(!showNotes)}
           onTourPrecedent={() => nextTurn(-1)}
           onTourSuivant={() => nextTurn(1)}
@@ -137,7 +144,7 @@ export default function App() {
         />
 
         <main>
-          <ListeInitiative scene={scene} participants={scene.participants} actifId={scene.activeId} interactions={characters} />
+          <ListeInitiative scene={scene} participants={scene.participants} actifId={scene.activeId} interactions={characters} temporaliteSouple={temporaliteSouple} onChoisirActif={choisirActif} />
           <ReserveHorsInitiative scene={scene} interactions={characters} onModifierNotes={(notes) => actions.updateSceneField('reserveNotes', notes)} />
         </main>
       </div>
