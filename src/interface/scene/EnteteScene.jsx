@@ -5,6 +5,7 @@ export function EnteteScene(props) {
   const {
     scene,
     actif,
+    groupeActif = [],
     horlogesBloquantes,
     effetRound,
     compteurGlobalAuto,
@@ -18,7 +19,12 @@ export function EnteteScene(props) {
     onOuvrirCompteurGlobal,
   } = props;
   const horlogeABloquee = horlogesBloquantes.length > 0;
-  const nomTourActif = horlogeABloquee ? horlogesBloquantes.map((participant) => participant.name).join(', ') : actif?.name || 'Aucun participant';
+  const tourSimultane = !horlogeABloquee && groupeActif.length > 1;
+  const nomTourActif = horlogeABloquee
+    ? horlogesBloquantes.map((participant) => participant.name).join(', ')
+    : tourSimultane
+      ? groupeActif.map((participant) => participant.name).join(' + ')
+      : actif?.name || 'Aucun participant';
 
   return (
     <header className="top compact">
@@ -33,12 +39,13 @@ export function EnteteScene(props) {
       {notesVisibles && <div className="scene-notes panel">{scene.notes}</div>}
       <div className="turn-row">
         <button className="turn-btn" onClick={onTourPrecedent} aria-label="Participant précédent">↶</button>
-        <div className="active-box panel">
+        <div className={`active-box panel ${tourSimultane ? 'simultaneous-turn' : ''}`}>
           <div className="turn-active-line">
             <div className="active-name">
-              <div className="muted">{horlogeABloquee ? 'Horloge à gérer' : 'Tour actif'}</div>
+              <div className="muted">{horlogeABloquee ? 'Horloge à gérer' : tourSimultane ? 'Tour simultané' : 'Tour actif'}</div>
               <strong>{nomTourActif}</strong>
             </div>
+            {tourSimultane && <span className="chip simultaneous-chip">Même temps</span>}
             <CompteurGlobal compteur={scene.globalTracker} onChanger={onModifierCompteurGlobal} onOuvrir={onOuvrirCompteurGlobal} animationTick={compteurGlobalAuto} />
           </div>
         </div>
