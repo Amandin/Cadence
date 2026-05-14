@@ -5,7 +5,7 @@ export function ReserveHorsInitiative({ scene, interactions, onModifierNotes }) 
 
   return (
     <section className="reserve">
-      <h3>Hors initiative</h3>
+      <h3>Réserve</h3>
       {scene.reserve.map((participant) => (
         <FichetteReserve
           key={participant.id}
@@ -18,7 +18,7 @@ export function ReserveHorsInitiative({ scene, interactions, onModifierNotes }) 
           onRetirerEtat={(statusId) => interactions.removeCharacterStatus(participant.id, statusId)}
         />
       ))}
-      <label className="field reserve-notes">Notes hors initiative<textarea value={scene.reserveNotes || ''} onChange={(event) => onModifierNotes(event.target.value)} placeholder="Notes, PNJ en attente, effets hors ordre de tour…" /></label>
+      <label className="field reserve-notes">Notes de réserve<textarea value={scene.reserveNotes || ''} onChange={(event) => onModifierNotes(event.target.value)} placeholder="Renforts, événements en attente, éléments hors scène immédiate…" /></label>
     </section>
   );
 }
