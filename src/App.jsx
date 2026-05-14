@@ -252,9 +252,9 @@ export default function App() {
           templates={templates.templates}
           dark={dark}
           onChangerTheme={actions.setDark}
-          onOuvrirScene={() => setCurrentView('scene')}
           onChoisirScene={chooseScene}
           onNouvelleScene={newScene}
+          onModifierReglesInitiative={actions.updateCampaignInitiativeRules}
           onExporter={() => setExportOpen(true)}
           onImporter={importCampaign}
           onReinitialiser={resetDemo}
