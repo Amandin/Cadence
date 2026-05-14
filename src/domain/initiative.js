@@ -13,6 +13,28 @@ export function valeurDepartage(participant) {
   return numberOr(participant?.departage ?? 0, 0);
 }
 
+export function initiativeDePhase(participant, phase = 1, decrement = 10) {
+  return valeurInitiative(participant) - Math.max(0, Number(phase || 1) - 1) * Math.max(1, Number(decrement) || 10);
+}
+
+export function participantActifEnPhase(participant, phase = 1, decrement = 10) {
+  return initiativeDePhase(participant, phase, decrement) > 0;
+}
+
+export function participantsPourPhase(participants = [], phase = 1, decrement = 10, options = {}) {
+  return trierParInitiative(participants
+    .filter((participant) => participantActifEnPhase(participant, phase, decrement))
+    .map((participant) => ({ ...participant, initiative: initiativeDePhase(participant, phase, decrement), baseInitiative: valeurInitiative(participant) })), options);
+}
+
+export function participantsEnAttentePhase(participants = [], phase = 1, decrement = 10) {
+  return participants.filter((participant) => !participantActifEnPhase(participant, phase, decrement));
+}
+
+export function phaseSuivanteExiste(participants = [], phase = 1, decrement = 10) {
+  return participants.some((participant) => participantActifEnPhase(participant, phase + 1, decrement));
+}
+
 export function normaliserCategorie(kind) {
   return legacyParticipantKinds[kind] || kind || 'Environnement';
 }
