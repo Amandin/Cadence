@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { Fenetre } from '../commun/ComposantsCommuns.jsx';
+import { APP_VERSION } from '../../constants.js';
 
 function grouperTemplates(templates = []) {
   return [...templates]
@@ -23,9 +23,33 @@ function OngletsHub({ onglet, setOnglet }) {
   );
 }
 
-function OngletScenes({ scenes, sceneActiveId, onChoisirScene, onNouvelleScene, onFermer }) {
+function EnteteHub({ campaignName, sombre, onChangerTheme, onOuvrirScene }) {
+  const logo = sombre ? '/branding/logo-cadence-dark.svg' : '/branding/logo-cadence-light.svg';
+
   return (
-    <div className="stack hub-section">
+    <header className="campaign-hub-header panel">
+      <div className="menu-brand">
+        <img src={logo} alt="Cadence" />
+        <div>
+          <strong>{campaignName || 'Campagne Cadence'}</strong>
+          <span className="muted">Cadence · v{APP_VERSION}</span>
+        </div>
+      </div>
+      <div className="hub-header-actions">
+        <button className="small-btn" onClick={onOuvrirScene}>Ouvrir la scène</button>
+        <button className={`theme-toggle ${sombre ? 'dark-on' : 'light-on'}`} onClick={() => onChangerTheme(!sombre)} aria-label="Basculer thème clair ou sombre">
+          <span>☀</span>
+          <span>☾</span>
+          <i />
+        </button>
+      </div>
+    </header>
+  );
+}
+
+function OngletScenes({ scenes, sceneActiveId, onChoisirScene, onNouvelleScene }) {
+  return (
+    <div className="stack hub-section panel">
       <div className="hub-section-head">
         <h3>Scènes</h3>
         <button className="small-btn" onClick={onNouvelleScene}>Nouvelle scène</button>
@@ -35,10 +59,10 @@ function OngletScenes({ scenes, sceneActiveId, onChoisirScene, onNouvelleScene, 
           <button
             className={`restore-row hub-row ${scene.id === sceneActiveId ? 'selected' : ''}`}
             key={scene.id}
-            onClick={() => { onChoisirScene(index); onFermer(); }}
+            onClick={() => onChoisirScene(index)}
           >
             <span><strong>{scene.title || 'Scène'}</strong><small>{scene.type || 'Scène'} · Round {scene.round || 1}</small></span>
-            {scene.id === sceneActiveId && <em>active</em>}
+            <em>{scene.id === sceneActiveId ? 'active' : 'ouvrir'}</em>
           </button>
         ))}
       </div>
@@ -56,7 +80,7 @@ function OngletSauvegarde({ onExporter, onImporter, onReinitialiser }) {
   };
 
   return (
-    <div className="stack hub-section">
+    <div className="stack hub-section panel">
       <h3>Sauvegarde</h3>
       <p className="muted compact-help">Exporte une campagne .cad, importe une sauvegarde Cadence ou réinitialise la démo.</p>
       <div className="grid2">
@@ -74,7 +98,7 @@ function OngletTemplates({ templates = [], onAjouterDepuisTemplate, onSupprimerT
 
   if (templates.length === 0) {
     return (
-      <div className="stack hub-section">
+      <div className="stack hub-section panel">
         <h3>Templates</h3>
         <div className="empty-section panel">Aucun template enregistré. Ouvre une fiche personnage puis utilise “Enregistrer comme template”.</div>
       </div>
@@ -82,7 +106,7 @@ function OngletTemplates({ templates = [], onAjouterDepuisTemplate, onSupprimerT
   }
 
   return (
-    <div className="stack hub-section">
+    <div className="stack hub-section panel">
       <h3>Templates</h3>
       <p className="muted compact-help">Ajoute rapidement un template à la scène courante ou supprime les fiches devenues inutiles.</p>
       {groupes.map((groupe) => (
@@ -106,10 +130,13 @@ function OngletTemplates({ templates = [], onAjouterDepuisTemplate, onSupprimerT
 }
 
 export function HubCampagne({
+  campaignName,
   scene,
   scenes,
   templates,
-  onFermer,
+  dark,
+  onChangerTheme,
+  onOuvrirScene,
   onChoisirScene,
   onNouvelleScene,
   onExporter,
@@ -121,13 +148,14 @@ export function HubCampagne({
   const [onglet, setOnglet] = useState('scenes');
 
   return (
-    <Fenetre title="Hub de campagne" onClose={onFermer}>
-      <div className="stack campaign-hub">
+    <div className="campaign-page shell">
+      <EnteteHub campaignName={campaignName} sombre={dark} onChangerTheme={onChangerTheme} onOuvrirScene={onOuvrirScene} />
+      <main className="campaign-hub-page">
         <OngletsHub onglet={onglet} setOnglet={setOnglet} />
-        {onglet === 'scenes' && <OngletScenes scenes={scenes} sceneActiveId={scene?.id} onChoisirScene={onChoisirScene} onNouvelleScene={onNouvelleScene} onFermer={onFermer} />}
+        {onglet === 'scenes' && <OngletScenes scenes={scenes} sceneActiveId={scene?.id} onChoisirScene={onChoisirScene} onNouvelleScene={onNouvelleScene} />}
         {onglet === 'sauvegarde' && <OngletSauvegarde onExporter={onExporter} onImporter={onImporter} onReinitialiser={onReinitialiser} />}
         {onglet === 'templates' && <OngletTemplates templates={templates} onAjouterDepuisTemplate={onAjouterDepuisTemplate} onSupprimerTemplate={onSupprimerTemplate} />}
-      </div>
-    </Fenetre>
+      </main>
+    </div>
   );
 }
