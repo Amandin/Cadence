@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { defaultCategoryOrder, defaultEqualityRule, temporalityModes } from './constants.js';
 import { groupeEgalitePourParticipant, participantsPourPhase, phaseSuivanteExiste } from './domain/initiative.js';
 import { FenetresSuperposees } from './interface/app/FenetresSuperposees.jsx';
@@ -25,6 +25,7 @@ export default function App() {
   const [initiativeEntryOpen, setInitiativeEntryOpen] = useState(false);
   const [templateTarget, setTemplateTarget] = useState(null);
   const [templateError, setTemplateError] = useState(null);
+  const previousRoundRef = useRef(scene.round);
 
   const temporaliteSouple = scene.temporalite === temporalityModes.FLEXIBLE;
   const temporalitePhases = scene.temporalite === temporalityModes.PHASES;
@@ -59,6 +60,14 @@ export default function App() {
   useEffect(() => {
     if (clockModalOpen && blocked.length === 0) setClockModalOpen(false);
   }, [blocked.length, clockModalOpen]);
+
+  useEffect(() => {
+    const roundAvant = previousRoundRef.current;
+    previousRoundRef.current = scene.round;
+    if (scene.round > roundAvant && scene.temporalite === temporalityModes.PHASES && scene.phaseRerollEachRound) {
+      setInitiativeEntryOpen(true);
+    }
+  }, [scene.phaseRerollEachRound, scene.round, scene.temporalite]);
 
   // Une horloge bloquante interrompt volontairement le passage au tour suivant :
   // elle doit être résolue avant que les états/horloges avancent.
