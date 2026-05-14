@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { APP_VERSION, defaultCategoryOrder, defaultEqualityRule, equalityRuleLabels, equalityRules } from '../../constants.js';
+import { APP_VERSION, defaultCategoryOrder, defaultEqualityRule, equalityRuleDescriptions, equalityRuleLabels, equalityRules } from '../../constants.js';
 import { Fenetre } from '../commun/ComposantsCommuns.jsx';
 
 function LogoMenu({ sombre }) {
@@ -66,13 +66,15 @@ function OptionsEgalites({ equalityRule = defaultEqualityRule, onModifier }) {
   return (
     <div className="scene-options compact-options advanced-rule-block">
       <h3>Synchronisation</h3>
-      <p className="muted compact-help">Décide quand plusieurs éléments partagent exactement le même tour.</p>
-      <label className="field compact-field">
-        Mode
-        <select value={equalityRule} onChange={(event) => onModifier(event.target.value)}>
-          {Object.values(equalityRules).map((rule) => <option key={rule} value={rule}>{equalityRuleLabels[rule]}</option>)}
-        </select>
-      </label>
+      <p className="muted compact-help">Quand deux éléments partagent-ils vraiment le même tour ?</p>
+      <div className="advanced-radio-list">
+        {Object.values(equalityRules).map((rule) => (
+          <label className={`advanced-radio ${equalityRule === rule ? 'selected' : ''}`} key={rule}>
+            <input type="radio" name="equality-rule" value={rule} checked={equalityRule === rule} onChange={(event) => onModifier(event.target.value)} />
+            <span><strong>{equalityRuleLabels[rule]}</strong><small>{equalityRuleDescriptions[rule]}</small></span>
+          </label>
+        ))}
+      </div>
     </div>
   );
 }
@@ -95,7 +97,7 @@ function OptionsOrdreCategories({ order = defaultCategoryOrder, onModifier }) {
   return (
     <div className="scene-options compact-options advanced-rule-block">
       <h3>Priorités</h3>
-      <p className="muted compact-help">Départage les types quand la synchronisation n’est pas forcée.</p>
+      <p className="muted compact-help">Ordre utilisé quand le type départage encore les égalités.</p>
       <div className="stack compact-category-order">
         {order.map((categorie, index) => (
           <div className="restore-row discreet" key={categorie}>
