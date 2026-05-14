@@ -23,7 +23,7 @@ export function createStatus(data) {
 }
 
 export function statusRendInactif(status) {
-  return !!status?.inactive;
+  return !!status?.inactive && !status?.expired;
 }
 
 export function participantEstInactif(participant) {
