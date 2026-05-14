@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { HubCampagne } from '../campaign/HubCampagne.jsx';
 import { FenetreEtat } from '../dialogues/FenetreEtat.jsx';
 import { FenetreExportCampagne } from '../dialogues/FenetreExportCampagne.jsx';
 import { FenetreInformation } from '../dialogues/FenetreInformation.jsx';
@@ -35,6 +36,7 @@ export function FenetresSuperposees({
 }) {
   const [reglesAvanceesOuvertes, setReglesAvanceesOuvertes] = useState(false);
   const [exportOuvert, setExportOuvert] = useState(false);
+  const [hubOuvert, setHubOuvert] = useState(false);
   const {
     addSheetOpen,
     openMenu,
@@ -63,6 +65,15 @@ export function FenetresSuperposees({
   const { templateTarget, templateError, fermerSauvegardeTemplate, enregistrerTemplate } = templatesUi;
   const { resetClock, deleteClock } = resolutionHorloge;
 
+  const ouvrirHub = () => {
+    fermerMenu?.();
+    setHubOuvert(true);
+  };
+
+  const ajouterTemplateDansScene = (templateId) => {
+    creerDepuisTemplate(templateId, { placement: 'reserve' });
+  };
+
   return (
     <>
       {characters.selected && <FicheParticipant participant={characters.selected} enInitiative={characters.isInInit(characters.selected.id)} onFermer={characters.closeCharacter} onModifier={() => characters.editCharacter(characters.selected.id)} onChangerInitiative={(initiative) => characters.updateCharacter(characters.selected.id, (participant) => ({ ...participant, initiative }))} onRejoindreInitiative={() => characters.requestJoin(characters.selected.id)} onQuitterInitiative={() => characters.leaveInit(characters.selected.id)} onSuivi={(trackerId, next) => characters.updateCharacterTracker(characters.selected.id, trackerId, next)} onSupprimerSuivi={(trackerId) => characters.deleteCharacterTracker(characters.selected.id, trackerId)} onAjouterEtat={() => characters.requestStatus(characters.selected.id)} onRetirerEtat={(statusId) => characters.removeCharacterStatus(characters.selected.id, statusId)} onNote={(note) => characters.updateCharacter(characters.selected.id, (participant) => ({ ...participant, note }))} />}
@@ -74,7 +85,8 @@ export function FenetresSuperposees({
       {globalSheetOpen && <FenetreCompteurGlobal compteur={scene.globalTracker} onModifier={actions.updateGlobalTracker} onChanger={actions.stepGlobal} onFermer={fermerCompteurGlobal} />}
       {clockModalOpen && <FenetreResolutionHorloge participants={compteurGlobal.horlogesBloquantes} onFermer={fermerResolutionHorloge} onRelancerHorloge={resetClock} onSupprimerHorloge={deleteClock} />}
       {notice && <FenetreInformation titre={notice.title} message={notice.message} onFermer={fermerNotice} />}
-      {openMenu && <MenuPrincipal campaignName={campaignName} scenes={scenes} scene={scene} restorePoints={restorePoints} onRestore={restaurerScene} onClose={fermerMenu} setSceneIndex={actions.setSceneIndex} dark={dark} setDark={actions.setDark} onAddParticipant={commandesInterface.ouvrirAjoutPersonnage} onNewScene={nouvelleScene} onExport={() => setExportOuvert(true)} onImport={importerCampagne} onReset={reinitialiserDemo} onGlobalTracker={actions.updateGlobalTracker} onOpenAdvancedRules={() => setReglesAvanceesOuvertes(true)} onOpenInitiativeRoller={commandesInterface.ouvrirSaisieInitiatives} />}
+      {openMenu && <MenuPrincipal scene={scene} restorePoints={restorePoints} onRestore={restaurerScene} onClose={fermerMenu} dark={dark} setDark={actions.setDark} onAddParticipant={commandesInterface.ouvrirAjoutPersonnage} onOpenCampaignHub={ouvrirHub} onGlobalTracker={actions.updateGlobalTracker} onOpenAdvancedRules={() => setReglesAvanceesOuvertes(true)} onOpenInitiativeRoller={commandesInterface.ouvrirSaisieInitiatives} />}
+      {hubOuvert && <HubCampagne scene={scene} scenes={scenes} templates={templates.templates} onFermer={() => setHubOuvert(false)} onChoisirScene={actions.setSceneIndex} onNouvelleScene={nouvelleScene} onExporter={() => setExportOuvert(true)} onImporter={importerCampagne} onReinitialiser={reinitialiserDemo} onAjouterDepuisTemplate={ajouterTemplateDansScene} onSupprimerTemplate={templates.deleteTemplate} />}
       {exportOuvert && <FenetreExportCampagne nomInitial={campaignName} onFermer={() => setExportOuvert(false)} onExporter={actions.exportCampaign} />}
       {reglesAvanceesOuvertes && <FenetreReglesAvancees scene={scene} onFermer={() => setReglesAvanceesOuvertes(false)} onUpdateCategoryOrder={actions.updateCategoryOrder} onUpdateEqualityRule={actions.updateEqualityRule} onUpdateTemporality={actions.updateTemporality} onUpdatePhaseDecrement={actions.updatePhaseDecrement} onUpdatePhaseRerollEachRound={actions.updatePhaseRerollEachRound} />}
       {initiativeEntryOpen && <FenetreLancerInitiatives participants={scene.participants} reserve={scene.reserve} onFermer={fermerSaisieInitiatives} onValider={actions.applyInitiativeRolls} onPasserHorsInitiative={actions.moveParticipantsToReserve} />}
