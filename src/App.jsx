@@ -32,7 +32,7 @@ export default function App() {
   useEffect(() => {
     if (!scene.activeId) return;
     const element = document.querySelector(`[data-participant-id="${scene.activeId}"]`);
-    element?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    element?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }, [scene.activeId]);
 
   useEffect(() => {
@@ -51,8 +51,13 @@ export default function App() {
     actions.nextTurn(direction);
   };
 
-  const choisirActif = (participantId) => {
-    actions.setActiveParticipant(participantId);
+  const marquerAJoue = (participantId) => {
+    actions.markFlexiblePlayed(participantId);
+    setShowNotes(false);
+  };
+
+  const annulerAJoue = (participantId) => {
+    actions.unmarkFlexiblePlayed(participantId);
     setShowNotes(false);
   };
 
@@ -145,7 +150,7 @@ export default function App() {
         />
 
         <main>
-          <ListeInitiative scene={scene} participants={scene.participants} actifId={scene.activeId} interactions={characters} temporaliteSouple={temporaliteSouple} onChoisirActif={choisirActif} />
+          <ListeInitiative scene={scene} participants={scene.participants} actifId={scene.activeId} interactions={characters} temporaliteSouple={temporaliteSouple} onMarquerAJoue={marquerAJoue} onAnnulerAJoue={annulerAJoue} />
           <ReserveHorsInitiative scene={scene} interactions={characters} onModifierNotes={(notes) => actions.updateSceneField('reserveNotes', notes)} />
         </main>
       </div>
