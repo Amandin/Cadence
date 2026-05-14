@@ -14,6 +14,44 @@ function createBlankScene() {
   };
 }
 
+function campaignExportFileName() {
+  const date = new Date().toISOString().slice(0, 10);
+  return `campagne-cadence-${date}.json`;
+}
+
+function downloadBlob(blob, fileName) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fileName;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+async function shareOrDownloadCampaign(content) {
+  const fileName = campaignExportFileName();
+  const blob = new Blob([content], { type: 'application/json' });
+
+  if (typeof File !== 'undefined' && navigator.canShare && navigator.share) {
+    const file = new File([blob], fileName, { type: 'application/json' });
+    if (navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: 'Campagne Cadence',
+          text: 'Export de campagne Cadence',
+        });
+        return;
+      } catch (error) {
+        if (error?.name === 'AbortError') return;
+        console.warn('Partage impossible, téléchargement direct utilisé.', error);
+      }
+    }
+  }
+
+  downloadBlob(blob, fileName);
+}
+
 export function createCampaignActions({ scenes, dark, setScenes, setSceneIndex, setDark }) {
   return {
     setSceneIndex,
@@ -22,14 +60,8 @@ export function createCampaignActions({ scenes, dark, setScenes, setSceneIndex, 
       setScenes((currentScenes) => [...currentScenes, createBlankScene()]);
       setSceneIndex(scenes.length);
     },
-    exportCampaign() {
-      const blob = new Blob([serializeCampaign(scenes, dark)], { type:'application/json' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'campagne-cadence.json';
-      link.click();
-      URL.revokeObjectURL(url);
+    async exportCampaign() {
+      await shareOrDownloadCampaign(serializeCampaign(scenes, dark));
     },
     async importCampaign(file) {
       try {
