@@ -105,6 +105,12 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
         participants: trierParInitiative(s.participants || [], { ...optionsTri(s), equalityRule }),
       }));
     },
+    updateTemporality(temporalite) {
+      updateScene((s) => ({ ...s, temporalite }));
+    },
+    setActiveParticipant(activeId) {
+      updateScene((s) => ({ ...s, activeId }));
+    },
     restoreScene(pointId) {
       const point = (restorePoints[scene.id] || []).find((item) => item.id === pointId);
       if (!point) return;
