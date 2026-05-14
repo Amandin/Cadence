@@ -1,5 +1,5 @@
 import { defaultCategoryOrder, defaultEqualityRule, temporalityModes } from '../constants.js';
-import { trierParInitiative, valeurInitiative } from '../domain/initiative.js';
+import { phaseSuivanteExiste, participantsPourPhase, trierParInitiative, valeurInitiative } from '../domain/initiative.js';
 import { stepAutoGlobalTracker } from '../domain/globalTracker.js';
 import { createStatus } from '../domain/statuses.js';
 import { clone, newTracker, tickParticipant, untickParticipant, uid } from '../logic.js';
@@ -47,6 +47,10 @@ function estModeSouple(scene) {
   return scene.temporalite === temporalityModes.FLEXIBLE;
 }
 
+function estModePhases(scene) {
+  return scene.temporalite === temporalityModes.PHASES;
+}
+
 function toutLeMondeAJoueSouple(scene) {
   const idsJoues = new Set(scene.jouesSouples || []);
   return (scene.participants || []).length > 0 && scene.participants.every((participant) => idsJoues.has(participant.id));
@@ -61,6 +65,10 @@ function trouverTourActifParInitiative(scene, participantsTries) {
   if (actifMemeOuPlusBas) return { activeId: actifMemeOuPlusBas.id, nouveauRound: false };
 
   return { activeId: participantsTries[0]?.id || scene.activeId, nouveauRound: participantsTries.length > 0 };
+}
+
+function participantsPhase(scene, phase = scene.phase || 1) {
+  return participantsPourPhase(scene.participants || [], phase, scene.phaseDecrement || 10, optionsTri(scene));
 }
 
 function appliquerDebutNouveauRound(scene, activeId) {
@@ -87,9 +95,21 @@ function appliquerNouveauRoundSouple(scene) {
   };
 }
 
+function appliquerNouveauRoundPhases(scene) {
+  return {
+    ...scene,
+    activeId: '',
+    phase: 1,
+    round: Math.max(1, scene.round + 1),
+    globalTracker: stepAutoGlobalTracker(scene.globalTracker, 1),
+    participants: (scene.participants || []).map(tickParticipant),
+    reserve: (scene.reserve || []).map(tickParticipant),
+  };
+}
+
 function modifierParticipantDansScene(scene, participantId, updater) {
   const participants = trierParInitiative(scene.participants.map((p) => p.id === participantId ? updater(p) : p), optionsTri(scene));
-  const { activeId, nouveauRound } = estModeSouple(scene)
+  const { activeId, nouveauRound } = estModeSouple(scene) || estModePhases(scene)
     ? { activeId: scene.activeId, nouveauRound: false }
     : trouverTourActifParInitiative(scene, participants);
   const sceneSuivante = {
@@ -158,9 +178,15 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
       updateScene((s) => ({
         ...s,
         temporalite,
+        phase: temporalite === temporalityModes.PHASES ? (s.phase || 1) : 1,
+        activeId: temporalite === temporalityModes.FLEXIBLE ? '' : s.activeId,
         jouesSouples: temporalite === temporalityModes.FLEXIBLE ? (s.jouesSouples || []) : [],
         historiqueSouple: temporalite === temporalityModes.FLEXIBLE ? (s.historiqueSouple || []) : [],
       }));
+    },
+    updatePhaseDecrement(phaseDecrement) {
+      const valeur = Math.max(1, Number(phaseDecrement) || 10);
+      updateScene((s) => ({ ...s, phaseDecrement: valeur, activeId: estModePhases(s) ? participantsPhase({ ...s, phaseDecrement: valeur })[0]?.id || '' : s.activeId }));
     },
     setActiveParticipant(activeId) {
       updateScene((s) => ({ ...s, activeId }));
@@ -174,10 +200,10 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
           if (!Number.isFinite(initiative)) return participant;
           return { ...participant, initiative };
         }), optionsTri(s));
+        const sceneAvecParticipants = { ...s, participants, phase: estModePhases(s) ? 1 : s.phase || 1 };
         return {
-          ...s,
-          participants,
-          activeId: estModeSouple(s) ? '' : participants[0]?.id || '',
+          ...sceneAvecParticipants,
+          activeId: estModeSouple(s) ? '' : estModePhases(s) ? participantsPhase(sceneAvecParticipants)[0]?.id || '' : participants[0]?.id || '',
           jouesSouples: [],
           historiqueSouple: [],
         };
@@ -265,6 +291,38 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
             return nextScene;
           });
         }
+        return;
+      }
+
+      if (estModePhases(scene)) {
+        const phaseParticipants = participantsPhase(scene);
+        if (!phaseParticipants.length) return;
+        const currentIndex = Math.max(0, phaseParticipants.findIndex((p) => p.id === scene.activeId));
+        if (direction < 0) {
+          const previousIndex = Math.max(0, currentIndex - 1);
+          updateScene((s) => ({ ...s, activeId: phaseParticipants[previousIndex]?.id || s.activeId }));
+          return;
+        }
+        const nextIndex = currentIndex + 1;
+        if (nextIndex < phaseParticipants.length) {
+          updateScene((s) => ({ ...s, activeId: phaseParticipants[nextIndex].id }));
+          return;
+        }
+        if (blocked.length) return;
+        if (phaseSuivanteExiste(scene.participants, scene.phase || 1, scene.phaseDecrement || 10)) {
+          updateScene((s) => {
+            const phase = (s.phase || 1) + 1;
+            const nextParticipants = participantsPhase({ ...s, phase });
+            return { ...s, phase, activeId: nextParticipants[0]?.id || '' };
+          });
+          return;
+        }
+        setRoundEffect('next');
+        updateScene((s) => {
+          const nextScene = appliquerNouveauRoundPhases(s);
+          setRestorePoints((points) => addRestorePoint(points, s.id, nextScene));
+          return nextScene;
+        });
         return;
       }
 
