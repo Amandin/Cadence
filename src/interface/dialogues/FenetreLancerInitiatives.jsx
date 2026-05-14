@@ -129,7 +129,7 @@ export function FenetreLancerInitiatives({ participants = [], reserve = [], onFe
         <div className="initiative-actions">
           <div className="initiative-decision-actions">
             <BoutonChoixInitiative
-              titre="Appliquer"
+              titre="Continuer"
               detail={saisiePartielle ? 'Valider, puis compléter les champs vides.' : 'Valider les valeurs renseignées.'}
               onClick={appliquer}
               disabled={restantsAvecValeur.length === 0}
@@ -142,13 +142,13 @@ export function FenetreLancerInitiatives({ participants = [], reserve = [], onFe
               variant="keep-choice"
             />}
             {saisiePartielle && participantsActifsSansValeur.length > 0 && <BoutonChoixInitiative
-              titre="Hors init’"
+              titre="Ignorer"
               detail="Valider et sortir les non renseignés."
               onClick={appliquerEtPasserRestantsHorsInitiative}
               variant="out-choice"
             />}
           </div>
-          {participantsActifsSansValeur.length > 0 && restantsAvecValeur.length === 0 && idsEnAttente.length < candidats.length && <BoutonChoixInitiative titre="Hors init’" detail="Sortir les champs encore vides." onClick={passerRestantsHorsInitiative} variant="out-choice" />}
+          {participantsActifsSansValeur.length > 0 && restantsAvecValeur.length === 0 && idsEnAttente.length < candidats.length && <BoutonChoixInitiative titre="Ignorer" detail="Sortir les champs encore vides." onClick={passerRestantsHorsInitiative} variant="out-choice" />}
           <button className="initiative-cancel-action" onClick={onFermer}>Annuler</button>
         </div>
       </div>
