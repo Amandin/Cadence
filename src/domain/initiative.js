@@ -13,6 +13,9 @@ export function valeurDepartage(participant) {
   return numberOr(participant?.departage ?? 0, 0);
 }
 
+// Mode Phases, type SR5 : chaque nouvelle phase utilise l’initiative de base
+// diminuée d’un décrément fixe. On renvoie une valeur calculée, sans modifier
+// le participant réel stocké dans la scène.
 export function initiativeDePhase(participant, phase = 1, decrement = 10) {
   return valeurInitiative(participant) - Math.max(0, Number(phase || 1) - 1) * Math.max(1, Number(decrement) || 10);
 }
@@ -21,6 +24,9 @@ export function participantActifEnPhase(participant, phase = 1, decrement = 10) 
   return initiativeDePhase(participant, phase, decrement) > 0;
 }
 
+// Les participants de phase sont des copies destinées à l’affichage et au calcul
+// du tour actif : leur initiative est remplacée par l’initiative courante de
+// phase, mais baseInitiative garde la valeur originale.
 export function participantsPourPhase(participants = [], phase = 1, decrement = 10, options = {}) {
   return trierParInitiative(participants
     .filter((participant) => participantActifEnPhase(participant, phase, decrement))
@@ -52,6 +58,9 @@ function comparerNoms(a, b) {
   return nomParticipant(a).localeCompare(nomParticipant(b), 'fr', { sensitivity: 'base' });
 }
 
+// Tri principal des participants en initiative.
+// L’ordre alphabétique n’intervient qu’en règle NEVER : dans les autres modes,
+// deux participants vraiment simultanés doivent conserver un groupe commun.
 export function trierParInitiative(participants = [], options = {}) {
   const categoryOrder = options.categoryOrder || defaultCategoryOrder;
   const equalityRule = options.equalityRule || defaultEqualityRule;
@@ -71,6 +80,8 @@ export function trierParInitiative(participants = [], options = {}) {
   });
 }
 
+// La réserve est hors initiative : les initiatives y sont normalisées à 0.
+// Son tri repose donc sur le rôle choisi par le MJ, puis le départage, puis le nom.
 export function trierReserve(participants = [], options = {}) {
   const categoryOrder = options.categoryOrder || defaultCategoryOrder;
 
@@ -79,6 +90,8 @@ export function trierReserve(participants = [], options = {}) {
     || comparerNoms(a, b));
 }
 
+// Clef utilisée pour savoir si plusieurs participants doivent être affichés
+// comme un seul bloc simultané. Elle dépend volontairement de la règle d’égalité.
 export function clefEgaliteParfaite(participant, options = {}) {
   const equalityRule = options.equalityRule || defaultEqualityRule;
   if (equalityRule === equalityRules.NEVER) return null;
@@ -123,6 +136,8 @@ export function grouperParInitiative(participants = []) {
   }, []);
 }
 
+// Convertit une liste triée en blocs d’affichage : soit un participant seul,
+// soit un groupe simultané. L’ordre original est conservé autant que possible.
 export function grouperAffichageParticipants(participants = [], options = {}) {
   const groupesSimultanes = groupesEgaliteParfaite(participants, options);
   const groupeParId = new Map();
