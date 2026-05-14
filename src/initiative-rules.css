@@ -28,6 +28,69 @@
   margin: 0;
 }
 
+.initiative-roll-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.initiative-roll-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: end;
+}
+
+.initiative-roll-toolbar input {
+  max-width: 96px;
+}
+
+.initiative-roll-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border-radius: 16px;
+  border: 1px solid rgba(49, 18, 54, .12);
+  background: rgba(255, 250, 245, .46);
+}
+
+.initiative-roll-group h3 {
+  margin: 0;
+  font-size: 13px;
+}
+
+.initiative-roll-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.initiative-roll-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 76px;
+  gap: 8px;
+  align-items: center;
+}
+
+.initiative-roll-row span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 700;
+}
+
+.initiative-roll-row input {
+  min-width: 0;
+  text-align: center;
+  font-weight: 900;
+}
+
+.dark .initiative-roll-group {
+  border-color: rgba(210, 164, 86, .16);
+  background: rgba(16, 7, 19, .36);
+}
+
 .card.inactive-character {
   opacity: .62;
   filter: saturate(.65);
