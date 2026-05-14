@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { FenetreEtat } from '../dialogues/FenetreEtat.jsx';
 import { FenetreInformation } from '../dialogues/FenetreInformation.jsx';
 import { FenetreRejoindreInitiative } from '../dialogues/FenetreRejoindreInitiative.jsx';
@@ -6,7 +7,7 @@ import { FenetreSauvegardeTemplate } from '../dialogues/FenetreSauvegardeTemplat
 import { FenetreAjoutPersonnage } from '../fiches/FenetreAjoutPersonnage.jsx';
 import { FenetreEditionFiche } from '../fiches/FenetreEditionFiche.jsx';
 import { FicheParticipant } from '../fiches/FicheParticipant.jsx';
-import { MenuPrincipal } from '../menu/MenuPrincipal.jsx';
+import { FenetreReglesAvancees, MenuPrincipal } from '../menu/MenuPrincipal.jsx';
 import { FenetreCompteurGlobal } from '../suivis/CompteurGlobal.jsx';
 
 /**
@@ -29,6 +30,7 @@ export function FenetresSuperposees({
   resolutionHorloge,
   templatesUi,
 }) {
+  const [reglesAvanceesOuvertes, setReglesAvanceesOuvertes] = useState(false);
   const {
     addSheetOpen,
     openMenu,
@@ -66,7 +68,8 @@ export function FenetresSuperposees({
       {globalSheetOpen && <FenetreCompteurGlobal compteur={scene.globalTracker} onModifier={actions.updateGlobalTracker} onChanger={actions.stepGlobal} onFermer={fermerCompteurGlobal} />}
       {clockModalOpen && <FenetreResolutionHorloge participants={compteurGlobal.horlogesBloquantes} onFermer={fermerResolutionHorloge} onRelancerHorloge={resetClock} onSupprimerHorloge={deleteClock} />}
       {notice && <FenetreInformation titre={notice.title} message={notice.message} onFermer={fermerNotice} />}
-      {openMenu && <MenuPrincipal scenes={scenes} scene={scene} restorePoints={restorePoints} onRestore={restaurerScene} onClose={fermerMenu} setSceneIndex={actions.setSceneIndex} dark={dark} setDark={actions.setDark} onAddParticipant={commandesInterface.ouvrirAjoutPersonnage} onNewScene={nouvelleScene} onExport={actions.exportCampaign} onImport={importerCampagne} onReset={reinitialiserDemo} onGlobalTracker={actions.updateGlobalTracker} onUpdateCategoryOrder={actions.updateCategoryOrder} onUpdateEqualityRule={actions.updateEqualityRule} />}
+      {openMenu && <MenuPrincipal scenes={scenes} scene={scene} restorePoints={restorePoints} onRestore={restaurerScene} onClose={fermerMenu} setSceneIndex={actions.setSceneIndex} dark={dark} setDark={actions.setDark} onAddParticipant={commandesInterface.ouvrirAjoutPersonnage} onNewScene={nouvelleScene} onExport={actions.exportCampaign} onImport={importerCampagne} onReset={reinitialiserDemo} onGlobalTracker={actions.updateGlobalTracker} onOpenAdvancedRules={() => setReglesAvanceesOuvertes(true)} />}
+      {reglesAvanceesOuvertes && <FenetreReglesAvancees scene={scene} onFermer={() => setReglesAvanceesOuvertes(false)} onUpdateCategoryOrder={actions.updateCategoryOrder} onUpdateEqualityRule={actions.updateEqualityRule} />}
     </>
   );
 }
