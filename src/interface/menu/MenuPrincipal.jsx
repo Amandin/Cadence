@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { APP_VERSION, defaultCategoryOrder, defaultEqualityRule, defaultPhaseDecrement, defaultTemporalityMode, equalityRuleDescriptions, equalityRuleLabels, equalityRules, temporalityDescriptions, temporalityLabels, temporalityModes } from '../../constants.js';
+import { APP_VERSION, defaultCategoryOrder, defaultEqualityRule, defaultPhaseDecrement, defaultPhaseRerollEachRound, defaultTemporalityMode, equalityRuleDescriptions, equalityRuleLabels, equalityRules, temporalityDescriptions, temporalityLabels, temporalityModes } from '../../constants.js';
 import { Fenetre } from '../commun/ComposantsCommuns.jsx';
 
 function LogoMenu({ sombre }) {
@@ -79,15 +79,25 @@ function OptionsTemporalite({ temporalite = defaultTemporalityMode, onModifier }
   );
 }
 
-function OptionsPhases({ decrement = defaultPhaseDecrement, onModifier }) {
+function OptionsPhases({ decrement = defaultPhaseDecrement, rerollEachRound = defaultPhaseRerollEachRound, onModifierDecrement, onModifierRelance }) {
   return (
     <div className="scene-options compact-options advanced-rule-block phase-options">
       <h3>Phases</h3>
-      <p className="muted compact-help">Valeur retirée aux initiatives entre deux phases.</p>
+      <p className="muted compact-help">Réglages du mode à phases d’initiative.</p>
       <label className="field">
         Décrément
-        <input type="number" min="1" step="1" value={decrement || defaultPhaseDecrement} onChange={(event) => onModifier(event.target.value)} />
+        <input type="number" min="1" step="1" value={decrement || defaultPhaseDecrement} onChange={(event) => onModifierDecrement(event.target.value)} />
       </label>
+      <div className="advanced-radio-list">
+        <label className={`advanced-radio ${!rerollEachRound ? 'selected' : ''}`}>
+          <input type="radio" name="phase-round-init" checked={!rerollEachRound} onChange={() => onModifierRelance(false)} />
+          <span><strong>Reprendre les anciennes initiatives</strong><small>Au nouveau round, Cadence repart en phase 1 avec les mêmes valeurs.</small></span>
+        </label>
+        <label className={`advanced-radio ${rerollEachRound ? 'selected' : ''}`}>
+          <input type="radio" name="phase-round-init" checked={rerollEachRound} onChange={() => onModifierRelance(true)} />
+          <span><strong>Relancer l’initiative</strong><small>Au nouveau round, Cadence ouvre la fenêtre de saisie des initiatives.</small></span>
+        </label>
+      </div>
     </div>
   );
 }
@@ -143,12 +153,12 @@ function OptionsOrdreCategories({ order = defaultCategoryOrder, onModifier }) {
   );
 }
 
-export function FenetreReglesAvancees({ scene, onFermer, onUpdateCategoryOrder, onUpdateEqualityRule, onUpdateTemporality, onUpdatePhaseDecrement }) {
+export function FenetreReglesAvancees({ scene, onFermer, onUpdateCategoryOrder, onUpdateEqualityRule, onUpdateTemporality, onUpdatePhaseDecrement, onUpdatePhaseRerollEachRound }) {
   return (
     <Fenetre title="Règles avancées" onClose={onFermer}>
       <div className="advanced-rules-stack">
         <OptionsTemporalite temporalite={scene?.temporalite || defaultTemporalityMode} onModifier={onUpdateTemporality} />
-        {scene?.temporalite === temporalityModes.PHASES && <OptionsPhases decrement={scene?.phaseDecrement || defaultPhaseDecrement} onModifier={onUpdatePhaseDecrement} />}
+        {scene?.temporalite === temporalityModes.PHASES && <OptionsPhases decrement={scene?.phaseDecrement || defaultPhaseDecrement} rerollEachRound={scene?.phaseRerollEachRound ?? defaultPhaseRerollEachRound} onModifierDecrement={onUpdatePhaseDecrement} onModifierRelance={onUpdatePhaseRerollEachRound} />}
         <OptionsEgalites equalityRule={scene?.equalityRule || defaultEqualityRule} onModifier={onUpdateEqualityRule} />
         <OptionsOrdreCategories order={scene?.categoryOrder || defaultCategoryOrder} onModifier={onUpdateCategoryOrder} />
       </div>
