@@ -13,7 +13,7 @@ import { createBlankParticipant } from './templates.js';
 
 export default function App() {
   const campaign = useCampaign();
-  const { scenes, scene, restorePoints, dark, active, blocked, nextStartsRound, nextClass, roundEffect, actions } = campaign;
+  const { scenes, campaignName, scene, restorePoints, dark, active, blocked, nextStartsRound, nextClass, roundEffect, actions } = campaign;
   const characters = useCharacterInteractions(scene, actions);
   const templates = useTemplates();
   const [openMenu, setOpenMenu] = useState(false);
@@ -246,6 +246,7 @@ export default function App() {
       />
 
       <FenetresSuperposees
+        campaignName={campaignName}
         scene={scene}
         scenes={scenes}
         restorePoints={restorePoints}
