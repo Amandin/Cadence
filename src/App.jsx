@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { defaultCategoryOrder, defaultEqualityRule } from './constants.js';
+import { groupeEgalitePourParticipant } from './domain/initiative.js';
 import { FenetresSuperposees } from './interface/app/FenetresSuperposees.jsx';
 import { BarreActionBas } from './interface/scene/BarreActionBas.jsx';
 import { EnteteScene } from './interface/scene/EnteteScene.jsx';
@@ -24,6 +26,7 @@ export default function App() {
   const [templateError, setTemplateError] = useState(null);
 
   const globalAutoTick = roundEffect === 'next' && !!scene.globalTracker?.enabled && !!scene.globalTracker?.auto;
+  const activeGroup = scene.activeId ? groupeEgalitePourParticipant(scene.participants, scene.activeId, { categoryOrder: scene.categoryOrder || defaultCategoryOrder, equalityRule: scene.equalityRule || defaultEqualityRule }) : [];
 
   useEffect(() => {
     if (!scene.activeId) return;
@@ -119,6 +122,7 @@ export default function App() {
         <EnteteScene
           scene={scene}
           actif={active}
+          groupeActif={activeGroup}
           horlogesBloquantes={blocked}
           effetRound={roundEffect}
           compteurGlobalAuto={globalAutoTick}
@@ -133,7 +137,7 @@ export default function App() {
         />
 
         <main>
-          <ListeInitiative participants={scene.participants} actifId={scene.activeId} interactions={characters} />
+          <ListeInitiative scene={scene} participants={scene.participants} actifId={scene.activeId} interactions={characters} />
           <ReserveHorsInitiative scene={scene} interactions={characters} onModifierNotes={(notes) => actions.updateSceneField('reserveNotes', notes)} />
         </main>
       </div>
