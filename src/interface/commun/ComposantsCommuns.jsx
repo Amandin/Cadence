@@ -22,7 +22,7 @@ function typeEtat(etat) {
 }
 
 export function EtiquetteEtat({ etat, onRetirer }) {
-  return <span className={`status ${typeEtat(etat)} ${etat.expired ? 'expired' : ''}`}>{etat.name} · {libelleEtat(etat)}<button onClick={onRetirer}>×</button></span>;
+  return <span className={`status ${typeEtat(etat)} ${etat.inactive ? 'inactive-status' : ''} ${etat.expired ? 'expired' : ''}`}>{etat.name} · {etat.inactive ? '⏸ ' : ''}{libelleEtat(etat)}<button onClick={onRetirer}>×</button></span>;
 }
 
 export function BadgeRound({ round, effect }) {
