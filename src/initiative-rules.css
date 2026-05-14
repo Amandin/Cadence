@@ -125,16 +125,6 @@
   border-top-color: rgba(210, 164, 86, .20);
 }
 
-.card.already-played {
-  opacity: .72;
-  filter: saturate(.82);
-}
-
-.card.already-played.active {
-  opacity: 1;
-  filter: none;
-}
-
 .chip.played-chip {
   background: rgba(49, 18, 54, .10);
   color: var(--theme-light-muted);
