@@ -84,10 +84,29 @@ function modifierParticipantDansScene(scene, participantId, updater) {
   return nouveauRound ? appliquerDebutNouveauRound(sceneSuivante, activeId) : sceneSuivante;
 }
 
-function cocherJoueSouple(scene, activeId) {
-  if (!activeId) return scene.jouesSouples || [];
+function ajouterJoueSouple(scene, participantId) {
   const actuel = scene.jouesSouples || [];
-  return actuel.includes(activeId) ? actuel : [...actuel, activeId];
+  return actuel.includes(participantId) ? actuel : [...actuel, participantId];
+}
+
+function retirerJoueSouple(scene, participantId) {
+  return (scene.jouesSouples || []).filter((id) => id !== participantId);
+}
+
+function retirerHistoriqueSouple(scene, participantId) {
+  return (scene.historiqueSouple || []).filter((id) => id !== participantId);
+}
+
+function annulerDernierJoueSouple(scene) {
+  const historique = scene.historiqueSouple || [];
+  const dernier = historique.at(-1);
+  if (!dernier) return scene;
+  return {
+    ...scene,
+    activeId: dernier,
+    historiqueSouple: historique.slice(0, -1),
+    jouesSouples: retirerJoueSouple(scene, dernier),
+  };
 }
 
 export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, setScenes, setRestorePoints, setRoundEffect }) {
@@ -126,25 +145,28 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
       }));
     },
     setActiveParticipant(activeId) {
+      updateScene((s) => ({ ...s, activeId }));
+    },
+    markFlexiblePlayed(participantId) {
       updateScene((s) => ({
         ...s,
-        activeId,
-        jouesSouples: estModeSouple(s) ? cocherJoueSouple(s, s.activeId) : (s.jouesSouples || []),
-        historiqueSouple: estModeSouple(s) ? [...(s.historiqueSouple || []), s.activeId].filter(Boolean) : (s.historiqueSouple || []),
+        activeId: participantId,
+        jouesSouples: ajouterJoueSouple(s, participantId),
+        historiqueSouple: (s.jouesSouples || []).includes(participantId)
+          ? (s.historiqueSouple || [])
+          : [...(s.historiqueSouple || []), participantId],
+      }));
+    },
+    unmarkFlexiblePlayed(participantId) {
+      updateScene((s) => ({
+        ...s,
+        activeId: participantId,
+        jouesSouples: retirerJoueSouple(s, participantId),
+        historiqueSouple: retirerHistoriqueSouple(s, participantId),
       }));
     },
     undoFlexibleTurn() {
-      updateScene((s) => {
-        const historique = s.historiqueSouple || [];
-        const precedent = historique.at(-1);
-        if (!precedent) return s;
-        return {
-          ...s,
-          activeId: precedent,
-          historiqueSouple: historique.slice(0, -1),
-          jouesSouples: (s.jouesSouples || []).filter((id) => id !== precedent),
-        };
-      });
+      updateScene(annulerDernierJoueSouple);
     },
     restoreScene(pointId) {
       const point = (restorePoints[scene.id] || []).find((item) => item.id === pointId);
@@ -162,8 +184,8 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
           participants,
           reserve,
           activeId,
-          jouesSouples: (s.jouesSouples || []).filter((joueId) => joueId !== id),
-          historiqueSouple: (s.historiqueSouple || []).filter((joueId) => joueId !== id),
+          jouesSouples: retirerJoueSouple(s, id),
+          historiqueSouple: retirerHistoriqueSouple(s, id),
         };
       });
     },
@@ -182,7 +204,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
     },
     nextTurn(direction = 1) {
       if (estModeSouple(scene)) {
-        if (direction < 0) this.undoFlexibleTurn?.();
+        if (direction < 0) updateScene(annulerDernierJoueSouple);
         return;
       }
 
@@ -236,8 +258,8 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
         participants: s.participants.filter((x) => x.id !== id),
         reserve: [...(s.reserve || []), participant],
         activeId: s.activeId === id ? s.participants.find((x) => x.id !== id)?.id || '' : s.activeId,
-        jouesSouples: (s.jouesSouples || []).filter((joueId) => joueId !== id),
-        historiqueSouple: (s.historiqueSouple || []).filter((joueId) => joueId !== id),
+        jouesSouples: retirerJoueSouple(s, id),
+        historiqueSouple: retirerHistoriqueSouple(s, id),
       }));
     },
     joinInit(id, initiativeValue) {
