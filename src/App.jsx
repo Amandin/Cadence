@@ -33,6 +33,10 @@ export default function App() {
     categoryOrder: scene.categoryOrder || defaultCategoryOrder,
     equalityRule: scene.equalityRule || defaultEqualityRule,
   };
+
+  // En mode Phases, l’affichage et le participant actif reposent sur des copies
+  // de participants dont l’initiative est recalculée pour la phase courante.
+  // On évite ainsi d’écrire l’initiative diminuée dans la scène réelle.
   const phaseParticipants = temporalitePhases
     ? participantsPourPhase(scene.participants, scene.phase, scene.phaseDecrement, optionsInitiative)
     : [];
@@ -47,6 +51,9 @@ export default function App() {
   const phaseDemarreNouveauRound = temporalitePhases && phaseEnFin && !phaseSuivanteDisponible;
   const toutLeMondeAJoueSouple = temporaliteSouple && scene.participants.length > 0 && scene.participants.every((participant) => (scene.jouesSouples || []).includes(participant.id));
   const globalAutoTick = roundEffect === 'next' && !!scene.globalTracker?.enabled && !!scene.globalTracker?.auto;
+
+  // Les égalités simultanées doivent suivre l’initiative affichée : en Phases,
+  // on compare donc les initiatives courantes de phase, pas les valeurs de base.
   const participantsPourEgalites = temporalitePhases ? phaseParticipants : scene.participants;
   const idActifPourEgalites = temporalitePhases ? phaseActiveId : scene.activeId;
   const activeGroup = !temporaliteSouple && idActifPourEgalites ? groupeEgalitePourParticipant(participantsPourEgalites, idActifPourEgalites, optionsInitiative) : [];
@@ -161,6 +168,9 @@ export default function App() {
   const deleteClock = (participantId, trackerId) => {
     actions.deleteTracker(participantId, trackerId);
   };
+
+  // Le libellé du bouton suivant est calculé ici parce qu’il dépend de l’état UI
+  // courant : mode souple, horloge bloquante, fin de phase ou nouveau round.
   const nextLabel = temporaliteSouple
     ? toutLeMondeAJoueSouple ? 'Nouveau round' : 'Mode souple : choisir dans la liste'
     : blocked.length
