@@ -203,6 +203,7 @@
 
 .campaign-hub-page > .hub-section.panel {
   position: relative;
+  padding-top: 20px;
   padding-inline: 18px;
   padding-bottom: 22px;
 }
@@ -318,6 +319,7 @@
   }
 
   .campaign-hub-page > .hub-section.panel {
+    padding-top: 19px;
     padding-inline: 16px;
   }
 
