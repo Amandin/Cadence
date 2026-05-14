@@ -74,7 +74,7 @@ export function useCampaign() {
   useEffect(() => saveCampaign(scenes, dark, campaignName), [scenes, dark, campaignName]);
 
   const sceneActions = useMemo(() => createSceneActions({ scene, sceneIndex, blocked, restorePoints, setScenes, setRestorePoints, setRoundEffect }), [blocked, scene, restorePoints, sceneIndex]);
-  const campaignActions = useMemo(() => createCampaignActions({ scenes, dark, campaignName, setScenes, setSceneIndex, setDark, setCampaignNameState: setCampaignName }), [campaignName, dark, scenes]);
+  const campaignActions = useMemo(() => createCampaignActions({ scenes, sceneIndex, dark, campaignName, setScenes, setSceneIndex, setDark, setCampaignNameState: setCampaignName }), [campaignName, dark, sceneIndex, scenes]);
 
   const extraSceneActions = useMemo(() => ({
     updateSceneField(key, value) {
