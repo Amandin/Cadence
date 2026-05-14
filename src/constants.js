@@ -1,4 +1,4 @@
-export const APP_VERSION = '0.1.44';
+export const APP_VERSION = '0.1.45';
 export const STORAGE_KEY = 'cadence:campaign:v1';
 export const TEMPLATE_STORAGE_KEY = 'cadence:templates:v1';
 
@@ -11,6 +11,20 @@ export const legacyParticipantKinds = {
 };
 
 export const defaultCategoryOrder = ['PJ', 'Opposant', 'Allié', 'Environnement'];
+
+export const equalityRules = {
+  NEVER: 'never',
+  STRICT: 'strict',
+  LOOSE: 'loose',
+};
+
+export const defaultEqualityRule = equalityRules.STRICT;
+
+export const equalityRuleLabels = {
+  [equalityRules.NEVER]: 'Jamais — ordre alphabétique au besoin',
+  [equalityRules.STRICT]: 'Seulement si initiative, départage et type sont identiques',
+  [equalityRules.LOOSE]: 'Dès que le départage ne suffit pas',
+};
 
 export const trackerTypeLabels = {
   bar: 'Barre',
