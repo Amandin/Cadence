@@ -80,6 +80,15 @@ function ListeParPaliers({ scene, participants, actifId, interactions, temporali
   ));
 }
 
+function EnteteSectionSouple({ titre, compteur, variant }) {
+  return (
+    <div className={`flexible-section-title ${variant || ''}`}>
+      <span>{titre}</span>
+      <strong>{compteur}</strong>
+    </div>
+  );
+}
+
 export function ListeInitiative({ scene, participants, actifId, interactions, temporaliteSouple, onMarquerAJoue, onAnnulerAJoue }) {
   if (!temporaliteSouple) {
     return (
@@ -90,17 +99,17 @@ export function ListeInitiative({ scene, participants, actifId, interactions, te
   }
 
   const dejaJouesIds = new Set(scene.jouesSouples || []);
-  const aJouer = participants.filter((participant) => !dejaJouesIds.has(participant.id));
+  const doitJouer = participants.filter((participant) => !dejaJouesIds.has(participant.id));
   const dejaJoues = participants.filter((participant) => dejaJouesIds.has(participant.id));
 
   return (
     <div className="initiative-list flexible-list">
       <section className="flexible-section">
-        <h3>À jouer</h3>
-        <ListeParPaliers scene={scene} participants={aJouer} actifId={actifId} interactions={interactions} temporaliteSouple onMarquerAJoue={onMarquerAJoue} onAnnulerAJoue={onAnnulerAJoue} />
+        <EnteteSectionSouple titre="Doit jouer" compteur={doitJouer.length} />
+        <ListeParPaliers scene={scene} participants={doitJouer} actifId={actifId} interactions={interactions} temporaliteSouple onMarquerAJoue={onMarquerAJoue} onAnnulerAJoue={onAnnulerAJoue} />
       </section>
       {dejaJoues.length > 0 && <section className="flexible-section already-played-section">
-        <h3>Déjà joués</h3>
+        <EnteteSectionSouple titre="Déjà joués" compteur={dejaJoues.length} variant="played" />
         <ListeParPaliers scene={scene} participants={dejaJoues} actifId={actifId} interactions={interactions} temporaliteSouple onMarquerAJoue={onMarquerAJoue} onAnnulerAJoue={onAnnulerAJoue} dejaJoue />
       </section>}
     </div>
