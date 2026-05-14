@@ -38,9 +38,32 @@ function downloadBlob(blob, fileName) {
   URL.revokeObjectURL(url);
 }
 
+async function saveWithPicker(blob, fileName) {
+  if (!window.showSaveFilePicker) return false;
+
+  const handle = await window.showSaveFilePicker({
+    suggestedName: fileName,
+    types: [{
+      description: 'Campagne Cadence',
+      accept: { 'application/json': ['.cad'] },
+    }],
+  });
+  const writable = await handle.createWritable();
+  await writable.write(blob);
+  await writable.close();
+  return true;
+}
+
 async function shareOrDownloadCampaign(content, campaignName) {
   const fileName = campaignExportFileName(campaignName);
   const blob = new Blob([content], { type: 'application/json' });
+
+  try {
+    if (await saveWithPicker(blob, fileName)) return { ok: true, method: 'picker' };
+  } catch (error) {
+    if (error?.name === 'AbortError') return { ok: false, cancelled: true };
+    console.warn('Enregistrement direct impossible, fallback utilisé.', error);
+  }
 
   if (typeof File !== 'undefined' && navigator.canShare && navigator.share) {
     const file = new File([blob], fileName, { type: 'application/json' });
@@ -51,15 +74,16 @@ async function shareOrDownloadCampaign(content, campaignName) {
           title: normalizeCampaignName(campaignName),
           text: 'Export de campagne Cadence',
         });
-        return;
+        return { ok: true, method: 'share' };
       } catch (error) {
-        if (error?.name === 'AbortError') return;
+        if (error?.name === 'AbortError') return { ok: false, cancelled: true };
         console.warn('Partage impossible, téléchargement direct utilisé.', error);
       }
     }
   }
 
   downloadBlob(blob, fileName);
+  return { ok: true, method: 'download' };
 }
 
 export function createCampaignActions({ scenes, dark, campaignName, setScenes, setSceneIndex, setDark, setCampaignNameState }) {
@@ -73,8 +97,11 @@ export function createCampaignActions({ scenes, dark, campaignName, setScenes, s
       setScenes((currentScenes) => [...currentScenes, createBlankScene()]);
       setSceneIndex(scenes.length);
     },
-    async exportCampaign() {
-      await shareOrDownloadCampaign(serializeCampaign(scenes, dark, campaignName), campaignName);
+    async exportCampaign(name = campaignName) {
+      const exportName = normalizeCampaignName(name);
+      const result = await shareOrDownloadCampaign(serializeCampaign(scenes, dark, exportName), exportName);
+      if (result?.ok) setCampaignNameState(exportName);
+      return result;
     },
     async importCampaign(file) {
       try {
