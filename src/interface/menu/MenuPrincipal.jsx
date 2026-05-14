@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { APP_VERSION, defaultCategoryOrder, defaultEqualityRule, defaultTemporalityMode, equalityRuleDescriptions, equalityRuleLabels, equalityRules, temporalityDescriptions, temporalityLabels, temporalityModes } from '../../constants.js';
+import { APP_VERSION, defaultCategoryOrder, defaultEqualityRule, defaultPhaseDecrement, defaultTemporalityMode, equalityRuleDescriptions, equalityRuleLabels, equalityRules, temporalityDescriptions, temporalityLabels, temporalityModes } from '../../constants.js';
 import { Fenetre } from '../commun/ComposantsCommuns.jsx';
 
 function LogoMenu({ sombre }) {
@@ -79,6 +79,19 @@ function OptionsTemporalite({ temporalite = defaultTemporalityMode, onModifier }
   );
 }
 
+function OptionsPhases({ decrement = defaultPhaseDecrement, onModifier }) {
+  return (
+    <div className="scene-options compact-options advanced-rule-block phase-options">
+      <h3>Phases</h3>
+      <p className="muted compact-help">Valeur retirée aux initiatives entre deux phases.</p>
+      <label className="field">
+        Décrément
+        <input type="number" min="1" step="1" value={decrement || defaultPhaseDecrement} onChange={(event) => onModifier(event.target.value)} />
+      </label>
+    </div>
+  );
+}
+
 function OptionsEgalites({ equalityRule = defaultEqualityRule, onModifier }) {
   return (
     <div className="scene-options compact-options advanced-rule-block">
@@ -130,11 +143,12 @@ function OptionsOrdreCategories({ order = defaultCategoryOrder, onModifier }) {
   );
 }
 
-export function FenetreReglesAvancees({ scene, onFermer, onUpdateCategoryOrder, onUpdateEqualityRule, onUpdateTemporality }) {
+export function FenetreReglesAvancees({ scene, onFermer, onUpdateCategoryOrder, onUpdateEqualityRule, onUpdateTemporality, onUpdatePhaseDecrement }) {
   return (
     <Fenetre title="Règles avancées" onClose={onFermer}>
       <div className="advanced-rules-stack">
         <OptionsTemporalite temporalite={scene?.temporalite || defaultTemporalityMode} onModifier={onUpdateTemporality} />
+        {scene?.temporalite === temporalityModes.PHASES && <OptionsPhases decrement={scene?.phaseDecrement || defaultPhaseDecrement} onModifier={onUpdatePhaseDecrement} />}
         <OptionsEgalites equalityRule={scene?.equalityRule || defaultEqualityRule} onModifier={onUpdateEqualityRule} />
         <OptionsOrdreCategories order={scene?.categoryOrder || defaultCategoryOrder} onModifier={onUpdateCategoryOrder} />
       </div>
