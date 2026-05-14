@@ -1,131 +1,21 @@
-import { defaultCategoryOrder, defaultEqualityRule, temporalityModes } from '../constants.js';
-import { phaseSuivanteExiste, participantsPourPhase, trierParInitiative, valeurInitiative } from '../domain/initiative.js';
+import { temporalityModes } from '../constants.js';
+import { trierParInitiative } from '../domain/initiative.js';
 import { stepAutoGlobalTracker } from '../domain/globalTracker.js';
 import { createStatus } from '../domain/statuses.js';
-import { clone, newTracker, tickParticipant, untickParticipant, uid } from '../logic.js';
-
-function createBlankParticipant() {
-  return {
-    id: uid('p'),
-    name: 'Nouveau personnage',
-    kind: 'Allié',
-    symbol: '🛡',
-    color: 'emerald',
-    initiative: 1,
-    departage: '',
-    description: '',
-    stats: [],
-    statuses: [],
-    trackers: [newTracker('bar')],
-  };
-}
-
-// Un participant en réserve est hors initiative : on neutralise donc toujours
-// son initiative pour éviter qu’un ancien score influence l’affichage ou le tri.
-function placerEnReserve(participant) {
-  return { ...participant, initiative: 0 };
-}
-
-function createRestorePoint(scene) {
-  return {
-    id: uid('restore'),
-    round: scene.round,
-    activeId: scene.activeId,
-    title: `Début R${scene.round}`,
-    scene: clone(scene),
-  };
-}
-
-function addRestorePoint(points, sceneId, nextScene) {
-  const current = points[sceneId] || [];
-  if (current.some((point) => point.round === nextScene.round)) return points;
-  return { ...points, [sceneId]: [...current, createRestorePoint(nextScene)].slice(-50) };
-}
-
-function optionsTri(scene) {
-  return {
-    categoryOrder: scene.categoryOrder || defaultCategoryOrder,
-    equalityRule: scene.equalityRule || defaultEqualityRule,
-  };
-}
-
-function estModeSouple(scene) {
-  return scene.temporalite === temporalityModes.FLEXIBLE;
-}
-
-function estModePhases(scene) {
-  return scene.temporalite === temporalityModes.PHASES;
-}
-
-function toutLeMondeAJoueSouple(scene) {
-  const idsJoues = new Set(scene.jouesSouples || []);
-  return (scene.participants || []).length > 0 && scene.participants.every((participant) => idsJoues.has(participant.id));
-}
-
-// En mode classique, modifier l’initiative du participant actif peut déplacer
-// son rang. On cherche alors le premier participant encore compatible avec
-// l’initiative précédente, afin d’éviter des sauts de tour trop surprenants.
-function trouverTourActifParInitiative(scene, participantsTries) {
-  const actifAvant = scene.participants.find((participant) => participant.id === scene.activeId);
-  if (!actifAvant) return { activeId: scene.activeId, nouveauRound: false };
-
-  const initiativeActive = valeurInitiative(actifAvant);
-  const actifMemeOuPlusBas = participantsTries.find((participant) => valeurInitiative(participant) <= initiativeActive);
-  if (actifMemeOuPlusBas) return { activeId: actifMemeOuPlusBas.id, nouveauRound: false };
-
-  return { activeId: participantsTries[0]?.id || scene.activeId, nouveauRound: participantsTries.length > 0 };
-}
-
-function participantsPhase(scene, phase = scene.phase || 1) {
-  return participantsPourPhase(scene.participants || [], phase, scene.phaseDecrement || 10, optionsTri(scene));
-}
-
-function premierParticipantPhase(scene) {
-  return participantsPhase(scene)[0]?.id || '';
-}
-
-function appliquerDebutNouveauRound(scene, activeId) {
-  return {
-    ...scene,
-    activeId,
-    round: Math.max(1, scene.round + 1),
-    globalTracker: stepAutoGlobalTracker(scene.globalTracker, 1),
-    participants: scene.participants.map((participant) => participant.id === activeId ? tickParticipant(participant) : participant),
-    reserve: (scene.reserve || []).map(tickParticipant).map(placerEnReserve),
-  };
-}
-
-function appliquerNouveauRoundSouple(scene) {
-  return {
-    ...scene,
-    activeId: '',
-    round: Math.max(1, scene.round + 1),
-    globalTracker: stepAutoGlobalTracker(scene.globalTracker, 1),
-    participants: (scene.participants || []).map(tickParticipant),
-    reserve: (scene.reserve || []).map(tickParticipant).map(placerEnReserve),
-    jouesSouples: [],
-    historiqueSouple: [],
-  };
-}
-
-function appliquerNouveauRoundPhases(scene) {
-  const sceneSuivante = {
-    ...scene,
-    activeId: '',
-    phase: 1,
-    round: Math.max(1, scene.round + 1),
-    globalTracker: stepAutoGlobalTracker(scene.globalTracker, 1),
-    participants: (scene.participants || []).map(tickParticipant),
-    reserve: (scene.reserve || []).map(tickParticipant).map(placerEnReserve),
-  };
-
-  // Si l’option de relance est active, on laisse activeId vide : App.jsx ouvrira
-  // la fenêtre de saisie d’initiative au changement de round. Sinon on repart
-  // directement sur le premier participant de la phase 1.
-  return scene.phaseRerollEachRound
-    ? sceneSuivante
-    : { ...sceneSuivante, activeId: premierParticipantPhase(sceneSuivante) };
-}
+import { clone, tickParticipant, untickParticipant } from '../logic.js';
+import { ajouterJoueSouple, annulerDernierJoueSouple, retirerHistoriqueSouple, retirerJoueSouple, toutLeMondeAJoueSouple } from './flexibleTurnState.js';
+import { addRestorePoint, createBlankParticipant, optionsTri, placerEnReserve, valeurInitiativeRenseignee } from './sceneSupport.js';
+import {
+  appliquerDebutNouveauRound,
+  appliquerNouveauRoundPhases,
+  appliquerNouveauRoundSouple,
+  estModePhases,
+  estModeSouple,
+  participantsPhase,
+  phaseSuivanteDisponible,
+  premierParticipantPhase,
+  trouverTourActifParInitiative,
+} from './tempoState.js';
 
 function modifierParticipantDansScene(scene, participantId, updater) {
   const participants = trierParInitiative(scene.participants.map((p) => p.id === participantId ? updater(p) : p), optionsTri(scene));
@@ -142,36 +32,10 @@ function modifierParticipantDansScene(scene, participantId, updater) {
   return nouveauRound ? appliquerDebutNouveauRound(sceneSuivante, activeId) : sceneSuivante;
 }
 
-function ajouterJoueSouple(scene, participantId) {
-  const actuel = scene.jouesSouples || [];
-  return actuel.includes(participantId) ? actuel : [...actuel, participantId];
-}
-
-function retirerJoueSouple(scene, participantId) {
-  return (scene.jouesSouples || []).filter((id) => id !== participantId);
-}
-
-function retirerHistoriqueSouple(scene, participantId) {
-  return (scene.historiqueSouple || []).filter((id) => id !== participantId);
-}
-
-function annulerDernierJoueSouple(scene) {
-  const historique = scene.historiqueSouple || [];
-  const dernier = historique.at(-1);
-  if (!dernier) return scene;
-  return {
-    ...scene,
-    activeId: dernier,
-    historiqueSouple: historique.slice(0, -1),
-    jouesSouples: retirerJoueSouple(scene, dernier),
-  };
-}
-
-function valeurInitiativeRenseignee(valuesById, participantId) {
-  const raw = valuesById?.[participantId];
-  if (raw === '' || raw == null) return null;
-  const initiative = Number(raw);
-  return Number.isFinite(initiative) ? initiative : null;
+function recalerActifPhaseSiBesoin(scene) {
+  return estModePhases(scene) && !participantsPhase(scene).some((participant) => participant.id === scene.activeId)
+    ? { ...scene, activeId: premierParticipantPhase(scene) }
+    : scene;
 }
 
 export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, setScenes, setRestorePoints, setRoundEffect }) {
@@ -203,20 +67,15 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
     },
     updateTemporality(temporalite) {
       setRoundEffect(null);
-      updateScene((s) => {
-        const sceneSuivante = {
-          ...s,
-          temporalite,
-          phase: temporalite === temporalityModes.PHASES ? (s.phase || 1) : 1,
-          activeId: temporalite === temporalityModes.FLEXIBLE ? '' : s.activeId,
-          reserve: (s.reserve || []).map(placerEnReserve),
-          jouesSouples: temporalite === temporalityModes.FLEXIBLE ? (s.jouesSouples || []) : [],
-          historiqueSouple: temporalite === temporalityModes.FLEXIBLE ? (s.historiqueSouple || []) : [],
-        };
-        return temporalite === temporalityModes.PHASES && !participantsPhase(sceneSuivante).some((participant) => participant.id === sceneSuivante.activeId)
-          ? { ...sceneSuivante, activeId: premierParticipantPhase(sceneSuivante) }
-          : sceneSuivante;
-      });
+      updateScene((s) => recalerActifPhaseSiBesoin({
+        ...s,
+        temporalite,
+        phase: temporalite === temporalityModes.PHASES ? (s.phase || 1) : 1,
+        activeId: temporalite === temporalityModes.FLEXIBLE ? '' : s.activeId,
+        reserve: (s.reserve || []).map(placerEnReserve),
+        jouesSouples: temporalite === temporalityModes.FLEXIBLE ? (s.jouesSouples || []) : [],
+        historiqueSouple: temporalite === temporalityModes.FLEXIBLE ? (s.historiqueSouple || []) : [],
+      }));
     },
     updatePhaseDecrement(phaseDecrement) {
       const valeur = Math.max(1, Number(phaseDecrement) || 10);
@@ -267,9 +126,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
           jouesSouples: (s.jouesSouples || []).filter((id) => !idsSet.has(id)),
           historiqueSouple: (s.historiqueSouple || []).filter((id) => !idsSet.has(id)),
         };
-        return estModePhases(sceneSuivante) && !participantsPhase(sceneSuivante).some((participant) => participant.id === sceneSuivante.activeId)
-          ? { ...sceneSuivante, activeId: premierParticipantPhase(sceneSuivante) }
-          : sceneSuivante;
+        return recalerActifPhaseSiBesoin(sceneSuivante);
       });
     },
     markFlexiblePlayed(participantId) {
@@ -300,21 +157,14 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
       updateScene(() => clone(point.scene));
     },
     deleteParticipant(id) {
-      updateScene((s) => {
-        const participants = s.participants.filter((p) => p.id !== id);
-        const reserve = (s.reserve || []).filter((p) => p.id !== id).map(placerEnReserve);
-        const sceneSuivante = {
-          ...s,
-          participants,
-          reserve,
-          activeId: s.activeId === id ? participants[0]?.id || '' : s.activeId,
-          jouesSouples: retirerJoueSouple(s, id),
-          historiqueSouple: retirerHistoriqueSouple(s, id),
-        };
-        return estModePhases(sceneSuivante) && !participantsPhase(sceneSuivante).some((participant) => participant.id === sceneSuivante.activeId)
-          ? { ...sceneSuivante, activeId: premierParticipantPhase(sceneSuivante) }
-          : sceneSuivante;
-      });
+      updateScene((s) => recalerActifPhaseSiBesoin({
+        ...s,
+        participants: s.participants.filter((p) => p.id !== id),
+        reserve: (s.reserve || []).filter((p) => p.id !== id).map(placerEnReserve),
+        activeId: s.activeId === id ? s.participants.find((p) => p.id !== id)?.id || '' : s.activeId,
+        jouesSouples: retirerJoueSouple(s, id),
+        historiqueSouple: retirerHistoriqueSouple(s, id),
+      }));
     },
     trackerChange(pid, tid, next) {
       updateParticipant(pid, (p) => ({ ...p, trackers: p.trackers.map((t) => t.id === tid ? next : t) }));
@@ -365,7 +215,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
           return;
         }
         if (blocked.length) return;
-        if (phaseSuivanteExiste(scene.participants, scene.phase || 1, scene.phaseDecrement || 10)) {
+        if (phaseSuivanteDisponible(scene)) {
           setRoundEffect(null);
           updateScene((s) => {
             const phase = (s.phase || 1) + 1;
@@ -428,19 +278,14 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
       const participant = scene.participants.find((x) => x.id === id);
       if (!participant) return;
 
-      updateScene((s) => {
-        const sceneSuivante = {
-          ...s,
-          participants: s.participants.filter((x) => x.id !== id),
-          reserve: [...(s.reserve || []).map(placerEnReserve), placerEnReserve(participant)],
-          activeId: s.activeId === id ? s.participants.find((x) => x.id !== id)?.id || '' : s.activeId,
-          jouesSouples: retirerJoueSouple(s, id),
-          historiqueSouple: retirerHistoriqueSouple(s, id),
-        };
-        return estModePhases(sceneSuivante) && !participantsPhase(sceneSuivante).some((item) => item.id === sceneSuivante.activeId)
-          ? { ...sceneSuivante, activeId: premierParticipantPhase(sceneSuivante) }
-          : sceneSuivante;
-      });
+      updateScene((s) => recalerActifPhaseSiBesoin({
+        ...s,
+        participants: s.participants.filter((x) => x.id !== id),
+        reserve: [...(s.reserve || []).map(placerEnReserve), placerEnReserve(participant)],
+        activeId: s.activeId === id ? s.participants.find((x) => x.id !== id)?.id || '' : s.activeId,
+        jouesSouples: retirerJoueSouple(s, id),
+        historiqueSouple: retirerHistoriqueSouple(s, id),
+      }));
     },
     joinInit(id, initiativeValue) {
       const participant = scene.reserve.find((x) => x.id === id);
@@ -449,15 +294,12 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
 
       updateScene((s) => {
         const participants = trierParInitiative([...s.participants, { ...participant, initiative }], optionsTri(s));
-        const sceneSuivante = {
+        return recalerActifPhaseSiBesoin({
           ...s,
           reserve: s.reserve.filter((x) => x.id !== id).map(placerEnReserve),
           participants,
           activeId: s.activeId || participant.id,
-        };
-        return estModePhases(sceneSuivante) && !participantsPhase(sceneSuivante).some((item) => item.id === sceneSuivante.activeId)
-          ? { ...sceneSuivante, activeId: premierParticipantPhase(sceneSuivante) }
-          : sceneSuivante;
+        });
       });
     },
     addParticipant(participant = createBlankParticipant(), placement = 'init') {
@@ -465,13 +307,12 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
         updateScene((s) => ({ ...s, reserve: [...(s.reserve || []).map(placerEnReserve), placerEnReserve(participant)] }));
         return;
       }
-      updateScene((s) => {
-        const participants = trierParInitiative([...s.participants, participant], optionsTri(s));
-        const sceneSuivante = { ...s, participants, activeId: s.activeId || participant.id, reserve: (s.reserve || []).map(placerEnReserve) };
-        return estModePhases(sceneSuivante) && !participantsPhase(sceneSuivante).some((item) => item.id === sceneSuivante.activeId)
-          ? { ...sceneSuivante, activeId: premierParticipantPhase(sceneSuivante) }
-          : sceneSuivante;
-      });
+      updateScene((s) => recalerActifPhaseSiBesoin({
+        ...s,
+        participants: trierParInitiative([...s.participants, participant], optionsTri(s)),
+        activeId: s.activeId || participant.id,
+        reserve: (s.reserve || []).map(placerEnReserve),
+      }));
     },
   };
 }
