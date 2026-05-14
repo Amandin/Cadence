@@ -21,7 +21,7 @@ export function EnteteScene(props) {
     onOuvrirCompteurGlobal,
   } = props;
   const horlogeABloquee = horlogesBloquantes.length > 0;
-  const tourSimultane = !horlogeABloquee && groupeActif.length > 1;
+  const tourSimultane = !temporaliteSouple && !horlogeABloquee && groupeActif.length > 1;
   const nomTourActif = horlogeABloquee
     ? horlogesBloquantes.map((participant) => participant.name).join(', ')
     : tourSimultane
@@ -44,11 +44,10 @@ export function EnteteScene(props) {
         <div className={`active-box panel ${tourSimultane ? 'simultaneous-turn' : ''} ${temporaliteSouple ? 'flexible-turn' : ''}`}>
           <div className="turn-active-line">
             <div className="active-name">
-              <div className="muted">{horlogeABloquee ? 'Horloge à gérer' : tourSimultane ? 'Tour simultané' : temporaliteSouple ? 'Actif choisi' : 'Tour actif'}</div>
-              <strong>{nomTourActif}</strong>
+              {temporaliteSouple && !horlogeABloquee ? <><div className="muted">Mode souple</div><strong>Marquer les tours dans la liste</strong></> : <><div className="muted">{horlogeABloquee ? 'Horloge à gérer' : tourSimultane ? 'Tour simultané' : 'Tour actif'}</div><strong>{nomTourActif}</strong></>}
             </div>
             {tourSimultane && <span className="chip simultaneous-chip">Même temps</span>}
-            {temporaliteSouple && !tourSimultane && !horlogeABloquee && <span className="chip flexible-chip">Souple</span>}
+            {temporaliteSouple && !horlogeABloquee && <span className="chip flexible-chip">Souple</span>}
             <CompteurGlobal compteur={scene.globalTracker} onChanger={onModifierCompteurGlobal} onOuvrir={onOuvrirCompteurGlobal} animationTick={compteurGlobalAuto} />
           </div>
         </div>
