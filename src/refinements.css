@@ -196,6 +196,11 @@
   margin-top: 8px;
 }
 
+.campaign-hub-header.panel,
+.campaign-hub-page > .hub-section.panel {
+  border-radius: 28px;
+}
+
 .campaign-hub {
   gap: 12px;
 }
@@ -204,6 +209,10 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 6px;
+}
+
+.hub-tabs .choice {
+  border-radius: 18px;
 }
 
 .hub-section {
@@ -226,6 +235,7 @@
   align-items: center;
   gap: 8px;
   text-align: left;
+  border-radius: 20px;
 }
 
 .hub-row.selected {
@@ -276,6 +286,11 @@
   .hub-section-head {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .campaign-hub-header.panel,
+  .campaign-hub-page > .hub-section.panel {
+    border-radius: 24px;
   }
 }
 
