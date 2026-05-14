@@ -1,4 +1,4 @@
-import { defaultCategoryOrder, defaultEqualityRule } from '../constants.js';
+import { defaultCategoryOrder, defaultEqualityRule, temporalityModes } from '../constants.js';
 import { trierParInitiative, valeurInitiative } from '../domain/initiative.js';
 import { stepAutoGlobalTracker } from '../domain/globalTracker.js';
 import { createStatus } from '../domain/statuses.js';
@@ -43,6 +43,10 @@ function optionsTri(scene) {
   };
 }
 
+function estModeSouple(scene) {
+  return scene.temporalite === temporalityModes.FLEXIBLE;
+}
+
 function trouverTourActifParInitiative(scene, participantsTries) {
   const actifAvant = scene.participants.find((participant) => participant.id === scene.activeId);
   if (!actifAvant) return { activeId: scene.activeId, nouveauRound: false };
@@ -67,7 +71,9 @@ function appliquerDebutNouveauRound(scene, activeId) {
 
 function modifierParticipantDansScene(scene, participantId, updater) {
   const participants = trierParInitiative(scene.participants.map((p) => p.id === participantId ? updater(p) : p), optionsTri(scene));
-  const { activeId, nouveauRound } = trouverTourActifParInitiative(scene, participants);
+  const { activeId, nouveauRound } = estModeSouple(scene)
+    ? { activeId: scene.activeId, nouveauRound: false }
+    : trouverTourActifParInitiative(scene, participants);
   const sceneSuivante = {
     ...scene,
     participants,
@@ -76,6 +82,12 @@ function modifierParticipantDansScene(scene, participantId, updater) {
   };
 
   return nouveauRound ? appliquerDebutNouveauRound(sceneSuivante, activeId) : sceneSuivante;
+}
+
+function cocherJoueSouple(scene, activeId) {
+  if (!activeId) return scene.jouesSouples || [];
+  const actuel = scene.jouesSouples || [];
+  return actuel.includes(activeId) ? actuel : [...actuel, activeId];
 }
 
 export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, setScenes, setRestorePoints, setRoundEffect }) {
@@ -106,10 +118,33 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
       }));
     },
     updateTemporality(temporalite) {
-      updateScene((s) => ({ ...s, temporalite }));
+      updateScene((s) => ({
+        ...s,
+        temporalite,
+        jouesSouples: temporalite === temporalityModes.FLEXIBLE ? (s.jouesSouples || []) : [],
+        historiqueSouple: temporalite === temporalityModes.FLEXIBLE ? (s.historiqueSouple || []) : [],
+      }));
     },
     setActiveParticipant(activeId) {
-      updateScene((s) => ({ ...s, activeId }));
+      updateScene((s) => ({
+        ...s,
+        activeId,
+        jouesSouples: estModeSouple(s) ? cocherJoueSouple(s, s.activeId) : (s.jouesSouples || []),
+        historiqueSouple: estModeSouple(s) ? [...(s.historiqueSouple || []), s.activeId].filter(Boolean) : (s.historiqueSouple || []),
+      }));
+    },
+    undoFlexibleTurn() {
+      updateScene((s) => {
+        const historique = s.historiqueSouple || [];
+        const precedent = historique.at(-1);
+        if (!precedent) return s;
+        return {
+          ...s,
+          activeId: precedent,
+          historiqueSouple: historique.slice(0, -1),
+          jouesSouples: (s.jouesSouples || []).filter((id) => id !== precedent),
+        };
+      });
     },
     restoreScene(pointId) {
       const point = (restorePoints[scene.id] || []).find((item) => item.id === pointId);
@@ -122,7 +157,14 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
         const participants = s.participants.filter((p) => p.id !== id);
         const reserve = (s.reserve || []).filter((p) => p.id !== id);
         const activeId = s.activeId === id ? participants[0]?.id || '' : s.activeId;
-        return { ...s, participants, reserve, activeId };
+        return {
+          ...s,
+          participants,
+          reserve,
+          activeId,
+          jouesSouples: (s.jouesSouples || []).filter((joueId) => joueId !== id),
+          historiqueSouple: (s.historiqueSouple || []).filter((joueId) => joueId !== id),
+        };
       });
     },
     trackerChange(pid, tid, next) {
@@ -139,6 +181,11 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
       updateParticipant(pid, (p) => ({ ...p, statuses: (p.statuses || []).filter((s) => s.id !== sid) }));
     },
     nextTurn(direction = 1) {
+      if (estModeSouple(scene)) {
+        if (direction < 0) this.undoFlexibleTurn?.();
+        return;
+      }
+
       const participants = scene.participants;
       if (!participants.length) return;
 
@@ -189,6 +236,8 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
         participants: s.participants.filter((x) => x.id !== id),
         reserve: [...(s.reserve || []), participant],
         activeId: s.activeId === id ? s.participants.find((x) => x.id !== id)?.id || '' : s.activeId,
+        jouesSouples: (s.jouesSouples || []).filter((joueId) => joueId !== id),
+        historiqueSouple: (s.historiqueSouple || []).filter((joueId) => joueId !== id),
       }));
     },
     joinInit(id, initiativeValue) {
