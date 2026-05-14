@@ -20,11 +20,31 @@ npm run preview
 
 Le dossier produit est `dist/`.
 
-## Tests
+## Tests automatisés
+
+Les tests unitaires utilisent Vitest.
 
 ```bash
 npm test
 ```
+
+Ils couvrent notamment :
+
+- la logique d’initiative classique ;
+- les phases SR5-like ;
+- les égalités et groupes simultanés ;
+- le tri de la réserve ;
+- les trackers, cases, horloges et états temporaires ;
+- le compteur global de scène.
+
+Avant une modification importante, lancer :
+
+```bash
+npm test
+npm run build
+```
+
+Une GitHub Action `Quality` lance automatiquement les tests puis le build sur chaque push ou pull request vers `main`.
 
 ## Cloudflare Pages
 
@@ -38,13 +58,18 @@ Réglages recommandés :
 
 L’application sauvegarde automatiquement en `localStorage`. Le menu permet aussi l’export/import JSON de campagne.
 
-## Organisation
+## Organisation actuelle
 
 ```txt
 src/
   App.jsx
   constants.js
-  data/defaultCampaign.js
+  logic.js
+  refinements.css
+  actions/
   components/
+  domain/
+  hooks/
+  interface/
   utils/
 ```
