@@ -3,7 +3,7 @@ import { createCampaignActions } from '../actions/campaignActions.js';
 import { createSceneActions } from '../actions/sceneActions.js';
 import { normalizeGlobalTracker, stepGlobalTracker } from '../domain/globalTracker.js';
 import { clone, hasTriggeredClock, nextTurnInfo, uid } from '../logic.js';
-import { campaignNameFromPayload, saveCampaign } from '../storage.js';
+import { campaignNameFromPayload, loadCampaign, saveCampaign } from '../storage.js';
 import { defaultCategoryOrder, defaultEqualityRule, defaultPhaseDecrement, defaultPhaseRerollEachRound, defaultTemporalityMode, legacyParticipantKinds } from '../constants.js';
 
 function normalizeKind(kind) {
