@@ -16,7 +16,7 @@ function createBlankScene() {
 
 function campaignExportFileName() {
   const date = new Date().toISOString().slice(0, 10);
-  return `campagne-cadence-${date}.json`;
+  return `campagne-cadence-${date}.cad`;
 }
 
 function downloadBlob(blob, fileName) {
@@ -73,7 +73,7 @@ export function createCampaignActions({ scenes, dark, setScenes, setSceneIndex, 
         setSceneIndex(0);
         return { ok: true };
       } catch {
-        return { ok: false, message: 'Impossible de lire ce fichier JSON.' };
+        return { ok: false, message: 'Impossible de lire ce fichier Cadence.' };
       }
     },
     resetDemo() {
