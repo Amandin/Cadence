@@ -1,8 +1,16 @@
-export const APP_VERSION = '0.1.42';
+export const APP_VERSION = '0.1.43';
 export const STORAGE_KEY = 'cadence:campaign:v1';
 export const TEMPLATE_STORAGE_KEY = 'cadence:templates:v1';
 
-export const participantKinds = ['PJ', 'Allié', 'Opposition', 'Horloge', 'Autre'];
+export const participantKinds = ['PJ', 'Allié', 'Opposant', 'Environnement'];
+
+export const legacyParticipantKinds = {
+  Opposition: 'Opposant',
+  Horloge: 'Environnement',
+  Autre: 'Environnement',
+};
+
+export const defaultCategoryOrder = ['PJ', 'Opposant', 'Allié', 'Environnement'];
 
 export const trackerTypeLabels = {
   bar: 'Barre',
