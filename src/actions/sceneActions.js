@@ -110,7 +110,9 @@ function appliquerNouveauRoundPhases(scene) {
     reserve: (scene.reserve || []).map(tickParticipant),
   };
 
-  return { ...sceneSuivante, activeId: premierParticipantPhase(sceneSuivante) };
+  return scene.phaseRerollEachRound
+    ? sceneSuivante
+    : { ...sceneSuivante, activeId: premierParticipantPhase(sceneSuivante) };
 }
 
 function modifierParticipantDansScene(scene, participantId, updater) {
@@ -153,6 +155,13 @@ function annulerDernierJoueSouple(scene) {
   };
 }
 
+function valeurInitiativeRenseignee(valuesById, participantId) {
+  const raw = valuesById?.[participantId];
+  if (raw === '' || raw == null) return null;
+  const initiative = Number(raw);
+  return Number.isFinite(initiative) ? initiative : null;
+}
+
 export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, setScenes, setRestorePoints, setRoundEffect }) {
   const updateScene = (updater) => setScenes((list) => list.map((s, i) => i === sceneIndex ? updater(s) : s));
   const updateParticipant = (id, updater) => updateScene((s) => {
@@ -181,6 +190,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
       }));
     },
     updateTemporality(temporalite) {
+      setRoundEffect(null);
       updateScene((s) => {
         const sceneSuivante = {
           ...s,
@@ -197,21 +207,31 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
     },
     updatePhaseDecrement(phaseDecrement) {
       const valeur = Math.max(1, Number(phaseDecrement) || 10);
+      setRoundEffect(null);
       updateScene((s) => ({ ...s, phaseDecrement: valeur, activeId: estModePhases(s) ? participantsPhase({ ...s, phaseDecrement: valeur })[0]?.id || '' : s.activeId }));
+    },
+    updatePhaseRerollEachRound(phaseRerollEachRound) {
+      updateScene((s) => ({ ...s, phaseRerollEachRound: !!phaseRerollEachRound }));
     },
     setActiveParticipant(activeId) {
       updateScene((s) => ({ ...s, activeId }));
     },
     applyInitiativeRolls(valuesById) {
+      setRoundEffect(null);
       updateScene((s) => {
-        const participants = trierParInitiative((s.participants || []).map((participant) => {
-          const raw = valuesById?.[participant.id];
-          if (raw === '' || raw == null) return participant;
-          const initiative = Number(raw);
-          if (!Number.isFinite(initiative)) return participant;
-          return { ...participant, initiative };
-        }), optionsTri(s));
-        const sceneAvecParticipants = { ...s, participants, phase: estModePhases(s) ? 1 : s.phase || 1 };
+        const participantsMisAJour = (s.participants || []).map((participant) => {
+          const initiative = valeurInitiativeRenseignee(valuesById, participant.id);
+          return initiative == null ? participant : { ...participant, initiative };
+        });
+        const reserveJointe = [];
+        const reserve = (s.reserve || []).flatMap((participant) => {
+          const initiative = valeurInitiativeRenseignee(valuesById, participant.id);
+          if (initiative == null) return [participant];
+          reserveJointe.push({ ...participant, initiative });
+          return [];
+        });
+        const participants = trierParInitiative([...participantsMisAJour, ...reserveJointe], optionsTri(s));
+        const sceneAvecParticipants = { ...s, participants, reserve, phase: estModePhases(s) ? 1 : s.phase || 1 };
         return {
           ...sceneAvecParticipants,
           activeId: estModeSouple(s) ? '' : estModePhases(s) ? participantsPhase(sceneAvecParticipants)[0]?.id || '' : participants[0]?.id || '',
@@ -315,21 +335,25 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
         if (!phaseParticipants.length) return;
         const currentIndex = phaseParticipants.findIndex((p) => p.id === scene.activeId);
         if (currentIndex < 0) {
+          setRoundEffect(null);
           updateScene((s) => ({ ...s, activeId: phaseParticipants[0]?.id || s.activeId }));
           return;
         }
         if (direction < 0) {
           const previousIndex = Math.max(0, currentIndex - 1);
+          setRoundEffect(null);
           updateScene((s) => ({ ...s, activeId: phaseParticipants[previousIndex]?.id || s.activeId }));
           return;
         }
         const nextIndex = currentIndex + 1;
         if (nextIndex < phaseParticipants.length) {
+          setRoundEffect(null);
           updateScene((s) => ({ ...s, activeId: phaseParticipants[nextIndex].id }));
           return;
         }
         if (blocked.length) return;
         if (phaseSuivanteExiste(scene.participants, scene.phase || 1, scene.phaseDecrement || 10)) {
+          setRoundEffect(null);
           updateScene((s) => {
             const phase = (s.phase || 1) + 1;
             const nextParticipants = participantsPhase({ ...s, phase });
