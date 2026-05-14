@@ -151,13 +151,12 @@ export function FenetreReglesAvancees({ scene, onFermer, onUpdateCategoryOrder, 
   );
 }
 
-function ActionsScene({ onAjouterParticipant, onSaisirInitiatives, onReglesAvancees, onOuvrirHub }) {
+function ActionsScene({ onAjouterParticipant, onSaisirInitiatives, onReglesAvancees }) {
   return (
     <div className="stack" style={{ marginTop: 12 }}>
       <button className="primary" onClick={onAjouterParticipant}>Ajouter un personnage</button>
       <button className="small-btn" onClick={onSaisirInitiatives}>Saisir les initiatives</button>
       <button className="small-btn" onClick={onReglesAvancees}>Règles avancées</button>
-      <button className="small-btn" onClick={onOuvrirHub}>Hub de campagne</button>
     </div>
   );
 }
@@ -184,8 +183,9 @@ export function MenuPrincipal({ scene, restorePoints = [], onRestore, onClose, d
     <Fenetre title="Menu" onClose={onClose}>
       <LogoMenu sombre={dark} />
       <LigneVersionEtTheme sombre={dark} onChangerTheme={setDark} />
+      <button className="primary hub-menu-main-action" onClick={onOpenCampaignHub}>Hub de campagne</button>
       <OptionsCompteurScene compteur={scene?.globalTracker} onModifier={onGlobalTracker} />
-      <ActionsScene onAjouterParticipant={onAddParticipant} onSaisirInitiatives={onOpenInitiativeRoller} onReglesAvancees={onOpenAdvancedRules} onOuvrirHub={onOpenCampaignHub} />
+      <ActionsScene onAjouterParticipant={onAddParticipant} onSaisirInitiatives={onOpenInitiativeRoller} onReglesAvancees={onOpenAdvancedRules} />
       <RestaurationScene points={pointsRestauration} pointActif={pointRestaurationId} onChoisirPoint={setPointRestaurationId} onRestaurer={onRestore} />
     </Fenetre>
   );
