@@ -27,6 +27,8 @@ function normalizeScene(scene) {
     notes: scene?.notes || '',
     reserveNotes: scene?.reserveNotes || '',
     temporalite: scene?.temporalite || defaultTemporalityMode,
+    jouesSouples: Array.isArray(scene?.jouesSouples) ? scene.jouesSouples : [],
+    historiqueSouple: Array.isArray(scene?.historiqueSouple) ? scene.historiqueSouple : [],
     equalityRule: scene?.equalityRule || defaultEqualityRule,
     categoryOrder: Array.isArray(scene?.categoryOrder) && scene.categoryOrder.length ? scene.categoryOrder : defaultCategoryOrder,
     globalTracker: normalizeGlobalTracker(scene?.globalTracker),
