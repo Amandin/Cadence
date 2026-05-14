@@ -1,0 +1,58 @@
+.round.phase-aware {
+  min-width: 104px;
+  padding: 5px 9px 6px;
+  display: grid;
+  grid-template-rows: auto auto auto;
+  place-items: center;
+  row-gap: 0;
+  line-height: 1;
+}
+
+.round.phase-aware small {
+  display: block;
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: .09em;
+}
+
+.round.phase-aware strong {
+  display: block;
+  margin-top: 1px;
+  font-size: 24px;
+  line-height: .95;
+  font-weight: 1000;
+}
+
+.round.phase-aware span {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: .01em;
+  opacity: .82;
+}
+
+.round.phase-aware.new small {
+  font-size: 9px;
+  letter-spacing: .06em;
+}
+
+.round.phase-aware.new strong {
+  font-size: 22px;
+}
+
+@media (max-width: 420px) {
+  .round.phase-aware {
+    min-width: 92px;
+    padding-inline: 7px;
+  }
+
+  .round.phase-aware strong {
+    font-size: 22px;
+  }
+
+  .round.phase-aware span {
+    font-size: 10px;
+  }
+}
