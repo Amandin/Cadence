@@ -1,21 +1,17 @@
+import { defaultCategoryOrder, defaultEqualityRule } from '../../constants.js';
+import { grouperParInitiative, idsEgaliteParfaite } from '../../domain/initiative.js';
 import { FichetteInitiative } from '../fiches/FichetteInitiative.jsx';
 
-function valeurInitiative(participant) {
-  const nombre = Number(participant?.initiative);
-  return Number.isFinite(nombre) ? nombre : 0;
+function optionsEgalite(scene) {
+  return {
+    categoryOrder: scene?.categoryOrder || defaultCategoryOrder,
+    equalityRule: scene?.equalityRule || defaultEqualityRule,
+  };
 }
 
-function grouperParInitiative(participants = []) {
-  return participants.reduce((groupes, participant) => {
-    const initiative = valeurInitiative(participant);
-    const groupe = groupes.find((item) => item.initiative === initiative);
-    if (groupe) groupe.participants.push(participant);
-    else groupes.push({ initiative, participants: [participant] });
-    return groupes;
-  }, []);
-}
+export function ListeInitiative({ scene, participants, actifId, interactions }) {
+  const idsSimultanes = idsEgaliteParfaite(participants, optionsEgalite(scene));
 
-export function ListeInitiative({ participants, actifId, interactions }) {
   return (
     <div className="initiative-list">
       {grouperParInitiative(participants).map((groupe) => (
@@ -30,6 +26,7 @@ export function ListeInitiative({ participants, actifId, interactions }) {
                 key={participant.id}
                 participant={participant}
                 actif={participant.id === actifId}
+                simultane={idsSimultanes.has(participant.id)}
                 onOuvrir={() => interactions.openCharacter(participant.id)}
                 onSuivi={(trackerId, next) => interactions.updateCharacterTracker(participant.id, trackerId, next)}
                 onSupprimerSuivi={(trackerId) => interactions.deleteCharacterTracker(participant.id, trackerId)}
