@@ -142,10 +142,11 @@ export function FenetreReglesAvancees({ scene, onFermer, onUpdateCategoryOrder, 
   );
 }
 
-function ActionsScene({ onAjouterParticipant, onNouvelleScene, onReglesAvancees }) {
+function ActionsScene({ onAjouterParticipant, onNouvelleScene, onLancerInitiatives, onReglesAvancees }) {
   return (
     <div className="stack" style={{ marginTop: 12 }}>
       <button className="primary" onClick={onAjouterParticipant}>Ajouter un personnage</button>
+      <button className="small-btn" onClick={onLancerInitiatives}>Lancer les initiatives</button>
       <button className="small-btn" onClick={onNouvelleScene}>Nouvelle scène</button>
       <button className="small-btn" onClick={onReglesAvancees}>Règles avancées</button>
     </div>
@@ -182,7 +183,7 @@ function RestaurationScene({ points, pointActif, onChoisirPoint, onRestaurer }) 
   );
 }
 
-export function MenuPrincipal({ scenes, scene, restorePoints = [], onRestore, onClose, setSceneIndex, dark, setDark, onAddParticipant, onNewScene, onExport, onImport, onReset, onGlobalTracker, onOpenAdvancedRules }) {
+export function MenuPrincipal({ scenes, scene, restorePoints = [], onRestore, onClose, setSceneIndex, dark, setDark, onAddParticipant, onNewScene, onExport, onImport, onReset, onGlobalTracker, onOpenAdvancedRules, onOpenInitiativeRoller }) {
   const pointsRestauration = [...restorePoints].sort((a, b) => a.round - b.round);
   const [pointRestaurationId, setPointRestaurationId] = useState(pointsRestauration.at(-1)?.id || '');
 
@@ -192,7 +193,7 @@ export function MenuPrincipal({ scenes, scene, restorePoints = [], onRestore, on
       <LigneVersionEtTheme sombre={dark} onChangerTheme={setDark} />
       <ListeScenes scenes={scenes} onChoisirScene={setSceneIndex} onFermer={onClose} />
       <OptionsCompteurScene compteur={scene?.globalTracker} onModifier={onGlobalTracker} />
-      <ActionsScene onAjouterParticipant={onAddParticipant} onNouvelleScene={onNewScene} onReglesAvancees={onOpenAdvancedRules} />
+      <ActionsScene onAjouterParticipant={onAddParticipant} onLancerInitiatives={onOpenInitiativeRoller} onNouvelleScene={onNewScene} onReglesAvancees={onOpenAdvancedRules} />
       <ActionsSauvegarde onExporter={onExport} onImporter={onImport} onReinitialiser={onReset} />
       <RestaurationScene points={pointsRestauration} pointActif={pointRestaurationId} onChoisirPoint={setPointRestaurationId} onRestaurer={onRestore} />
     </Fenetre>
