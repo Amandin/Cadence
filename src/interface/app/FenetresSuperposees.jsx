@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { HubCampagne } from '../campaign/HubCampagne.jsx';
 import { FenetreEtat } from '../dialogues/FenetreEtat.jsx';
 import { FenetreExportCampagne } from '../dialogues/FenetreExportCampagne.jsx';
 import { FenetreInformation } from '../dialogues/FenetreInformation.jsx';
@@ -22,7 +21,6 @@ import { FenetreCompteurGlobal } from '../suivis/CompteurGlobal.jsx';
 export function FenetresSuperposees({
   campaignName,
   scene,
-  scenes,
   restorePoints,
   dark,
   characters,
@@ -36,7 +34,6 @@ export function FenetresSuperposees({
 }) {
   const [reglesAvanceesOuvertes, setReglesAvanceesOuvertes] = useState(false);
   const [exportOuvert, setExportOuvert] = useState(false);
-  const [hubOuvert, setHubOuvert] = useState(false);
   const {
     addSheetOpen,
     openMenu,
@@ -56,10 +53,8 @@ export function FenetresSuperposees({
     ouvrirSauvegardeTemplate,
     creerPersonnageVierge,
     creerDepuisTemplate,
-    nouvelleScene,
-    importerCampagne,
-    reinitialiserDemo,
     restaurerScene,
+    ouvrirHubCampagne,
   } = commandesInterface;
 
   const { templateTarget, templateError, fermerSauvegardeTemplate, enregistrerTemplate } = templatesUi;
@@ -67,11 +62,7 @@ export function FenetresSuperposees({
 
   const ouvrirHub = () => {
     fermerMenu?.();
-    setHubOuvert(true);
-  };
-
-  const ajouterTemplateDansScene = (templateId) => {
-    creerDepuisTemplate(templateId, { placement: 'reserve' });
+    ouvrirHubCampagne?.();
   };
 
   return (
@@ -86,7 +77,6 @@ export function FenetresSuperposees({
       {clockModalOpen && <FenetreResolutionHorloge participants={compteurGlobal.horlogesBloquantes} onFermer={fermerResolutionHorloge} onRelancerHorloge={resetClock} onSupprimerHorloge={deleteClock} />}
       {notice && <FenetreInformation titre={notice.title} message={notice.message} onFermer={fermerNotice} />}
       {openMenu && <MenuPrincipal scene={scene} restorePoints={restorePoints} onRestore={restaurerScene} onClose={fermerMenu} dark={dark} setDark={actions.setDark} onAddParticipant={commandesInterface.ouvrirAjoutPersonnage} onOpenCampaignHub={ouvrirHub} onGlobalTracker={actions.updateGlobalTracker} onOpenAdvancedRules={() => setReglesAvanceesOuvertes(true)} onOpenInitiativeRoller={commandesInterface.ouvrirSaisieInitiatives} />}
-      {hubOuvert && <HubCampagne scene={scene} scenes={scenes} templates={templates.templates} onFermer={() => setHubOuvert(false)} onChoisirScene={actions.setSceneIndex} onNouvelleScene={nouvelleScene} onExporter={() => setExportOuvert(true)} onImporter={importerCampagne} onReinitialiser={reinitialiserDemo} onAjouterDepuisTemplate={ajouterTemplateDansScene} onSupprimerTemplate={templates.deleteTemplate} />}
       {exportOuvert && <FenetreExportCampagne nomInitial={campaignName} onFermer={() => setExportOuvert(false)} onExporter={actions.exportCampaign} />}
       {reglesAvanceesOuvertes && <FenetreReglesAvancees scene={scene} onFermer={() => setReglesAvanceesOuvertes(false)} onUpdateCategoryOrder={actions.updateCategoryOrder} onUpdateEqualityRule={actions.updateEqualityRule} onUpdateTemporality={actions.updateTemporality} onUpdatePhaseDecrement={actions.updatePhaseDecrement} onUpdatePhaseRerollEachRound={actions.updatePhaseRerollEachRound} />}
       {initiativeEntryOpen && <FenetreLancerInitiatives participants={scene.participants} reserve={scene.reserve} onFermer={fermerSaisieInitiatives} onValider={actions.applyInitiativeRolls} onPasserHorsInitiative={actions.moveParticipantsToReserve} />}
