@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { defaultCategoryOrder, defaultEqualityRule, temporalityModes } from './constants.js';
-import { groupeEgalitePourParticipant } from './domain/initiative.js';
+import { groupeEgalitePourParticipant, participantsPourPhase, phaseSuivanteExiste } from './domain/initiative.js';
 import { FenetresSuperposees } from './interface/app/FenetresSuperposees.jsx';
 import { BarreActionBas } from './interface/scene/BarreActionBas.jsx';
 import { EnteteScene } from './interface/scene/EnteteScene.jsx';
@@ -27,9 +27,28 @@ export default function App() {
   const [templateError, setTemplateError] = useState(null);
 
   const temporaliteSouple = scene.temporalite === temporalityModes.FLEXIBLE;
+  const temporalitePhases = scene.temporalite === temporalityModes.PHASES;
+  const optionsInitiative = {
+    categoryOrder: scene.categoryOrder || defaultCategoryOrder,
+    equalityRule: scene.equalityRule || defaultEqualityRule,
+  };
+  const phaseParticipants = temporalitePhases
+    ? participantsPourPhase(scene.participants, scene.phase, scene.phaseDecrement, optionsInitiative)
+    : [];
+  const phaseActiveId = temporalitePhases
+    ? phaseParticipants.find((participant) => participant.id === scene.activeId)?.id || phaseParticipants[0]?.id || ''
+    : scene.activeId;
+  const phaseActive = temporalitePhases
+    ? phaseParticipants.find((participant) => participant.id === phaseActiveId) || null
+    : null;
+  const phaseSuivanteDisponible = temporalitePhases && phaseSuivanteExiste(scene.participants, scene.phase, scene.phaseDecrement);
+  const phaseEnFin = temporalitePhases && phaseParticipants.length > 0 && phaseActiveId === phaseParticipants.at(-1)?.id;
+  const phaseDemarreNouveauRound = temporalitePhases && phaseEnFin && !phaseSuivanteDisponible;
   const toutLeMondeAJoueSouple = temporaliteSouple && scene.participants.length > 0 && scene.participants.every((participant) => (scene.jouesSouples || []).includes(participant.id));
   const globalAutoTick = roundEffect === 'next' && !!scene.globalTracker?.enabled && !!scene.globalTracker?.auto;
-  const activeGroup = !temporaliteSouple && scene.activeId ? groupeEgalitePourParticipant(scene.participants, scene.activeId, { categoryOrder: scene.categoryOrder || defaultCategoryOrder, equalityRule: scene.equalityRule || defaultEqualityRule }) : [];
+  const participantsPourEgalites = temporalitePhases ? phaseParticipants : scene.participants;
+  const idActifPourEgalites = temporalitePhases ? phaseActiveId : scene.activeId;
+  const activeGroup = !temporaliteSouple && idActifPourEgalites ? groupeEgalitePourParticipant(participantsPourEgalites, idActifPourEgalites, optionsInitiative) : [];
 
   useEffect(() => {
     if (!scene.activeId) return;
@@ -45,6 +64,7 @@ export default function App() {
   // elle doit être résolue avant que les états/horloges avancent.
   const nextTurn = (direction) => {
     if (temporaliteSouple && direction > 0 && !toutLeMondeAJoueSouple) return;
+    if (temporalitePhases && direction > 0 && !phaseParticipants.length) return;
     if (direction > 0) setShowNotes(false);
     if (direction > 0 && blocked.length) {
       setClockModalOpen(true);
@@ -134,15 +154,41 @@ export default function App() {
   };
   const nextLabel = temporaliteSouple
     ? toutLeMondeAJoueSouple ? 'Nouveau round' : 'Mode souple : choisir dans la liste'
-    : blocked.length ? 'Gérer horloge bloquante' : nextStartsRound ? 'Nouveau round' : 'Participant suivant';
-  const classeSuivantEffective = temporaliteSouple && toutLeMondeAJoueSouple ? 'next-round' : nextClass;
+    : blocked.length
+      ? 'Gérer horloge bloquante'
+      : temporalitePhases
+        ? !phaseParticipants.length
+          ? 'Aucun participant actif'
+          : phaseEnFin && phaseSuivanteDisponible
+            ? 'Phase suivante'
+            : phaseDemarreNouveauRound
+              ? 'Nouveau round'
+              : 'Participant suivant'
+        : nextStartsRound ? 'Nouveau round' : 'Participant suivant';
+  const classeSuivantEffective = temporaliteSouple && toutLeMondeAJoueSouple
+    ? 'next-round'
+    : blocked.length
+      ? 'blocked'
+      : temporalitePhases
+        ? phaseDemarreNouveauRound ? 'next-round' : phaseEnFin && phaseSuivanteDisponible ? 'next-phase' : ''
+        : nextClass;
+  const suivantDesactive = (temporaliteSouple && !toutLeMondeAJoueSouple) || (temporalitePhases && !phaseParticipants.length);
+  const libelleBas = temporaliteSouple
+    ? toutLeMondeAJoueSouple ? `Nouveau round · R${scene.round + 1}` : 'Choisir'
+    : temporalitePhases
+      ? phaseDemarreNouveauRound
+        ? `Nouveau round · R${scene.round + 1}`
+        : phaseEnFin && phaseSuivanteDisponible
+          ? `Phase ${scene.phase + 1}`
+          : `Suivant · P${scene.phase}`
+      : undefined;
 
   return (
     <div className={`app ${dark ? 'dark' : ''}`}>
       <div className="shell">
         <EnteteScene
           scene={scene}
-          actif={active}
+          actif={temporalitePhases ? phaseActive : active}
           groupeActif={activeGroup}
           horlogesBloquantes={blocked}
           effetRound={roundEffect}
@@ -151,7 +197,8 @@ export default function App() {
           classeSuivant={classeSuivantEffective}
           libelleSuivant={nextLabel}
           temporaliteSouple={temporaliteSouple}
-          suivantDesactive={temporaliteSouple && !toutLeMondeAJoueSouple}
+          temporalitePhases={temporalitePhases}
+          suivantDesactive={suivantDesactive}
           onBasculerNotes={() => setShowNotes(!showNotes)}
           onTourPrecedent={() => nextTurn(-1)}
           onTourSuivant={() => nextTurn(1)}
@@ -160,18 +207,18 @@ export default function App() {
         />
 
         <main>
-          <ListeInitiative scene={scene} participants={scene.participants} actifId={scene.activeId} interactions={characters} temporaliteSouple={temporaliteSouple} onMarquerAJoue={marquerAJoue} onAnnulerAJoue={annulerAJoue} />
+          <ListeInitiative scene={scene} participants={scene.participants} actifId={temporalitePhases ? phaseActiveId : scene.activeId} interactions={characters} temporaliteSouple={temporaliteSouple} temporalitePhases={temporalitePhases} onMarquerAJoue={marquerAJoue} onAnnulerAJoue={annulerAJoue} />
           <ReserveHorsInitiative scene={scene} interactions={characters} onModifierNotes={(notes) => actions.updateSceneField('reserveNotes', notes)} />
         </main>
       </div>
 
       <BarreActionBas
         classeSuivant={classeSuivantEffective}
-        prochainRound={temporaliteSouple ? toutLeMondeAJoueSouple : nextStartsRound}
+        prochainRound={temporaliteSouple ? toutLeMondeAJoueSouple : temporalitePhases ? phaseDemarreNouveauRound : nextStartsRound}
         round={scene.round}
         horlogeBloquee={blocked.length > 0}
-        suivantDesactive={temporaliteSouple && !toutLeMondeAJoueSouple}
-        libelleSuivant={temporaliteSouple ? toutLeMondeAJoueSouple ? `Nouveau round · R${scene.round + 1}` : 'Choisir' : undefined}
+        suivantDesactive={suivantDesactive}
+        libelleSuivant={libelleBas}
         onTourPrecedent={() => nextTurn(-1)}
         onTourSuivant={() => nextTurn(1)}
         onAjouterPersonnage={openAddCharacter}
