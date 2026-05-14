@@ -157,7 +157,6 @@ export default function App() {
           onTourSuivant={() => nextTurn(1)}
           onModifierCompteurGlobal={actions.stepGlobal}
           onOuvrirCompteurGlobal={() => setGlobalSheetOpen(true)}
-          onOuvrirSaisieInitiatives={openInitiativeEntry}
         />
 
         <main>
@@ -176,6 +175,7 @@ export default function App() {
         onTourPrecedent={() => nextTurn(-1)}
         onTourSuivant={() => nextTurn(1)}
         onAjouterPersonnage={openAddCharacter}
+        onSaisirInitiatives={openInitiativeEntry}
         onOuvrirMenu={() => setOpenMenu(true)}
       />
 
