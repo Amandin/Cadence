@@ -24,9 +24,15 @@ function slugifyFilePart(value) {
   return normalized || 'campagne-cadence';
 }
 
+function dateFrPourFichier(date = new Date()) {
+  const jour = String(date.getDate()).padStart(2, '0');
+  const mois = String(date.getMonth() + 1).padStart(2, '0');
+  const annee = date.getFullYear();
+  return `${jour}-${mois}-${annee}`;
+}
+
 function campaignExportFileName(campaignName) {
-  const date = new Date().toISOString().slice(0, 10);
-  return `${slugifyFilePart(campaignName)}-${date}.cad`;
+  return `${slugifyFilePart(campaignName)}-${dateFrPourFichier()}.cad`;
 }
 
 function downloadBlob(blob, fileName) {
