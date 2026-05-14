@@ -1,12 +1,18 @@
+import { defaultCategoryOrder } from '../../constants.js';
+import { trierReserve } from '../../domain/initiative.js';
 import { FichetteReserve } from '../fiches/FichetteReserve.jsx';
 
 export function ReserveHorsInitiative({ scene, interactions, onModifierNotes }) {
   if (!scene.reserve?.length) return null;
 
+  const reserveTriee = trierReserve(scene.reserve, {
+    categoryOrder: scene.categoryOrder || defaultCategoryOrder,
+  });
+
   return (
     <section className="reserve">
       <h3>Réserve</h3>
-      {scene.reserve.map((participant) => (
+      {reserveTriee.map((participant) => (
         <FichetteReserve
           key={participant.id}
           participant={participant}
