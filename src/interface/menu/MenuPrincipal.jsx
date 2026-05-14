@@ -96,6 +96,19 @@ function OptionsOrdreCategories({ order = defaultCategoryOrder, onModifier }) {
   );
 }
 
+function ReglesAvancees({ order, onModifier }) {
+  const [ouvert, setOuvert] = useState(false);
+
+  return (
+    <div className="stack" style={{ marginTop: 12 }}>
+      <button className="small-btn" onClick={() => setOuvert((etat) => !etat)}>
+        {ouvert ? 'Masquer règles avancées' : 'Règles avancées'}
+      </button>
+      {ouvert && <OptionsOrdreCategories order={order} onModifier={onModifier} />}
+    </div>
+  );
+}
+
 function ActionsScene({ onAjouterParticipant, onNouvelleScene }) {
   return (
     <div className="stack" style={{ marginTop: 12 }}>
@@ -145,7 +158,7 @@ export function MenuPrincipal({ scenes, scene, restorePoints = [], onRestore, on
       <LigneVersionEtTheme sombre={dark} onChangerTheme={setDark} />
       <ListeScenes scenes={scenes} onChoisirScene={setSceneIndex} onFermer={onClose} />
       <OptionsCompteurScene compteur={scene?.globalTracker} onModifier={onGlobalTracker} />
-      <OptionsOrdreCategories order={scene?.categoryOrder || defaultCategoryOrder} onModifier={onUpdateCategoryOrder} />
+      <ReglesAvancees order={scene?.categoryOrder || defaultCategoryOrder} onModifier={onUpdateCategoryOrder} />
       <ActionsScene onAjouterParticipant={onAddParticipant} onNouvelleScene={onNewScene} />
       <ActionsSauvegarde onExporter={onExport} onImporter={onImport} onReinitialiser={onReset} />
       <RestaurationScene points={pointsRestauration} pointActif={pointRestaurationId} onChoisirPoint={setPointRestaurationId} onRestaurer={onRestore} />
