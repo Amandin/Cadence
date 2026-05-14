@@ -1,6 +1,7 @@
 import { defaultCategoryOrder, defaultEqualityRule, defaultPhaseDecrement, defaultPhaseRerollEachRound, defaultTemporalityMode, temporalityModes } from '../constants.js';
-import { campaignNameFromPayload, isValidCampaign, normalizeCampaignName, serializeCampaign } from '../storage.js';
+import { campaignNameFromPayload, campaignTemplatesFromPayload, isValidCampaign, normalizeCampaignName, serializeCampaign } from '../storage.js';
 import { makeDefaultCampaign, uid } from '../logic.js';
+import { mergeTemplateStores } from '../templates.js';
 
 function initiativeRulesFromScene(scene = {}) {
   return {
@@ -131,7 +132,7 @@ async function shareOrDownloadCampaign(content, campaignName) {
   return { ok: true, method: 'download' };
 }
 
-export function createCampaignActions({ scenes, sceneIndex, dark, campaignName, setScenes, setSceneIndex, setDark, setCampaignNameState }) {
+export function createCampaignActions({ scenes, sceneIndex, dark, campaignName, templateStore, setScenes, setSceneIndex, setDark, setCampaignNameState, setTemplateStore }) {
   return {
     setSceneIndex,
     setDark,
@@ -148,7 +149,7 @@ export function createCampaignActions({ scenes, sceneIndex, dark, campaignName, 
     },
     async exportCampaign(name = campaignName) {
       const exportName = normalizeCampaignName(name);
-      const result = await shareOrDownloadCampaign(serializeCampaign(scenes, dark, exportName), exportName);
+      const result = await shareOrDownloadCampaign(serializeCampaign(scenes, dark, exportName, templateStore), exportName);
       if (result?.ok) setCampaignNameState(exportName);
       return result;
     },
@@ -160,15 +161,29 @@ export function createCampaignActions({ scenes, sceneIndex, dark, campaignName, 
         setScenes(data.scenes);
         setDark(data.settings?.dark || false);
         setCampaignNameState(campaignNameFromPayload(data));
+        setTemplateStore(campaignTemplatesFromPayload(data));
         setSceneIndex(0);
         return { ok: true };
       } catch {
         return { ok: false, message: 'Impossible de lire ce fichier Cadence.' };
       }
     },
+    async importTemplatesFromCampaign(file) {
+      try {
+        const data = JSON.parse(await file.text());
+        if (!isValidCampaign(data)) return { ok: false, message: 'Le fichier choisi n’est pas une campagne Cadence valide.' };
+        const importedTemplates = campaignTemplatesFromPayload(data);
+        const result = mergeTemplateStores(templateStore, importedTemplates);
+        setTemplateStore(result.store);
+        return { ok: true, added: result.added.length, skipped: result.skipped.length };
+      } catch {
+        return { ok: false, message: 'Impossible de lire les templates de cette campagne.' };
+      }
+    },
     resetDemo() {
       const fresh = makeDefaultCampaign();
       setScenes(fresh.scenes);
+      setTemplateStore(campaignTemplatesFromPayload(fresh));
       setCampaignNameState(campaignNameFromPayload(fresh));
       setSceneIndex(0);
     },
