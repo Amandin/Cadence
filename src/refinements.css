@@ -202,7 +202,22 @@
 }
 
 .campaign-hub-page > .hub-section.panel {
+  position: relative;
   padding-inline: 18px;
+  padding-bottom: 22px;
+}
+
+.campaign-hub-page > .hub-section.panel::after {
+  content: '';
+  display: block;
+  height: 1px;
+  margin: 6px 10px 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgba(49, 18, 54, .18), transparent);
+}
+
+.dark .campaign-hub-page > .hub-section.panel::after {
+  background: linear-gradient(90deg, transparent, rgba(255, 247, 237, .16), transparent);
 }
 
 .campaign-hub {
@@ -230,10 +245,14 @@
 
 .hub-section-head {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 8px;
   padding-inline: 2px;
+}
+
+.hub-section-head .small-btn {
+  margin-top: 3px;
 }
 
 .hub-row {
@@ -300,6 +319,10 @@
 
   .campaign-hub-page > .hub-section.panel {
     padding-inline: 16px;
+  }
+
+  .hub-section-head .small-btn {
+    margin-top: 1px;
   }
 }
 
