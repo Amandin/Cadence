@@ -28,13 +28,13 @@ export function EnteteScene(props) {
     : tourSimultane
       ? groupeActif.map((participant) => participant.name).join(' + ')
       : actif?.name || 'Aucun participant';
-  const suffixeTemporalite = temporaliteSouple ? ' · souple' : temporalitePhases ? ` · phase ${scene.phase || 1}` : '';
+  const suffixeTemporalite = temporaliteSouple ? ' · souple' : temporalitePhases ? ' · phases' : '';
   const libelleTour = horlogeABloquee
     ? 'Horloge à gérer'
     : tourSimultane
-      ? temporalitePhases ? `Tour simultané · Phase ${scene.phase || 1}` : 'Tour simultané'
+      ? 'Tour simultané'
       : temporalitePhases
-        ? `Tour actif · Phase ${scene.phase || 1}`
+        ? 'Tour actif'
         : 'Tour actif';
 
   return (
@@ -45,7 +45,7 @@ export function EnteteScene(props) {
           <h1>{scene.title}</h1>
           <div className="muted">{scene.type} · {scene.participants.length} en initiative{suffixeTemporalite}</div>
         </div>
-        <BadgeRound round={scene.round} effect={effetRound} />
+        <BadgeRound round={scene.round} effect={effetRound} phase={temporalitePhases ? scene.phase || 1 : null} />
       </div>
       {notesVisibles && <div className="scene-notes panel">{scene.notes}</div>}
       <div className="turn-row">
@@ -57,7 +57,6 @@ export function EnteteScene(props) {
             </div>
             {tourSimultane && <span className="chip simultaneous-chip">Même temps</span>}
             {temporaliteSouple && !horlogeABloquee && <span className="chip flexible-chip">Souple</span>}
-            {temporalitePhases && !horlogeABloquee && <span className="chip phase-chip">Phase {scene.phase || 1}</span>}
             <CompteurGlobal compteur={scene.globalTracker} onChanger={onModifierCompteurGlobal} onOuvrir={onOuvrirCompteurGlobal} animationTick={compteurGlobalAuto} />
           </div>
         </div>
