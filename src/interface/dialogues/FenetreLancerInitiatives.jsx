@@ -31,6 +31,15 @@ function valeursRenseignees(participants, valeurs) {
     .map((participant) => [participant.id, valeurs[participant.id]]));
 }
 
+function BoutonChoixInitiative({ titre, detail, onClick, disabled = false, variant = 'standard' }) {
+  return (
+    <button className={`initiative-choice-action ${variant}`} onClick={onClick} disabled={disabled}>
+      <strong>{titre}</strong>
+      <small>{detail}</small>
+    </button>
+  );
+}
+
 function SectionSaisieInitiative({ titre, participants, inclureEnvironnements, valeurs, changerValeur }) {
   const groupes = participantsParType(participants, inclureEnvironnements);
   if (groupes.length === 0) return null;
@@ -112,18 +121,36 @@ export function FenetreLancerInitiatives({ participants = [], reserve = [], onFe
             <button className="small-btn" onClick={vider}>Vider</button>
           </div>
         </div>
-        {saisiePartielle && <div className="initiative-entry-warning">Les valeurs renseignées vont être appliquées. Les autres resteront à compléter, pourront être conservées, ou pourront passer hors init’.</div>}
+        {saisiePartielle && <div className="initiative-entry-warning">Certaines valeurs sont renseignées, d’autres non. Choisis quoi faire des champs vides.</div>}
         {aucunCandidatAffiche ? <p className="muted">Aucun personnage à renseigner.</p> : <>
           <SectionSaisieInitiative titre="En initiative" participants={participantsEnAttente} inclureEnvironnements={inclureEnvironnements} valeurs={valeurs} changerValeur={changerValeur} />
           <SectionSaisieInitiative titre="Réserve" participants={reserveEnAttente} inclureEnvironnements={inclureEnvironnements} valeurs={valeurs} changerValeur={changerValeur} />
         </>}
-        <div className="grid2" style={{ marginTop: 12 }}>
-          <button className="primary" onClick={appliquer} disabled={restantsAvecValeur.length === 0}>Appliquer</button>
-          <button className="small-btn" onClick={onFermer}>Annuler</button>
+        <div className="initiative-actions">
+          <div className="initiative-decision-actions">
+            <BoutonChoixInitiative
+              titre="Appliquer"
+              detail={saisiePartielle ? 'Valider, puis compléter les champs vides.' : 'Valider les valeurs renseignées.'}
+              onClick={appliquer}
+              disabled={restantsAvecValeur.length === 0}
+              variant="primary-choice"
+            />
+            {saisiePartielle && <BoutonChoixInitiative
+              titre="Conserver"
+              detail="Valider et garder les autres initiatives."
+              onClick={ajouterEtConserverAutresInitiatives}
+              variant="keep-choice"
+            />}
+            {saisiePartielle && participantsActifsSansValeur.length > 0 && <BoutonChoixInitiative
+              titre="Hors init’"
+              detail="Valider et sortir les non renseignés."
+              onClick={appliquerEtPasserRestantsHorsInitiative}
+              variant="out-choice"
+            />}
+          </div>
+          {participantsActifsSansValeur.length > 0 && restantsAvecValeur.length === 0 && idsEnAttente.length < candidats.length && <BoutonChoixInitiative titre="Hors init’" detail="Sortir les champs encore vides." onClick={passerRestantsHorsInitiative} variant="out-choice" />}
+          <button className="initiative-cancel-action" onClick={onFermer}>Annuler</button>
         </div>
-        {saisiePartielle && <button className="small-btn" onClick={ajouterEtConserverAutresInitiatives}>Ajouter et conserver les autres initiatives</button>}
-        {participantsActifsSansValeur.length > 0 && restantsAvecValeur.length === 0 && idsEnAttente.length < candidats.length && <button className="small-btn" onClick={passerRestantsHorsInitiative}>Passer les restants hors init’</button>}
-        {saisiePartielle && participantsActifsSansValeur.length > 0 && <button className="small-btn" onClick={appliquerEtPasserRestantsHorsInitiative}>Appliquer et passer les autres hors init’</button>}
       </div>
     </Fenetre>
   );
