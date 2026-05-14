@@ -9,17 +9,21 @@ function optionsEgalite(scene) {
   };
 }
 
-function GroupeSimultane({ groupe, actifId, interactions }) {
+function GroupeSimultane({ groupe, actifId, interactions, temporaliteSouple, onChoisirActif }) {
   const actif = groupe.participants.some((participant) => participant.id === actifId);
+  const choisirGroupe = () => onChoisirActif?.(groupe.participants[0]?.id);
 
   return (
     <div className={`simultaneous-group ${actif ? 'active' : ''}`}>
+      {temporaliteSouple && !actif && <button className="small-btn flexible-play-group" onClick={choisirGroupe}>Jouer ce groupe</button>}
       {groupe.participants.map((participant) => (
         <FichetteInitiative
           key={participant.id}
           participant={participant}
           actif={actif}
           groupeSimultane
+          temporaliteSouple={temporaliteSouple}
+          onChoisirActif={() => onChoisirActif?.(participant.id)}
           onOuvrir={() => interactions.openCharacter(participant.id)}
           onSuivi={(trackerId, next) => interactions.updateCharacterTracker(participant.id, trackerId, next)}
           onSupprimerSuivi={(trackerId) => interactions.deleteCharacterTracker(participant.id, trackerId)}
@@ -32,7 +36,7 @@ function GroupeSimultane({ groupe, actifId, interactions }) {
   );
 }
 
-export function ListeInitiative({ scene, participants, actifId, interactions }) {
+export function ListeInitiative({ scene, participants, actifId, interactions, temporaliteSouple, onChoisirActif }) {
   const options = optionsEgalite(scene);
 
   return (
@@ -46,11 +50,13 @@ export function ListeInitiative({ scene, participants, actifId, interactions }) 
           <div className="initiative-tier-cards">
             {grouperAffichageParticipants(groupe.participants, options).map((bloc) => (
               bloc.simultaneous
-                ? <GroupeSimultane key={bloc.id} groupe={bloc} actifId={actifId} interactions={interactions} />
+                ? <GroupeSimultane key={bloc.id} groupe={bloc} actifId={actifId} interactions={interactions} temporaliteSouple={temporaliteSouple} onChoisirActif={onChoisirActif} />
                 : <FichetteInitiative
                     key={bloc.id}
                     participant={bloc.participants[0]}
                     actif={bloc.participants[0].id === actifId}
+                    temporaliteSouple={temporaliteSouple}
+                    onChoisirActif={() => onChoisirActif?.(bloc.participants[0].id)}
                     onOuvrir={() => interactions.openCharacter(bloc.participants[0].id)}
                     onSuivi={(trackerId, next) => interactions.updateCharacterTracker(bloc.participants[0].id, trackerId, next)}
                     onSupprimerSuivi={(trackerId) => interactions.deleteCharacterTracker(bloc.participants[0].id, trackerId)}
