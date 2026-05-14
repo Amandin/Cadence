@@ -1,4 +1,4 @@
-export const APP_VERSION = '0.1.58';
+export const APP_VERSION = '0.1.59';
 export const STORAGE_KEY = 'cadence:campaign:v1';
 export const TEMPLATE_STORAGE_KEY = 'cadence:templates:v1';
 
@@ -20,6 +20,7 @@ export const temporalityModes = {
 
 export const defaultTemporalityMode = temporalityModes.CLASSIC;
 export const defaultPhaseDecrement = 10;
+export const defaultPhaseRerollEachRound = false;
 
 export const temporalityLabels = {
   [temporalityModes.CLASSIC]: 'Classique',
