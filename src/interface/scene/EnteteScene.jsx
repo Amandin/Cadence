@@ -13,6 +13,7 @@ export function EnteteScene(props) {
     classeSuivant,
     libelleSuivant,
     temporaliteSouple,
+    suivantDesactive,
     onBasculerNotes,
     onTourPrecedent,
     onTourSuivant,
@@ -51,7 +52,7 @@ export function EnteteScene(props) {
             <CompteurGlobal compteur={scene.globalTracker} onChanger={onModifierCompteurGlobal} onOuvrir={onOuvrirCompteurGlobal} animationTick={compteurGlobalAuto} />
           </div>
         </div>
-        <button className={`turn-btn next ${classeSuivant}`} onClick={onTourSuivant} aria-label={libelleSuivant}>{horlogeABloquee ? '⏸' : '➜'}</button>
+        <button className={`turn-btn next ${classeSuivant}`} onClick={onTourSuivant} disabled={suivantDesactive} aria-label={libelleSuivant}>{horlogeABloquee ? '⏸' : '➜'}</button>
       </div>
     </header>
   );
