@@ -13,6 +13,7 @@ export function EnteteScene(props) {
     classeSuivant,
     libelleSuivant,
     temporaliteSouple,
+    temporalitePhases,
     suivantDesactive,
     onBasculerNotes,
     onTourPrecedent,
@@ -27,6 +28,14 @@ export function EnteteScene(props) {
     : tourSimultane
       ? groupeActif.map((participant) => participant.name).join(' + ')
       : actif?.name || 'Aucun participant';
+  const suffixeTemporalite = temporaliteSouple ? ' · souple' : temporalitePhases ? ` · phase ${scene.phase || 1}` : '';
+  const libelleTour = horlogeABloquee
+    ? 'Horloge à gérer'
+    : tourSimultane
+      ? temporalitePhases ? `Tour simultané · Phase ${scene.phase || 1}` : 'Tour simultané'
+      : temporalitePhases
+        ? `Tour actif · Phase ${scene.phase || 1}`
+        : 'Tour actif';
 
   return (
     <header className="top compact">
@@ -34,20 +43,21 @@ export function EnteteScene(props) {
         <button className="icon-btn" onClick={onBasculerNotes}>{notesVisibles ? '⌃' : '⌄'}</button>
         <div>
           <h1>{scene.title}</h1>
-          <div className="muted">{scene.type} · {scene.participants.length} en initiative{temporaliteSouple ? ' · souple' : ''}</div>
+          <div className="muted">{scene.type} · {scene.participants.length} en initiative{suffixeTemporalite}</div>
         </div>
         <BadgeRound round={scene.round} effect={effetRound} />
       </div>
       {notesVisibles && <div className="scene-notes panel">{scene.notes}</div>}
       <div className="turn-row">
         <button className="turn-btn" onClick={onTourPrecedent} aria-label="Participant précédent">↶</button>
-        <div className={`active-box panel ${tourSimultane ? 'simultaneous-turn' : ''} ${temporaliteSouple ? 'flexible-turn' : ''}`}>
+        <div className={`active-box panel ${tourSimultane ? 'simultaneous-turn' : ''} ${temporaliteSouple ? 'flexible-turn' : ''} ${temporalitePhases ? 'phase-turn' : ''}`}>
           <div className="turn-active-line">
             <div className="active-name">
-              {temporaliteSouple && !horlogeABloquee ? <><div className="muted">Mode souple</div><strong>Marquer les tours dans la liste</strong></> : <><div className="muted">{horlogeABloquee ? 'Horloge à gérer' : tourSimultane ? 'Tour simultané' : 'Tour actif'}</div><strong>{nomTourActif}</strong></>}
+              {temporaliteSouple && !horlogeABloquee ? <><div className="muted">Mode souple</div><strong>Marquer les tours dans la liste</strong></> : <><div className="muted">{libelleTour}</div><strong>{nomTourActif}</strong></>}
             </div>
             {tourSimultane && <span className="chip simultaneous-chip">Même temps</span>}
             {temporaliteSouple && !horlogeABloquee && <span className="chip flexible-chip">Souple</span>}
+            {temporalitePhases && !horlogeABloquee && <span className="chip phase-chip">Phase {scene.phase || 1}</span>}
             <CompteurGlobal compteur={scene.globalTracker} onChanger={onModifierCompteurGlobal} onOuvrir={onOuvrirCompteurGlobal} animationTick={compteurGlobalAuto} />
           </div>
         </div>
