@@ -48,6 +48,12 @@
   color: var(--theme-dark-text);
 }
 
+.flexible-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .already-played-section {
   padding-top: 4px;
   border-top: 1px dashed rgba(49, 18, 54, .18);
@@ -91,10 +97,22 @@
   color: var(--theme-orange-deep);
 }
 
+.flexible-play.undo-played {
+  border-color: rgba(49, 18, 54, .20);
+  background: rgba(49, 18, 54, .06);
+  color: var(--theme-purple-deep);
+}
+
 .dark .flexible-play {
   border-color: rgba(210, 164, 86, .42);
   background: rgba(210, 164, 86, .10);
   color: var(--theme-gold);
+}
+
+.dark .flexible-play.undo-played {
+  border-color: rgba(210, 164, 86, .24);
+  background: rgba(16, 7, 19, .34);
+  color: var(--theme-dark-text);
 }
 
 .simultaneous-group {
