@@ -15,9 +15,9 @@ import { createBlankParticipant } from './templates.js';
 
 export default function App() {
   const campaign = useCampaign();
-  const { scenes, campaignName, scene, restorePoints, dark, active, blocked, nextStartsRound, nextClass, roundEffect, actions } = campaign;
+  const { scenes, templateStore, setTemplateStore, campaignName, scene, restorePoints, dark, active, blocked, nextStartsRound, nextClass, roundEffect, actions } = campaign;
   const characters = useCharacterInteractions(scene, actions);
-  const templates = useTemplates();
+  const templates = useTemplates(templateStore, setTemplateStore);
   const [currentView, setCurrentView] = useState('hub');
   const [openMenu, setOpenMenu] = useState(false);
   const [addSheetOpen, setAddSheetOpen] = useState(false);
@@ -132,6 +132,14 @@ export default function App() {
     setOpenMenu(false);
     characters.closeCharacterPanels();
     setCurrentView('hub');
+  };
+  const importTemplatesFromCampaign = async (file) => {
+    const result = await actions.importTemplatesFromCampaign(file);
+    if (result?.ok === false) {
+      setNotice({ title: 'Import impossible', message: result.message });
+      return;
+    }
+    setNotice({ title: 'Templates importés', message: `${result.added} ajouté(s), ${result.skipped} ignoré(s) car déjà présents.` });
   };
   const resetDemo = () => {
     actions.resetDemo();
@@ -260,6 +268,7 @@ export default function App() {
           onReinitialiser={resetDemo}
           onAjouterDepuisTemplate={(templateId) => createFromTemplate(templateId, { placement: 'reserve' })}
           onSupprimerTemplate={templates.deleteTemplate}
+          onImporterTemplates={importTemplatesFromCampaign}
         />
         {fenetresCommunes}
       </div>
