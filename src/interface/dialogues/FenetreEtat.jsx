@@ -17,6 +17,7 @@ export function FenetreEtat({ participant, onFermer, onValider }) {
   const [duree, setDuree] = useState('infinite');
   const [dureePersonnalisee, setDureePersonnalisee] = useState('8');
   const [boucle, setBoucle] = useState(false);
+  const [inactif, setInactif] = useState(false);
 
   const dureeFinie = duree !== 'infinite';
   const valeurDuree = duree === 'custom' ? Number(dureePersonnalisee) : Number(duree);
@@ -26,8 +27,8 @@ export function FenetreEtat({ participant, onFermer, onValider }) {
   const enregistrer = () => {
     const nomNettoye = nom.trim();
     if (!nomNettoye || !dureeValide) return;
-    onValider({ name: nomNettoye, duration: dureeFinie ? valeurDuree : null, loop: dureeFinie && boucle });
+    onValider({ name: nomNettoye, duration: dureeFinie ? valeurDuree : null, loop: dureeFinie && boucle, inactive: inactif });
   };
 
-  return <Fenetre title={`Ajouter un état · ${participant.name}`} onClose={onFermer}><label className="field">Nom<input value={nom} onChange={(event) => setNom(event.target.value)} autoFocus /></label><div className="field">Durée<div className="choice-row status-duration-row">{optionsDuree.map((option) => <button key={option.value} className={`choice ${duree === option.value ? 'selected' : ''}`} onClick={() => setDuree(option.value)}>{option.label}</button>)}</div></div>{duree === 'custom' && <label className="field">Durée personnalisée<input type="number" inputMode="numeric" min="1" value={dureePersonnalisee} onChange={(event) => setDureePersonnalisee(event.target.value)} /></label>}{dureeFinie && <label className="row"><input type="checkbox" checked={boucle} onChange={(event) => setBoucle(event.target.checked)} /> renouveler en boucle</label>}<div className="grid2" style={{ marginTop: 12 }}><button className="primary" onClick={enregistrer} disabled={!peutEnregistrer}>Ajouter</button><button className="small-btn" onClick={onFermer}>Annuler</button></div></Fenetre>;
+  return <Fenetre title={`Ajouter un état · ${participant.name}`} onClose={onFermer}><label className="field">Nom<input value={nom} onChange={(event) => setNom(event.target.value)} autoFocus /></label><div className="field">Durée<div className="choice-row status-duration-row">{optionsDuree.map((option) => <button key={option.value} className={`choice ${duree === option.value ? 'selected' : ''}`} onClick={() => setDuree(option.value)}>{option.label}</button>)}</div></div>{duree === 'custom' && <label className="field">Durée personnalisée<input type="number" inputMode="numeric" min="1" value={dureePersonnalisee} onChange={(event) => setDureePersonnalisee(event.target.value)} /></label>}{dureeFinie && <label className="row"><input type="checkbox" checked={boucle} onChange={(event) => setBoucle(event.target.checked)} /> renouveler en boucle</label>}<label className="row"><input type="checkbox" checked={inactif} onChange={(event) => setInactif(event.target.checked)} /> rend inactif</label><div className="grid2" style={{ marginTop: 12 }}><button className="primary" onClick={enregistrer} disabled={!peutEnregistrer}>Ajouter</button><button className="small-btn" onClick={onFermer}>Annuler</button></div></Fenetre>;
 }
