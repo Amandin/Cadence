@@ -169,6 +169,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
       updateScene((s) => {
         const participants = trierParInitiative((s.participants || []).map((participant) => {
           const raw = valuesById?.[participant.id];
+          if (raw === '' || raw == null) return participant;
           const initiative = Number(raw);
           if (!Number.isFinite(initiative)) return participant;
           return { ...participant, initiative };
@@ -179,6 +180,22 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
           activeId: estModeSouple(s) ? '' : participants[0]?.id || '',
           jouesSouples: [],
           historiqueSouple: [],
+        };
+      });
+    },
+    moveParticipantsToReserve(ids = []) {
+      const idsSet = new Set(ids);
+      if (idsSet.size === 0) return;
+      updateScene((s) => {
+        const sortants = (s.participants || []).filter((participant) => idsSet.has(participant.id));
+        const participants = (s.participants || []).filter((participant) => !idsSet.has(participant.id));
+        return {
+          ...s,
+          participants,
+          reserve: [...(s.reserve || []), ...sortants],
+          activeId: idsSet.has(s.activeId) ? participants[0]?.id || '' : s.activeId,
+          jouesSouples: (s.jouesSouples || []).filter((id) => !idsSet.has(id)),
+          historiqueSouple: (s.historiqueSouple || []).filter((id) => !idsSet.has(id)),
         };
       });
     },
