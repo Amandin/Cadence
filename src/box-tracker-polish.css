@@ -1,0 +1,45 @@
+.box {
+  color: #2f183a;
+}
+
+.box.mark-1::after,
+.box.mark-2::before,
+.box.mark-2::after,
+.box.mark-3::before,
+.box.mark-3::after,
+.box.mark-4::before,
+.box.mark-4::after {
+  width: 2px;
+  border-radius: 999px;
+}
+
+.box.mark-4 {
+  background-image:
+    linear-gradient(90deg, transparent 47%, currentColor 47%, currentColor 53%, transparent 53%),
+    linear-gradient(0deg, transparent 47%, currentColor 47%, currentColor 53%, transparent 53%);
+}
+
+.dark .box {
+  color: #fde68a;
+  background: rgba(8, 5, 13, .86);
+  border-color: rgba(245, 158, 11, .58);
+  box-shadow: inset 0 0 0 1px rgba(253, 230, 138, .14);
+}
+
+.dark .box.mark-1::after,
+.dark .box.mark-2::before,
+.dark .box.mark-2::after,
+.dark .box.mark-3::before,
+.dark .box.mark-3::after,
+.dark .box.mark-4::before,
+.dark .box.mark-4::after {
+  background: currentColor;
+  box-shadow: 0 0 3px rgba(253, 230, 138, .26);
+}
+
+.dark .box.mark-5,
+.dark .box.full {
+  background: #c084fc;
+  border-color: #e9d5ff;
+  color: #2e1065;
+}
