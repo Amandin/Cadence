@@ -32,14 +32,15 @@ function GroupeSimultane({ groupe, actifId, interactions }) {
   );
 }
 
-function FichetteLibre({ participant, actifId, interactions, temporaliteSouple, onChoisirActif, dejaJoue }) {
+function FichetteLibre({ participant, actifId, interactions, temporaliteSouple, onMarquerAJoue, onAnnulerAJoue, dejaJoue }) {
   return (
     <FichetteInitiative
       participant={participant}
       actif={participant.id === actifId}
       temporaliteSouple={temporaliteSouple}
       dejaJoue={dejaJoue}
-      onChoisirActif={() => onChoisirActif?.(participant.id)}
+      onMarquerAJoue={() => onMarquerAJoue?.(participant.id)}
+      onAnnulerAJoue={() => onAnnulerAJoue?.(participant.id)}
       onOuvrir={() => interactions.openCharacter(participant.id)}
       onSuivi={(trackerId, next) => interactions.updateCharacterTracker(participant.id, trackerId, next)}
       onSupprimerSuivi={(trackerId) => interactions.deleteCharacterTracker(participant.id, trackerId)}
@@ -50,8 +51,12 @@ function FichetteLibre({ participant, actifId, interactions, temporaliteSouple, 
   );
 }
 
-function ListeParPaliers({ scene, participants, actifId, interactions, temporaliteSouple, onChoisirActif, dejaJoue = false }) {
+function ListeParPaliers({ scene, participants, actifId, interactions, temporaliteSouple, onMarquerAJoue, onAnnulerAJoue, dejaJoue = false }) {
   const options = optionsEgalite(scene);
+
+  if (temporaliteSouple) {
+    return <div className="initiative-tier-cards flexible-cards">{participants.map((participant) => <FichetteLibre key={participant.id} participant={participant} actifId={actifId} interactions={interactions} temporaliteSouple onMarquerAJoue={onMarquerAJoue} onAnnulerAJoue={onAnnulerAJoue} dejaJoue={dejaJoue} />)}</div>;
+  }
 
   return grouperParInitiative(participants).map((groupe) => (
     <section className="initiative-tier" key={groupe.initiative}>
@@ -60,7 +65,7 @@ function ListeParPaliers({ scene, participants, actifId, interactions, temporali
         <strong>{groupe.initiative}</strong>
       </div>
       <div className="initiative-tier-cards">
-        {(temporaliteSouple ? groupe.participants.map((participant) => ({ id: participant.id, simultaneous: false, participants: [participant] })) : grouperAffichageParticipants(groupe.participants, options)).map((bloc) => (
+        {grouperAffichageParticipants(groupe.participants, options).map((bloc) => (
           bloc.simultaneous
             ? <GroupeSimultane key={bloc.id} groupe={bloc} actifId={actifId} interactions={interactions} />
             : <FichetteLibre
@@ -68,9 +73,6 @@ function ListeParPaliers({ scene, participants, actifId, interactions, temporali
                 participant={bloc.participants[0]}
                 actifId={actifId}
                 interactions={interactions}
-                temporaliteSouple={temporaliteSouple}
-                onChoisirActif={onChoisirActif}
-                dejaJoue={dejaJoue}
               />
         ))}
       </div>
@@ -78,7 +80,7 @@ function ListeParPaliers({ scene, participants, actifId, interactions, temporali
   ));
 }
 
-export function ListeInitiative({ scene, participants, actifId, interactions, temporaliteSouple, onChoisirActif }) {
+export function ListeInitiative({ scene, participants, actifId, interactions, temporaliteSouple, onMarquerAJoue, onAnnulerAJoue }) {
   if (!temporaliteSouple) {
     return (
       <div className="initiative-list">
@@ -95,11 +97,11 @@ export function ListeInitiative({ scene, participants, actifId, interactions, te
     <div className="initiative-list flexible-list">
       <section className="flexible-section">
         <h3>À jouer</h3>
-        <ListeParPaliers scene={scene} participants={aJouer} actifId={actifId} interactions={interactions} temporaliteSouple onChoisirActif={onChoisirActif} />
+        <ListeParPaliers scene={scene} participants={aJouer} actifId={actifId} interactions={interactions} temporaliteSouple onMarquerAJoue={onMarquerAJoue} onAnnulerAJoue={onAnnulerAJoue} />
       </section>
       {dejaJoues.length > 0 && <section className="flexible-section already-played-section">
         <h3>Déjà joués</h3>
-        <ListeParPaliers scene={scene} participants={dejaJoues} actifId={actifId} interactions={interactions} temporaliteSouple onChoisirActif={onChoisirActif} dejaJoue />
+        <ListeParPaliers scene={scene} participants={dejaJoues} actifId={actifId} interactions={interactions} temporaliteSouple onMarquerAJoue={onMarquerAJoue} onAnnulerAJoue={onAnnulerAJoue} dejaJoue />
       </section>}
     </div>
   );
