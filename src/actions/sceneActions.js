@@ -20,6 +20,10 @@ function createBlankParticipant() {
   };
 }
 
+function placerEnReserve(participant) {
+  return { ...participant, initiative: 0 };
+}
+
 function createRestorePoint(scene) {
   return {
     id: uid('restore'),
@@ -82,7 +86,7 @@ function appliquerDebutNouveauRound(scene, activeId) {
     round: Math.max(1, scene.round + 1),
     globalTracker: stepAutoGlobalTracker(scene.globalTracker, 1),
     participants: scene.participants.map((participant) => participant.id === activeId ? tickParticipant(participant) : participant),
-    reserve: (scene.reserve || []).map(tickParticipant),
+    reserve: (scene.reserve || []).map(tickParticipant).map(placerEnReserve),
   };
 }
 
@@ -93,7 +97,7 @@ function appliquerNouveauRoundSouple(scene) {
     round: Math.max(1, scene.round + 1),
     globalTracker: stepAutoGlobalTracker(scene.globalTracker, 1),
     participants: (scene.participants || []).map(tickParticipant),
-    reserve: (scene.reserve || []).map(tickParticipant),
+    reserve: (scene.reserve || []).map(tickParticipant).map(placerEnReserve),
     jouesSouples: [],
     historiqueSouple: [],
   };
@@ -107,7 +111,7 @@ function appliquerNouveauRoundPhases(scene) {
     round: Math.max(1, scene.round + 1),
     globalTracker: stepAutoGlobalTracker(scene.globalTracker, 1),
     participants: (scene.participants || []).map(tickParticipant),
-    reserve: (scene.reserve || []).map(tickParticipant),
+    reserve: (scene.reserve || []).map(tickParticipant).map(placerEnReserve),
   };
 
   return scene.phaseRerollEachRound
@@ -124,7 +128,7 @@ function modifierParticipantDansScene(scene, participantId, updater) {
     ...scene,
     participants,
     activeId,
-    reserve: (scene.reserve || []).map((p) => p.id === participantId ? updater(p) : p),
+    reserve: (scene.reserve || []).map((p) => p.id === participantId ? placerEnReserve(updater(p)) : placerEnReserve(p)),
   };
 
   return nouveauRound ? appliquerDebutNouveauRound(sceneSuivante, activeId) : sceneSuivante;
@@ -197,6 +201,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
           temporalite,
           phase: temporalite === temporalityModes.PHASES ? (s.phase || 1) : 1,
           activeId: temporalite === temporalityModes.FLEXIBLE ? '' : s.activeId,
+          reserve: (s.reserve || []).map(placerEnReserve),
           jouesSouples: temporalite === temporalityModes.FLEXIBLE ? (s.jouesSouples || []) : [],
           historiqueSouple: temporalite === temporalityModes.FLEXIBLE ? (s.historiqueSouple || []) : [],
         };
@@ -226,7 +231,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
         const reserveJointe = [];
         const reserve = (s.reserve || []).flatMap((participant) => {
           const initiative = valeurInitiativeRenseignee(valuesById, participant.id);
-          if (initiative == null) return [participant];
+          if (initiative == null) return [placerEnReserve(participant)];
           reserveJointe.push({ ...participant, initiative });
           return [];
         });
@@ -244,12 +249,12 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
       const idsSet = new Set(ids);
       if (idsSet.size === 0) return;
       updateScene((s) => {
-        const sortants = (s.participants || []).filter((participant) => idsSet.has(participant.id));
+        const sortants = (s.participants || []).filter((participant) => idsSet.has(participant.id)).map(placerEnReserve);
         const participants = (s.participants || []).filter((participant) => !idsSet.has(participant.id));
         const sceneSuivante = {
           ...s,
           participants,
-          reserve: [...(s.reserve || []), ...sortants],
+          reserve: [...(s.reserve || []).map(placerEnReserve), ...sortants],
           activeId: idsSet.has(s.activeId) ? participants[0]?.id || '' : s.activeId,
           jouesSouples: (s.jouesSouples || []).filter((id) => !idsSet.has(id)),
           historiqueSouple: (s.historiqueSouple || []).filter((id) => !idsSet.has(id)),
@@ -289,7 +294,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
     deleteParticipant(id) {
       updateScene((s) => {
         const participants = s.participants.filter((p) => p.id !== id);
-        const reserve = (s.reserve || []).filter((p) => p.id !== id);
+        const reserve = (s.reserve || []).filter((p) => p.id !== id).map(placerEnReserve);
         const sceneSuivante = {
           ...s,
           participants,
@@ -387,7 +392,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
           round: Math.max(1, s.round + roundDelta),
           globalTracker: roundDelta < 0 ? stepAutoGlobalTracker(s.globalTracker, -1) : s.globalTracker,
           participants: s.participants.map((p, i) => i === currentIndex ? untickParticipant(p) : p),
-          reserve: roundDelta < 0 ? (s.reserve || []).map(untickParticipant) : (s.reserve || []),
+          reserve: roundDelta < 0 ? (s.reserve || []).map(untickParticipant).map(placerEnReserve) : (s.reserve || []).map(placerEnReserve),
         }));
         return;
       }
@@ -404,7 +409,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
           round: Math.max(1, s.round + roundDelta),
           globalTracker: roundDelta > 0 ? stepAutoGlobalTracker(s.globalTracker, 1) : s.globalTracker,
           participants: s.participants.map((p, i) => i === nextIndex ? tickParticipant(p) : p),
-          reserve: roundDelta > 0 ? (s.reserve || []).map(tickParticipant) : (s.reserve || []),
+          reserve: roundDelta > 0 ? (s.reserve || []).map(tickParticipant).map(placerEnReserve) : (s.reserve || []).map(placerEnReserve),
         };
 
         if (roundDelta > 0) setRestorePoints((points) => addRestorePoint(points, s.id, nextScene));
@@ -419,7 +424,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
         const sceneSuivante = {
           ...s,
           participants: s.participants.filter((x) => x.id !== id),
-          reserve: [...(s.reserve || []), participant],
+          reserve: [...(s.reserve || []).map(placerEnReserve), placerEnReserve(participant)],
           activeId: s.activeId === id ? s.participants.find((x) => x.id !== id)?.id || '' : s.activeId,
           jouesSouples: retirerJoueSouple(s, id),
           historiqueSouple: retirerHistoriqueSouple(s, id),
@@ -438,7 +443,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
         const participants = trierParInitiative([...s.participants, { ...participant, initiative }], optionsTri(s));
         const sceneSuivante = {
           ...s,
-          reserve: s.reserve.filter((x) => x.id !== id),
+          reserve: s.reserve.filter((x) => x.id !== id).map(placerEnReserve),
           participants,
           activeId: s.activeId || participant.id,
         };
@@ -449,12 +454,12 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
     },
     addParticipant(participant = createBlankParticipant(), placement = 'init') {
       if (placement === 'reserve') {
-        updateScene((s) => ({ ...s, reserve: [...(s.reserve || []), participant] }));
+        updateScene((s) => ({ ...s, reserve: [...(s.reserve || []).map(placerEnReserve), placerEnReserve(participant)] }));
         return;
       }
       updateScene((s) => {
         const participants = trierParInitiative([...s.participants, participant], optionsTri(s));
-        const sceneSuivante = { ...s, participants, activeId: s.activeId || participant.id };
+        const sceneSuivante = { ...s, participants, activeId: s.activeId || participant.id, reserve: (s.reserve || []).map(placerEnReserve) };
         return estModePhases(sceneSuivante) && !participantsPhase(sceneSuivante).some((item) => item.id === sceneSuivante.activeId)
           ? { ...sceneSuivante, activeId: premierParticipantPhase(sceneSuivante) }
           : sceneSuivante;
