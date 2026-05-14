@@ -65,9 +65,10 @@ function OptionsCompteurScene({ compteur, onModifier }) {
 function OptionsEgalites({ equalityRule = defaultEqualityRule, onModifier }) {
   return (
     <div className="scene-options compact-options advanced-rule-block">
-      <h3>Égalités parfaites</h3>
+      <h3>Synchronisation</h3>
+      <p className="muted compact-help">Décide quand plusieurs éléments partagent exactement le même tour.</p>
       <label className="field compact-field">
-        Règle
+        Mode
         <select value={equalityRule} onChange={(event) => onModifier(event.target.value)}>
           {Object.values(equalityRules).map((rule) => <option key={rule} value={rule}>{equalityRuleLabels[rule]}</option>)}
         </select>
@@ -93,8 +94,8 @@ function OptionsOrdreCategories({ order = defaultCategoryOrder, onModifier }) {
 
   return (
     <div className="scene-options compact-options advanced-rule-block">
-      <h3>Priorité des types</h3>
-      <p className="muted compact-help">Utilisée selon la règle d’égalité choisie.</p>
+      <h3>Priorités</h3>
+      <p className="muted compact-help">Départage les types quand la synchronisation n’est pas forcée.</p>
       <div className="stack compact-category-order">
         {order.map((categorie, index) => (
           <div className="restore-row discreet" key={categorie}>
@@ -110,27 +111,23 @@ function OptionsOrdreCategories({ order = defaultCategoryOrder, onModifier }) {
   );
 }
 
-function ReglesAvancees({ order, equalityRule, onModifierOrder, onModifierEqualityRule }) {
-  const [ouvert, setOuvert] = useState(false);
-
+export function FenetreReglesAvancees({ scene, onFermer, onUpdateCategoryOrder, onUpdateEqualityRule }) {
   return (
-    <div className="stack" style={{ marginTop: 12 }}>
-      <button className="small-btn" onClick={() => setOuvert((etat) => !etat)}>
-        {ouvert ? 'Masquer règles avancées' : 'Règles avancées'}
-      </button>
-      {ouvert && <div className="advanced-rules-stack">
-        <OptionsEgalites equalityRule={equalityRule} onModifier={onModifierEqualityRule} />
-        <OptionsOrdreCategories order={order} onModifier={onModifierOrder} />
-      </div>}
-    </div>
+    <Fenetre title="Règles avancées" onClose={onFermer}>
+      <div className="advanced-rules-stack">
+        <OptionsEgalites equalityRule={scene?.equalityRule || defaultEqualityRule} onModifier={onUpdateEqualityRule} />
+        <OptionsOrdreCategories order={scene?.categoryOrder || defaultCategoryOrder} onModifier={onUpdateCategoryOrder} />
+      </div>
+    </Fenetre>
   );
 }
 
-function ActionsScene({ onAjouterParticipant, onNouvelleScene }) {
+function ActionsScene({ onAjouterParticipant, onNouvelleScene, onReglesAvancees }) {
   return (
     <div className="stack" style={{ marginTop: 12 }}>
       <button className="primary" onClick={onAjouterParticipant}>Ajouter un personnage</button>
       <button className="small-btn" onClick={onNouvelleScene}>Nouvelle scène</button>
+      <button className="small-btn" onClick={onReglesAvancees}>Règles avancées</button>
     </div>
   );
 }
@@ -165,7 +162,7 @@ function RestaurationScene({ points, pointActif, onChoisirPoint, onRestaurer }) 
   );
 }
 
-export function MenuPrincipal({ scenes, scene, restorePoints = [], onRestore, onClose, setSceneIndex, dark, setDark, onAddParticipant, onNewScene, onExport, onImport, onReset, onGlobalTracker, onUpdateCategoryOrder, onUpdateEqualityRule }) {
+export function MenuPrincipal({ scenes, scene, restorePoints = [], onRestore, onClose, setSceneIndex, dark, setDark, onAddParticipant, onNewScene, onExport, onImport, onReset, onGlobalTracker, onOpenAdvancedRules }) {
   const pointsRestauration = [...restorePoints].sort((a, b) => a.round - b.round);
   const [pointRestaurationId, setPointRestaurationId] = useState(pointsRestauration.at(-1)?.id || '');
 
@@ -175,8 +172,7 @@ export function MenuPrincipal({ scenes, scene, restorePoints = [], onRestore, on
       <LigneVersionEtTheme sombre={dark} onChangerTheme={setDark} />
       <ListeScenes scenes={scenes} onChoisirScene={setSceneIndex} onFermer={onClose} />
       <OptionsCompteurScene compteur={scene?.globalTracker} onModifier={onGlobalTracker} />
-      <ReglesAvancees order={scene?.categoryOrder || defaultCategoryOrder} equalityRule={scene?.equalityRule || defaultEqualityRule} onModifierOrder={onUpdateCategoryOrder} onModifierEqualityRule={onUpdateEqualityRule} />
-      <ActionsScene onAjouterParticipant={onAddParticipant} onNouvelleScene={onNewScene} />
+      <ActionsScene onAjouterParticipant={onAddParticipant} onNouvelleScene={onNewScene} onReglesAvancees={onOpenAdvancedRules} />
       <ActionsSauvegarde onExporter={onExport} onImporter={onImport} onReinitialiser={onReset} />
       <RestaurationScene points={pointsRestauration} pointActif={pointRestaurationId} onChoisirPoint={setPointRestaurationId} onRestaurer={onRestore} />
     </Fenetre>
