@@ -153,36 +153,85 @@ function normalizeCategoryName(value) {
   return value?.trim();
 }
 
-function normalizeStore(value) {
+function normalizeTemplate(template) {
+  if (!template?.participant?.name) return null;
+  return {
+    id: template.id || uid('tpl'),
+    name: normalizeCategoryName(template.name) || template.participant.name,
+    category: normalizeCategoryName(template.category) || 'PNJ',
+    createdAt: template.createdAt || new Date().toISOString(),
+    updatedAt: template.updatedAt,
+    participant: {
+      ...clone(template.participant),
+      id: 'template-participant',
+    },
+  };
+}
+
+export function normalizeTemplateStore(value) {
   if (Array.isArray(value)) {
+    const templates = value.map(normalizeTemplate).filter(Boolean);
     return {
       version: 1,
       categories: defaultTemplateCategories,
-      templates: value.filter((template) => template?.participant?.name),
+      templates,
     };
   }
 
+  const sourceTemplates = Array.isArray(value?.templates) ? value.templates : defaultTemplates;
+  const templates = sourceTemplates.map(normalizeTemplate).filter(Boolean);
   const categories = Array.isArray(value?.categories) && value.categories.length ? value.categories : defaultTemplateCategories;
-  const templates = Array.isArray(value?.templates) ? value.templates.filter((template) => template?.participant?.name) : defaultTemplates;
 
   return {
     version: 1,
-    categories: Array.from(new Set([...categories, ...defaultTemplates.map((template) => template.category)])),
+    categories: Array.from(new Set([...categories.map(normalizeCategoryName).filter(Boolean), ...templates.map((template) => template.category)])),
     templates,
   };
 }
 
 export function loadTemplateStore() {
   try {
-    return normalizeStore(JSON.parse(localStorage.getItem(TEMPLATE_STORAGE_KEY)));
+    return normalizeTemplateStore(JSON.parse(localStorage.getItem(TEMPLATE_STORAGE_KEY)));
   } catch (error) {
     console.warn('Impossible de charger les templates Cadence.', error);
-    return normalizeStore(null);
+    return normalizeTemplateStore(null);
   }
 }
 
 export function saveTemplateStore(store) {
-  localStorage.setItem(TEMPLATE_STORAGE_KEY, JSON.stringify(normalizeStore(store)));
+  localStorage.setItem(TEMPLATE_STORAGE_KEY, JSON.stringify(normalizeTemplateStore(store)));
+}
+
+export function isTemplateStoreLike(value) {
+  return value == null || Array.isArray(value) || (typeof value === 'object' && !Array.isArray(value));
+}
+
+export function mergeTemplateStores(currentStore, incomingStore) {
+  const current = normalizeTemplateStore(currentStore);
+  const incoming = normalizeTemplateStore(incomingStore);
+  const existingKeys = new Set(current.templates.map((template) => `${template.category.toLocaleLowerCase()}::${template.name.toLocaleLowerCase()}`));
+  const added = [];
+  const skipped = [];
+
+  for (const template of incoming.templates) {
+    const key = `${template.category.toLocaleLowerCase()}::${template.name.toLocaleLowerCase()}`;
+    if (existingKeys.has(key)) {
+      skipped.push(template);
+      continue;
+    }
+    existingKeys.add(key);
+    added.push({ ...clone(template), id: uid('tpl'), importedAt: new Date().toISOString() });
+  }
+
+  return {
+    store: normalizeTemplateStore({
+      version: 1,
+      categories: [...current.categories, ...incoming.categories],
+      templates: [...current.templates, ...added],
+    }),
+    added,
+    skipped,
+  };
 }
 
 function resetTrackerIds(trackers = []) {
