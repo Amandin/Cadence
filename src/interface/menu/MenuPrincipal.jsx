@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { APP_VERSION, defaultCategoryOrder, defaultEqualityRule, defaultPhaseDecrement, defaultPhaseRerollEachRound, defaultTemporalityMode, equalityRuleDescriptions, equalityRuleLabels, equalityRules, temporalityDescriptions, temporalityLabels, temporalityModes } from '../../constants.js';
 import { Fenetre } from '../commun/ComposantsCommuns.jsx';
 
@@ -178,16 +178,23 @@ function ActionsScene({ onAjouterParticipant, onNouvelleScene, onSaisirInitiativ
 }
 
 function ActionsSauvegarde({ onExporter, onImporter, onReinitialiser }) {
+  const importInputRef = useRef(null);
+  const choisirFichier = () => importInputRef.current?.click();
+  const importerFichier = (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (file) onImporter(file);
+  };
+
   return (
     <>
       <h3>Sauvegarde</h3>
       <div className="grid2">
         <button className="primary" onClick={onExporter}>Exporter</button>
-        <label className="small-btn" style={{ textAlign: 'center' }}>
-          Importer
-          <input type="file" accept=".json,application/json" style={{ display: 'none' }} onChange={(event) => event.target.files?.[0] && onImporter(event.target.files[0])} />
-        </label>
+        <button className="small-btn" onClick={choisirFichier}>Importer</button>
+        <input ref={importInputRef} type="file" accept=".json,application/json" style={{ display: 'none' }} onChange={importerFichier} />
       </div>
+      <p className="muted compact-help" style={{ marginTop: 6 }}>Sur mobile, l’export ouvre le partage si le navigateur le permet. Sinon, il télécharge un fichier JSON.</p>
       <button className="danger-btn" style={{ marginTop: 8, width: '100%' }} onClick={onReinitialiser}>Réinitialiser la démo</button>
     </>
   );
@@ -218,7 +225,7 @@ export function MenuPrincipal({ scenes, scene, restorePoints = [], onRestore, on
       <ListeScenes scenes={scenes} onChoisirScene={setSceneIndex} onFermer={onClose} />
       <OptionsCompteurScene compteur={scene?.globalTracker} onModifier={onGlobalTracker} />
       <ActionsScene onAjouterParticipant={onAddParticipant} onSaisirInitiatives={onOpenInitiativeRoller} onNouvelleScene={onNewScene} onReglesAvancees={onOpenAdvancedRules} />
-      <ActionsSauvegarde onExporter={onExport} onImporter={onImport} onReinitialiser={onReset} />
+      <ActionsSauvegarde onExporter={onExporter} onImporter={onImport} onReinitialiser={onReset} />
       <RestaurationScene points={pointsRestauration} pointActif={pointRestaurationId} onChoisirPoint={setPointRestaurationId} onRestaurer={onRestore} />
     </Fenetre>
   );
