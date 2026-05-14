@@ -63,3 +63,106 @@
   background: rgba(210, 164, 86, .12);
   color: var(--theme-gold);
 }
+
+.initiative-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.initiative-decision-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 7px;
+}
+
+.initiative-choice-action {
+  display: grid;
+  gap: 2px;
+  align-items: center;
+  justify-items: center;
+  min-height: 52px;
+  padding: 9px 12px;
+  border-radius: 18px;
+  border: 1px solid rgba(199, 94, 25, .34);
+  background: rgba(255, 250, 245, .86);
+  color: var(--theme-purple-deep);
+  text-align: center;
+  font-weight: 900;
+}
+
+.initiative-choice-action strong {
+  font-size: 14px;
+  line-height: 1.05;
+}
+
+.initiative-choice-action small {
+  font-size: 11px;
+  line-height: 1.15;
+  color: var(--theme-light-muted);
+  font-weight: 800;
+}
+
+.initiative-choice-action.primary-choice {
+  border-color: rgba(199, 94, 25, .74);
+  background: var(--theme-purple-deep);
+  color: white;
+  box-shadow: 0 8px 18px rgba(49, 18, 54, .14);
+}
+
+.initiative-choice-action.primary-choice small {
+  color: rgba(255, 255, 255, .78);
+}
+
+.initiative-choice-action.keep-choice,
+.initiative-choice-action.out-choice {
+  border-width: 2px;
+}
+
+.initiative-choice-action.out-choice {
+  border-color: rgba(199, 94, 25, .54);
+}
+
+.initiative-cancel-action {
+  align-self: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--theme-light-muted);
+  font-size: 12px;
+  font-weight: 900;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.dark .initiative-choice-action {
+  border-color: rgba(210, 164, 86, .28);
+  background: rgba(16, 7, 19, .38);
+  color: var(--theme-dark-text);
+}
+
+.dark .initiative-choice-action small {
+  color: var(--theme-dark-muted);
+}
+
+.dark .initiative-choice-action.primary-choice {
+  border-color: rgba(210, 164, 86, .56);
+  background: rgba(210, 164, 86, .16);
+  color: var(--theme-gold);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, .24);
+}
+
+.dark .initiative-choice-action.primary-choice small {
+  color: rgba(255, 247, 237, .72);
+}
+
+.dark .initiative-cancel-action {
+  color: var(--theme-dark-muted);
+}
+
+@media (min-width: 520px) {
+  .initiative-decision-actions {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
+}
