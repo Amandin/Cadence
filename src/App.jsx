@@ -22,6 +22,7 @@ export default function App() {
   const [showNotes, setShowNotes] = useState(true);
   const [clockModalOpen, setClockModalOpen] = useState(false);
   const [globalSheetOpen, setGlobalSheetOpen] = useState(false);
+  const [initiativeEntryOpen, setInitiativeEntryOpen] = useState(false);
   const [templateTarget, setTemplateTarget] = useState(null);
   const [templateError, setTemplateError] = useState(null);
 
@@ -65,6 +66,10 @@ export default function App() {
   const openAddCharacter = () => {
     setOpenMenu(false);
     setAddSheetOpen(true);
+  };
+  const openInitiativeEntry = () => {
+    setOpenMenu(false);
+    setInitiativeEntryOpen(true);
   };
   const createBlankCharacter = (options) => {
     characters.addCharacter(createBlankParticipant(), options);
@@ -152,6 +157,7 @@ export default function App() {
           onTourSuivant={() => nextTurn(1)}
           onModifierCompteurGlobal={actions.stepGlobal}
           onOuvrirCompteurGlobal={() => setGlobalSheetOpen(true)}
+          onOuvrirSaisieInitiatives={openInitiativeEntry}
         />
 
         <main>
@@ -181,14 +187,16 @@ export default function App() {
         characters={characters}
         templates={templates}
         actions={actions}
-        etatInterface={{ addSheetOpen, openMenu, notice, globalSheetOpen, clockModalOpen }}
+        etatInterface={{ addSheetOpen, openMenu, notice, globalSheetOpen, clockModalOpen, initiativeEntryOpen }}
         commandesInterface={{
           ouvrirAjoutPersonnage: openAddCharacter,
+          ouvrirSaisieInitiatives: openInitiativeEntry,
           fermerAjoutPersonnage: () => setAddSheetOpen(false),
           fermerMenu: () => setOpenMenu(false),
           fermerNotice: () => setNotice(null),
           fermerCompteurGlobal: () => setGlobalSheetOpen(false),
           fermerResolutionHorloge: () => setClockModalOpen(false),
+          fermerSaisieInitiatives: () => setInitiativeEntryOpen(false),
           ouvrirSauvegardeTemplate: openTemplateSave,
           creerPersonnageVierge: createBlankCharacter,
           creerDepuisTemplate: createFromTemplate,
