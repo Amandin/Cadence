@@ -28,6 +28,11 @@
   margin: 0;
 }
 
+.header-init-btn {
+  padding-inline: 10px;
+  white-space: nowrap;
+}
+
 .initiative-roll-panel {
   display: flex;
   flex-direction: column;
@@ -38,11 +43,11 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
-  align-items: end;
+  align-items: center;
 }
 
-.initiative-roll-toolbar input {
-  max-width: 96px;
+.initiative-roll-toolbar.manual-entry .compact-help {
+  margin: 0 !important;
 }
 
 .initiative-roll-group {
