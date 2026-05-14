@@ -4,6 +4,18 @@ import { createSceneActions } from '../actions/sceneActions.js';
 import { normalizeGlobalTracker, stepGlobalTracker } from '../domain/globalTracker.js';
 import { clone, hasTriggeredClock, nextTurnInfo, uid } from '../logic.js';
 import { loadCampaign, saveCampaign } from '../storage.js';
+import { defaultCategoryOrder, legacyParticipantKinds } from '../constants.js';
+
+function normalizeKind(kind) {
+  return legacyParticipantKinds[kind] || kind;
+}
+
+function normalizeParticipant(participant) {
+  return {
+    ...participant,
+    kind: normalizeKind(participant?.kind || 'Environnement'),
+  };
+}
 
 function normalizeScene(scene) {
   return {
@@ -14,9 +26,11 @@ function normalizeScene(scene) {
     activeId: scene?.activeId || '',
     notes: scene?.notes || '',
     reserveNotes: scene?.reserveNotes || '',
+    temporalite: scene?.temporalite || 'classique',
+    categoryOrder: Array.isArray(scene?.categoryOrder) && scene.categoryOrder.length ? scene.categoryOrder : defaultCategoryOrder,
     globalTracker: normalizeGlobalTracker(scene?.globalTracker),
-    reserve: Array.isArray(scene?.reserve) ? scene.reserve : [],
-    participants: Array.isArray(scene?.participants) ? scene.participants : [],
+    reserve: Array.isArray(scene?.reserve) ? scene.reserve.map(normalizeParticipant) : [],
+    participants: Array.isArray(scene?.participants) ? scene.participants.map(normalizeParticipant) : [],
   };
 }
 
