@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { APP_VERSION } from '../../constants.js';
+import { APP_VERSION, defaultCategoryOrder } from '../../constants.js';
 import { Fenetre } from '../commun/ComposantsCommuns.jsx';
 
 function LogoMenu({ sombre }) {
@@ -62,6 +62,40 @@ function OptionsCompteurScene({ compteur, onModifier }) {
   );
 }
 
+function OptionsOrdreCategories({ order = defaultCategoryOrder, onModifier }) {
+  const monter = (index) => {
+    if (index <= 0) return;
+    const suivant = [...order];
+    [suivant[index - 1], suivant[index]] = [suivant[index], suivant[index - 1]];
+    onModifier(suivant);
+  };
+
+  const descendre = (index) => {
+    if (index >= order.length - 1) return;
+    const suivant = [...order];
+    [suivant[index + 1], suivant[index]] = [suivant[index], suivant[index + 1]];
+    onModifier(suivant);
+  };
+
+  return (
+    <div className="scene-options compact-options">
+      <h3>Égalités d’initiative</h3>
+      <p className="muted" style={{ marginTop: 4, fontSize: 12 }}>Ordre utilisé si initiative et départage sont identiques.</p>
+      <div className="stack" style={{ marginTop: 8 }}>
+        {order.map((categorie, index) => (
+          <div className="restore-row discreet" key={categorie}>
+            <strong>{categorie}</strong>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <button className="small-btn" onClick={() => monter(index)} disabled={index <= 0}>↑</button>
+              <button className="small-btn" onClick={() => descendre(index)} disabled={index >= order.length - 1}>↓</button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function ActionsScene({ onAjouterParticipant, onNouvelleScene }) {
   return (
     <div className="stack" style={{ marginTop: 12 }}>
@@ -101,7 +135,7 @@ function RestaurationScene({ points, pointActif, onChoisirPoint, onRestaurer }) 
   );
 }
 
-export function MenuPrincipal({ scenes, scene, restorePoints = [], onRestore, onClose, setSceneIndex, dark, setDark, onAddParticipant, onNewScene, onExport, onImport, onReset, onGlobalTracker }) {
+export function MenuPrincipal({ scenes, scene, restorePoints = [], onRestore, onClose, setSceneIndex, dark, setDark, onAddParticipant, onNewScene, onExport, onImport, onReset, onGlobalTracker, onUpdateCategoryOrder }) {
   const pointsRestauration = [...restorePoints].sort((a, b) => a.round - b.round);
   const [pointRestaurationId, setPointRestaurationId] = useState(pointsRestauration.at(-1)?.id || '');
 
@@ -111,6 +145,7 @@ export function MenuPrincipal({ scenes, scene, restorePoints = [], onRestore, on
       <LigneVersionEtTheme sombre={dark} onChangerTheme={setDark} />
       <ListeScenes scenes={scenes} onChoisirScene={setSceneIndex} onFermer={onClose} />
       <OptionsCompteurScene compteur={scene?.globalTracker} onModifier={onGlobalTracker} />
+      <OptionsOrdreCategories order={scene?.categoryOrder || defaultCategoryOrder} onModifier={onUpdateCategoryOrder} />
       <ActionsScene onAjouterParticipant={onAddParticipant} onNouvelleScene={onNewScene} />
       <ActionsSauvegarde onExporter={onExport} onImporter={onImport} onReinitialiser={onReset} />
       <RestaurationScene points={pointsRestauration} pointActif={pointRestaurationId} onChoisirPoint={setPointRestaurationId} onRestaurer={onRestore} />
