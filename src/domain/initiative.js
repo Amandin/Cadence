@@ -48,6 +48,10 @@ function nomParticipant(participant) {
   return participant?.name || '';
 }
 
+function comparerNoms(a, b) {
+  return nomParticipant(a).localeCompare(nomParticipant(b), 'fr', { sensitivity: 'base' });
+}
+
 export function trierParInitiative(participants = [], options = {}) {
   const categoryOrder = options.categoryOrder || defaultCategoryOrder;
   const equalityRule = options.equalityRule || defaultEqualityRule;
@@ -62,7 +66,7 @@ export function trierParInitiative(participants = [], options = {}) {
     const categorie = ordreCategorie(a.kind, categoryOrder) - ordreCategorie(b.kind, categoryOrder);
     if (categorie) return categorie;
 
-    if (equalityRule === equalityRules.NEVER) return nomParticipant(a).localeCompare(nomParticipant(b));
+    if (equalityRule === equalityRules.NEVER) return comparerNoms(a, b);
     return 0;
   });
 }
@@ -70,10 +74,9 @@ export function trierParInitiative(participants = [], options = {}) {
 export function trierReserve(participants = [], options = {}) {
   const categoryOrder = options.categoryOrder || defaultCategoryOrder;
 
-  return [...participants].sort((a, b) => valeurInitiative(b) - valeurInitiative(a)
+  return [...participants].sort((a, b) => ordreCategorie(a.kind, categoryOrder) - ordreCategorie(b.kind, categoryOrder)
     || valeurDepartage(b) - valeurDepartage(a)
-    || ordreCategorie(a.kind, categoryOrder) - ordreCategorie(b.kind, categoryOrder)
-    || nomParticipant(a).localeCompare(nomParticipant(b), 'fr', { sensitivity: 'base' }));
+    || comparerNoms(a, b));
 }
 
 export function clefEgaliteParfaite(participant, options = {}) {
