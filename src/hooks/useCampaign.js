@@ -4,7 +4,7 @@ import { createSceneActions } from '../actions/sceneActions.js';
 import { normalizeGlobalTracker, stepGlobalTracker } from '../domain/globalTracker.js';
 import { clone, hasTriggeredClock, nextTurnInfo, uid } from '../logic.js';
 import { loadCampaign, saveCampaign } from '../storage.js';
-import { defaultCategoryOrder, defaultEqualityRule, legacyParticipantKinds } from '../constants.js';
+import { defaultCategoryOrder, defaultEqualityRule, defaultTemporalityMode, legacyParticipantKinds } from '../constants.js';
 
 function normalizeKind(kind) {
   return legacyParticipantKinds[kind] || kind;
@@ -26,7 +26,7 @@ function normalizeScene(scene) {
     activeId: scene?.activeId || '',
     notes: scene?.notes || '',
     reserveNotes: scene?.reserveNotes || '',
-    temporalite: scene?.temporalite || 'classique',
+    temporalite: scene?.temporalite || defaultTemporalityMode,
     equalityRule: scene?.equalityRule || defaultEqualityRule,
     categoryOrder: Array.isArray(scene?.categoryOrder) && scene.categoryOrder.length ? scene.categoryOrder : defaultCategoryOrder,
     globalTracker: normalizeGlobalTracker(scene?.globalTracker),
