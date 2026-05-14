@@ -6,6 +6,7 @@ import './styles.css';
 import './overrides.css';
 import './theme-cadence.css';
 import './initiative-rules.css';
+import './initiative-entry-polish.css';
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
