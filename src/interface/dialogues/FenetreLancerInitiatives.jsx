@@ -84,6 +84,12 @@ export function FenetreLancerInitiatives({ participants = [], reserve = [], onFe
     if (restantsSansValeur.length === 0) onFermer();
   };
 
+  const ajouterEtConserverAutresInitiatives = () => {
+    if (restantsAvecValeur.length === 0) return;
+    onValider(valeursRenseignees(restantsAvecValeur, valeurs));
+    onFermer();
+  };
+
   const passerRestantsHorsInitiative = () => {
     onPasserHorsInitiative(participantsActifsSansValeur.map((participant) => participant.id));
     onFermer();
@@ -106,7 +112,7 @@ export function FenetreLancerInitiatives({ participants = [], reserve = [], onFe
             <button className="small-btn" onClick={vider}>Vider</button>
           </div>
         </div>
-        {saisiePartielle && <div className="initiative-entry-warning">Les valeurs renseignées vont être appliquées. Les autres resteront à compléter ou pourront passer hors init’.</div>}
+        {saisiePartielle && <div className="initiative-entry-warning">Les valeurs renseignées vont être appliquées. Les autres resteront à compléter, pourront être conservées, ou pourront passer hors init’.</div>}
         {aucunCandidatAffiche ? <p className="muted">Aucun personnage à renseigner.</p> : <>
           <SectionSaisieInitiative titre="En initiative" participants={participantsEnAttente} inclureEnvironnements={inclureEnvironnements} valeurs={valeurs} changerValeur={changerValeur} />
           <SectionSaisieInitiative titre="Réserve" participants={reserveEnAttente} inclureEnvironnements={inclureEnvironnements} valeurs={valeurs} changerValeur={changerValeur} />
@@ -115,6 +121,7 @@ export function FenetreLancerInitiatives({ participants = [], reserve = [], onFe
           <button className="primary" onClick={appliquer} disabled={restantsAvecValeur.length === 0}>Appliquer</button>
           <button className="small-btn" onClick={onFermer}>Annuler</button>
         </div>
+        {saisiePartielle && <button className="small-btn" onClick={ajouterEtConserverAutresInitiatives}>Ajouter et conserver les autres initiatives</button>}
         {participantsActifsSansValeur.length > 0 && restantsAvecValeur.length === 0 && idsEnAttente.length < candidats.length && <button className="small-btn" onClick={passerRestantsHorsInitiative}>Passer les restants hors init’</button>}
         {saisiePartielle && participantsActifsSansValeur.length > 0 && <button className="small-btn" onClick={appliquerEtPasserRestantsHorsInitiative}>Appliquer et passer les autres hors init’</button>}
       </div>
