@@ -32,10 +32,18 @@ export function useTemplates() {
     return instantiateTemplate(template);
   };
 
+  const deleteTemplate = (templateId) => {
+    setStore((current) => ({
+      ...current,
+      templates: current.templates.filter((template) => template.id !== templateId),
+    }));
+  };
+
   return {
     categories: store.categories,
     templates: store.templates,
     saveParticipantAsTemplate,
     createParticipantFromTemplate,
+    deleteTemplate,
   };
 }
