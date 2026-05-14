@@ -1,5 +1,5 @@
 import { defaultCategoryOrder, defaultEqualityRule } from '../../constants.js';
-import { grouperParInitiative, idsEgaliteParfaite } from '../../domain/initiative.js';
+import { grouperAffichageParticipants, grouperParInitiative } from '../../domain/initiative.js';
 import { FichetteInitiative } from '../fiches/FichetteInitiative.jsx';
 
 function optionsEgalite(scene) {
@@ -9,8 +9,31 @@ function optionsEgalite(scene) {
   };
 }
 
+function GroupeSimultane({ groupe, actifId, interactions }) {
+  const actif = groupe.participants.some((participant) => participant.id === actifId);
+
+  return (
+    <div className={`simultaneous-group ${actif ? 'active' : ''}`}>
+      {groupe.participants.map((participant) => (
+        <FichetteInitiative
+          key={participant.id}
+          participant={participant}
+          actif={actif}
+          groupeSimultane
+          onOuvrir={() => interactions.openCharacter(participant.id)}
+          onSuivi={(trackerId, next) => interactions.updateCharacterTracker(participant.id, trackerId, next)}
+          onSupprimerSuivi={(trackerId) => interactions.deleteCharacterTracker(participant.id, trackerId)}
+          onAjouterEtat={() => interactions.requestStatus(participant.id)}
+          onRetirerEtat={(statusId) => interactions.removeCharacterStatus(participant.id, statusId)}
+          onQuitterInitiative={() => interactions.leaveInit(participant.id)}
+        />
+      ))}
+    </div>
+  );
+}
+
 export function ListeInitiative({ scene, participants, actifId, interactions }) {
-  const idsSimultanes = idsEgaliteParfaite(participants, optionsEgalite(scene));
+  const options = optionsEgalite(scene);
 
   return (
     <div className="initiative-list">
@@ -21,19 +44,20 @@ export function ListeInitiative({ scene, participants, actifId, interactions }) 
             <strong>{groupe.initiative}</strong>
           </div>
           <div className="initiative-tier-cards">
-            {groupe.participants.map((participant) => (
-              <FichetteInitiative
-                key={participant.id}
-                participant={participant}
-                actif={participant.id === actifId}
-                simultane={idsSimultanes.has(participant.id)}
-                onOuvrir={() => interactions.openCharacter(participant.id)}
-                onSuivi={(trackerId, next) => interactions.updateCharacterTracker(participant.id, trackerId, next)}
-                onSupprimerSuivi={(trackerId) => interactions.deleteCharacterTracker(participant.id, trackerId)}
-                onAjouterEtat={() => interactions.requestStatus(participant.id)}
-                onRetirerEtat={(statusId) => interactions.removeCharacterStatus(participant.id, statusId)}
-                onQuitterInitiative={() => interactions.leaveInit(participant.id)}
-              />
+            {grouperAffichageParticipants(groupe.participants, options).map((bloc) => (
+              bloc.simultaneous
+                ? <GroupeSimultane key={bloc.id} groupe={bloc} actifId={actifId} interactions={interactions} />
+                : <FichetteInitiative
+                    key={bloc.id}
+                    participant={bloc.participants[0]}
+                    actif={bloc.participants[0].id === actifId}
+                    onOuvrir={() => interactions.openCharacter(bloc.participants[0].id)}
+                    onSuivi={(trackerId, next) => interactions.updateCharacterTracker(bloc.participants[0].id, trackerId, next)}
+                    onSupprimerSuivi={(trackerId) => interactions.deleteCharacterTracker(bloc.participants[0].id, trackerId)}
+                    onAjouterEtat={() => interactions.requestStatus(bloc.participants[0].id)}
+                    onRetirerEtat={(statusId) => interactions.removeCharacterStatus(bloc.participants[0].id, statusId)}
+                    onQuitterInitiative={() => interactions.leaveInit(bloc.participants[0].id)}
+                  />
             ))}
           </div>
         </section>
