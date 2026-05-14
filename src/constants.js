@@ -1,4 +1,4 @@
-export const APP_VERSION = '0.1.57';
+export const APP_VERSION = '0.1.58';
 export const STORAGE_KEY = 'cadence:campaign:v1';
 export const TEMPLATE_STORAGE_KEY = 'cadence:templates:v1';
 
@@ -15,18 +15,22 @@ export const defaultCategoryOrder = ['PJ', 'Opposant', 'Allié', 'Environnement'
 export const temporalityModes = {
   CLASSIC: 'classique',
   FLEXIBLE: 'souple',
+  PHASES: 'phases',
 };
 
 export const defaultTemporalityMode = temporalityModes.CLASSIC;
+export const defaultPhaseDecrement = 10;
 
 export const temporalityLabels = {
   [temporalityModes.CLASSIC]: 'Classique',
   [temporalityModes.FLEXIBLE]: 'Souple',
+  [temporalityModes.PHASES]: 'Phases',
 };
 
 export const temporalityDescriptions = {
   [temporalityModes.CLASSIC]: 'Cadence suit l’ordre d’initiative et avance au participant suivant.',
-  [temporalityModes.FLEXIBLE]: 'Le MJ choisit librement le prochain élément actif depuis la liste.',
+  [temporalityModes.FLEXIBLE]: 'Le MJ marque librement qui a joué dans la liste.',
+  [temporalityModes.PHASES]: 'Cadence enchaîne des phases et applique un décrément aux initiatives.',
 };
 
 export const equalityRules = {
