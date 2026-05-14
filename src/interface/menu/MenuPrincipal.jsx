@@ -225,7 +225,7 @@ export function MenuPrincipal({ scenes, scene, restorePoints = [], onRestore, on
       <ListeScenes scenes={scenes} onChoisirScene={setSceneIndex} onFermer={onClose} />
       <OptionsCompteurScene compteur={scene?.globalTracker} onModifier={onGlobalTracker} />
       <ActionsScene onAjouterParticipant={onAddParticipant} onSaisirInitiatives={onOpenInitiativeRoller} onNouvelleScene={onNewScene} onReglesAvancees={onOpenAdvancedRules} />
-      <ActionsSauvegarde onExporter={onExporter} onImporter={onImport} onReinitialiser={onReset} />
+      <ActionsSauvegarde onExporter={onExport} onImporter={onImport} onReinitialiser={onReset} />
       <RestaurationScene points={pointsRestauration} pointActif={pointRestaurationId} onChoisirPoint={setPointRestaurationId} onRestaurer={onRestore} />
     </Fenetre>
   );
