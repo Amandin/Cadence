@@ -32,13 +32,13 @@ export function FenetresSuperposees({
   templatesUi,
 }) {
   const [reglesAvanceesOuvertes, setReglesAvanceesOuvertes] = useState(false);
-  const [lancerInitiativesOuvert, setLancerInitiativesOuvert] = useState(false);
   const {
     addSheetOpen,
     openMenu,
     notice,
     globalSheetOpen,
     clockModalOpen,
+    initiativeEntryOpen,
   } = etatInterface;
 
   const {
@@ -47,6 +47,7 @@ export function FenetresSuperposees({
     fermerNotice,
     fermerCompteurGlobal,
     fermerResolutionHorloge,
+    fermerSaisieInitiatives,
     ouvrirSauvegardeTemplate,
     creerPersonnageVierge,
     creerDepuisTemplate,
@@ -70,9 +71,9 @@ export function FenetresSuperposees({
       {globalSheetOpen && <FenetreCompteurGlobal compteur={scene.globalTracker} onModifier={actions.updateGlobalTracker} onChanger={actions.stepGlobal} onFermer={fermerCompteurGlobal} />}
       {clockModalOpen && <FenetreResolutionHorloge participants={compteurGlobal.horlogesBloquantes} onFermer={fermerResolutionHorloge} onRelancerHorloge={resetClock} onSupprimerHorloge={deleteClock} />}
       {notice && <FenetreInformation titre={notice.title} message={notice.message} onFermer={fermerNotice} />}
-      {openMenu && <MenuPrincipal scenes={scenes} scene={scene} restorePoints={restorePoints} onRestore={restaurerScene} onClose={fermerMenu} setSceneIndex={actions.setSceneIndex} dark={dark} setDark={actions.setDark} onAddParticipant={commandesInterface.ouvrirAjoutPersonnage} onNewScene={nouvelleScene} onExport={actions.exportCampaign} onImport={importerCampagne} onReset={reinitialiserDemo} onGlobalTracker={actions.updateGlobalTracker} onOpenAdvancedRules={() => setReglesAvanceesOuvertes(true)} onOpenInitiativeRoller={() => setLancerInitiativesOuvert(true)} />}
+      {openMenu && <MenuPrincipal scenes={scenes} scene={scene} restorePoints={restorePoints} onRestore={restaurerScene} onClose={fermerMenu} setSceneIndex={actions.setSceneIndex} dark={dark} setDark={actions.setDark} onAddParticipant={commandesInterface.ouvrirAjoutPersonnage} onNewScene={nouvelleScene} onExport={actions.exportCampaign} onImport={importerCampagne} onReset={reinitialiserDemo} onGlobalTracker={actions.updateGlobalTracker} onOpenAdvancedRules={() => setReglesAvanceesOuvertes(true)} onOpenInitiativeRoller={commandesInterface.ouvrirSaisieInitiatives} />}
       {reglesAvanceesOuvertes && <FenetreReglesAvancees scene={scene} onFermer={() => setReglesAvanceesOuvertes(false)} onUpdateCategoryOrder={actions.updateCategoryOrder} onUpdateEqualityRule={actions.updateEqualityRule} onUpdateTemporality={actions.updateTemporality} />}
-      {lancerInitiativesOuvert && <FenetreLancerInitiatives participants={scene.participants} onFermer={() => setLancerInitiativesOuvert(false)} onValider={actions.applyInitiativeRolls} />}
+      {initiativeEntryOpen && <FenetreLancerInitiatives participants={scene.participants} onFermer={fermerSaisieInitiatives} onValider={actions.applyInitiativeRolls} />}
     </>
   );
 }
