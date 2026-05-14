@@ -20,13 +20,18 @@
 }
 
 .initiative-tier-cards {
-  gap: 6px;
+  gap: 12px;
+}
+
+.initiative-tier-cards > .card,
+.simultaneous-group .card {
+  margin: 0;
 }
 
 .simultaneous-group {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 12px;
   padding: 6px;
   border: 1px solid rgba(199, 94, 25, .40);
   border-radius: 26px;
@@ -41,7 +46,7 @@
 }
 
 .simultaneous-group .card + .card {
-  margin-top: 6px;
+  margin-top: 0;
 }
 
 .simultaneous-group.active {
