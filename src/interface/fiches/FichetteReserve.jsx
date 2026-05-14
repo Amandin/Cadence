@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { participantEstInactif } from '../../domain/statuses.js';
 import { isVisible } from '../../logic.js';
 import { AvatarParticipant, EtiquetteEtat } from '../commun/ComposantsCommuns.jsx';
 import { Suivi } from '../suivis/Suivi.jsx';
@@ -6,15 +7,16 @@ import { Suivi } from '../suivis/Suivi.jsx';
 export function FichetteReserve({ participant, onRejoindre, onOuvrir, onSuivi, onSupprimerSuivi, onAjouterEtat, onRetirerEtat }) {
   const [repliee, setRepliee] = useState(false);
   const suivisVisibles = (participant.trackers || []).filter(isVisible);
+  const inactif = participantEstInactif(participant);
 
   return (
-    <div className={`card reserve-card ${repliee ? 'collapsed' : ''}`} data-participant-id={participant.id}>
+    <div className={`card reserve-card ${inactif ? 'inactive-character' : ''} ${repliee ? 'collapsed' : ''}`} data-participant-id={participant.id}>
       <div className="card-head">
         <button className="icon-btn collapse-btn" onClick={() => setRepliee((valeur) => !valeur)} aria-label={repliee ? 'Dérouler la fichette' : 'Enrouler la fichette'}>{repliee ? '⌄' : '⌃'}</button>
         <button className="card-main" onClick={onOuvrir}>
           <AvatarParticipant participant={participant} />
           <div className="info">
-            <strong>{participant.name}</strong>
+            <div className="name-line"><strong>{participant.name}</strong>{inactif && <span className="chip inactive-chip">Inactif</span>}</div>
             <div className="muted">{participant.description}</div>
           </div>
         </button>
