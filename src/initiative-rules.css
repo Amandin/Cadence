@@ -28,6 +28,30 @@
   margin: 0;
 }
 
+.card.inactive-character {
+  opacity: .62;
+  filter: saturate(.65);
+}
+
+.card.inactive-character.active {
+  opacity: .88;
+  filter: saturate(.75);
+}
+
+.chip.inactive-chip,
+.status.inactive-status {
+  background: rgba(49, 18, 54, .12);
+  border: 1px solid rgba(49, 18, 54, .18);
+  color: var(--theme-light-muted);
+}
+
+.dark .chip.inactive-chip,
+.dark .status.inactive-status {
+  background: rgba(210, 164, 86, .10);
+  border-color: rgba(210, 164, 86, .18);
+  color: var(--theme-dark-muted);
+}
+
 .flexible-list {
   gap: 16px;
 }
