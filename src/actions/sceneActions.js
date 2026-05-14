@@ -165,6 +165,23 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
     setActiveParticipant(activeId) {
       updateScene((s) => ({ ...s, activeId }));
     },
+    applyInitiativeRolls(valuesById) {
+      updateScene((s) => {
+        const participants = trierParInitiative((s.participants || []).map((participant) => {
+          const raw = valuesById?.[participant.id];
+          const initiative = Number(raw);
+          if (!Number.isFinite(initiative)) return participant;
+          return { ...participant, initiative };
+        }), optionsTri(s));
+        return {
+          ...s,
+          participants,
+          activeId: estModeSouple(s) ? '' : participants[0]?.id || '',
+          jouesSouples: [],
+          historiqueSouple: [],
+        };
+      });
+    },
     markFlexiblePlayed(participantId) {
       updateScene((s) => ({
         ...s,
