@@ -19,7 +19,6 @@ export function EnteteScene(props) {
     onTourSuivant,
     onModifierCompteurGlobal,
     onOuvrirCompteurGlobal,
-    onOuvrirSaisieInitiatives,
   } = props;
   const horlogeABloquee = horlogesBloquantes.length > 0;
   const tourSimultane = !temporaliteSouple && !horlogeABloquee && groupeActif.length > 1;
@@ -37,7 +36,6 @@ export function EnteteScene(props) {
           <h1>{scene.title}</h1>
           <div className="muted">{scene.type} · {scene.participants.length} en initiative{temporaliteSouple ? ' · souple' : ''}</div>
         </div>
-        <button className="small-btn header-init-btn" onClick={onOuvrirSaisieInitiatives}>Init</button>
         <BadgeRound round={scene.round} effect={effetRound} />
       </div>
       {notesVisibles && <div className="scene-notes panel">{scene.notes}</div>}
