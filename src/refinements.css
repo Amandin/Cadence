@@ -196,19 +196,13 @@
   margin-top: 8px;
 }
 
-.hub-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
 .campaign-hub {
   gap: 12px;
 }
 
-.grid3.hub-tabs {
+.grid4.hub-tabs {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 6px;
 }
 
@@ -257,6 +251,12 @@
   gap: 7px;
 }
 
+.hub-menu-main-action {
+  width: 100%;
+  margin: 10px 0 4px;
+  min-height: 46px;
+}
+
 .mini-danger {
   padding-inline: 9px;
 }
@@ -277,17 +277,15 @@
     align-items: stretch;
     flex-direction: column;
   }
+}
 
-  .hub-header-actions {
-    justify-content: space-between;
+@media (max-width: 520px) {
+  .grid4.hub-tabs {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (max-width: 420px) {
-  .grid3.hub-tabs {
-    grid-template-columns: 1fr;
-  }
-
   .hub-row {
     align-items: stretch;
   }
