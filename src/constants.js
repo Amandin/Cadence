@@ -21,9 +21,15 @@ export const equalityRules = {
 export const defaultEqualityRule = equalityRules.STRICT;
 
 export const equalityRuleLabels = {
-  [equalityRules.NEVER]: 'Jamais — ordre alphabétique au besoin',
-  [equalityRules.STRICT]: 'Seulement si initiative, départage et type sont identiques',
-  [equalityRules.LOOSE]: 'Dès que le départage ne suffit pas',
+  [equalityRules.NEVER]: 'Jamais',
+  [equalityRules.STRICT]: 'Strict',
+  [equalityRules.LOOSE]: 'Souple',
+};
+
+export const equalityRuleDescriptions = {
+  [equalityRules.NEVER]: 'Aucun vrai simultané : si tout est égal, Cadence trie par nom.',
+  [equalityRules.STRICT]: 'Simultané seulement si initiative, départage et type sont identiques.',
+  [equalityRules.LOOSE]: 'Simultané dès que initiative et départage sont identiques.',
 };
 
 export const trackerTypeLabels = {
