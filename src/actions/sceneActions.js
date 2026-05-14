@@ -20,6 +20,8 @@ function createBlankParticipant() {
   };
 }
 
+// Un participant en réserve est hors initiative : on neutralise donc toujours
+// son initiative pour éviter qu’un ancien score influence l’affichage ou le tri.
 function placerEnReserve(participant) {
   return { ...participant, initiative: 0 };
 }
@@ -60,6 +62,9 @@ function toutLeMondeAJoueSouple(scene) {
   return (scene.participants || []).length > 0 && scene.participants.every((participant) => idsJoues.has(participant.id));
 }
 
+// En mode classique, modifier l’initiative du participant actif peut déplacer
+// son rang. On cherche alors le premier participant encore compatible avec
+// l’initiative précédente, afin d’éviter des sauts de tour trop surprenants.
 function trouverTourActifParInitiative(scene, participantsTries) {
   const actifAvant = scene.participants.find((participant) => participant.id === scene.activeId);
   if (!actifAvant) return { activeId: scene.activeId, nouveauRound: false };
@@ -114,6 +119,9 @@ function appliquerNouveauRoundPhases(scene) {
     reserve: (scene.reserve || []).map(tickParticipant).map(placerEnReserve),
   };
 
+  // Si l’option de relance est active, on laisse activeId vide : App.jsx ouvrira
+  // la fenêtre de saisie d’initiative au changement de round. Sinon on repart
+  // directement sur le premier participant de la phase 1.
   return scene.phaseRerollEachRound
     ? sceneSuivante
     : { ...sceneSuivante, activeId: premierParticipantPhase(sceneSuivante) };
