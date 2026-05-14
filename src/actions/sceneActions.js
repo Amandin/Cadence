@@ -1,3 +1,4 @@
+import { defaultCategoryOrder, legacyParticipantKinds } from '../constants.js';
 import { stepAutoGlobalTracker } from '../domain/globalTracker.js';
 import { createStatus } from '../domain/statuses.js';
 import { clone, newTracker, tickParticipant, untickParticipant, uid } from '../logic.js';
@@ -10,6 +11,7 @@ function createBlankParticipant() {
     symbol: '🛡',
     color: 'emerald',
     initiative: 1,
+    departage: '',
     description: '',
     stats: [],
     statuses: [],
@@ -38,8 +40,26 @@ function valeurInitiative(participant) {
   return Number.isFinite(initiative) ? initiative : 0;
 }
 
-function trierParInitiative(participants = []) {
-  return [...participants].sort((a, b) => valeurInitiative(b) - valeurInitiative(a));
+function valeurDepartage(participant) {
+  const departage = Number(participant?.departage ?? 0);
+  return Number.isFinite(departage) ? departage : 0;
+}
+
+function normaliserCategorie(kind) {
+  return legacyParticipantKinds[kind] || kind || 'Environnement';
+}
+
+function ordreCategorie(kind, categoryOrder = defaultCategoryOrder) {
+  const index = categoryOrder.indexOf(normaliserCategorie(kind));
+  return index >= 0 ? index : categoryOrder.length;
+}
+
+function trierParInitiative(participants = [], categoryOrder = defaultCategoryOrder) {
+  return [...participants].sort((a, b) => (
+    valeurInitiative(b) - valeurInitiative(a)
+    || valeurDepartage(b) - valeurDepartage(a)
+    || ordreCategorie(a.kind, categoryOrder) - ordreCategorie(b.kind, categoryOrder)
+  ));
 }
 
 function trouverTourActifParInitiative(scene, participantsTries) {
@@ -65,7 +85,8 @@ function appliquerDebutNouveauRound(scene, activeId) {
 }
 
 function modifierParticipantDansScene(scene, participantId, updater) {
-  const participants = trierParInitiative(scene.participants.map((p) => p.id === participantId ? updater(p) : p));
+  const categoryOrder = scene.categoryOrder || defaultCategoryOrder;
+  const participants = trierParInitiative(scene.participants.map((p) => p.id === participantId ? updater(p) : p), categoryOrder);
   const { activeId, nouveauRound } = trouverTourActifParInitiative(scene, participants);
   const sceneSuivante = {
     ...scene,
@@ -90,6 +111,13 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
 
   return {
     updateParticipant,
+    updateCategoryOrder(categoryOrder) {
+      updateScene((s) => ({
+        ...s,
+        categoryOrder,
+        participants: trierParInitiative(s.participants || [], categoryOrder),
+      }));
+    },
     restoreScene(pointId) {
       const point = (restorePoints[scene.id] || []).find((item) => item.id === pointId);
       if (!point) return;
@@ -176,7 +204,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
       if (!participant || !Number.isFinite(initiative)) return;
 
       updateScene((s) => {
-        const participants = trierParInitiative([...s.participants, { ...participant, initiative }]);
+        const participants = trierParInitiative([...s.participants, { ...participant, initiative }], s.categoryOrder || defaultCategoryOrder);
         return {
           ...s,
           reserve: s.reserve.filter((x) => x.id !== id),
@@ -191,7 +219,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
         return;
       }
       updateScene((s) => {
-        const participants = trierParInitiative([...s.participants, participant]);
+        const participants = trierParInitiative([...s.participants, participant], s.categoryOrder || defaultCategoryOrder);
         return { ...s, participants, activeId: s.activeId || participant.id };
       });
     },
