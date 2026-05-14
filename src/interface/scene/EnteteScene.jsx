@@ -12,6 +12,7 @@ export function EnteteScene(props) {
     notesVisibles,
     classeSuivant,
     libelleSuivant,
+    temporaliteSouple,
     onBasculerNotes,
     onTourPrecedent,
     onTourSuivant,
@@ -32,20 +33,21 @@ export function EnteteScene(props) {
         <button className="icon-btn" onClick={onBasculerNotes}>{notesVisibles ? '⌃' : '⌄'}</button>
         <div>
           <h1>{scene.title}</h1>
-          <div className="muted">{scene.type} · {scene.participants.length} en initiative</div>
+          <div className="muted">{scene.type} · {scene.participants.length} en initiative{temporaliteSouple ? ' · souple' : ''}</div>
         </div>
         <BadgeRound round={scene.round} effect={effetRound} />
       </div>
       {notesVisibles && <div className="scene-notes panel">{scene.notes}</div>}
       <div className="turn-row">
         <button className="turn-btn" onClick={onTourPrecedent} aria-label="Participant précédent">↶</button>
-        <div className={`active-box panel ${tourSimultane ? 'simultaneous-turn' : ''}`}>
+        <div className={`active-box panel ${tourSimultane ? 'simultaneous-turn' : ''} ${temporaliteSouple ? 'flexible-turn' : ''}`}>
           <div className="turn-active-line">
             <div className="active-name">
-              <div className="muted">{horlogeABloquee ? 'Horloge à gérer' : tourSimultane ? 'Tour simultané' : 'Tour actif'}</div>
+              <div className="muted">{horlogeABloquee ? 'Horloge à gérer' : tourSimultane ? 'Tour simultané' : temporaliteSouple ? 'Actif choisi' : 'Tour actif'}</div>
               <strong>{nomTourActif}</strong>
             </div>
             {tourSimultane && <span className="chip simultaneous-chip">Même temps</span>}
+            {temporaliteSouple && !tourSimultane && !horlogeABloquee && <span className="chip flexible-chip">Souple</span>}
             <CompteurGlobal compteur={scene.globalTracker} onChanger={onModifierCompteurGlobal} onOuvrir={onOuvrirCompteurGlobal} animationTick={compteurGlobalAuto} />
           </div>
         </div>
