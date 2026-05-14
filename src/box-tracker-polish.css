@@ -11,6 +11,12 @@
 .box.mark-4::after {
   width: 2px;
   border-radius: 999px;
+  background: currentColor;
+  box-shadow: none;
+}
+
+.box.mark-3 {
+  background-image: linear-gradient(90deg, transparent 47%, currentColor 47%, currentColor 53%, transparent 53%);
 }
 
 .box.mark-4 {
@@ -24,17 +30,6 @@
   background: #150f1a;
   border-color: rgba(255, 247, 237, .62);
   box-shadow: inset 0 0 0 1px rgba(255, 247, 237, .10);
-}
-
-.dark .box.mark-1::after,
-.dark .box.mark-2::before,
-.dark .box.mark-2::after,
-.dark .box.mark-3::before,
-.dark .box.mark-3::after,
-.dark .box.mark-4::before,
-.dark .box.mark-4::after {
-  background: currentColor;
-  box-shadow: none;
 }
 
 .dark .box.mark-3 {
