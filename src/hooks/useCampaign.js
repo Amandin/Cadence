@@ -17,6 +17,13 @@ function normalizeParticipant(participant) {
   };
 }
 
+function normalizeReserveParticipant(participant) {
+  return {
+    ...normalizeParticipant(participant),
+    initiative: 0,
+  };
+}
+
 function normalizeScene(scene) {
   return {
     id: scene?.id || 'scene-secours',
@@ -35,7 +42,7 @@ function normalizeScene(scene) {
     equalityRule: scene?.equalityRule || defaultEqualityRule,
     categoryOrder: Array.isArray(scene?.categoryOrder) && scene.categoryOrder.length ? scene.categoryOrder : defaultCategoryOrder,
     globalTracker: normalizeGlobalTracker(scene?.globalTracker),
-    reserve: Array.isArray(scene?.reserve) ? scene.reserve.map(normalizeParticipant) : [],
+    reserve: Array.isArray(scene?.reserve) ? scene.reserve.map(normalizeReserveParticipant) : [],
     participants: Array.isArray(scene?.participants) ? scene.participants.map(normalizeParticipant) : [],
   };
 }
