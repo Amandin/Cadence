@@ -67,6 +67,15 @@ export function trierParInitiative(participants = [], options = {}) {
   });
 }
 
+export function trierReserve(participants = [], options = {}) {
+  const categoryOrder = options.categoryOrder || defaultCategoryOrder;
+
+  return [...participants].sort((a, b) => valeurInitiative(b) - valeurInitiative(a)
+    || valeurDepartage(b) - valeurDepartage(a)
+    || ordreCategorie(a.kind, categoryOrder) - ordreCategorie(b.kind, categoryOrder)
+    || nomParticipant(a).localeCompare(nomParticipant(b), 'fr', { sensitivity: 'base' }));
+}
+
 export function clefEgaliteParfaite(participant, options = {}) {
   const equalityRule = options.equalityRule || defaultEqualityRule;
   if (equalityRule === equalityRules.NEVER) return null;
