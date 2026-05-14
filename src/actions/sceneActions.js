@@ -1,4 +1,5 @@
-import { defaultCategoryOrder, legacyParticipantKinds } from '../constants.js';
+import { defaultCategoryOrder, defaultEqualityRule } from '../constants.js';
+import { trierParInitiative, valeurInitiative } from '../domain/initiative.js';
 import { stepAutoGlobalTracker } from '../domain/globalTracker.js';
 import { createStatus } from '../domain/statuses.js';
 import { clone, newTracker, tickParticipant, untickParticipant, uid } from '../logic.js';
@@ -35,31 +36,11 @@ function addRestorePoint(points, sceneId, nextScene) {
   return { ...points, [sceneId]: [...current, createRestorePoint(nextScene)].slice(-50) };
 }
 
-function valeurInitiative(participant) {
-  const initiative = Number(participant?.initiative);
-  return Number.isFinite(initiative) ? initiative : 0;
-}
-
-function valeurDepartage(participant) {
-  const departage = Number(participant?.departage ?? 0);
-  return Number.isFinite(departage) ? departage : 0;
-}
-
-function normaliserCategorie(kind) {
-  return legacyParticipantKinds[kind] || kind || 'Environnement';
-}
-
-function ordreCategorie(kind, categoryOrder = defaultCategoryOrder) {
-  const index = categoryOrder.indexOf(normaliserCategorie(kind));
-  return index >= 0 ? index : categoryOrder.length;
-}
-
-function trierParInitiative(participants = [], categoryOrder = defaultCategoryOrder) {
-  return [...participants].sort((a, b) => (
-    valeurInitiative(b) - valeurInitiative(a)
-    || valeurDepartage(b) - valeurDepartage(a)
-    || ordreCategorie(a.kind, categoryOrder) - ordreCategorie(b.kind, categoryOrder)
-  ));
+function optionsTri(scene) {
+  return {
+    categoryOrder: scene.categoryOrder || defaultCategoryOrder,
+    equalityRule: scene.equalityRule || defaultEqualityRule,
+  };
 }
 
 function trouverTourActifParInitiative(scene, participantsTries) {
@@ -85,8 +66,7 @@ function appliquerDebutNouveauRound(scene, activeId) {
 }
 
 function modifierParticipantDansScene(scene, participantId, updater) {
-  const categoryOrder = scene.categoryOrder || defaultCategoryOrder;
-  const participants = trierParInitiative(scene.participants.map((p) => p.id === participantId ? updater(p) : p), categoryOrder);
+  const participants = trierParInitiative(scene.participants.map((p) => p.id === participantId ? updater(p) : p), optionsTri(scene));
   const { activeId, nouveauRound } = trouverTourActifParInitiative(scene, participants);
   const sceneSuivante = {
     ...scene,
@@ -115,7 +95,14 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
       updateScene((s) => ({
         ...s,
         categoryOrder,
-        participants: trierParInitiative(s.participants || [], categoryOrder),
+        participants: trierParInitiative(s.participants || [], { ...optionsTri(s), categoryOrder }),
+      }));
+    },
+    updateEqualityRule(equalityRule) {
+      updateScene((s) => ({
+        ...s,
+        equalityRule,
+        participants: trierParInitiative(s.participants || [], { ...optionsTri(s), equalityRule }),
       }));
     },
     restoreScene(pointId) {
@@ -204,7 +191,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
       if (!participant || !Number.isFinite(initiative)) return;
 
       updateScene((s) => {
-        const participants = trierParInitiative([...s.participants, { ...participant, initiative }], s.categoryOrder || defaultCategoryOrder);
+        const participants = trierParInitiative([...s.participants, { ...participant, initiative }], optionsTri(s));
         return {
           ...s,
           reserve: s.reserve.filter((x) => x.id !== id),
@@ -219,7 +206,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
         return;
       }
       updateScene((s) => {
-        const participants = trierParInitiative([...s.participants, participant], s.categoryOrder || defaultCategoryOrder);
+        const participants = trierParInitiative([...s.participants, participant], optionsTri(s));
         return { ...s, participants, activeId: s.activeId || participant.id };
       });
     },
