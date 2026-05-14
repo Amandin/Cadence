@@ -40,6 +40,12 @@ Ils couvrent notamment :
 Avant une modification importante, lancer :
 
 ```bash
+npm run verify
+```
+
+Ce script exécute :
+
+```bash
 npm test
 npm run build
 ```
@@ -50,9 +56,11 @@ Une GitHub Action `Quality` lance automatiquement les tests puis le build sur ch
 
 Réglages recommandés :
 
-- Build command : `npm run build`
+- Build command : `npm run build:cloudflare`
 - Build output directory : `dist`
 - Root directory : vide si le projet est à la racine du dépôt
+
+Le script `build:cloudflare` lance d’abord les tests, puis le build. Si les tests échouent, Cloudflare arrête le déploiement.
 
 ## Sauvegarde
 
