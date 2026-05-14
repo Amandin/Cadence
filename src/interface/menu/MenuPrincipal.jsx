@@ -29,6 +29,26 @@ function LigneVersionEtTheme({ sombre, onChangerTheme }) {
   );
 }
 
+function ChampNomCampagne({ nom, onRenommer }) {
+  const [valeur, setValeur] = useState(nom || '');
+
+  return (
+    <label className="field compact-campaign-name">
+      Nom de campagne
+      <input
+        type="text"
+        value={valeur}
+        placeholder="Campagne Cadence"
+        onChange={(event) => setValeur(event.target.value)}
+        onBlur={() => onRenommer(valeur)}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') event.currentTarget.blur();
+        }}
+      />
+    </label>
+  );
+}
+
 function ListeScenes({ scenes, onChoisirScene, onFermer }) {
   return (
     <>
@@ -214,7 +234,7 @@ function RestaurationScene({ points, pointActif, onChoisirPoint, onRestaurer }) 
   );
 }
 
-export function MenuPrincipal({ scenes, scene, restorePoints = [], onRestore, onClose, setSceneIndex, dark, setDark, onAddParticipant, onNewScene, onExport, onImport, onReset, onGlobalTracker, onOpenAdvancedRules, onOpenInitiativeRoller }) {
+export function MenuPrincipal({ campaignName, scenes, scene, restorePoints = [], onRestore, onClose, setSceneIndex, dark, setDark, onRenameCampaign, onAddParticipant, onNewScene, onExport, onImport, onReset, onGlobalTracker, onOpenAdvancedRules, onOpenInitiativeRoller }) {
   const pointsRestauration = [...restorePoints].sort((a, b) => a.round - b.round);
   const [pointRestaurationId, setPointRestaurationId] = useState(pointsRestauration.at(-1)?.id || '');
 
@@ -222,6 +242,7 @@ export function MenuPrincipal({ scenes, scene, restorePoints = [], onRestore, on
     <Fenetre title="Menu" onClose={onClose}>
       <LogoMenu sombre={dark} />
       <LigneVersionEtTheme sombre={dark} onChangerTheme={setDark} />
+      <ChampNomCampagne nom={campaignName} onRenommer={onRenameCampaign} />
       <ListeScenes scenes={scenes} onChoisirScene={setSceneIndex} onFermer={onClose} />
       <OptionsCompteurScene compteur={scene?.globalTracker} onModifier={onGlobalTracker} />
       <ActionsScene onAjouterParticipant={onAddParticipant} onSaisirInitiatives={onOpenInitiativeRoller} onNouvelleScene={onNewScene} onReglesAvancees={onOpenAdvancedRules} />
