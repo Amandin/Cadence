@@ -62,12 +62,12 @@ async function shareOrDownloadCampaign(content, campaignName) {
   downloadBlob(blob, fileName);
 }
 
-export function createCampaignActions({ scenes, dark, campaignName, setScenes, setSceneIndex, setDark, setCampaignName }) {
+export function createCampaignActions({ scenes, dark, campaignName, setScenes, setSceneIndex, setDark, setCampaignNameState }) {
   return {
     setSceneIndex,
     setDark,
     setCampaignName(name) {
-      setCampaignName(normalizeCampaignName(name));
+      setCampaignNameState(normalizeCampaignName(name));
     },
     newScene() {
       setScenes((currentScenes) => [...currentScenes, createBlankScene()]);
@@ -83,7 +83,7 @@ export function createCampaignActions({ scenes, dark, campaignName, setScenes, s
 
         setScenes(data.scenes);
         setDark(data.settings?.dark || false);
-        setCampaignName(campaignNameFromPayload(data));
+        setCampaignNameState(campaignNameFromPayload(data));
         setSceneIndex(0);
         return { ok: true };
       } catch {
@@ -93,7 +93,7 @@ export function createCampaignActions({ scenes, dark, campaignName, setScenes, s
     resetDemo() {
       const fresh = makeDefaultCampaign();
       setScenes(fresh.scenes);
-      setCampaignName(campaignNameFromPayload(fresh));
+      setCampaignNameState(campaignNameFromPayload(fresh));
       setSceneIndex(0);
     },
   };
