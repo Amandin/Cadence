@@ -66,7 +66,7 @@ export function FenetresSuperposees({
       {globalSheetOpen && <FenetreCompteurGlobal compteur={scene.globalTracker} onModifier={actions.updateGlobalTracker} onChanger={actions.stepGlobal} onFermer={fermerCompteurGlobal} />}
       {clockModalOpen && <FenetreResolutionHorloge participants={compteurGlobal.horlogesBloquantes} onFermer={fermerResolutionHorloge} onRelancerHorloge={resetClock} onSupprimerHorloge={deleteClock} />}
       {notice && <FenetreInformation titre={notice.title} message={notice.message} onFermer={fermerNotice} />}
-      {openMenu && <MenuPrincipal scenes={scenes} scene={scene} restorePoints={restorePoints} onRestore={restaurerScene} onClose={fermerMenu} setSceneIndex={actions.setSceneIndex} dark={dark} setDark={actions.setDark} onAddParticipant={commandesInterface.ouvrirAjoutPersonnage} onNewScene={nouvelleScene} onExport={actions.exportCampaign} onImport={importerCampagne} onReset={reinitialiserDemo} onGlobalTracker={actions.updateGlobalTracker} onUpdateCategoryOrder={actions.updateCategoryOrder} />}
+      {openMenu && <MenuPrincipal scenes={scenes} scene={scene} restorePoints={restorePoints} onRestore={restaurerScene} onClose={fermerMenu} setSceneIndex={actions.setSceneIndex} dark={dark} setDark={actions.setDark} onAddParticipant={commandesInterface.ouvrirAjoutPersonnage} onNewScene={nouvelleScene} onExport={actions.exportCampaign} onImport={importerCampagne} onReset={reinitialiserDemo} onGlobalTracker={actions.updateGlobalTracker} onUpdateCategoryOrder={actions.updateCategoryOrder} onUpdateEqualityRule={actions.updateEqualityRule} />}
     </>
   );
 }
