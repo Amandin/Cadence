@@ -192,9 +192,9 @@ function ActionsSauvegarde({ onExporter, onImporter, onReinitialiser }) {
       <div className="grid2">
         <button className="primary" onClick={onExporter}>Exporter</button>
         <button className="small-btn" onClick={choisirFichier}>Importer</button>
-        <input ref={importInputRef} type="file" accept=".json,application/json" style={{ display: 'none' }} onChange={importerFichier} />
+        <input ref={importInputRef} type="file" accept=".cad,.json,application/json" style={{ display: 'none' }} onChange={importerFichier} />
       </div>
-      <p className="muted compact-help" style={{ marginTop: 6 }}>Sur mobile, l’export ouvre le partage si le navigateur le permet. Sinon, il télécharge un fichier JSON.</p>
+      <p className="muted compact-help" style={{ marginTop: 6 }}>L’export crée un fichier .cad. Les anciens exports .json restent importables s’ils viennent de Cadence.</p>
       <button className="danger-btn" style={{ marginTop: 8, width: '100%' }} onClick={onReinitialiser}>Réinitialiser la démo</button>
     </>
   );
