@@ -2,9 +2,9 @@ export function BarreActionBas({ classeSuivant, prochainRound, round, horlogeBlo
   const texteSuivant = libelleSuivant || (horlogeBloquee ? 'Horloge' : prochainRound ? `Nouveau round · R${round + 1}` : `Suivant · R${round}`);
 
   return (
-    <div className="bottom">
+    <div className="bottom" style={{ gridTemplateColumns: 'auto minmax(0, .82fr) auto auto auto', gap: 6, padding: 6 }}>
       <button className="turn-btn compact" onClick={onTourPrecedent} aria-label="Participant précédent">↶</button>
-      <button className={`primary ${classeSuivant}`} onClick={onTourSuivant} disabled={suivantDesactive}>{texteSuivant}</button>
+      <button className={`primary ${classeSuivant}`} style={{ minWidth: 0, padding: '10px 11px', fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} onClick={onTourSuivant} disabled={suivantDesactive}>{texteSuivant}</button>
       <button className="small-btn" onClick={onSaisirInitiatives}>Init</button>
       <button className="small-btn" onClick={onAjouterPersonnage}>+</button>
       <button className="small-btn" onClick={onOuvrirMenu}>☰</button>
