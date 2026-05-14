@@ -25,6 +25,12 @@ function valeursVides(participants) {
   return Object.fromEntries(participants.map((participant) => [participant.id, '']));
 }
 
+function valeursRenseignees(participants, valeurs) {
+  return Object.fromEntries(participants
+    .filter((participant) => champRempli(valeurs[participant.id]))
+    .map((participant) => [participant.id, valeurs[participant.id]]));
+}
+
 function SectionSaisieInitiative({ titre, participants, inclureEnvironnements, valeurs, changerValeur }) {
   const groupes = participantsParType(participants, inclureEnvironnements);
   if (groupes.length === 0) return null;
@@ -72,8 +78,7 @@ export function FenetreLancerInitiatives({ participants = [], reserve = [], onFe
 
   const appliquer = () => {
     if (restantsAvecValeur.length === 0) return;
-    const valeursRenseignees = Object.fromEntries(restantsAvecValeur.map((participant) => [participant.id, valeurs[participant.id]]));
-    onValider(valeursRenseignees);
+    onValider(valeursRenseignees(restantsAvecValeur, valeurs));
     setIdsEnAttente(restantsSansValeur.map((participant) => participant.id));
     setValeurs((courant) => ({ ...courant, ...valeursVides(restantsAvecValeur) }));
     if (restantsSansValeur.length === 0) onFermer();
@@ -82,6 +87,11 @@ export function FenetreLancerInitiatives({ participants = [], reserve = [], onFe
   const passerRestantsHorsInitiative = () => {
     onPasserHorsInitiative(participantsActifsSansValeur.map((participant) => participant.id));
     onFermer();
+  };
+
+  const appliquerEtPasserRestantsHorsInitiative = () => {
+    if (restantsAvecValeur.length > 0) onValider(valeursRenseignees(restantsAvecValeur, valeurs));
+    passerRestantsHorsInitiative();
   };
 
   const aucunCandidatAffiche = participantsEnAttente.length === 0 && reserveEnAttente.length === 0;
@@ -106,7 +116,7 @@ export function FenetreLancerInitiatives({ participants = [], reserve = [], onFe
           <button className="small-btn" onClick={onFermer}>Annuler</button>
         </div>
         {participantsActifsSansValeur.length > 0 && restantsAvecValeur.length === 0 && idsEnAttente.length < candidats.length && <button className="small-btn" onClick={passerRestantsHorsInitiative}>Passer les restants hors init’</button>}
-        {saisiePartielle && participantsActifsSansValeur.length > 0 && <button className="small-btn" onClick={passerRestantsHorsInitiative}>Appliquer et passer les autres hors init’</button>}
+        {saisiePartielle && participantsActifsSansValeur.length > 0 && <button className="small-btn" onClick={appliquerEtPasserRestantsHorsInitiative}>Appliquer et passer les autres hors init’</button>}
       </div>
     </Fenetre>
   );
