@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { APP_VERSION, defaultCategoryOrder } from '../../constants.js';
+import { APP_VERSION, defaultCategoryOrder, defaultEqualityRule, equalityRuleLabels, equalityRules } from '../../constants.js';
 import { Fenetre } from '../commun/ComposantsCommuns.jsx';
 
 function LogoMenu({ sombre }) {
@@ -62,6 +62,20 @@ function OptionsCompteurScene({ compteur, onModifier }) {
   );
 }
 
+function OptionsEgalites({ equalityRule = defaultEqualityRule, onModifier }) {
+  return (
+    <div className="scene-options compact-options advanced-rule-block">
+      <h3>Égalités parfaites</h3>
+      <label className="field compact-field">
+        Règle
+        <select value={equalityRule} onChange={(event) => onModifier(event.target.value)}>
+          {Object.values(equalityRules).map((rule) => <option key={rule} value={rule}>{equalityRuleLabels[rule]}</option>)}
+        </select>
+      </label>
+    </div>
+  );
+}
+
 function OptionsOrdreCategories({ order = defaultCategoryOrder, onModifier }) {
   const monter = (index) => {
     if (index <= 0) return;
@@ -78,14 +92,14 @@ function OptionsOrdreCategories({ order = defaultCategoryOrder, onModifier }) {
   };
 
   return (
-    <div className="scene-options compact-options">
-      <h3>Égalités d’initiative</h3>
-      <p className="muted" style={{ marginTop: 4, fontSize: 12 }}>Ordre utilisé si initiative et départage sont identiques.</p>
-      <div className="stack" style={{ marginTop: 8 }}>
+    <div className="scene-options compact-options advanced-rule-block">
+      <h3>Priorité des types</h3>
+      <p className="muted compact-help">Utilisée selon la règle d’égalité choisie.</p>
+      <div className="stack compact-category-order">
         {order.map((categorie, index) => (
           <div className="restore-row discreet" key={categorie}>
             <strong>{categorie}</strong>
-            <div style={{ display: 'flex', gap: 6 }}>
+            <div className="compact-arrows">
               <button className="small-btn" onClick={() => monter(index)} disabled={index <= 0}>↑</button>
               <button className="small-btn" onClick={() => descendre(index)} disabled={index >= order.length - 1}>↓</button>
             </div>
@@ -96,7 +110,7 @@ function OptionsOrdreCategories({ order = defaultCategoryOrder, onModifier }) {
   );
 }
 
-function ReglesAvancees({ order, onModifier }) {
+function ReglesAvancees({ order, equalityRule, onModifierOrder, onModifierEqualityRule }) {
   const [ouvert, setOuvert] = useState(false);
 
   return (
@@ -104,7 +118,10 @@ function ReglesAvancees({ order, onModifier }) {
       <button className="small-btn" onClick={() => setOuvert((etat) => !etat)}>
         {ouvert ? 'Masquer règles avancées' : 'Règles avancées'}
       </button>
-      {ouvert && <OptionsOrdreCategories order={order} onModifier={onModifier} />}
+      {ouvert && <div className="advanced-rules-stack">
+        <OptionsEgalites equalityRule={equalityRule} onModifier={onModifierEqualityRule} />
+        <OptionsOrdreCategories order={order} onModifier={onModifierOrder} />
+      </div>}
     </div>
   );
 }
@@ -148,7 +165,7 @@ function RestaurationScene({ points, pointActif, onChoisirPoint, onRestaurer }) 
   );
 }
 
-export function MenuPrincipal({ scenes, scene, restorePoints = [], onRestore, onClose, setSceneIndex, dark, setDark, onAddParticipant, onNewScene, onExport, onImport, onReset, onGlobalTracker, onUpdateCategoryOrder }) {
+export function MenuPrincipal({ scenes, scene, restorePoints = [], onRestore, onClose, setSceneIndex, dark, setDark, onAddParticipant, onNewScene, onExport, onImport, onReset, onGlobalTracker, onUpdateCategoryOrder, onUpdateEqualityRule }) {
   const pointsRestauration = [...restorePoints].sort((a, b) => a.round - b.round);
   const [pointRestaurationId, setPointRestaurationId] = useState(pointsRestauration.at(-1)?.id || '');
 
@@ -158,7 +175,7 @@ export function MenuPrincipal({ scenes, scene, restorePoints = [], onRestore, on
       <LigneVersionEtTheme sombre={dark} onChangerTheme={setDark} />
       <ListeScenes scenes={scenes} onChoisirScene={setSceneIndex} onFermer={onClose} />
       <OptionsCompteurScene compteur={scene?.globalTracker} onModifier={onGlobalTracker} />
-      <ReglesAvancees order={scene?.categoryOrder || defaultCategoryOrder} onModifier={onUpdateCategoryOrder} />
+      <ReglesAvancees order={scene?.categoryOrder || defaultCategoryOrder} equalityRule={scene?.equalityRule || defaultEqualityRule} onModifierOrder={onUpdateCategoryOrder} onModifierEqualityRule={onUpdateEqualityRule} />
       <ActionsScene onAjouterParticipant={onAddParticipant} onNouvelleScene={onNewScene} />
       <ActionsSauvegarde onExporter={onExport} onImporter={onImport} onReinitialiser={onReset} />
       <RestaurationScene points={pointsRestauration} pointActif={pointRestaurationId} onChoisirPoint={setPointRestaurationId} onRestaurer={onRestore} />
