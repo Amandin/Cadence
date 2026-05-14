@@ -201,6 +201,10 @@
   border-radius: 28px;
 }
 
+.campaign-hub-page > .hub-section.panel {
+  padding-inline: 18px;
+}
+
 .campaign-hub {
   gap: 12px;
 }
@@ -229,6 +233,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  padding-inline: 2px;
 }
 
 .hub-row {
@@ -291,6 +296,10 @@
   .campaign-hub-header.panel,
   .campaign-hub-page > .hub-section.panel {
     border-radius: 24px;
+  }
+
+  .campaign-hub-page > .hub-section.panel {
+    padding-inline: 16px;
   }
 }
 
