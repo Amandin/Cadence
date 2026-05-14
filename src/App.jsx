@@ -29,6 +29,7 @@ export default function App() {
 
   const temporaliteSouple = scene.temporalite === temporalityModes.FLEXIBLE;
   const temporalitePhases = scene.temporalite === temporalityModes.PHASES;
+  const phaseAttendRelanceInitiative = temporalitePhases && !!scene.phaseRerollEachRound && !scene.activeId;
   const optionsInitiative = {
     categoryOrder: scene.categoryOrder || defaultCategoryOrder,
     equalityRule: scene.equalityRule || defaultEqualityRule,
@@ -37,16 +38,16 @@ export default function App() {
   // En mode Phases, l’affichage et le participant actif reposent sur des copies
   // de participants dont l’initiative est recalculée pour la phase courante.
   // On évite ainsi d’écrire l’initiative diminuée dans la scène réelle.
-  const phaseParticipants = temporalitePhases
+  const phaseParticipants = temporalitePhases && !phaseAttendRelanceInitiative
     ? participantsPourPhase(scene.participants, scene.phase, scene.phaseDecrement, optionsInitiative)
     : [];
   const phaseActiveId = temporalitePhases
-    ? phaseParticipants.find((participant) => participant.id === scene.activeId)?.id || phaseParticipants[0]?.id || ''
+    ? phaseParticipants.find((participant) => participant.id === scene.activeId)?.id || ''
     : scene.activeId;
   const phaseActive = temporalitePhases
     ? phaseParticipants.find((participant) => participant.id === phaseActiveId) || null
     : null;
-  const phaseSuivanteDisponible = temporalitePhases && phaseSuivanteExiste(scene.participants, scene.phase, scene.phaseDecrement);
+  const phaseSuivanteDisponible = temporalitePhases && !phaseAttendRelanceInitiative && phaseSuivanteExiste(scene.participants, scene.phase, scene.phaseDecrement);
   const phaseEnFin = temporalitePhases && phaseParticipants.length > 0 && phaseActiveId === phaseParticipants.at(-1)?.id;
   const phaseDemarreNouveauRound = temporalitePhases && phaseEnFin && !phaseSuivanteDisponible;
   const toutLeMondeAJoueSouple = temporaliteSouple && scene.participants.length > 0 && scene.participants.every((participant) => (scene.jouesSouples || []).includes(participant.id));
@@ -176,13 +177,15 @@ export default function App() {
     : blocked.length
       ? 'Gérer horloge bloquante'
       : temporalitePhases
-        ? !phaseParticipants.length
-          ? 'Aucun participant actif'
-          : phaseEnFin && phaseSuivanteDisponible
-            ? 'Phase suivante'
-            : phaseDemarreNouveauRound
-              ? 'Nouveau round'
-              : 'Participant suivant'
+        ? phaseAttendRelanceInitiative
+          ? 'Saisir les initiatives'
+          : !phaseParticipants.length
+            ? 'Aucun participant actif'
+            : phaseEnFin && phaseSuivanteDisponible
+              ? 'Phase suivante'
+              : phaseDemarreNouveauRound
+                ? 'Nouveau round'
+                : 'Participant suivant'
         : nextStartsRound ? 'Nouveau round' : 'Participant suivant';
   const classeSuivantEffective = temporaliteSouple && toutLeMondeAJoueSouple
     ? 'next-round'
@@ -195,11 +198,13 @@ export default function App() {
   const libelleBas = temporaliteSouple
     ? toutLeMondeAJoueSouple ? `Nouveau round · R${scene.round + 1}` : 'Choisir'
     : temporalitePhases
-      ? phaseDemarreNouveauRound
-        ? `Nouveau round · R${scene.round + 1}`
-        : phaseEnFin && phaseSuivanteDisponible
-          ? `Phase ${scene.phase + 1}`
-          : `Suivant · P${scene.phase}`
+      ? phaseAttendRelanceInitiative
+        ? 'Init requise'
+        : phaseDemarreNouveauRound
+          ? `Nouveau round · R${scene.round + 1}`
+          : phaseEnFin && phaseSuivanteDisponible
+            ? `Phase ${scene.phase + 1}`
+            : `Suivant · P${scene.phase}`
       : undefined;
 
   return (
@@ -226,7 +231,7 @@ export default function App() {
         />
 
         <main>
-          <ListeInitiative scene={scene} participants={scene.participants} actifId={temporalitePhases ? phaseActiveId : scene.activeId} interactions={characters} temporaliteSouple={temporaliteSouple} temporalitePhases={temporalitePhases} onMarquerAJoue={marquerAJoue} onAnnulerAJoue={annulerAJoue} />
+          <ListeInitiative scene={scene} participants={scene.participants} actifId={temporalitePhases ? phaseActiveId : scene.activeId} interactions={characters} temporaliteSouple={temporaliteSouple} temporalitePhases={temporalitePhases} phaseAttendRelanceInitiative={phaseAttendRelanceInitiative} onMarquerAJoue={marquerAJoue} onAnnulerAJoue={annulerAJoue} />
           <ReserveHorsInitiative scene={scene} interactions={characters} onModifierNotes={(notes) => actions.updateSceneField('reserveNotes', notes)} />
         </main>
       </div>
