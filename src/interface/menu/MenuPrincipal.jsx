@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { APP_VERSION, defaultCategoryOrder, defaultEqualityRule, equalityRuleDescriptions, equalityRuleLabels, equalityRules } from '../../constants.js';
+import { APP_VERSION, defaultCategoryOrder, defaultEqualityRule, defaultTemporalityMode, equalityRuleDescriptions, equalityRuleLabels, equalityRules, temporalityDescriptions, temporalityLabels, temporalityModes } from '../../constants.js';
 import { Fenetre } from '../commun/ComposantsCommuns.jsx';
 
 function LogoMenu({ sombre }) {
@@ -62,6 +62,23 @@ function OptionsCompteurScene({ compteur, onModifier }) {
   );
 }
 
+function OptionsTemporalite({ temporalite = defaultTemporalityMode, onModifier }) {
+  return (
+    <div className="scene-options compact-options advanced-rule-block">
+      <h3>Temporalité</h3>
+      <p className="muted compact-help">Choisit comment le tour actif est désigné.</p>
+      <div className="advanced-radio-list">
+        {Object.values(temporalityModes).map((mode) => (
+          <label className={`advanced-radio ${temporalite === mode ? 'selected' : ''}`} key={mode}>
+            <input type="radio" name="temporality-mode" value={mode} checked={temporalite === mode} onChange={(event) => onModifier(event.target.value)} />
+            <span><strong>{temporalityLabels[mode]}</strong><small>{temporalityDescriptions[mode]}</small></span>
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function OptionsEgalites({ equalityRule = defaultEqualityRule, onModifier }) {
   return (
     <div className="scene-options compact-options advanced-rule-block">
@@ -113,10 +130,11 @@ function OptionsOrdreCategories({ order = defaultCategoryOrder, onModifier }) {
   );
 }
 
-export function FenetreReglesAvancees({ scene, onFermer, onUpdateCategoryOrder, onUpdateEqualityRule }) {
+export function FenetreReglesAvancees({ scene, onFermer, onUpdateCategoryOrder, onUpdateEqualityRule, onUpdateTemporality }) {
   return (
     <Fenetre title="Règles avancées" onClose={onFermer}>
       <div className="advanced-rules-stack">
+        <OptionsTemporalite temporalite={scene?.temporalite || defaultTemporalityMode} onModifier={onUpdateTemporality} />
         <OptionsEgalites equalityRule={scene?.equalityRule || defaultEqualityRule} onModifier={onUpdateEqualityRule} />
         <OptionsOrdreCategories order={scene?.categoryOrder || defaultCategoryOrder} onModifier={onUpdateCategoryOrder} />
       </div>
