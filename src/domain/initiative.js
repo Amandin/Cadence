@@ -23,7 +23,7 @@ export function ordreCategorie(kind, categoryOrder = defaultCategoryOrder) {
 }
 
 function nomParticipant(participant) {
-  return (participant?.name || '').localeCompare('', undefined) ? participant.name || '' : '';
+  return participant?.name || '';
 }
 
 export function trierParInitiative(participants = [], options = {}) {
@@ -87,4 +87,22 @@ export function grouperParInitiative(participants = []) {
     else groupes.push({ initiative, participants: [participant] });
     return groupes;
   }, []);
+}
+
+export function grouperAffichageParticipants(participants = [], options = {}) {
+  const groupesSimultanes = groupesEgaliteParfaite(participants, options);
+  const groupeParId = new Map();
+
+  groupesSimultanes.forEach((groupe, index) => {
+    groupe.forEach((participant) => groupeParId.set(participant.id, { id: `sim-${index}`, participants: groupe }));
+  });
+
+  const vus = new Set();
+  return participants.flatMap((participant) => {
+    const groupe = groupeParId.get(participant.id);
+    if (!groupe) return [{ id: participant.id, simultaneous: false, participants: [participant] }];
+    if (vus.has(groupe.id)) return [];
+    vus.add(groupe.id);
+    return [{ ...groupe, simultaneous: true }];
+  });
 }
