@@ -17,6 +17,15 @@ export function createStatus(data) {
     duration,
     remaining: duration,
     loop: duration !== null && !!data.loop,
+    inactive: !!data.inactive,
     expired: false,
   };
+}
+
+export function statusRendInactif(status) {
+  return !!status?.inactive;
+}
+
+export function participantEstInactif(participant) {
+  return (participant?.statuses || []).some(statusRendInactif);
 }
