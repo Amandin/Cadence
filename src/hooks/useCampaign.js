@@ -3,7 +3,7 @@ import { createCampaignActions } from '../actions/campaignActions.js';
 import { createSceneActions } from '../actions/sceneActions.js';
 import { normalizeGlobalTracker, stepGlobalTracker } from '../domain/globalTracker.js';
 import { clone, hasTriggeredClock, nextTurnInfo, uid } from '../logic.js';
-import { campaignNameFromPayload, loadCampaign, saveCampaign } from '../storage.js';
+import { campaignNameFromPayload, campaignTemplatesFromPayload, loadCampaign, saveCampaign } from '../storage.js';
 import { defaultCategoryOrder, defaultEqualityRule, defaultPhaseDecrement, defaultPhaseRerollEachRound, defaultTemporalityMode, legacyParticipantKinds } from '../constants.js';
 
 function normalizeKind(kind) {
@@ -57,6 +57,7 @@ function initialRestorePoints(scenes) {
 export function useCampaign() {
   const [initialCampaign] = useState(loadCampaign);
   const [scenes, setScenes] = useState(initialCampaign.scenes);
+  const [templateStore, setTemplateStore] = useState(() => campaignTemplatesFromPayload(initialCampaign));
   const [campaignName, setCampaignName] = useState(() => campaignNameFromPayload(initialCampaign));
   const [sceneIndex, setSceneIndex] = useState(0);
   const [restorePoints, setRestorePoints] = useState(() => initialRestorePoints(initialCampaign.scenes));
@@ -71,10 +72,10 @@ export function useCampaign() {
   const { nextStartsRound } = nextTurnInfo(scene, blocked.length > 0);
   const nextClass = blocked.length ? 'blocked' : nextStartsRound ? 'next-round' : '';
 
-  useEffect(() => saveCampaign(scenes, dark, campaignName), [scenes, dark, campaignName]);
+  useEffect(() => saveCampaign(scenes, dark, campaignName, templateStore), [scenes, dark, campaignName, templateStore]);
 
   const sceneActions = useMemo(() => createSceneActions({ scene, sceneIndex, blocked, restorePoints, setScenes, setRestorePoints, setRoundEffect }), [blocked, scene, restorePoints, sceneIndex]);
-  const campaignActions = useMemo(() => createCampaignActions({ scenes, sceneIndex, dark, campaignName, setScenes, setSceneIndex, setDark, setCampaignNameState: setCampaignName }), [campaignName, dark, sceneIndex, scenes]);
+  const campaignActions = useMemo(() => createCampaignActions({ scenes, sceneIndex, dark, campaignName, templateStore, setScenes, setSceneIndex, setDark, setCampaignNameState: setCampaignName, setTemplateStore }), [campaignName, dark, sceneIndex, scenes, templateStore]);
 
   const extraSceneActions = useMemo(() => ({
     updateSceneField(key, value) {
@@ -90,6 +91,8 @@ export function useCampaign() {
 
   return {
     scenes,
+    templateStore,
+    setTemplateStore,
     campaignName,
     scene,
     sceneIndex,
