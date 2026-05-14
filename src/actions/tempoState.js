@@ -12,6 +12,10 @@ export function estModePhases(scene) {
   return scene.temporalite === temporalityModes.PHASES;
 }
 
+export function phasesAttendRelanceInitiative(scene) {
+  return estModePhases(scene) && !!scene.phaseRerollEachRound && !scene.activeId;
+}
+
 export function trouverTourActifParInitiative(scene, participantsTries) {
   const actifAvant = scene.participants.find((participant) => participant.id === scene.activeId);
   if (!actifAvant) return { activeId: scene.activeId, nouveauRound: false };
@@ -24,6 +28,7 @@ export function trouverTourActifParInitiative(scene, participantsTries) {
 }
 
 export function participantsPhase(scene, phase = scene.phase || 1) {
+  if (phasesAttendRelanceInitiative(scene)) return [];
   return participantsPourPhase(scene.participants || [], phase, scene.phaseDecrement || 10, optionsTri(scene));
 }
 
