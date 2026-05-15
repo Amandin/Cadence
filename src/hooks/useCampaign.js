@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createCampaignActions } from '../actions/campaignActions.js';
 import { createSceneActions } from '../actions/sceneActions.js';
-import { campaignRulesFromScenes, applyInitiativeRules, unifyCampaignScenes } from '../domain/campaignRules.js';
+import { campaignRulesFromPayload, applyInitiativeRules, normalizeCampaignRules, unifyCampaignScenes } from '../domain/campaignRules.js';
 import { normalizeGlobalTracker, stepGlobalTracker } from '../domain/globalTracker.js';
 import { clone, hasTriggeredClock, nextTurnInfo, uid } from '../logic.js';
 import { campaignNameFromPayload, campaignTemplatesFromPayload, loadCampaign, saveCampaign } from '../storage.js';
@@ -48,9 +48,9 @@ function normalizeScene(scene) {
   };
 }
 
-function normalizeScenesWithCampaignRules(rawScenes) {
+function normalizeScenesWithCampaignRules(rawScenes, rules) {
   const normalizedScenes = (rawScenes || []).map(normalizeScene);
-  return unifyCampaignScenes(normalizedScenes, campaignRulesFromScenes(normalizedScenes));
+  return unifyCampaignScenes(normalizedScenes, rules);
 }
 
 function initialRestorePoints(scenes) {
@@ -62,7 +62,8 @@ function initialRestorePoints(scenes) {
 
 export function useCampaign() {
   const [initialCampaign] = useState(loadCampaign);
-  const [scenes, setScenes] = useState(() => normalizeScenesWithCampaignRules(initialCampaign.scenes));
+  const [campaignRules, setCampaignRules] = useState(() => normalizeCampaignRules(campaignRulesFromPayload(initialCampaign)));
+  const [scenes, setScenes] = useState(() => normalizeScenesWithCampaignRules(initialCampaign.scenes, campaignRulesFromPayload(initialCampaign)));
   const [templateStore, setTemplateStore] = useState(() => campaignTemplatesFromPayload(initialCampaign));
   const [campaignName, setCampaignName] = useState(() => campaignNameFromPayload(initialCampaign));
   const [sceneIndex, setSceneIndex] = useState(0);
@@ -70,19 +71,19 @@ export function useCampaign() {
   const [dark, setDark] = useState(initialCampaign.settings?.dark || false);
   const [roundEffect, setRoundEffect] = useState(null);
 
-  const campaignRules = campaignRulesFromScenes(scenes);
   const rawScene = scenes[sceneIndex] || scenes[0];
   const scene = normalizeScene(applyInitiativeRules(rawScene, campaignRules));
+  const syncedScenes = normalizeScenesWithCampaignRules(scenes, campaignRules);
   const participants = scene.participants;
   const active = participants.find((p) => p.id === scene.activeId);
   const blocked = [...participants, ...(scene.reserve || [])].filter(hasTriggeredClock);
   const { nextStartsRound } = nextTurnInfo(scene, blocked.length > 0);
   const nextClass = blocked.length ? 'blocked' : nextStartsRound ? 'next-round' : '';
 
-  useEffect(() => saveCampaign(normalizeScenesWithCampaignRules(scenes), dark, campaignName, templateStore), [scenes, dark, campaignName, templateStore]);
+  useEffect(() => saveCampaign(syncedScenes, dark, campaignName, templateStore, campaignRules), [syncedScenes, dark, campaignName, templateStore, campaignRules]);
 
   const sceneActions = useMemo(() => createSceneActions({ scene, sceneIndex, blocked, restorePoints, setScenes, setRestorePoints, setRoundEffect }), [blocked, scene, restorePoints, sceneIndex]);
-  const campaignActions = useMemo(() => createCampaignActions({ scenes, sceneIndex, dark, campaignName, templateStore, setScenes, setSceneIndex, setDark, setCampaignNameState: setCampaignName, setTemplateStore }), [campaignName, dark, sceneIndex, scenes, templateStore]);
+  const campaignActions = useMemo(() => createCampaignActions({ scenes: syncedScenes, campaignRules, setCampaignRules, sceneIndex, dark, campaignName, templateStore, setScenes, setSceneIndex, setDark, setCampaignNameState: setCampaignName, setTemplateStore }), [campaignName, campaignRules, dark, sceneIndex, syncedScenes, templateStore]);
 
   const extraSceneActions = useMemo(() => ({
     updateSceneField(key, value) {
@@ -97,7 +98,8 @@ export function useCampaign() {
   }), [sceneIndex]);
 
   return {
-    scenes: normalizeScenesWithCampaignRules(scenes),
+    scenes: syncedScenes,
+    campaignRules,
     templateStore,
     setTemplateStore,
     campaignName,
