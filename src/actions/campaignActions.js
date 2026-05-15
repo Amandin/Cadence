@@ -1,4 +1,5 @@
 import { defaultCategoryOrder, defaultEqualityRule, defaultPhaseDecrement, defaultPhaseRerollEachRound, defaultTemporalityMode, temporalityModes } from '../constants.js';
+import { trierParInitiative } from '../domain/initiative.js';
 import { campaignNameFromPayload, campaignTemplatesFromPayload, isValidCampaign, normalizeCampaignName, serializeCampaign } from '../storage.js';
 import { clone, makeDefaultCampaign, uid } from '../logic.js';
 import { mergeTemplateStores } from '../templates.js';
@@ -39,6 +40,22 @@ function applyInitiativeRules(scene, patch = {}) {
   };
 }
 
+function premierParticipantId(scene) {
+  if (scene?.temporalite === temporalityModes.FLEXIBLE) return '';
+  return trierParInitiative(scene?.participants || [], initiativeRulesFromScene(scene))[0]?.id || '';
+}
+
+function remettreSceneAuDepartInitiative(scene) {
+  return {
+    ...scene,
+    round: 1,
+    phase: 1,
+    activeId: premierParticipantId(scene),
+    jouesSouples: [],
+    historiqueSouple: [],
+  };
+}
+
 function createBlankScene(rules = {}) {
   return {
     id: uid('scene'),
@@ -55,11 +72,11 @@ function createBlankScene(rules = {}) {
 }
 
 function duplicateSceneData(scene) {
-  return {
+  return remettreSceneAuDepartInitiative({
     ...clone(scene),
     id: uid('scene'),
     title: `${scene?.title || 'Scène'} — copie`,
-  };
+  });
 }
 
 function slugifyFilePart(value) {
