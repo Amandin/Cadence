@@ -71,6 +71,7 @@ function EnteteCategorieTemplate({ groupe, index, total, onAjouterTemplateCatego
 
 function LigneTemplate({ template, categories, onChangerCategorieTemplate, onEditerTemplate, onDupliquerTemplate, onSupprimerTemplate }) {
   const [categorieOuverte, setCategorieOuverte] = useState(false);
+  const [suppressionVisible, setSuppressionVisible] = useState(false);
   const changerCategorie = (event) => {
     onChangerCategorieTemplate(template.id, event.target.value);
     setCategorieOuverte(false);
@@ -89,7 +90,11 @@ function LigneTemplate({ template, categories, onChangerCategorieTemplate, onEdi
         )}
         <button className="small-btn" onClick={() => onEditerTemplate(template.id)}>Modifier</button>
         <button className="small-btn" onClick={() => onDupliquerTemplate(template.id)}>Dupliquer</button>
-        <button className="danger-btn mini-danger" onClick={() => onSupprimerTemplate(template.id)}>Suppr.</button>
+        {suppressionVisible ? (
+          <button className="danger-btn mini-danger template-delete-confirm" onClick={() => onSupprimerTemplate(template.id)}>Suppr.</button>
+        ) : (
+          <button className="small-btn template-delete-reveal" onClick={() => setSuppressionVisible(true)} aria-label={`Afficher la suppression de ${template.name}`}>×</button>
+        )}
       </div>
     </div>
   );
