@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   APP_VERSION,
   defaultCategoryOrder,
@@ -13,22 +13,7 @@ import {
   temporalityLabels,
   temporalityModes,
 } from '../../constants.js';
-
-function grouperTemplates(templates = [], categories = []) {
-  const groupes = categories.map((categorie) => ({ categorie, templates: [] }));
-  const trouverOuCreerGroupe = (categorie) => {
-    const nom = categorie || 'Sans catégorie';
-    const existant = groupes.find((item) => item.categorie === nom);
-    if (existant) return existant;
-    const nouveau = { categorie: nom, templates: [] };
-    groupes.push(nouveau);
-    return nouveau;
-  };
-  [...templates]
-    .sort((a, b) => `${a.category}/${a.name}`.localeCompare(`${b.category}/${b.name}`, 'fr'))
-    .forEach((template) => trouverOuCreerGroupe(template.category).templates.push(template));
-  return groupes;
-}
+import { OngletTemplates } from './OngletTemplates.jsx';
 
 function OngletsHub({ onglet, setOnglet }) {
   return (
@@ -43,7 +28,6 @@ function OngletsHub({ onglet, setOnglet }) {
 
 function EnteteHub({ campaignName, sombre, onChangerTheme }) {
   const logo = sombre ? '/branding/logo-cadence-dark.svg' : '/branding/logo-cadence-light.svg';
-
   return (
     <header className="campaign-hub-header panel">
       <div className="menu-brand">
@@ -66,6 +50,7 @@ function CarteScene({ scene, index, canDelete, editing, onEditer, onFermerEditio
   const [titre, setTitre] = useState(scene.title || 'Scène');
   const [type, setType] = useState(scene.type || 'Scène');
   const [notes, setNotes] = useState(scene.notes || '');
+  const [suppressionVisible, setSuppressionVisible] = useState(false);
 
   useEffect(() => {
     if (!editing) return;
@@ -87,18 +72,9 @@ function CarteScene({ scene, index, canDelete, editing, onEditer, onFermerEditio
     <div className="hub-scene-card">
       {editing ? (
         <div className="stack hub-scene-edit">
-          <label className="field">
-            Nom
-            <input type="text" value={titre} onChange={(event) => setTitre(event.target.value)} />
-          </label>
-          <label className="field">
-            Type
-            <input type="text" value={type} onChange={(event) => setType(event.target.value)} />
-          </label>
-          <label className="field">
-            Notes
-            <textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows={3} />
-          </label>
+          <label className="field">Nom<input type="text" value={titre} onChange={(event) => setTitre(event.target.value)} /></label>
+          <label className="field">Type<input type="text" value={type} onChange={(event) => setType(event.target.value)} /></label>
+          <label className="field">Notes<textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows={3} /></label>
           <div className="grid2">
             <button className="primary" onClick={enregistrer}>Enregistrer</button>
             <button className="small-btn" onClick={onFermerEdition}>Annuler</button>
@@ -108,14 +84,20 @@ function CarteScene({ scene, index, canDelete, editing, onEditer, onFermerEditio
         <>
           <div className="hub-scene-summary">
             <strong>{scene.title || 'Scène'}</strong>
-            <span className="hub-scene-type">{scene.type || 'Scène'}</span>
+            <div className="hub-scene-meta">
+              <span className="hub-scene-type">{scene.type || 'Scène'}</span>
+              {canDelete && (suppressionVisible ? (
+                <button className="danger-btn mini-danger scene-delete-confirm" onClick={() => onSupprimerScene(index)}>Suppr.</button>
+              ) : (
+                <button className="small-btn scene-delete-reveal" onClick={() => setSuppressionVisible(true)} aria-label={`Afficher la suppression de ${scene.title || 'Scène'}`}>×</button>
+              ))}
+            </div>
           </div>
           {scene.notes && <p className="muted compact-help hub-scene-notes">{scene.notes}</p>}
           <div className="hub-scene-actions explicit">
             <button className="primary" onClick={() => onChoisirScene(index)}>Ouvrir</button>
             <button className="small-btn" onClick={() => onEditer(scene.id)}>Modifier</button>
             <button className="small-btn" onClick={() => onDupliquerScene(index)}>Dupliquer</button>
-            <button className="danger-btn mini-danger" onClick={() => onSupprimerScene(index)} disabled={!canDelete}>Suppr.</button>
           </div>
         </>
       )}
@@ -132,19 +114,7 @@ function OngletScenes({ scenes, editingSceneId, onEditerScene, onFermerEditionSc
       </div>
       <div className="stack hub-scene-list">
         {scenes.map((scene, index) => (
-          <CarteScene
-            key={scene.id}
-            scene={scene}
-            index={index}
-            editing={scene.id === editingSceneId}
-            canDelete={scenes.length > 1}
-            onEditer={onEditerScene}
-            onFermerEdition={onFermerEditionScene}
-            onChoisirScene={onChoisirScene}
-            onModifierScene={onModifierScene}
-            onDupliquerScene={onDupliquerScene}
-            onSupprimerScene={onSupprimerScene}
-          />
+          <CarteScene key={scene.id} scene={scene} index={index} editing={scene.id === editingSceneId} canDelete={scenes.length > 1} onEditer={onEditerScene} onFermerEdition={onFermerEditionScene} onChoisirScene={onChoisirScene} onModifierScene={onModifierScene} onDupliquerScene={onDupliquerScene} onSupprimerScene={onSupprimerScene} />
         ))}
       </div>
     </div>
@@ -173,10 +143,7 @@ function OptionsPhasesCampagne({ scene, onModifier }) {
     <div className="scene-options compact-options advanced-rule-block phase-options">
       <h3>Phases</h3>
       <p className="muted compact-help">Paramètres des phases d’initiative pour la campagne.</p>
-      <label className="field">
-        Décrément
-        <input type="number" min="1" step="1" value={scene?.phaseDecrement || defaultPhaseDecrement} onChange={(event) => onModifier({ phaseDecrement: event.target.value })} />
-      </label>
+      <label className="field">Décrément<input type="number" min="1" step="1" value={scene?.phaseDecrement || defaultPhaseDecrement} onChange={(event) => onModifier({ phaseDecrement: event.target.value })} /></label>
       <div className="advanced-radio-list">
         <label className={`advanced-radio ${!(scene?.phaseRerollEachRound ?? defaultPhaseRerollEachRound) ? 'selected' : ''}`}>
           <input type="radio" name="campaign-phase-round-init" checked={!(scene?.phaseRerollEachRound ?? defaultPhaseRerollEachRound)} onChange={() => onModifier({ phaseRerollEachRound: false })} />
@@ -218,7 +185,6 @@ function OptionsOrdreCategoriesCampagne({ scene, onModifier }) {
     [suivant[index], suivant[target]] = [suivant[target], suivant[index]];
     onModifier({ categoryOrder: suivant });
   };
-
   return (
     <div className="scene-options compact-options advanced-rule-block">
       <h3>Priorités</h3>
@@ -242,10 +208,7 @@ function OngletRegles({ scene, onModifierRegles }) {
   const temporalite = scene?.temporalite || defaultTemporalityMode;
   return (
     <div className="stack hub-section panel">
-      <div>
-        <h3>Règles d’initiative</h3>
-        <p className="muted compact-help">Ces réglages sont appliqués à toutes les scènes de la campagne et servent de base aux nouvelles scènes.</p>
-      </div>
+      <div><h3>Règles d’initiative</h3><p className="muted compact-help">Ces réglages sont appliqués à toutes les scènes de la campagne et servent de base aux nouvelles scènes.</p></div>
       <OptionsTemporaliteCampagne temporalite={temporalite} onModifier={onModifierRegles} />
       {temporalite === temporalityModes.PHASES && <OptionsPhasesCampagne scene={scene} onModifier={onModifierRegles} />}
       <OptionsEgalitesCampagne scene={scene} onModifier={onModifierRegles} />
@@ -262,7 +225,6 @@ function OngletSauvegarde({ onExporter, onImporter, onReinitialiser }) {
     event.target.value = '';
     if (file) onImporter(file);
   };
-
   return (
     <div className="stack hub-section panel">
       <h3>Sauvegarde</h3>
@@ -277,90 +239,7 @@ function OngletSauvegarde({ onExporter, onImporter, onReinitialiser }) {
   );
 }
 
-function NouvelleCategorieTemplate({ onAjouterCategorie }) {
-  const [nom, setNom] = useState('');
-  const ajouter = () => {
-    const result = onAjouterCategorie(nom);
-    if (result?.ok) setNom('');
-  };
-
-  return (
-    <div className="template-new-category">
-      <input value={nom} placeholder="Nouvelle catégorie" onChange={(event) => setNom(event.target.value)} />
-      <button className="small-btn" onClick={ajouter}>Ajouter</button>
-    </div>
-  );
-}
-
-function OngletTemplates({ categories = [], templates = [], onAjouterTemplateCategorie, onAjouterCategorie, onEditerTemplate, onDupliquerTemplate, onSupprimerTemplate, onImporterTemplates }) {
-  const groupes = useMemo(() => grouperTemplates(templates, categories), [categories, templates]);
-  const importInputRef = useRef(null);
-  const choisirFichier = () => importInputRef.current?.click();
-  const importerFichier = (event) => {
-    const file = event.target.files?.[0];
-    event.target.value = '';
-    if (file) onImporterTemplates(file);
-  };
-
-  return (
-    <div className="stack hub-section panel">
-      <div className="hub-section-head">
-        <h3>Templates</h3>
-        <button className="small-btn" onClick={choisirFichier}>Importer depuis une autre campagne</button>
-        <input ref={importInputRef} type="file" accept=".cad,.json,application/json" style={{ display: 'none' }} onChange={importerFichier} />
-      </div>
-      <p className="muted compact-help">Les templates servent de fiches modèles. Crée un modèle dans une catégorie, puis modifie sa fiche.</p>
-      <NouvelleCategorieTemplate onAjouterCategorie={onAjouterCategorie} />
-      {groupes.map((groupe) => (
-        <section className="hub-template-group" key={groupe.categorie}>
-          <div className="flexible-section-title"><span>{groupe.categorie}</span><strong>{groupe.templates.length}</strong></div>
-          <button className="small-btn template-category-add" onClick={() => onAjouterTemplateCategorie(groupe.categorie)}>Ajouter un template</button>
-          {groupe.templates.length === 0 ? (
-            <div className="empty-section panel">Aucun template dans cette catégorie.</div>
-          ) : (
-            <div className="stack">
-              {groupe.templates.map((template) => (
-                <div className="restore-row hub-row" key={template.id}>
-                  <span><strong>{template.name}</strong><small>{template.participant?.kind || 'Personnage'}</small></span>
-                  <div className="compact-arrows">
-                    <button className="small-btn" onClick={() => onEditerTemplate(template.id)}>Modifier</button>
-                    <button className="small-btn" onClick={() => onDupliquerTemplate(template.id)}>Dupliquer</button>
-                    <button className="danger-btn mini-danger" onClick={() => onSupprimerTemplate(template.id)}>Suppr.</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-      ))}
-    </div>
-  );
-}
-
-export function HubCampagne({
-  campaignName,
-  scene,
-  scenes,
-  templates,
-  templateCategories,
-  dark,
-  onChangerTheme,
-  onChoisirScene,
-  onNouvelleScene,
-  onModifierScene,
-  onDupliquerScene,
-  onSupprimerScene,
-  onModifierReglesInitiative,
-  onExporter,
-  onImporter,
-  onReinitialiser,
-  onAjouterTemplateCategorie,
-  onAjouterCategorieTemplate,
-  onEditerTemplate,
-  onDupliquerTemplate,
-  onSupprimerTemplate,
-  onImporterTemplates,
-}) {
+export function HubCampagne({ campaignName, scene, scenes, templates, templateCategories, dark, onChangerTheme, onChoisirScene, onNouvelleScene, onModifierScene, onDupliquerScene, onSupprimerScene, onModifierReglesInitiative, onExporter, onImporter, onReinitialiser, onAjouterTemplateCategorie, onAjouterCategorieTemplate, onRenommerCategorieTemplate, onSupprimerCategorieTemplate, onDeplacerCategorieTemplate, onChangerCategorieTemplate, onEditerTemplate, onDupliquerTemplate, onSupprimerTemplate, onImporterTemplates }) {
   const [onglet, setOnglet] = useState('scenes');
   const [editingSceneId, setEditingSceneId] = useState('');
   const [editCreatedSceneWhenReady, setEditCreatedSceneWhenReady] = useState(false);
@@ -376,7 +255,6 @@ export function HubCampagne({
     onNouvelleScene();
     setEditCreatedSceneWhenReady(true);
   };
-
   const dupliquerScene = (index) => {
     onDupliquerScene(index);
     setEditCreatedSceneWhenReady(true);
@@ -390,7 +268,7 @@ export function HubCampagne({
         {onglet === 'scenes' && <OngletScenes scenes={scenes} editingSceneId={editingSceneId} onEditerScene={setEditingSceneId} onFermerEditionScene={() => setEditingSceneId('')} onChoisirScene={onChoisirScene} onNouvelleScene={creerNouvelleScene} onModifierScene={onModifierScene} onDupliquerScene={dupliquerScene} onSupprimerScene={onSupprimerScene} />}
         {onglet === 'regles' && <OngletRegles scene={scene} onModifierRegles={onModifierReglesInitiative} />}
         {onglet === 'sauvegarde' && <OngletSauvegarde onExporter={onExporter} onImporter={onImporter} onReinitialiser={onReinitialiser} />}
-        {onglet === 'templates' && <OngletTemplates categories={templateCategories} templates={templates} onAjouterTemplateCategorie={onAjouterTemplateCategorie} onAjouterCategorie={onAjouterCategorieTemplate} onEditerTemplate={onEditerTemplate} onDupliquerTemplate={onDupliquerTemplate} onSupprimerTemplate={onSupprimerTemplate} onImporterTemplates={onImporterTemplates} />}
+        {onglet === 'templates' && <OngletTemplates categories={templateCategories} templates={templates} onAjouterTemplateCategorie={onAjouterTemplateCategorie} onAjouterCategorie={onAjouterCategorieTemplate} onRenommerCategorie={onRenommerCategorieTemplate} onSupprimerCategorie={onSupprimerCategorieTemplate} onDeplacerCategorie={onDeplacerCategorieTemplate} onChangerCategorieTemplate={onChangerCategorieTemplate} onEditerTemplate={onEditerTemplate} onDupliquerTemplate={onDupliquerTemplate} onSupprimerTemplate={onSupprimerTemplate} onImporterTemplates={onImporterTemplates} />}
       </main>
     </div>
   );

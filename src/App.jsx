@@ -153,13 +153,23 @@ export default function App() {
     if (result?.ok === false) setNotice({ title: 'Catégorie impossible', message: result.message });
     return result;
   };
+  const renameTemplateCategory = (category, nextName) => {
+    const result = templates.renameCategory(category, nextName);
+    if (result?.ok === false) setNotice({ title: 'Renommage impossible', message: result.message });
+    return result;
+  };
+  const deleteTemplateCategory = (category) => {
+    const result = templates.deleteCategory(category);
+    if (result?.ok === false) setNotice({ title: 'Suppression impossible', message: result.message });
+    return result;
+  };
   const duplicateTemplate = (templateId) => {
     const duplicate = templates.duplicateTemplate(templateId);
     if (duplicate) setEditingTemplateId(duplicate.id);
   };
   const saveEditedTemplate = (participant) => {
     if (!editingTemplateId) return;
-    templates.updateTemplateParticipant(editingTemplateId, participant);
+    templates.updateTemplateParticipant(editingTemplateId, participant, editingTemplate.category);
     setEditingTemplateId('');
   };
   const deleteEditedTemplate = () => {
@@ -299,6 +309,10 @@ export default function App() {
           onReinitialiser={resetDemo}
           onAjouterTemplateCategorie={createTemplateInCategory}
           onAjouterCategorieTemplate={addTemplateCategory}
+          onRenommerCategorieTemplate={renameTemplateCategory}
+          onSupprimerCategorieTemplate={deleteTemplateCategory}
+          onDeplacerCategorieTemplate={templates.moveCategory}
+          onChangerCategorieTemplate={templates.setTemplateCategory}
           onEditerTemplate={setEditingTemplateId}
           onDupliquerTemplate={duplicateTemplate}
           onSupprimerTemplate={templates.deleteTemplate}

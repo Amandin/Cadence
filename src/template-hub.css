@@ -1,0 +1,121 @@
+.template-category-title {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.template-category-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.template-category-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.template-category-actions .small-btn,
+.template-category-actions .danger-btn {
+  min-height: 22px;
+  padding: 2px 6px;
+  font-size: 11px;
+}
+
+.template-category-edit {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 6px;
+  align-items: center;
+}
+
+.template-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.template-row-main {
+  min-width: 0;
+}
+
+.template-row-main strong,
+.template-row-main small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.template-row-actions {
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.template-category-select {
+  width: 84px;
+  min-width: 84px;
+  height: 28px;
+  padding: 2px 6px;
+  font-size: 12px;
+}
+
+.discreet-template-category {
+  min-width: 42px !important;
+  opacity: .72;
+}
+
+.discreet-template-category:hover,
+.discreet-template-category:focus-visible {
+  opacity: 1;
+}
+
+.template-delete-reveal,
+.scene-delete-reveal {
+  min-width: 24px !important;
+  width: 24px;
+  height: 24px;
+  padding: 0 !important;
+  border-radius: 999px;
+  opacity: .52;
+  font-size: 15px;
+  line-height: 1;
+}
+
+.template-delete-reveal:hover,
+.template-delete-reveal:focus-visible,
+.scene-delete-reveal:hover,
+.scene-delete-reveal:focus-visible {
+  opacity: 1;
+}
+
+.template-delete-confirm,
+.scene-delete-confirm {
+  min-height: 24px;
+  padding: 2px 8px;
+  font-size: 11px;
+}
+
+.hub-scene-meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  min-width: 0;
+}
+
+@media (max-width: 520px) {
+  .template-category-title,
+  .template-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .template-category-actions,
+  .template-row-actions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 420px) {
+  .hub-scene-meta {
+    justify-self: end;
+  }
+}
