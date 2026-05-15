@@ -3,6 +3,7 @@ import { colorNames, participantKinds, trackerTypeLabels } from '../../constants
 import { boxVisualRank, clone, colors, isVisible, newTracker, symbols, uid } from '../../logic.js';
 import { Fenetre } from '../commun/ComposantsCommuns.jsx';
 import { FenetreConfirmationSuppression } from '../dialogues/FenetreConfirmationSuppression.jsx';
+import { normaliserInfoRapide, normaliserInfosRapides, serialiserInfosRapides } from './InfosRapides.jsx';
 
 function entierPositif(valeur, defaut = 1) {
   if (valeur === '') return defaut;
@@ -16,14 +17,10 @@ function nombreOuDefaut(valeur, defaut = 0) {
   return Number.isFinite(nombre) ? nombre : defaut;
 }
 
-function normaliserStats(stats = []) {
-  return stats.map((stat) => String(stat || '').trim()).filter(Boolean);
-}
-
 function normaliserFiche(brouillon) {
   return {
     ...brouillon,
-    stats: normaliserStats(brouillon.stats),
+    stats: serialiserInfosRapides(brouillon.stats),
     initiative: nombreOuDefaut(brouillon.initiative, 0),
     departage: brouillon.departage === '' ? '' : nombreOuDefaut(brouillon.departage, 0),
     trackers: brouillon.trackers.map((suivi) => {
@@ -81,12 +78,14 @@ function ChampNombre({ label, valeur, onChange }) {
 }
 
 function EditeurInfosRapides({ stats = [], onChange }) {
-  const lignes = stats.length ? stats : [''];
-  const modifier = (index, valeur) => onChange(lignes.map((stat, position) => position === index ? valeur : stat));
-  const supprimer = (index) => onChange(lignes.filter((_, position) => position !== index));
-  const ajouter = () => onChange([...normaliserStats(lignes), '']);
+  const lignes = normaliserInfosRapides(stats);
+  const visibles = lignes.length ? lignes : [{ label: '', value: '', editable: false }];
+  const modifier = (index, patch) => onChange(visibles.map((info, position) => position === index ? { ...info, ...patch } : info));
+  const supprimer = (index) => onChange(visibles.filter((_, position) => position !== index));
+  const ajouter = () => onChange([...normaliserInfosRapides(visibles), { label: '', value: '', editable: false }]);
+  const changerTexte = (index, texte) => modifier(index, normaliserInfoRapide(texte));
 
-  return <div className="stack quick-stats-editor">{lignes.map((stat, index) => <div className="quick-stat-row" key={index}><input value={stat} placeholder="Défense 3, Attaque +6, Dégâts 2d6…" onChange={(e) => modifier(index, e.target.value)} /><button className="small-btn subtle-danger" onClick={() => supprimer(index)} disabled={lignes.length <= 1 && !stat}>×</button></div>)}<button className="small-btn" onClick={ajouter}>+ info rapide</button></div>;
+  return <div className="stack quick-stats-editor">{visibles.map((info, index) => <div className="quick-stat-row" key={index}><input value={[info.label, info.value].filter(Boolean).join(' ')} placeholder="CA 21, Attaque +6, Armure lourde…" onChange={(e) => changerTexte(index, e.target.value)} /><label className="quick-stat-edit-toggle"><input type="checkbox" checked={!!info.editable} onChange={(e) => modifier(index, { editable: e.target.checked })} /> valeur modifiable</label><button className="small-btn subtle-danger" onClick={() => supprimer(index)} disabled={visibles.length <= 1 && !info.label && !info.value}>×</button></div>)}<button className="small-btn" onClick={ajouter}>+ info rapide</button></div>;
 }
 
 function EditeurSuivi({ suivi, onChange, onDelete }) {
@@ -96,7 +95,7 @@ function EditeurSuivi({ suivi, onChange, onDelete }) {
 }
 
 export function FenetreEditionFiche({ participant, title = 'Modifier', saveTemplateVisible = true, deleteLabel = 'Supprimer la fiche', onClose, onSave, onDelete, onSaveTemplate }) {
-  const [brouillon, setBrouillon] = useState({ ...clone(participant), stats: participant.stats || [] });
+  const [brouillon, setBrouillon] = useState({ ...clone(participant), stats: normaliserInfosRapides(participant.stats || []) });
   const [confirmationSuppression, setConfirmationSuppression] = useState(false);
   const modifierChamp = (clef, valeur) => setBrouillon((courant) => ({ ...courant, [clef]: valeur }));
   const modifierSuivi = (id, suivant) => setBrouillon((courant) => ({ ...courant, trackers: courant.trackers.map((suivi) => suivi.id === id ? suivant : suivi) }));
