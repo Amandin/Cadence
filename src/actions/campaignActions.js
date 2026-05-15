@@ -1,49 +1,7 @@
-import { defaultCategoryOrder, defaultEqualityRule, defaultPhaseDecrement, defaultPhaseRerollEachRound, defaultTemporalityMode, temporalityModes } from '../constants.js';
-import { trierParInitiative } from '../domain/initiative.js';
+import { applyInitiativeRules, campaignRulesFromPayload, normalizeCampaignRules, unifyCampaignScenes } from '../domain/campaignRules.js';
 import { campaignNameFromPayload, campaignTemplatesFromPayload, isValidCampaign, normalizeCampaignName, serializeCampaign } from '../storage.js';
 import { clone, makeDefaultCampaign, uid } from '../logic.js';
 import { mergeTemplateStores } from '../templates.js';
-
-function initiativeRulesFromScene(scene = {}) {
-  return {
-    temporalite: scene.temporalite || defaultTemporalityMode,
-    phaseDecrement: Math.max(1, Number(scene.phaseDecrement) || defaultPhaseDecrement),
-    phaseRerollEachRound: scene.phaseRerollEachRound ?? defaultPhaseRerollEachRound,
-    equalityRule: scene.equalityRule || defaultEqualityRule,
-    categoryOrder: Array.isArray(scene.categoryOrder) && scene.categoryOrder.length ? scene.categoryOrder : defaultCategoryOrder,
-  };
-}
-
-function applyTemporality(scene, temporalite) {
-  return {
-    ...scene,
-    temporalite,
-    phase: temporalite === temporalityModes.PHASES ? (scene.phase || 1) : 1,
-    activeId: temporalite === temporalityModes.FLEXIBLE ? '' : scene.activeId,
-    jouesSouples: temporalite === temporalityModes.FLEXIBLE ? (scene.jouesSouples || []) : [],
-    historiqueSouple: temporalite === temporalityModes.FLEXIBLE ? (scene.historiqueSouple || []) : [],
-  };
-}
-
-function applyInitiativeRules(scene, patch = {}) {
-  const current = initiativeRulesFromScene(scene);
-  const next = { ...current, ...patch };
-  const sceneWithTemporality = patch.temporalite ? applyTemporality(scene, next.temporalite) : scene;
-
-  return {
-    ...sceneWithTemporality,
-    temporalite: next.temporalite,
-    phaseDecrement: Math.max(1, Number(next.phaseDecrement) || defaultPhaseDecrement),
-    phaseRerollEachRound: !!next.phaseRerollEachRound,
-    equalityRule: next.equalityRule || defaultEqualityRule,
-    categoryOrder: Array.isArray(next.categoryOrder) && next.categoryOrder.length ? next.categoryOrder : defaultCategoryOrder,
-  };
-}
-
-function premierParticipantId(scene) {
-  if (scene?.temporalite === temporalityModes.FLEXIBLE) return '';
-  return trierParInitiative(scene?.participants || [], initiativeRulesFromScene(scene))[0]?.id || '';
-}
 
 function valeurNumerique(value, fallback = 0) {
   const next = Number(value);
@@ -51,50 +9,44 @@ function valeurNumerique(value, fallback = 0) {
 }
 
 function resetTrackerPourDepartScene(tracker) {
-  if (tracker.type === 'bar') {
-    return { ...tracker, current: valeurNumerique(tracker.max, valeurNumerique(tracker.current, 0)) };
-  }
+  if (tracker.type === 'bar') return { ...tracker, current: valeurNumerique(tracker.max, valeurNumerique(tracker.current, 0)) };
   if (tracker.type === 'boxes') {
-    return {
-      ...tracker,
-      rows: (tracker.rows || []).map((row) => ({
-        ...row,
-        marks: (row.marks || []).map(() => 0),
-      })),
-    };
+    return { ...tracker, rows: (tracker.rows || []).map((row) => ({ ...row, marks: (row.marks || []).map(() => 0) })) };
   }
   if (['clock', 'dots', 'number'].includes(tracker.type)) return { ...tracker, current: 0 };
   return { ...tracker };
 }
 
 function resetParticipantPourDepartScene(participant) {
-  return {
-    ...participant,
-    trackers: (participant.trackers || []).map(resetTrackerPourDepartScene),
-  };
+  return { ...participant, trackers: (participant.trackers || []).map(resetTrackerPourDepartScene) };
 }
 
 function resetCompteurGlobalPourDepartScene(compteur) {
-  if (!compteur) return compteur;
-  return { ...compteur, current: 0 };
+  return compteur ? { ...compteur, current: 0 } : compteur;
 }
 
-function remettreSceneAuDepartInitiative(scene) {
-  return {
+function premierParticipantId(scene, rules) {
+  if (rules?.temporalite === 'souple') return '';
+  return scene?.participants?.[0]?.id || '';
+}
+
+function remettreSceneAuDepartInitiative(scene, rules) {
+  const resetScene = {
     ...scene,
     round: 1,
     phase: 1,
-    activeId: premierParticipantId(scene),
+    activeId: premierParticipantId(scene, rules),
     jouesSouples: [],
     historiqueSouple: [],
     globalTracker: resetCompteurGlobalPourDepartScene(scene.globalTracker),
     participants: (scene.participants || []).map(resetParticipantPourDepartScene),
     reserve: (scene.reserve || []).map(resetParticipantPourDepartScene),
   };
+  return applyInitiativeRules(resetScene, rules);
 }
 
 function createBlankScene(rules = {}) {
-  return {
+  return applyInitiativeRules({
     id: uid('scene'),
     title: 'Nouvelle scène',
     type: 'Scène',
@@ -104,33 +56,20 @@ function createBlankScene(rules = {}) {
     notes: '',
     reserve: [],
     participants: [],
-    ...initiativeRulesFromScene(rules),
-  };
+  }, rules);
 }
 
-function duplicateSceneData(scene) {
-  return remettreSceneAuDepartInitiative({
-    ...clone(scene),
-    id: uid('scene'),
-    title: `${scene?.title || 'Scène'} — copie`,
-  });
+function duplicateSceneData(scene, rules) {
+  return remettreSceneAuDepartInitiative({ ...clone(scene), id: uid('scene'), title: `${scene?.title || 'Scène'} — copie` }, rules);
 }
 
 function slugifyFilePart(value) {
-  const normalized = normalizeCampaignName(value)
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+  const normalized = normalizeCampaignName(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
   return normalized || 'campagne-cadence';
 }
 
 function dateFrPourFichier(date = new Date()) {
-  const jour = String(date.getDate()).padStart(2, '0');
-  const mois = String(date.getMonth() + 1).padStart(2, '0');
-  const annee = date.getFullYear();
-  return `${jour}-${mois}-${annee}`;
+  return `${String(date.getDate()).padStart(2, '0')}-${String(date.getMonth() + 1).padStart(2, '0')}-${date.getFullYear()}`;
 }
 
 function campaignExportFileName(campaignName) {
@@ -148,14 +87,7 @@ function downloadBlob(blob, fileName) {
 
 async function saveWithPicker(blob, fileName) {
   if (!window.showSaveFilePicker) return false;
-
-  const handle = await window.showSaveFilePicker({
-    suggestedName: fileName,
-    types: [{
-      description: 'Campagne Cadence',
-      accept: { 'application/json': ['.cad'] },
-    }],
-  });
+  const handle = await window.showSaveFilePicker({ suggestedName: fileName, types: [{ description: 'Campagne Cadence', accept: { 'application/json': ['.cad'] } }] });
   const writable = await handle.createWritable();
   await writable.write(blob);
   await writable.close();
@@ -177,11 +109,7 @@ async function shareOrDownloadCampaign(content, campaignName) {
     const file = new File([blob], fileName, { type: 'application/json' });
     if (navigator.canShare({ files: [file] })) {
       try {
-        await navigator.share({
-          files: [file],
-          title: normalizeCampaignName(campaignName),
-          text: 'Export de campagne Cadence',
-        });
+        await navigator.share({ files: [file], title: normalizeCampaignName(campaignName), text: 'Export de campagne Cadence' });
         return { ok: true, method: 'share' };
       } catch (error) {
         if (error?.name === 'AbortError') return { ok: false, cancelled: true };
@@ -194,7 +122,7 @@ async function shareOrDownloadCampaign(content, campaignName) {
   return { ok: true, method: 'download' };
 }
 
-export function createCampaignActions({ scenes, sceneIndex, dark, campaignName, templateStore, setScenes, setSceneIndex, setDark, setCampaignNameState, setTemplateStore }) {
+export function createCampaignActions({ scenes, campaignRules, setCampaignRules, sceneIndex, dark, campaignName, templateStore, setScenes, setSceneIndex, setDark, setCampaignNameState, setTemplateStore }) {
   return {
     setSceneIndex,
     setDark,
@@ -202,8 +130,8 @@ export function createCampaignActions({ scenes, sceneIndex, dark, campaignName, 
       setCampaignNameState(normalizeCampaignName(name));
     },
     newScene() {
-      const sourceRules = initiativeRulesFromScene(scenes[sceneIndex] || scenes[0]);
-      setScenes((currentScenes) => [...currentScenes, createBlankScene(sourceRules)]);
+      const rules = normalizeCampaignRules(campaignRules);
+      setScenes((currentScenes) => [...unifyCampaignScenes(currentScenes, rules), createBlankScene(rules)]);
       setSceneIndex(scenes.length);
     },
     updateSceneMeta(index, patch) {
@@ -211,11 +139,13 @@ export function createCampaignActions({ scenes, sceneIndex, dark, campaignName, 
     },
     duplicateScene(index) {
       const sourceIndex = Number.isInteger(index) ? index : sceneIndex;
+      const rules = normalizeCampaignRules(campaignRules);
       setScenes((currentScenes) => {
-        const source = currentScenes[sourceIndex] || currentScenes[0];
-        if (!source) return currentScenes;
-        const nextScenes = [...currentScenes];
-        nextScenes.splice(sourceIndex + 1, 0, duplicateSceneData(source));
+        const unifiedScenes = unifyCampaignScenes(currentScenes, rules);
+        const source = unifiedScenes[sourceIndex] || unifiedScenes[0];
+        if (!source) return unifiedScenes;
+        const nextScenes = [...unifiedScenes];
+        nextScenes.splice(sourceIndex + 1, 0, duplicateSceneData(source, rules));
         return nextScenes;
       });
       setSceneIndex(sourceIndex + 1);
@@ -227,15 +157,19 @@ export function createCampaignActions({ scenes, sceneIndex, dark, campaignName, 
         const nextScenes = currentScenes.filter((_, scenePosition) => scenePosition !== sourceIndex);
         const nextIndex = Math.min(sourceIndex, nextScenes.length - 1);
         setSceneIndex(Math.max(0, nextIndex));
-        return nextScenes;
+        return unifyCampaignScenes(nextScenes, campaignRules);
       });
     },
     updateCampaignInitiativeRules(patch) {
-      setScenes((currentScenes) => currentScenes.map((scene) => applyInitiativeRules(scene, patch)));
+      const nextRules = normalizeCampaignRules({ ...campaignRules, ...patch });
+      setCampaignRules(nextRules);
+      setScenes((currentScenes) => unifyCampaignScenes(currentScenes, nextRules));
     },
     async exportCampaign(name = campaignName) {
       const exportName = normalizeCampaignName(name);
-      const result = await shareOrDownloadCampaign(serializeCampaign(scenes, dark, exportName, templateStore), exportName);
+      const rules = normalizeCampaignRules(campaignRules);
+      const exportScenes = unifyCampaignScenes(scenes, rules);
+      const result = await shareOrDownloadCampaign(serializeCampaign(exportScenes, dark, exportName, templateStore, rules), exportName);
       if (result?.ok) setCampaignNameState(exportName);
       return result;
     },
@@ -243,8 +177,9 @@ export function createCampaignActions({ scenes, sceneIndex, dark, campaignName, 
       try {
         const data = JSON.parse(await file.text());
         if (!isValidCampaign(data)) return { ok: false, message: 'Le fichier choisi n’est pas une campagne Cadence valide.' };
-
-        setScenes(data.scenes);
+        const rules = campaignRulesFromPayload(data);
+        setCampaignRules(rules);
+        setScenes(unifyCampaignScenes(data.scenes, rules));
         setDark(data.settings?.dark || false);
         setCampaignNameState(campaignNameFromPayload(data));
         setTemplateStore(campaignTemplatesFromPayload(data));
@@ -268,7 +203,9 @@ export function createCampaignActions({ scenes, sceneIndex, dark, campaignName, 
     },
     resetDemo() {
       const fresh = makeDefaultCampaign();
-      setScenes(fresh.scenes);
+      const rules = campaignRulesFromPayload(fresh);
+      setCampaignRules(rules);
+      setScenes(unifyCampaignScenes(fresh.scenes, rules));
       setTemplateStore(campaignTemplatesFromPayload(fresh));
       setCampaignNameState(campaignNameFromPayload(fresh));
       setSceneIndex(0);
