@@ -36,9 +36,9 @@ export function EnteteScene(props) {
 
   return (
     <header className="top compact">
-      <div className="scene-head">
-        <button className="hub-return-logo" onClick={onRetourHub} aria-label="Retour au Hub de campagne" style={{ width: 30, height: 30, minWidth: 30, padding: 4, display: 'grid', placeItems: 'center', borderRadius: 999 }}><img src="/branding/logo-cadence-light.svg" alt="" style={{ width: 20, height: 20, display: 'block' }} /></button>
-        <div className="scene-title-block">
+      <div className="scene-head scene-head-with-logo" style={{ display: 'grid', gridTemplateColumns: 'auto minmax(0, 1fr) auto', alignItems: 'center', gap: 8 }}>
+        <button className="hub-return-logo" onClick={onRetourHub} aria-label="Retour au Hub de campagne" style={{ width: 46, height: 46, minWidth: 46, padding: 5, display: 'grid', placeItems: 'center', borderRadius: 999 }}><img src="/branding/logo-cadence-light.svg" alt="" style={{ width: 32, height: 32, display: 'block' }} /></button>
+        <div className="scene-title-block" style={{ minWidth: 0 }}>
           <h1>{scene.title}</h1>
           <div className="muted">{scene.type} · {scene.participants.length} en initiative{suffixeTemporalite}</div>
         </div>
