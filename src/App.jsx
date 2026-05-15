@@ -262,6 +262,9 @@ export default function App() {
           onChangerTheme={actions.setDark}
           onChoisirScene={chooseScene}
           onNouvelleScene={newScene}
+          onModifierScene={actions.updateSceneMeta}
+          onDupliquerScene={actions.duplicateScene}
+          onSupprimerScene={actions.deleteScene}
           onModifierReglesInitiative={actions.updateCampaignInitiativeRules}
           onExporter={() => setExportOpen(true)}
           onImporter={importCampaign}
