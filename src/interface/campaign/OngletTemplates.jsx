@@ -55,14 +55,41 @@ function EnteteCategorieTemplate({ groupe, index, total, onAjouterTemplateCatego
   }
 
   return (
-    <div className="template-category-head">
-      <div className="flexible-section-title"><span>{groupe.categorie}</span><strong>{groupe.templates.length}</strong></div>
+    <div className="flexible-section-title template-category-title">
+      <span className="template-category-label">{groupe.categorie}</span>
+      <strong>{groupe.templates.length}</strong>
       <div className="compact-arrows template-category-actions">
         <button className="small-btn" onClick={() => onAjouterTemplateCategorie(groupe.categorie)}>+ template</button>
         <button className="small-btn" onClick={() => setRenommage(true)}>Renommer</button>
         <button className="small-btn" onClick={() => onDeplacerCategorie(groupe.categorie, -1)} disabled={index <= 0}>↑</button>
         <button className="small-btn" onClick={() => onDeplacerCategorie(groupe.categorie, 1)} disabled={index >= total - 1}>↓</button>
         <button className="danger-btn mini-danger" onClick={() => onSupprimerCategorie(groupe.categorie)} disabled={groupe.templates.length > 0}>Suppr.</button>
+      </div>
+    </div>
+  );
+}
+
+function LigneTemplate({ template, categories, onChangerCategorieTemplate, onEditerTemplate, onDupliquerTemplate, onSupprimerTemplate }) {
+  const [categorieOuverte, setCategorieOuverte] = useState(false);
+  const changerCategorie = (event) => {
+    onChangerCategorieTemplate(template.id, event.target.value);
+    setCategorieOuverte(false);
+  };
+
+  return (
+    <div className="restore-row hub-row template-row">
+      <span className="template-row-main"><strong>{template.name}</strong><small>{template.participant?.kind || 'Personnage'}</small></span>
+      <div className="compact-arrows template-row-actions">
+        {categorieOuverte ? (
+          <select className="template-category-select" value={template.category} onChange={changerCategorie} onBlur={() => setCategorieOuverte(false)} aria-label="Catégorie du template">
+            {categories.map((categorie) => <option key={categorie} value={categorie}>{categorie}</option>)}
+          </select>
+        ) : (
+          <button className="small-btn discreet-template-category" onClick={() => setCategorieOuverte(true)} title={`Catégorie : ${template.category}`}>Cat.</button>
+        )}
+        <button className="small-btn" onClick={() => onEditerTemplate(template.id)}>Modifier</button>
+        <button className="small-btn" onClick={() => onDupliquerTemplate(template.id)}>Dupliquer</button>
+        <button className="danger-btn mini-danger" onClick={() => onSupprimerTemplate(template.id)}>Suppr.</button>
       </div>
     </div>
   );
@@ -95,17 +122,15 @@ export function OngletTemplates({ categories = [], templates = [], onAjouterTemp
           ) : (
             <div className="stack">
               {groupe.templates.map((template) => (
-                <div className="restore-row hub-row" key={template.id}>
-                  <span><strong>{template.name}</strong><small>{template.participant?.kind || 'Personnage'}</small></span>
-                  <select value={template.category} onChange={(event) => onChangerCategorieTemplate(template.id, event.target.value)} aria-label="Catégorie du template">
-                    {categories.map((categorie) => <option key={categorie} value={categorie}>{categorie}</option>)}
-                  </select>
-                  <div className="compact-arrows">
-                    <button className="small-btn" onClick={() => onEditerTemplate(template.id)}>Modifier</button>
-                    <button className="small-btn" onClick={() => onDupliquerTemplate(template.id)}>Dupliquer</button>
-                    <button className="danger-btn mini-danger" onClick={() => onSupprimerTemplate(template.id)}>Suppr.</button>
-                  </div>
-                </div>
+                <LigneTemplate
+                  key={template.id}
+                  template={template}
+                  categories={categories}
+                  onChangerCategorieTemplate={onChangerCategorieTemplate}
+                  onEditerTemplate={onEditerTemplate}
+                  onDupliquerTemplate={onDupliquerTemplate}
+                  onSupprimerTemplate={onSupprimerTemplate}
+                />
               ))}
             </div>
           )}
