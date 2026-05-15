@@ -103,7 +103,7 @@ function CarteScene({ scene, index, active, canDelete, editing, onEditer, onFerm
       ) : (
         <>
           <div className="hub-scene-summary">
-            <span><strong>{scene.title || 'Scène'}</strong><small>{scene.type || 'Scène'} · Round {scene.round || 1} · {scene.participants?.length || 0} en initiative</small></span>
+            <span><strong>{scene.title || 'Scène'}</strong><small>{scene.type || 'Scène'} · {scene.participants?.length || 0} en initiative</small></span>
             {active && <em>active</em>}
           </div>
           {scene.notes && <p className="muted compact-help hub-scene-notes">{scene.notes}</p>}
