@@ -56,14 +56,14 @@ function EnteteCategorieTemplate({ groupe, index, total, onAjouterTemplateCatego
 
   return (
     <div className="flexible-section-title template-category-title">
-      <span className="template-category-label">{groupe.categorie}</span>
       <strong>{groupe.templates.length}</strong>
+      <span className="template-category-label">{groupe.categorie}</span>
       <div className="compact-arrows template-category-actions">
         <button className="small-btn" onClick={() => onAjouterTemplateCategorie(groupe.categorie)}>+ template</button>
         <button className="small-btn" onClick={() => setRenommage(true)}>Renommer</button>
         <button className="small-btn" onClick={() => onDeplacerCategorie(groupe.categorie, -1)} disabled={index <= 0}>↑</button>
         <button className="small-btn" onClick={() => onDeplacerCategorie(groupe.categorie, 1)} disabled={index >= total - 1}>↓</button>
-        <button className="danger-btn mini-danger" onClick={() => onSupprimerCategorie(groupe.categorie)} disabled={groupe.templates.length > 0}>Suppr.</button>
+        {groupe.templates.length === 0 && <button className="danger-btn mini-danger" onClick={() => onSupprimerCategorie(groupe.categorie)}>Suppr.</button>}
       </div>
     </div>
   );
