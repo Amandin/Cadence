@@ -530,6 +530,28 @@
   opacity: 1;
 }
 
+.template-delete-reveal {
+  min-width: 24px !important;
+  width: 24px;
+  height: 24px;
+  padding: 0 !important;
+  border-radius: 999px;
+  opacity: .52;
+  font-size: 15px;
+  line-height: 1;
+}
+
+.template-delete-reveal:hover,
+.template-delete-reveal:focus-visible {
+  opacity: 1;
+}
+
+.template-delete-confirm {
+  min-height: 24px;
+  padding: 2px 8px;
+  font-size: 11px;
+}
+
 @media (max-width: 520px) {
   .template-category-title,
   .template-row {
