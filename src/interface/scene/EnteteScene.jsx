@@ -42,7 +42,7 @@ export function EnteteScene(props) {
     <header className="top compact">
       <div className="scene-head">
         <button className="icon-btn" onClick={onBasculerNotes}>{notesVisibles ? '⌃' : '⌄'}</button>
-        <button className="hub-return-btn" onClick={onRetourHub}>Hub</button>
+        <button className="hub-return-logo" onClick={onRetourHub} aria-label="Retour au Hub de campagne"><img src="/branding/logo-cadence-light.svg" alt="" /></button>
         <div>
           <h1>{scene.title}</h1>
           <div className="muted">{scene.type} · {scene.participants.length} en initiative{suffixeTemporalite}</div>
