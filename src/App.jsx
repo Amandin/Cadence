@@ -315,6 +315,7 @@ export default function App() {
         horlogeBloquee={blocked.length > 0}
         suivantDesactive={suivantDesactive}
         libelleSuivant={libelleBas}
+        onRetourHub={() => setCurrentView('hub')}
         onTourPrecedent={() => nextTurn(-1)}
         onTourSuivant={() => nextTurn(1)}
         onAjouterPersonnage={openAddCharacter}
