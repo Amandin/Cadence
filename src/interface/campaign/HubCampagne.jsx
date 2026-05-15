@@ -30,18 +30,18 @@ function EnteteHub({ campaignName, sombre, onChangerTheme }) {
   const logo = sombre ? '/branding/logo-cadence-dark.svg' : '/branding/logo-cadence-light.svg';
   return (
     <header className="campaign-hub-header panel">
-      <div className="menu-brand">
+      <div className="menu-brand campaign-brand-capsule">
         <img src={logo} alt="Cadence" />
         <div>
           <strong>{campaignName || 'Campagne Cadence'}</strong>
           <span className="muted">Cadence · v{APP_VERSION}</span>
         </div>
+        <button className={`theme-toggle ${sombre ? 'dark-on' : 'light-on'}`} onClick={() => onChangerTheme(!sombre)} aria-label="Basculer thème clair ou sombre">
+          <span>☀</span>
+          <span>☾</span>
+          <i />
+        </button>
       </div>
-      <button className={`theme-toggle ${sombre ? 'dark-on' : 'light-on'}`} onClick={() => onChangerTheme(!sombre)} aria-label="Basculer thème clair ou sombre">
-        <span>☀</span>
-        <span>☾</span>
-        <i />
-      </button>
     </header>
   );
 }
