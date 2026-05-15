@@ -23,7 +23,6 @@ export default function App() {
   const [openMenu, setOpenMenu] = useState(false);
   const [addSheetOpen, setAddSheetOpen] = useState(false);
   const [notice, setNotice] = useState(null);
-  const [showNotes, setShowNotes] = useState(true);
   const [clockModalOpen, setClockModalOpen] = useState(false);
   const [globalSheetOpen, setGlobalSheetOpen] = useState(false);
   const [initiativeEntryOpen, setInitiativeEntryOpen] = useState(false);
@@ -82,7 +81,6 @@ export default function App() {
   const nextTurn = (direction) => {
     if (temporaliteSouple && direction > 0 && !toutLeMondeAJoueSouple) return;
     if (temporalitePhases && direction > 0 && !phaseParticipants.length) return;
-    if (direction > 0) setShowNotes(false);
     if (direction > 0 && blocked.length) {
       setClockModalOpen(true);
       return;
@@ -92,12 +90,10 @@ export default function App() {
 
   const marquerAJoue = (participantId) => {
     actions.markFlexiblePlayed(participantId);
-    setShowNotes(false);
   };
 
   const annulerAJoue = (participantId) => {
     actions.unmarkFlexiblePlayed(participantId);
-    setShowNotes(false);
   };
 
   const openAddCharacter = () => {
@@ -333,14 +329,12 @@ export default function App() {
           horlogesBloquantes={blocked}
           effetRound={roundEffect}
           compteurGlobalAuto={globalAutoTick}
-          notesVisibles={showNotes}
           classeSuivant={classeSuivantEffective}
           libelleSuivant={nextLabel}
           temporaliteSouple={temporaliteSouple}
           temporalitePhases={temporalitePhases}
           suivantDesactive={suivantDesactive}
           dark={dark}
-          onBasculerNotes={() => setShowNotes(!showNotes)}
           onRetourHub={() => setCurrentView('hub')}
           onTourPrecedent={() => nextTurn(-1)}
           onTourSuivant={() => nextTurn(1)}
