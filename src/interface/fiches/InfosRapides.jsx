@@ -7,7 +7,8 @@ function decomposerTexteInfoRapide(stat = '') {
   const separation = texte.match(/^(.*\S)\s+(\S+)$/);
   if (!separation) return { label: texte, value: '', editable: false };
   const [, label, value] = separation;
-  return { label, value, editable: valeurSembleVariable(value) };
+  if (!valeurSembleVariable(value)) return { label: texte, value: '', editable: false };
+  return { label, value, editable: true };
 }
 
 export function normaliserInfoRapide(stat = '') {
@@ -26,11 +27,10 @@ export function normaliserInfosRapides(stats = []) {
 }
 
 export function serialiserInfosRapides(stats = []) {
-  return normaliserInfosRapides(stats).map((info) => ({
-    label: info.label,
-    value: info.editable ? info.value : '',
-    editable: !!info.editable,
-  }));
+  return normaliserInfosRapides(stats).map((info) => {
+    if (!info.editable) return { label: [info.label, info.value].filter(Boolean).join(' '), value: '', editable: false };
+    return { label: info.label, value: info.value, editable: true };
+  });
 }
 
 function texteInfoRapide(info) {
