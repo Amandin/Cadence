@@ -9,6 +9,13 @@ function optionsEgalite(scene) {
   };
 }
 
+function changerInfoRapide(interactions, participant, index, valeur) {
+  interactions.updateCharacter(participant.id, (courant) => ({
+    ...courant,
+    stats: (courant.stats || []).map((stat, position) => position === index ? valeur : stat),
+  }));
+}
+
 function GroupeSimultane({ groupe, actifId, interactions }) {
   const actif = groupe.participants.some((participant) => participant.id === actifId);
 
@@ -21,6 +28,7 @@ function GroupeSimultane({ groupe, actifId, interactions }) {
           actif={actif}
           groupeSimultane
           onOuvrir={() => interactions.openCharacter(participant.id)}
+          onInfoRapide={(index, valeur) => changerInfoRapide(interactions, participant, index, valeur)}
           onSuivi={(trackerId, next) => interactions.updateCharacterTracker(participant.id, trackerId, next)}
           onSupprimerSuivi={(trackerId) => interactions.deleteCharacterTracker(participant.id, trackerId)}
           onAjouterEtat={() => interactions.requestStatus(participant.id)}
@@ -42,6 +50,7 @@ function FichetteLibre({ participant, actifId, interactions, temporaliteSouple, 
       onMarquerAJoue={() => onMarquerAJoue?.(participant.id)}
       onAnnulerAJoue={() => onAnnulerAJoue?.(participant.id)}
       onOuvrir={() => interactions.openCharacter(participant.id)}
+      onInfoRapide={(index, valeur) => changerInfoRapide(interactions, participant, index, valeur)}
       onSuivi={(trackerId, next) => interactions.updateCharacterTracker(participant.id, trackerId, next)}
       onSupprimerSuivi={(trackerId) => interactions.deleteCharacterTracker(participant.id, trackerId)}
       onAjouterEtat={() => interactions.requestStatus(participant.id)}
