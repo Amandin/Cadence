@@ -2,29 +2,22 @@ import { useState } from 'react';
 import { APP_VERSION } from '../../constants.js';
 import { Fenetre } from '../commun/ComposantsCommuns.jsx';
 
-function LogoMenu({ sombre }) {
+function MenuEntete({ sombre, onChangerTheme, onClose }) {
   const logo = sombre ? '/branding/logo-cadence-dark.svg' : '/branding/logo-cadence-light.svg';
 
   return (
-    <div className="menu-brand">
+    <div className="menu-brand menu-brand-header">
       <img src={logo} alt="Cadence" />
       <div>
-        <strong>Cadence</strong>
-        <span className="muted">Initiative & scènes</span>
+        <strong>Menu</strong>
+        <span className="muted">Cadence · v{APP_VERSION}</span>
       </div>
-    </div>
-  );
-}
-
-function LigneVersionEtTheme({ sombre, onChangerTheme }) {
-  return (
-    <div className="menu-topline">
-      <span className="version-chip">v{APP_VERSION}</span>
       <button className={`theme-toggle ${sombre ? 'dark-on' : 'light-on'}`} onClick={() => onChangerTheme(!sombre)} aria-label="Basculer thème clair ou sombre">
         <span>☀</span>
         <span>☾</span>
         <i />
       </button>
+      <button className="icon-btn menu-close-btn" onClick={onClose} aria-label="Fermer le menu">×</button>
     </div>
   );
 }
@@ -75,9 +68,7 @@ export function MenuPrincipal({ scene, restorePoints = [], onRestore, onClose, d
   const [pointRestaurationId, setPointRestaurationId] = useState(pointsRestauration.at(-1)?.id || '');
 
   return (
-    <Fenetre title="Menu" onClose={onClose}>
-      <LogoMenu sombre={dark} />
-      <LigneVersionEtTheme sombre={dark} onChangerTheme={setDark} />
+    <Fenetre title="Menu" onClose={onClose} header={<MenuEntete sombre={dark} onChangerTheme={setDark} onClose={onClose} />}>
       <button className="primary hub-menu-main-action" onClick={onOpenCampaignHub}>Hub de campagne</button>
       <OptionsCompteurScene compteur={scene?.globalTracker} onModifier={onGlobalTracker} />
       <ActionsScene onAjouterParticipant={onAddParticipant} onSaisirInitiatives={onOpenInitiativeRoller} />
