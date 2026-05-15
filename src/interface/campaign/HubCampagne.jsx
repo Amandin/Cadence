@@ -58,7 +58,7 @@ function EnteteHub({ campaignName, sombre, onChangerTheme }) {
   );
 }
 
-function CarteScene({ scene, index, active, canDelete, editing, onEditer, onFermerEdition, onChoisirScene, onModifierScene, onDupliquerScene, onSupprimerScene }) {
+function CarteScene({ scene, index, canDelete, editing, onEditer, onFermerEdition, onChoisirScene, onModifierScene, onDupliquerScene, onSupprimerScene }) {
   const [titre, setTitre] = useState(scene.title || 'Scène');
   const [type, setType] = useState(scene.type || 'Scène');
   const [notes, setNotes] = useState(scene.notes || '');
@@ -80,7 +80,7 @@ function CarteScene({ scene, index, active, canDelete, editing, onEditer, onFerm
   };
 
   return (
-    <div className={`hub-scene-card ${active ? 'selected' : ''}`}>
+    <div className="hub-scene-card">
       {editing ? (
         <div className="stack hub-scene-edit">
           <label className="field">
@@ -103,8 +103,7 @@ function CarteScene({ scene, index, active, canDelete, editing, onEditer, onFerm
       ) : (
         <>
           <div className="hub-scene-summary">
-            <span><strong>{scene.title || 'Scène'}</strong><small>{scene.type || 'Scène'} · {scene.participants?.length || 0} en initiative</small></span>
-            {active && <em>active</em>}
+            <span><strong>{scene.title || 'Scène'}</strong><small>{scene.type || 'Scène'}</small></span>
           </div>
           {scene.notes && <p className="muted compact-help hub-scene-notes">{scene.notes}</p>}
           <div className="hub-scene-actions explicit">
@@ -119,7 +118,7 @@ function CarteScene({ scene, index, active, canDelete, editing, onEditer, onFerm
   );
 }
 
-function OngletScenes({ scenes, sceneActiveId, editingSceneId, onEditerScene, onFermerEditionScene, onChoisirScene, onNouvelleScene, onModifierScene, onDupliquerScene, onSupprimerScene }) {
+function OngletScenes({ scenes, editingSceneId, onEditerScene, onFermerEditionScene, onChoisirScene, onNouvelleScene, onModifierScene, onDupliquerScene, onSupprimerScene }) {
   return (
     <div className="stack hub-section panel">
       <div className="hub-section-head">
@@ -132,7 +131,6 @@ function OngletScenes({ scenes, sceneActiveId, editingSceneId, onEditerScene, on
             key={scene.id}
             scene={scene}
             index={index}
-            active={scene.id === sceneActiveId}
             editing={scene.id === editingSceneId}
             canDelete={scenes.length > 1}
             onEditer={onEditerScene}
@@ -366,7 +364,7 @@ export function HubCampagne({
       <EnteteHub campaignName={campaignName} sombre={dark} onChangerTheme={onChangerTheme} />
       <main className="campaign-hub-page">
         <OngletsHub onglet={onglet} setOnglet={setOnglet} />
-        {onglet === 'scenes' && <OngletScenes scenes={scenes} sceneActiveId={scene?.id} editingSceneId={editingSceneId} onEditerScene={setEditingSceneId} onFermerEditionScene={() => setEditingSceneId('')} onChoisirScene={onChoisirScene} onNouvelleScene={creerNouvelleScene} onModifierScene={onModifierScene} onDupliquerScene={onDupliquerScene} onSupprimerScene={onSupprimerScene} />}
+        {onglet === 'scenes' && <OngletScenes scenes={scenes} editingSceneId={editingSceneId} onEditerScene={setEditingSceneId} onFermerEditionScene={() => setEditingSceneId('')} onChoisirScene={onChoisirScene} onNouvelleScene={creerNouvelleScene} onModifierScene={onModifierScene} onDupliquerScene={onDupliquerScene} onSupprimerScene={onSupprimerScene} />}
         {onglet === 'regles' && <OngletRegles scene={scene} onModifierRegles={onModifierReglesInitiative} />}
         {onglet === 'sauvegarde' && <OngletSauvegarde onExporter={onExporter} onImporter={onImporter} onReinitialiser={onReinitialiser} />}
         {onglet === 'templates' && <OngletTemplates templates={templates} onAjouterDepuisTemplate={onAjouterDepuisTemplate} onSupprimerTemplate={onSupprimerTemplate} onImporterTemplates={onImporterTemplates} />}
