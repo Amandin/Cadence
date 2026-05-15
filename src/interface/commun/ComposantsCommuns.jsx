@@ -35,6 +35,7 @@ export function BadgeRound({ round, effect, phase }) {
   );
 }
 
-export function Fenetre({ title, children, onClose }) {
-  return <div className="overlay" onClick={onClose}><div className="sheet" onClick={(event) => event.stopPropagation()}><div className="row" style={{ justifyContent: 'space-between', marginBottom: 10 }}><h2 style={{ margin: 0 }}>{title}</h2><button className="icon-btn" onClick={onClose}>×</button></div>{children}</div></div>;
+export function Fenetre({ title, children, onClose, header }) {
+  const entete = header ?? <div className="row" style={{ justifyContent: 'space-between', marginBottom: 10 }}><h2 style={{ margin: 0 }}>{title}</h2><button className="icon-btn" onClick={onClose}>×</button></div>;
+  return <div className="overlay" onClick={onClose}><div className="sheet" onClick={(event) => event.stopPropagation()}>{entete}{children}</div></div>;
 }
