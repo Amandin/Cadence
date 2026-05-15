@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   APP_VERSION,
   defaultCategoryOrder,
@@ -50,6 +50,7 @@ function CarteScene({ scene, index, canDelete, editing, onEditer, onFermerEditio
   const [titre, setTitre] = useState(scene.title || 'Scène');
   const [type, setType] = useState(scene.type || 'Scène');
   const [notes, setNotes] = useState(scene.notes || '');
+  const [suppressionVisible, setSuppressionVisible] = useState(false);
 
   useEffect(() => {
     if (!editing) return;
@@ -90,7 +91,11 @@ function CarteScene({ scene, index, canDelete, editing, onEditer, onFermerEditio
             <button className="primary" onClick={() => onChoisirScene(index)}>Ouvrir</button>
             <button className="small-btn" onClick={() => onEditer(scene.id)}>Modifier</button>
             <button className="small-btn" onClick={() => onDupliquerScene(index)}>Dupliquer</button>
-            <button className="danger-btn mini-danger" onClick={() => onSupprimerScene(index)} disabled={!canDelete}>Suppr.</button>
+            {canDelete && (suppressionVisible ? (
+              <button className="danger-btn mini-danger scene-delete-confirm" onClick={() => onSupprimerScene(index)}>Suppr.</button>
+            ) : (
+              <button className="small-btn scene-delete-reveal" onClick={() => setSuppressionVisible(true)} aria-label={`Afficher la suppression de ${scene.title || 'Scène'}`}>×</button>
+            ))}
           </div>
         </>
       )}
