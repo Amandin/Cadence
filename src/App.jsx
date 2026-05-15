@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { defaultCategoryOrder, defaultEqualityRule, temporalityModes } from './constants.js';
 import { groupeEgalitePourParticipant, participantsPourPhase, phaseSuivanteExiste } from './domain/initiative.js';
 import { FenetresSuperposees } from './interface/app/FenetresSuperposees.jsx';
-import { HubCampagne } from './interface/campaign/HubCampagne.jsx';
+import { HubCampagneV2 } from './interface/campaign/HubCampagneV2.jsx';
 import { FenetreExportCampagne } from './interface/dialogues/FenetreExportCampagne.jsx';
 import { FenetreEditionFiche } from './interface/fiches/FenetreEditionFiche.jsx';
 import { BarreActionBas } from './interface/scene/BarreActionBas.jsx';
@@ -153,13 +153,23 @@ export default function App() {
     if (result?.ok === false) setNotice({ title: 'Catégorie impossible', message: result.message });
     return result;
   };
+  const renameTemplateCategory = (category, nextName) => {
+    const result = templates.renameCategory(category, nextName);
+    if (result?.ok === false) setNotice({ title: 'Renommage impossible', message: result.message });
+    return result;
+  };
+  const deleteTemplateCategory = (category) => {
+    const result = templates.deleteCategory(category);
+    if (result?.ok === false) setNotice({ title: 'Suppression impossible', message: result.message });
+    return result;
+  };
   const duplicateTemplate = (templateId) => {
     const duplicate = templates.duplicateTemplate(templateId);
     if (duplicate) setEditingTemplateId(duplicate.id);
   };
   const saveEditedTemplate = (participant) => {
     if (!editingTemplateId) return;
-    templates.updateTemplateParticipant(editingTemplateId, participant);
+    templates.updateTemplateParticipant(editingTemplateId, participant, editingTemplate.category);
     setEditingTemplateId('');
   };
   const deleteEditedTemplate = () => {
@@ -280,7 +290,7 @@ export default function App() {
   if (currentView === 'hub') {
     return (
       <div className={`app ${dark ? 'dark' : ''}`}>
-        <HubCampagne
+        <HubCampagneV2
           campaignName={campaignName}
           scene={scene}
           scenes={scenes}
@@ -299,6 +309,10 @@ export default function App() {
           onReinitialiser={resetDemo}
           onAjouterTemplateCategorie={createTemplateInCategory}
           onAjouterCategorieTemplate={addTemplateCategory}
+          onRenommerCategorieTemplate={renameTemplateCategory}
+          onSupprimerCategorieTemplate={deleteTemplateCategory}
+          onDeplacerCategorieTemplate={templates.moveCategory}
+          onChangerCategorieTemplate={templates.setTemplateCategory}
           onEditerTemplate={setEditingTemplateId}
           onDupliquerTemplate={duplicateTemplate}
           onSupprimerTemplate={templates.deleteTemplate}
