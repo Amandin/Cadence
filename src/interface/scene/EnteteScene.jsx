@@ -14,6 +14,7 @@ export function EnteteScene(props) {
     temporaliteSouple,
     temporalitePhases,
     suivantDesactive,
+    dark,
     onRetourHub,
     onTourPrecedent,
     onTourSuivant,
@@ -33,11 +34,12 @@ export function EnteteScene(props) {
     : tourSimultane
       ? 'Tour simultané'
       : 'Tour actif';
+  const logo = dark ? '/branding/logo-cadence-dark.svg' : '/branding/logo-cadence-light.svg';
 
   return (
     <header className="top compact">
       <div className="scene-head scene-head-with-logo" style={{ display: 'grid', gridTemplateColumns: 'auto minmax(0, 1fr) auto', alignItems: 'center', gap: 8 }}>
-        <button className="hub-return-logo" onClick={onRetourHub} aria-label="Retour au Hub de campagne" style={{ width: 46, height: 46, minWidth: 46, padding: 5, display: 'grid', placeItems: 'center', borderRadius: 999 }}><img src="/branding/logo-cadence-light.svg" alt="" style={{ width: 32, height: 32, display: 'block' }} /></button>
+        <button className="hub-return-logo" onClick={onRetourHub} aria-label="Retour au Hub de campagne"><img src={logo} alt="" /></button>
         <div className="scene-title-block" style={{ minWidth: 0 }}>
           <h1>{scene.title}</h1>
           <div className="muted">{scene.type} · {scene.participants.length} en initiative{suffixeTemporalite}</div>
