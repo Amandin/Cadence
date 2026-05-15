@@ -96,14 +96,13 @@ function CarteScene({ scene, index, active, canDelete, onChoisirScene, onModifie
         </div>
       ) : (
         <>
-          <div className="hub-scene-card-main">
-            <button className="hub-scene-open" onClick={() => onChoisirScene(index)}>
-              <span><strong>{scene.title || 'Scène'}</strong><small>{scene.type || 'Scène'} · Round {scene.round || 1} · {scene.participants?.length || 0} en initiative</small></span>
-              <em>{active ? 'active' : 'ouvrir'}</em>
-            </button>
-            {scene.notes && <p className="muted compact-help">{scene.notes}</p>}
+          <div className="hub-scene-summary">
+            <span><strong>{scene.title || 'Scène'}</strong><small>{scene.type || 'Scène'} · Round {scene.round || 1} · {scene.participants?.length || 0} en initiative</small></span>
+            {active && <em>active</em>}
           </div>
-          <div className="hub-scene-actions">
+          {scene.notes && <p className="muted compact-help hub-scene-notes">{scene.notes}</p>}
+          <div className="hub-scene-actions explicit">
+            <button className="primary" onClick={() => onChoisirScene(index)}>Ouvrir</button>
             <button className="small-btn" onClick={() => setEdition(true)}>Modifier</button>
             <button className="small-btn" onClick={() => onDupliquerScene(index)}>Dupliquer</button>
             <button className="danger-btn mini-danger" onClick={() => onSupprimerScene(index)} disabled={!canDelete}>Suppr.</button>
