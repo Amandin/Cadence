@@ -4,6 +4,7 @@ import { groupeEgalitePourParticipant, participantsPourPhase, phaseSuivanteExist
 import { FenetresSuperposees } from './interface/app/FenetresSuperposees.jsx';
 import { HubCampagne } from './interface/campaign/HubCampagne.jsx';
 import { FenetreExportCampagne } from './interface/dialogues/FenetreExportCampagne.jsx';
+import { FenetreEditionFiche } from './interface/fiches/FenetreEditionFiche.jsx';
 import { BarreActionBas } from './interface/scene/BarreActionBas.jsx';
 import { EnteteScene } from './interface/scene/EnteteScene.jsx';
 import { ListeInitiative } from './interface/scene/ListeInitiative.jsx';
@@ -27,6 +28,7 @@ export default function App() {
   const [globalSheetOpen, setGlobalSheetOpen] = useState(false);
   const [initiativeEntryOpen, setInitiativeEntryOpen] = useState(false);
   const [templateTarget, setTemplateTarget] = useState(null);
+  const [editingTemplateId, setEditingTemplateId] = useState('');
   const [templateError, setTemplateError] = useState(null);
   const [exportOpen, setExportOpen] = useState(false);
   const previousRoundRef = useRef(scene.round);
@@ -57,6 +59,7 @@ export default function App() {
   const participantsPourEgalites = temporalitePhases ? phaseParticipants : scene.participants;
   const idActifPourEgalites = temporalitePhases ? phaseActiveId : scene.activeId;
   const activeGroup = !temporaliteSouple && idActifPourEgalites ? groupeEgalitePourParticipant(participantsPourEgalites, idActifPourEgalites, optionsInitiative) : [];
+  const editingTemplate = editingTemplateId ? templates.getTemplate(editingTemplateId) : null;
 
   useEffect(() => {
     if (currentView !== 'scene' || !scene.activeId) return;
@@ -140,6 +143,20 @@ export default function App() {
       return;
     }
     setNotice({ title: 'Templates importés', message: `${result.added} ajouté(s), ${result.skipped} ignoré(s) car déjà présents.` });
+  };
+  const duplicateTemplate = (templateId) => {
+    const duplicate = templates.duplicateTemplate(templateId);
+    if (duplicate) setEditingTemplateId(duplicate.id);
+  };
+  const saveEditedTemplate = (participant) => {
+    if (!editingTemplateId) return;
+    templates.updateTemplateParticipant(editingTemplateId, participant);
+    setEditingTemplateId('');
+  };
+  const deleteEditedTemplate = () => {
+    if (!editingTemplateId) return;
+    templates.deleteTemplate(editingTemplateId);
+    setEditingTemplateId('');
   };
   const resetDemo = () => {
     actions.resetDemo();
@@ -247,6 +264,7 @@ export default function App() {
         templatesUi={{ templateTarget, templateError, fermerSauvegardeTemplate: () => setTemplateTarget(null), enregistrerTemplate: saveTemplate }}
       />
       {exportOpen && <FenetreExportCampagne nomInitial={campaignName} onFermer={() => setExportOpen(false)} onExporter={actions.exportCampaign} />}
+      {editingTemplate && <FenetreEditionFiche participant={editingTemplate.participant} title={`Modifier le template · ${editingTemplate.name}`} saveTemplateVisible={false} deleteLabel="Supprimer le template" onClose={() => setEditingTemplateId('')} onSave={saveEditedTemplate} onDelete={deleteEditedTemplate} />}
     </>
   );
 
@@ -270,6 +288,8 @@ export default function App() {
           onImporter={importCampaign}
           onReinitialiser={resetDemo}
           onAjouterDepuisTemplate={(templateId) => createFromTemplate(templateId, { placement: 'reserve' })}
+          onEditerTemplate={setEditingTemplateId}
+          onDupliquerTemplate={duplicateTemplate}
           onSupprimerTemplate={templates.deleteTemplate}
           onImporterTemplates={importTemplatesFromCampaign}
         />
