@@ -45,6 +45,40 @@ function premierParticipantId(scene) {
   return trierParInitiative(scene?.participants || [], initiativeRulesFromScene(scene))[0]?.id || '';
 }
 
+function valeurNumerique(value, fallback = 0) {
+  const next = Number(value);
+  return Number.isFinite(next) ? next : fallback;
+}
+
+function resetTrackerPourDepartScene(tracker) {
+  if (tracker.type === 'bar') {
+    return { ...tracker, current: valeurNumerique(tracker.max, valeurNumerique(tracker.current, 0)) };
+  }
+  if (tracker.type === 'boxes') {
+    return {
+      ...tracker,
+      rows: (tracker.rows || []).map((row) => ({
+        ...row,
+        marks: (row.marks || []).map(() => 0),
+      })),
+    };
+  }
+  if (['clock', 'dots', 'number'].includes(tracker.type)) return { ...tracker, current: 0 };
+  return { ...tracker };
+}
+
+function resetParticipantPourDepartScene(participant) {
+  return {
+    ...participant,
+    trackers: (participant.trackers || []).map(resetTrackerPourDepartScene),
+  };
+}
+
+function resetCompteurGlobalPourDepartScene(compteur) {
+  if (!compteur) return compteur;
+  return { ...compteur, current: 0 };
+}
+
 function remettreSceneAuDepartInitiative(scene) {
   return {
     ...scene,
@@ -53,6 +87,9 @@ function remettreSceneAuDepartInitiative(scene) {
     activeId: premierParticipantId(scene),
     jouesSouples: [],
     historiqueSouple: [],
+    globalTracker: resetCompteurGlobalPourDepartScene(scene.globalTracker),
+    participants: (scene.participants || []).map(resetParticipantPourDepartScene),
+    reserve: (scene.reserve || []).map(resetParticipantPourDepartScene),
   };
 }
 
