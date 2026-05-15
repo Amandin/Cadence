@@ -14,16 +14,20 @@ import {
   temporalityModes,
 } from '../../constants.js';
 
-function grouperTemplates(templates = []) {
-  return [...templates]
+function grouperTemplates(templates = [], categories = []) {
+  const groupes = categories.map((categorie) => ({ categorie, templates: [] }));
+  const trouverOuCreerGroupe = (categorie) => {
+    const nom = categorie || 'Sans catégorie';
+    const existant = groupes.find((item) => item.categorie === nom);
+    if (existant) return existant;
+    const nouveau = { categorie: nom, templates: [] };
+    groupes.push(nouveau);
+    return nouveau;
+  };
+  [...templates]
     .sort((a, b) => `${a.category}/${a.name}`.localeCompare(`${b.category}/${b.name}`, 'fr'))
-    .reduce((groupes, template) => {
-      const categorie = template.category || 'Sans catégorie';
-      const groupe = groupes.find((item) => item.categorie === categorie);
-      if (groupe) groupe.templates.push(template);
-      else groupes.push({ categorie, templates: [template] });
-      return groupes;
-    }, []);
+    .forEach((template) => trouverOuCreerGroupe(template.category).templates.push(template));
+  return groupes;
 }
 
 function OngletsHub({ onglet, setOnglet }) {
@@ -273,8 +277,23 @@ function OngletSauvegarde({ onExporter, onImporter, onReinitialiser }) {
   );
 }
 
-function OngletTemplates({ templates = [], onAjouterDepuisTemplate, onEditerTemplate, onDupliquerTemplate, onSupprimerTemplate, onImporterTemplates }) {
-  const groupes = useMemo(() => grouperTemplates(templates), [templates]);
+function NouvelleCategorieTemplate({ onAjouterCategorie }) {
+  const [nom, setNom] = useState('');
+  const ajouter = () => {
+    const result = onAjouterCategorie(nom);
+    if (result?.ok) setNom('');
+  };
+
+  return (
+    <div className="template-new-category">
+      <input value={nom} placeholder="Nouvelle catégorie" onChange={(event) => setNom(event.target.value)} />
+      <button className="small-btn" onClick={ajouter}>Ajouter</button>
+    </div>
+  );
+}
+
+function OngletTemplates({ categories = [], templates = [], onAjouterTemplateCategorie, onAjouterCategorie, onEditerTemplate, onDupliquerTemplate, onSupprimerTemplate, onImporterTemplates }) {
+  const groupes = useMemo(() => grouperTemplates(templates, categories), [categories, templates]);
   const importInputRef = useRef(null);
   const choisirFichier = () => importInputRef.current?.click();
   const importerFichier = (event) => {
@@ -283,43 +302,35 @@ function OngletTemplates({ templates = [], onAjouterDepuisTemplate, onEditerTemp
     if (file) onImporterTemplates(file);
   };
 
-  const entete = (
-    <div className="hub-section-head">
-      <h3>Templates</h3>
-      <button className="small-btn" onClick={choisirFichier}>Importer depuis une autre campagne</button>
-      <input ref={importInputRef} type="file" accept=".cad,.json,application/json" style={{ display: 'none' }} onChange={importerFichier} />
-    </div>
-  );
-
-  if (templates.length === 0) {
-    return (
-      <div className="stack hub-section panel">
-        {entete}
-        <div className="empty-section panel">Aucun template enregistré. Ouvre une fiche personnage puis utilise “Enregistrer comme template”.</div>
-      </div>
-    );
-  }
-
   return (
     <div className="stack hub-section panel">
-      {entete}
-      <p className="muted compact-help">Ajoute rapidement un template à la scène courante, modifie sa fiche modèle, ou nettoie la bibliothèque de campagne.</p>
+      <div className="hub-section-head">
+        <h3>Templates</h3>
+        <button className="small-btn" onClick={choisirFichier}>Importer depuis une autre campagne</button>
+        <input ref={importInputRef} type="file" accept=".cad,.json,application/json" style={{ display: 'none' }} onChange={importerFichier} />
+      </div>
+      <p className="muted compact-help">Les templates servent de fiches modèles. Crée un modèle dans une catégorie, puis modifie sa fiche.</p>
+      <NouvelleCategorieTemplate onAjouterCategorie={onAjouterCategorie} />
       {groupes.map((groupe) => (
         <section className="hub-template-group" key={groupe.categorie}>
           <div className="flexible-section-title"><span>{groupe.categorie}</span><strong>{groupe.templates.length}</strong></div>
-          <div className="stack">
-            {groupe.templates.map((template) => (
-              <div className="restore-row hub-row" key={template.id}>
-                <span><strong>{template.name}</strong><small>{template.participant?.kind || 'Personnage'}</small></span>
-                <div className="compact-arrows">
-                  <button className="small-btn" onClick={() => onAjouterDepuisTemplate(template.id)}>Ajouter</button>
-                  <button className="small-btn" onClick={() => onEditerTemplate(template.id)}>Modifier</button>
-                  <button className="small-btn" onClick={() => onDupliquerTemplate(template.id)}>Dupliquer</button>
-                  <button className="danger-btn mini-danger" onClick={() => onSupprimerTemplate(template.id)}>Suppr.</button>
+          <button className="small-btn template-category-add" onClick={() => onAjouterTemplateCategorie(groupe.categorie)}>Ajouter un template</button>
+          {groupe.templates.length === 0 ? (
+            <div className="empty-section panel">Aucun template dans cette catégorie.</div>
+          ) : (
+            <div className="stack">
+              {groupe.templates.map((template) => (
+                <div className="restore-row hub-row" key={template.id}>
+                  <span><strong>{template.name}</strong><small>{template.participant?.kind || 'Personnage'}</small></span>
+                  <div className="compact-arrows">
+                    <button className="small-btn" onClick={() => onEditerTemplate(template.id)}>Modifier</button>
+                    <button className="small-btn" onClick={() => onDupliquerTemplate(template.id)}>Dupliquer</button>
+                    <button className="danger-btn mini-danger" onClick={() => onSupprimerTemplate(template.id)}>Suppr.</button>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </section>
       ))}
     </div>
@@ -331,6 +342,7 @@ export function HubCampagne({
   scene,
   scenes,
   templates,
+  templateCategories,
   dark,
   onChangerTheme,
   onChoisirScene,
@@ -342,7 +354,8 @@ export function HubCampagne({
   onExporter,
   onImporter,
   onReinitialiser,
-  onAjouterDepuisTemplate,
+  onAjouterTemplateCategorie,
+  onAjouterCategorieTemplate,
   onEditerTemplate,
   onDupliquerTemplate,
   onSupprimerTemplate,
@@ -377,7 +390,7 @@ export function HubCampagne({
         {onglet === 'scenes' && <OngletScenes scenes={scenes} editingSceneId={editingSceneId} onEditerScene={setEditingSceneId} onFermerEditionScene={() => setEditingSceneId('')} onChoisirScene={onChoisirScene} onNouvelleScene={creerNouvelleScene} onModifierScene={onModifierScene} onDupliquerScene={dupliquerScene} onSupprimerScene={onSupprimerScene} />}
         {onglet === 'regles' && <OngletRegles scene={scene} onModifierRegles={onModifierReglesInitiative} />}
         {onglet === 'sauvegarde' && <OngletSauvegarde onExporter={onExporter} onImporter={onImporter} onReinitialiser={onReinitialiser} />}
-        {onglet === 'templates' && <OngletTemplates templates={templates} onAjouterDepuisTemplate={onAjouterDepuisTemplate} onEditerTemplate={onEditerTemplate} onDupliquerTemplate={onDupliquerTemplate} onSupprimerTemplate={onSupprimerTemplate} onImporterTemplates={onImporterTemplates} />}
+        {onglet === 'templates' && <OngletTemplates categories={templateCategories} templates={templates} onAjouterTemplateCategorie={onAjouterTemplateCategorie} onAjouterCategorie={onAjouterCategorieTemplate} onEditerTemplate={onEditerTemplate} onDupliquerTemplate={onDupliquerTemplate} onSupprimerTemplate={onSupprimerTemplate} onImporterTemplates={onImporterTemplates} />}
       </main>
     </div>
   );
