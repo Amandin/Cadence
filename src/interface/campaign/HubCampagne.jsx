@@ -103,7 +103,8 @@ function CarteScene({ scene, index, canDelete, editing, onEditer, onFermerEditio
       ) : (
         <>
           <div className="hub-scene-summary">
-            <span><strong>{scene.title || 'Scène'}</strong><small>{scene.type || 'Scène'}</small></span>
+            <strong>{scene.title || 'Scène'}</strong>
+            <span className="hub-scene-type">{scene.type || 'Scène'}</span>
           </div>
           {scene.notes && <p className="muted compact-help hub-scene-notes">{scene.notes}</p>}
           <div className="hub-scene-actions explicit">
