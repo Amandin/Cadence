@@ -530,7 +530,8 @@
   opacity: 1;
 }
 
-.template-delete-reveal {
+.template-delete-reveal,
+.scene-delete-reveal {
   min-width: 24px !important;
   width: 24px;
   height: 24px;
@@ -542,11 +543,14 @@
 }
 
 .template-delete-reveal:hover,
-.template-delete-reveal:focus-visible {
+.template-delete-reveal:focus-visible,
+.scene-delete-reveal:hover,
+.scene-delete-reveal:focus-visible {
   opacity: 1;
 }
 
-.template-delete-confirm {
+.template-delete-confirm,
+.scene-delete-confirm {
   min-height: 24px;
   padding: 2px 8px;
   font-size: 11px;
