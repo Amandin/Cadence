@@ -1,6 +1,4 @@
-import { useState } from 'react';
 import { FenetreEtat } from '../dialogues/FenetreEtat.jsx';
-import { FenetreExportCampagne } from '../dialogues/FenetreExportCampagne.jsx';
 import { FenetreInformation } from '../dialogues/FenetreInformation.jsx';
 import { FenetreLancerInitiatives } from '../dialogues/FenetreLancerInitiatives.jsx';
 import { FenetreRejoindreInitiative } from '../dialogues/FenetreRejoindreInitiative.jsx';
@@ -9,7 +7,7 @@ import { FenetreSauvegardeTemplate } from '../dialogues/FenetreSauvegardeTemplat
 import { FenetreAjoutPersonnage } from '../fiches/FenetreAjoutPersonnage.jsx';
 import { FenetreEditionFiche } from '../fiches/FenetreEditionFiche.jsx';
 import { FicheParticipant } from '../fiches/FicheParticipant.jsx';
-import { FenetreReglesAvancees, MenuPrincipal } from '../menu/MenuPrincipal.jsx';
+import { MenuPrincipal } from '../menu/MenuPrincipal.jsx';
 import { FenetreCompteurGlobal } from '../suivis/CompteurGlobal.jsx';
 
 /**
@@ -19,7 +17,6 @@ import { FenetreCompteurGlobal } from '../suivis/CompteurGlobal.jsx';
  * le rendu principal de la scène avec toutes les modales possibles.
  */
 export function FenetresSuperposees({
-  campaignName,
   scene,
   restorePoints,
   dark,
@@ -32,8 +29,6 @@ export function FenetresSuperposees({
   resolutionHorloge,
   templatesUi,
 }) {
-  const [reglesAvanceesOuvertes, setReglesAvanceesOuvertes] = useState(false);
-  const [exportOuvert, setExportOuvert] = useState(false);
   const {
     addSheetOpen,
     openMenu,
@@ -76,9 +71,7 @@ export function FenetresSuperposees({
       {globalSheetOpen && <FenetreCompteurGlobal compteur={scene.globalTracker} onModifier={actions.updateGlobalTracker} onChanger={actions.stepGlobal} onFermer={fermerCompteurGlobal} />}
       {clockModalOpen && <FenetreResolutionHorloge participants={compteurGlobal.horlogesBloquantes} onFermer={fermerResolutionHorloge} onRelancerHorloge={resetClock} onSupprimerHorloge={deleteClock} />}
       {notice && <FenetreInformation titre={notice.title} message={notice.message} onFermer={fermerNotice} />}
-      {openMenu && <MenuPrincipal scene={scene} restorePoints={restorePoints} onRestore={restaurerScene} onClose={fermerMenu} dark={dark} setDark={actions.setDark} onAddParticipant={commandesInterface.ouvrirAjoutPersonnage} onOpenCampaignHub={ouvrirHub} onGlobalTracker={actions.updateGlobalTracker} onOpenAdvancedRules={() => setReglesAvanceesOuvertes(true)} onOpenInitiativeRoller={commandesInterface.ouvrirSaisieInitiatives} />}
-      {exportOuvert && <FenetreExportCampagne nomInitial={campaignName} onFermer={() => setExportOuvert(false)} onExporter={actions.exportCampaign} />}
-      {reglesAvanceesOuvertes && <FenetreReglesAvancees scene={scene} onFermer={() => setReglesAvanceesOuvertes(false)} onUpdateCategoryOrder={actions.updateCategoryOrder} onUpdateEqualityRule={actions.updateEqualityRule} onUpdateTemporality={actions.updateTemporality} onUpdatePhaseDecrement={actions.updatePhaseDecrement} onUpdatePhaseRerollEachRound={actions.updatePhaseRerollEachRound} />}
+      {openMenu && <MenuPrincipal scene={scene} restorePoints={restorePoints} onRestore={restaurerScene} onClose={fermerMenu} dark={dark} setDark={actions.setDark} onAddParticipant={commandesInterface.ouvrirAjoutPersonnage} onOpenCampaignHub={ouvrirHub} onGlobalTracker={actions.updateGlobalTracker} onOpenInitiativeRoller={commandesInterface.ouvrirSaisieInitiatives} />}
       {initiativeEntryOpen && <FenetreLancerInitiatives participants={scene.participants} reserve={scene.reserve} onFermer={fermerSaisieInitiatives} onValider={actions.applyInitiativeRolls} onPasserHorsInitiative={actions.moveParticipantsToReserve} />}
     </>
   );
