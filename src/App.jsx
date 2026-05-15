@@ -144,6 +144,15 @@ export default function App() {
     }
     setNotice({ title: 'Templates importés', message: `${result.added} ajouté(s), ${result.skipped} ignoré(s) car déjà présents.` });
   };
+  const createTemplateInCategory = (category) => {
+    const template = templates.createTemplateInCategory(category);
+    if (template) setEditingTemplateId(template.id);
+  };
+  const addTemplateCategory = (category) => {
+    const result = templates.addCategory(category);
+    if (result?.ok === false) setNotice({ title: 'Catégorie impossible', message: result.message });
+    return result;
+  };
   const duplicateTemplate = (templateId) => {
     const duplicate = templates.duplicateTemplate(templateId);
     if (duplicate) setEditingTemplateId(duplicate.id);
@@ -276,6 +285,7 @@ export default function App() {
           scene={scene}
           scenes={scenes}
           templates={templates.templates}
+          templateCategories={templates.categories}
           dark={dark}
           onChangerTheme={actions.setDark}
           onChoisirScene={chooseScene}
@@ -287,7 +297,8 @@ export default function App() {
           onExporter={() => setExportOpen(true)}
           onImporter={importCampaign}
           onReinitialiser={resetDemo}
-          onAjouterDepuisTemplate={(templateId) => createFromTemplate(templateId, { placement: 'reserve' })}
+          onAjouterTemplateCategorie={createTemplateInCategory}
+          onAjouterCategorieTemplate={addTemplateCategory}
           onEditerTemplate={setEditingTemplateId}
           onDupliquerTemplate={duplicateTemplate}
           onSupprimerTemplate={templates.deleteTemplate}
