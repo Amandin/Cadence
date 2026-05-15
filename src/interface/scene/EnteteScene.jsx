@@ -16,6 +16,7 @@ export function EnteteScene(props) {
     temporalitePhases,
     suivantDesactive,
     onBasculerNotes,
+    onRetourHub,
     onTourPrecedent,
     onTourSuivant,
     onModifierCompteurGlobal,
@@ -41,6 +42,7 @@ export function EnteteScene(props) {
     <header className="top compact">
       <div className="scene-head">
         <button className="icon-btn" onClick={onBasculerNotes}>{notesVisibles ? '⌃' : '⌄'}</button>
+        <button className="hub-return-btn" onClick={onRetourHub}>Hub</button>
         <div>
           <h1>{scene.title}</h1>
           <div className="muted">{scene.type} · {scene.participants.length} en initiative{suffixeTemporalite}</div>
