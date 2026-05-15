@@ -5,6 +5,10 @@ function templateCategoryFromName(value) {
   return value?.trim();
 }
 
+function sameCategory(left, right) {
+  return templateCategoryFromName(left)?.toLocaleLowerCase() === templateCategoryFromName(right)?.toLocaleLowerCase();
+}
+
 function uniqueTemplateName(templates, category, baseName = 'Nouveau template') {
   const cleanCategory = templateCategoryFromName(category) || 'PNJ';
   const existingNames = new Set(
@@ -22,6 +26,14 @@ function defaultKindForTemplateCategory(category) {
   if (category === 'PJ') return 'PJ';
   if (category === 'Horloge') return 'Environnement';
   return 'Opposant';
+}
+
+function moveItem(list, index, delta) {
+  const target = index + delta;
+  if (index < 0 || target < 0 || target >= list.length) return list;
+  const next = [...list];
+  [next[index], next[target]] = [next[target], next[index]];
+  return next;
 }
 
 export function useTemplates(store, setStore) {
@@ -70,6 +82,52 @@ export function useTemplates(store, setStore) {
     return { ok: true, category: cleanCategory };
   };
 
+  const renameCategory = (category, nextName) => {
+    const cleanCurrent = templateCategoryFromName(category);
+    const cleanNext = templateCategoryFromName(nextName);
+    if (!cleanCurrent || !cleanNext) return { ok: false, message: 'Donne un nom à la catégorie.' };
+    if (!sameCategory(cleanCurrent, cleanNext) && categoryExists(templateStore.categories, cleanNext)) return { ok: false, message: 'Cette catégorie existe déjà.' };
+
+    setStore((current) => {
+      const currentStore = normalizeTemplateStore(current);
+      return normalizeTemplateStore({
+        ...currentStore,
+        categories: currentStore.categories.map((item) => sameCategory(item, cleanCurrent) ? cleanNext : item),
+        templates: currentStore.templates.map((template) => sameCategory(template.category, cleanCurrent) ? { ...template, category: cleanNext, updatedAt: new Date().toISOString() } : template),
+      });
+    });
+    return { ok: true, category: cleanNext };
+  };
+
+  const deleteCategory = (category) => {
+    const cleanCategory = templateCategoryFromName(category);
+    if (!cleanCategory) return { ok: false, message: 'Catégorie introuvable.' };
+    const containsTemplates = templateStore.templates.some((template) => sameCategory(template.category, cleanCategory));
+    if (containsTemplates) return { ok: false, message: 'Cette catégorie contient encore des templates.' };
+
+    setStore((current) => {
+      const currentStore = normalizeTemplateStore(current);
+      return normalizeTemplateStore({
+        ...currentStore,
+        categories: currentStore.categories.filter((item) => !sameCategory(item, cleanCategory)),
+      });
+    });
+    return { ok: true };
+  };
+
+  const moveCategory = (category, delta) => {
+    const cleanCategory = templateCategoryFromName(category);
+    const index = templateStore.categories.findIndex((item) => sameCategory(item, cleanCategory));
+    if (index < 0) return;
+    setStore((current) => {
+      const currentStore = normalizeTemplateStore(current);
+      return normalizeTemplateStore({
+        ...currentStore,
+        categories: moveItem(currentStore.categories, currentStore.categories.findIndex((item) => sameCategory(item, cleanCategory)), delta),
+      });
+    });
+  };
+
   const createTemplateInCategory = (category) => {
     const cleanCategory = templateCategoryFromName(category) || 'PNJ';
     const name = uniqueTemplateName(templateStore.templates, cleanCategory);
@@ -92,18 +150,34 @@ export function useTemplates(store, setStore) {
     return template;
   };
 
-  const updateTemplateParticipant = (templateId, participant) => {
+  const updateTemplateParticipant = (templateId, participant, category) => {
     const cleanParticipant = { ...clone(participant), id: 'template-participant', statuses: [] };
     const cleanName = cleanParticipant.name?.trim() || 'Template sans nom';
+    const cleanCategory = templateCategoryFromName(category);
     setStore((current) => {
       const currentStore = normalizeTemplateStore(current);
       return normalizeTemplateStore({
         ...currentStore,
+        categories: cleanCategory && !categoryExists(currentStore.categories, cleanCategory) ? [...currentStore.categories, cleanCategory] : currentStore.categories,
         templates: currentStore.templates.map((template) => template.id === templateId
-          ? { ...template, name: cleanName, updatedAt: new Date().toISOString(), participant: { ...cleanParticipant, name: cleanName } }
+          ? { ...template, category: cleanCategory || template.category, name: cleanName, updatedAt: new Date().toISOString(), participant: { ...cleanParticipant, name: cleanName } }
           : template),
       });
     });
+  };
+
+  const setTemplateCategory = (templateId, category) => {
+    const cleanCategory = templateCategoryFromName(category);
+    if (!cleanCategory) return { ok: false, message: 'Choisis une catégorie.' };
+    setStore((current) => {
+      const currentStore = normalizeTemplateStore(current);
+      return normalizeTemplateStore({
+        ...currentStore,
+        categories: categoryExists(currentStore.categories, cleanCategory) ? currentStore.categories : [...currentStore.categories, cleanCategory],
+        templates: currentStore.templates.map((template) => template.id === templateId ? { ...template, category: cleanCategory, updatedAt: new Date().toISOString() } : template),
+      });
+    });
+    return { ok: true };
   };
 
   const duplicateTemplate = (templateId) => {
@@ -156,8 +230,12 @@ export function useTemplates(store, setStore) {
     createParticipantFromTemplate,
     getTemplate,
     addCategory,
+    renameCategory,
+    deleteCategory,
+    moveCategory,
     createTemplateInCategory,
     updateTemplateParticipant,
+    setTemplateCategory,
     duplicateTemplate,
     deleteTemplate,
     importTemplates,
