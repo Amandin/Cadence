@@ -339,6 +339,7 @@ export default function App() {
           temporaliteSouple={temporaliteSouple}
           temporalitePhases={temporalitePhases}
           suivantDesactive={suivantDesactive}
+          dark={dark}
           onBasculerNotes={() => setShowNotes(!showNotes)}
           onRetourHub={() => setCurrentView('hub')}
           onTourPrecedent={() => nextTurn(-1)}
@@ -354,6 +355,7 @@ export default function App() {
       </div>
 
       <BarreActionBas
+        dark={dark}
         classeSuivant={classeSuivantEffective}
         prochainRound={temporaliteSouple ? toutLeMondeAJoueSouple : temporalitePhases ? phaseDemarreNouveauRound : nextStartsRound}
         round={scene.round}
