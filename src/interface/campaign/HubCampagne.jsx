@@ -346,18 +346,23 @@ export function HubCampagne({
 }) {
   const [onglet, setOnglet] = useState('scenes');
   const [editingSceneId, setEditingSceneId] = useState('');
-  const [editNewSceneWhenReady, setEditNewSceneWhenReady] = useState(false);
+  const [editCreatedSceneWhenReady, setEditCreatedSceneWhenReady] = useState(false);
 
   useEffect(() => {
-    if (!editNewSceneWhenReady || !scene?.id) return;
+    if (!editCreatedSceneWhenReady || !scene?.id) return;
     setOnglet('scenes');
     setEditingSceneId(scene.id);
-    setEditNewSceneWhenReady(false);
-  }, [editNewSceneWhenReady, scene?.id]);
+    setEditCreatedSceneWhenReady(false);
+  }, [editCreatedSceneWhenReady, scene?.id]);
 
   const creerNouvelleScene = () => {
     onNouvelleScene();
-    setEditNewSceneWhenReady(true);
+    setEditCreatedSceneWhenReady(true);
+  };
+
+  const dupliquerScene = (index) => {
+    onDupliquerScene(index);
+    setEditCreatedSceneWhenReady(true);
   };
 
   return (
@@ -365,7 +370,7 @@ export function HubCampagne({
       <EnteteHub campaignName={campaignName} sombre={dark} onChangerTheme={onChangerTheme} />
       <main className="campaign-hub-page">
         <OngletsHub onglet={onglet} setOnglet={setOnglet} />
-        {onglet === 'scenes' && <OngletScenes scenes={scenes} editingSceneId={editingSceneId} onEditerScene={setEditingSceneId} onFermerEditionScene={() => setEditingSceneId('')} onChoisirScene={onChoisirScene} onNouvelleScene={creerNouvelleScene} onModifierScene={onModifierScene} onDupliquerScene={onDupliquerScene} onSupprimerScene={onSupprimerScene} />}
+        {onglet === 'scenes' && <OngletScenes scenes={scenes} editingSceneId={editingSceneId} onEditerScene={setEditingSceneId} onFermerEditionScene={() => setEditingSceneId('')} onChoisirScene={onChoisirScene} onNouvelleScene={creerNouvelleScene} onModifierScene={onModifierScene} onDupliquerScene={dupliquerScene} onSupprimerScene={onSupprimerScene} />}
         {onglet === 'regles' && <OngletRegles scene={scene} onModifierRegles={onModifierReglesInitiative} />}
         {onglet === 'sauvegarde' && <OngletSauvegarde onExporter={onExporter} onImporter={onImporter} onReinitialiser={onReinitialiser} />}
         {onglet === 'templates' && <OngletTemplates templates={templates} onAjouterDepuisTemplate={onAjouterDepuisTemplate} onSupprimerTemplate={onSupprimerTemplate} onImporterTemplates={onImporterTemplates} />}
