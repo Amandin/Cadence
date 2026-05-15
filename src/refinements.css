@@ -352,6 +352,14 @@
   white-space: nowrap;
 }
 
+.hub-scene-meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  min-width: 0;
+}
+
 .hub-scene-type {
   justify-self: end;
   padding: 4px 9px;
@@ -533,12 +541,16 @@
   }
 
   .hub-scene-summary {
-    grid-template-columns: 1fr;
-    gap: 4px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px;
+  }
+
+  .hub-scene-meta {
+    justify-self: end;
   }
 
   .hub-scene-type {
-    justify-self: start;
+    max-width: 110px;
   }
 }
 
