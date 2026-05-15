@@ -295,6 +295,7 @@ export default function App() {
           temporalitePhases={temporalitePhases}
           suivantDesactive={suivantDesactive}
           onBasculerNotes={() => setShowNotes(!showNotes)}
+          onRetourHub={() => setCurrentView('hub')}
           onTourPrecedent={() => nextTurn(-1)}
           onTourSuivant={() => nextTurn(1)}
           onModifierCompteurGlobal={actions.stepGlobal}
