@@ -60,9 +60,14 @@ export function FenetresSuperposees({
     ouvrirHubCampagne?.();
   };
 
+  const changerInfoRapide = (participantId, index, valeur) => characters.updateCharacter(participantId, (participant) => ({
+    ...participant,
+    stats: (participant.stats || []).map((stat, position) => position === index ? valeur : stat),
+  }));
+
   return (
     <>
-      {characters.selected && <FicheParticipant participant={characters.selected} enInitiative={characters.isInInit(characters.selected.id)} onFermer={characters.closeCharacter} onModifier={() => characters.editCharacter(characters.selected.id)} onChangerInitiative={(initiative) => characters.updateCharacter(characters.selected.id, (participant) => ({ ...participant, initiative }))} onRejoindreInitiative={() => characters.requestJoin(characters.selected.id)} onQuitterInitiative={() => characters.leaveInit(characters.selected.id)} onSuivi={(trackerId, next) => characters.updateCharacterTracker(characters.selected.id, trackerId, next)} onSupprimerSuivi={(trackerId) => characters.deleteCharacterTracker(characters.selected.id, trackerId)} onAjouterEtat={() => characters.requestStatus(characters.selected.id)} onRetirerEtat={(statusId) => characters.removeCharacterStatus(characters.selected.id, statusId)} onNote={(note) => characters.updateCharacter(characters.selected.id, (participant) => ({ ...participant, note }))} />}
+      {characters.selected && <FicheParticipant participant={characters.selected} enInitiative={characters.isInInit(characters.selected.id)} onFermer={characters.closeCharacter} onModifier={() => characters.editCharacter(characters.selected.id)} onChangerInitiative={(initiative) => characters.updateCharacter(characters.selected.id, (participant) => ({ ...participant, initiative }))} onRejoindreInitiative={() => characters.requestJoin(characters.selected.id)} onQuitterInitiative={() => characters.leaveInit(characters.selected.id)} onInfoRapide={(index, valeur) => changerInfoRapide(characters.selected.id, index, valeur)} onSuivi={(trackerId, next) => characters.updateCharacterTracker(characters.selected.id, trackerId, next)} onSupprimerSuivi={(trackerId) => characters.deleteCharacterTracker(characters.selected.id, trackerId)} onAjouterEtat={() => characters.requestStatus(characters.selected.id)} onRetirerEtat={(statusId) => characters.removeCharacterStatus(characters.selected.id, statusId)} onNote={(note) => characters.updateCharacter(characters.selected.id, (participant) => ({ ...participant, note }))} />}
       {characters.editing && <FenetreEditionFiche participant={characters.editing} onClose={characters.closeEditor} onSave={characters.saveCharacter} onDelete={() => characters.deleteCharacter(characters.editing.id)} onSaveTemplate={ouvrirSauvegardeTemplate} />}
       {characters.statusTarget && <FenetreEtat participant={characters.statusTarget} onFermer={characters.cancelStatus} onValider={characters.saveStatus} />}
       {characters.joinTarget && <FenetreRejoindreInitiative participant={characters.joinTarget} onFermer={characters.cancelJoin} onValider={characters.joinInit} />}
