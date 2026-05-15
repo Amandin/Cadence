@@ -84,18 +84,20 @@ function CarteScene({ scene, index, canDelete, editing, onEditer, onFermerEditio
         <>
           <div className="hub-scene-summary">
             <strong>{scene.title || 'Scène'}</strong>
-            <span className="hub-scene-type">{scene.type || 'Scène'}</span>
+            <div className="hub-scene-meta">
+              <span className="hub-scene-type">{scene.type || 'Scène'}</span>
+              {canDelete && (suppressionVisible ? (
+                <button className="danger-btn mini-danger scene-delete-confirm" onClick={() => onSupprimerScene(index)}>Suppr.</button>
+              ) : (
+                <button className="small-btn scene-delete-reveal" onClick={() => setSuppressionVisible(true)} aria-label={`Afficher la suppression de ${scene.title || 'Scène'}`}>×</button>
+              ))}
+            </div>
           </div>
           {scene.notes && <p className="muted compact-help hub-scene-notes">{scene.notes}</p>}
           <div className="hub-scene-actions explicit">
             <button className="primary" onClick={() => onChoisirScene(index)}>Ouvrir</button>
             <button className="small-btn" onClick={() => onEditer(scene.id)}>Modifier</button>
             <button className="small-btn" onClick={() => onDupliquerScene(index)}>Dupliquer</button>
-            {canDelete && (suppressionVisible ? (
-              <button className="danger-btn mini-danger scene-delete-confirm" onClick={() => onSupprimerScene(index)}>Suppr.</button>
-            ) : (
-              <button className="small-btn scene-delete-reveal" onClick={() => setSuppressionVisible(true)} aria-label={`Afficher la suppression de ${scene.title || 'Scène'}`}>×</button>
-            ))}
           </div>
         </>
       )}
