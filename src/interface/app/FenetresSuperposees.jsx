@@ -71,7 +71,7 @@ export function FenetresSuperposees({
       {characters.editing && <FenetreEditionFiche participant={characters.editing} onClose={characters.closeEditor} onSave={characters.saveCharacter} onDelete={() => characters.deleteCharacter(characters.editing.id)} onSaveTemplate={ouvrirSauvegardeTemplate} />}
       {characters.statusTarget && <FenetreEtat participant={characters.statusTarget} onFermer={characters.cancelStatus} onValider={characters.saveStatus} />}
       {characters.joinTarget && <FenetreRejoindreInitiative participant={characters.joinTarget} onFermer={characters.cancelJoin} onValider={characters.joinInit} />}
-      {addSheetOpen && <FenetreAjoutPersonnage templates={templates.templates} onFermer={fermerAjoutPersonnage} onCreerVierge={creerPersonnageVierge} onCreerDepuisTemplate={creerDepuisTemplate} />}
+      {addSheetOpen && <FenetreAjoutPersonnage templates={templates.templates} categories={templates.categories} onFermer={fermerAjoutPersonnage} onCreerVierge={creerPersonnageVierge} onCreerDepuisTemplate={creerDepuisTemplate} />}
       {templateTarget && <FenetreSauvegardeTemplate participant={templateTarget} categories={templates.categories} erreur={templateError} onFermer={fermerSauvegardeTemplate} onEnregistrer={enregistrerTemplate} />}
       {globalSheetOpen && <FenetreCompteurGlobal compteur={scene.globalTracker} onModifier={actions.updateGlobalTracker} onChanger={actions.stepGlobal} onFermer={fermerCompteurGlobal} />}
       {clockModalOpen && <FenetreResolutionHorloge participants={compteurGlobal.horlogesBloquantes} onFermer={fermerResolutionHorloge} onRelancerHorloge={resetClock} onSupprimerHorloge={deleteClock} />}
