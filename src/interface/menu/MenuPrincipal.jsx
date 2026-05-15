@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { APP_VERSION, defaultCategoryOrder, defaultEqualityRule, defaultPhaseDecrement, defaultPhaseRerollEachRound, defaultTemporalityMode, equalityRuleDescriptions, equalityRuleLabels, equalityRules, temporalityDescriptions, temporalityLabels, temporalityModes } from '../../constants.js';
 import { Fenetre } from '../commun/ComposantsCommuns.jsx';
 
@@ -26,21 +26,6 @@ function LigneVersionEtTheme({ sombre, onChangerTheme }) {
         <i />
       </button>
     </div>
-  );
-}
-
-function ListeScenes({ scenes, onChoisirScene, onFermer }) {
-  return (
-    <>
-      <h3>Scènes</h3>
-      <div className="stack">
-        {scenes.map((scene, index) => (
-          <button className="small-btn" key={scene.id} onClick={() => { onChoisirScene(index); onFermer(); }}>
-            {scene.title} · R{scene.round}
-          </button>
-        ))}
-      </div>
-    </>
   );
 }
 
@@ -166,37 +151,13 @@ export function FenetreReglesAvancees({ scene, onFermer, onUpdateCategoryOrder, 
   );
 }
 
-function ActionsScene({ onAjouterParticipant, onNouvelleScene, onSaisirInitiatives, onReglesAvancees }) {
+function ActionsScene({ onAjouterParticipant, onSaisirInitiatives, onReglesAvancees }) {
   return (
     <div className="stack" style={{ marginTop: 12 }}>
       <button className="primary" onClick={onAjouterParticipant}>Ajouter un personnage</button>
       <button className="small-btn" onClick={onSaisirInitiatives}>Saisir les initiatives</button>
-      <button className="small-btn" onClick={onNouvelleScene}>Nouvelle scène</button>
       <button className="small-btn" onClick={onReglesAvancees}>Règles avancées</button>
     </div>
-  );
-}
-
-function ActionsSauvegarde({ onExporter, onImporter, onReinitialiser }) {
-  const importInputRef = useRef(null);
-  const choisirFichier = () => importInputRef.current?.click();
-  const importerFichier = (event) => {
-    const file = event.target.files?.[0];
-    event.target.value = '';
-    if (file) onImporter(file);
-  };
-
-  return (
-    <>
-      <h3>Sauvegarde</h3>
-      <div className="grid2">
-        <button className="primary" onClick={onExporter}>Exporter</button>
-        <button className="small-btn" onClick={choisirFichier}>Importer</button>
-        <input ref={importInputRef} type="file" accept=".cad,.json,application/json" style={{ display: 'none' }} onChange={importerFichier} />
-      </div>
-      <p className="muted compact-help" style={{ marginTop: 6 }}>L’export propose le nom du fichier avant d’ouvrir l’enregistrement ou le partage selon le navigateur.</p>
-      <button className="danger-btn" style={{ marginTop: 8, width: '100%' }} onClick={onReinitialiser}>Réinitialiser la démo</button>
-    </>
   );
 }
 
@@ -214,7 +175,7 @@ function RestaurationScene({ points, pointActif, onChoisirPoint, onRestaurer }) 
   );
 }
 
-export function MenuPrincipal({ scenes, scene, restorePoints = [], onRestore, onClose, setSceneIndex, dark, setDark, onAddParticipant, onNewScene, onExport, onImport, onReset, onGlobalTracker, onOpenAdvancedRules, onOpenInitiativeRoller }) {
+export function MenuPrincipal({ scene, restorePoints = [], onRestore, onClose, dark, setDark, onAddParticipant, onOpenAdvancedRules, onOpenInitiativeRoller, onOpenCampaignHub, onGlobalTracker }) {
   const pointsRestauration = [...restorePoints].sort((a, b) => a.round - b.round);
   const [pointRestaurationId, setPointRestaurationId] = useState(pointsRestauration.at(-1)?.id || '');
 
@@ -222,10 +183,9 @@ export function MenuPrincipal({ scenes, scene, restorePoints = [], onRestore, on
     <Fenetre title="Menu" onClose={onClose}>
       <LogoMenu sombre={dark} />
       <LigneVersionEtTheme sombre={dark} onChangerTheme={setDark} />
-      <ListeScenes scenes={scenes} onChoisirScene={setSceneIndex} onFermer={onClose} />
+      <button className="primary hub-menu-main-action" onClick={onOpenCampaignHub}>Hub de campagne</button>
       <OptionsCompteurScene compteur={scene?.globalTracker} onModifier={onGlobalTracker} />
-      <ActionsScene onAjouterParticipant={onAddParticipant} onSaisirInitiatives={onOpenInitiativeRoller} onNouvelleScene={onNewScene} onReglesAvancees={onOpenAdvancedRules} />
-      <ActionsSauvegarde onExporter={onExport} onImporter={onImport} onReinitialiser={onReset} />
+      <ActionsScene onAjouterParticipant={onAddParticipant} onSaisirInitiatives={onOpenInitiativeRoller} onReglesAvancees={onOpenAdvancedRules} />
       <RestaurationScene points={pointsRestauration} pointActif={pointRestaurationId} onChoisirPoint={setPointRestaurationId} onRestaurer={onRestore} />
     </Fenetre>
   );

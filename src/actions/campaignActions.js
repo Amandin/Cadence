@@ -1,16 +1,64 @@
-import { campaignNameFromPayload, isValidCampaign, normalizeCampaignName, serializeCampaign } from '../storage.js';
-import { makeDefaultCampaign, uid } from '../logic.js';
+import { defaultCategoryOrder, defaultEqualityRule, defaultPhaseDecrement, defaultPhaseRerollEachRound, defaultTemporalityMode, temporalityModes } from '../constants.js';
+import { campaignNameFromPayload, campaignTemplatesFromPayload, isValidCampaign, normalizeCampaignName, serializeCampaign } from '../storage.js';
+import { clone, makeDefaultCampaign, uid } from '../logic.js';
+import { mergeTemplateStores } from '../templates.js';
 
-function createBlankScene() {
+function initiativeRulesFromScene(scene = {}) {
+  return {
+    temporalite: scene.temporalite || defaultTemporalityMode,
+    phaseDecrement: Math.max(1, Number(scene.phaseDecrement) || defaultPhaseDecrement),
+    phaseRerollEachRound: scene.phaseRerollEachRound ?? defaultPhaseRerollEachRound,
+    equalityRule: scene.equalityRule || defaultEqualityRule,
+    categoryOrder: Array.isArray(scene.categoryOrder) && scene.categoryOrder.length ? scene.categoryOrder : defaultCategoryOrder,
+  };
+}
+
+function applyTemporality(scene, temporalite) {
+  return {
+    ...scene,
+    temporalite,
+    phase: temporalite === temporalityModes.PHASES ? (scene.phase || 1) : 1,
+    activeId: temporalite === temporalityModes.FLEXIBLE ? '' : scene.activeId,
+    jouesSouples: temporalite === temporalityModes.FLEXIBLE ? (scene.jouesSouples || []) : [],
+    historiqueSouple: temporalite === temporalityModes.FLEXIBLE ? (scene.historiqueSouple || []) : [],
+  };
+}
+
+function applyInitiativeRules(scene, patch = {}) {
+  const current = initiativeRulesFromScene(scene);
+  const next = { ...current, ...patch };
+  const sceneWithTemporality = patch.temporalite ? applyTemporality(scene, next.temporalite) : scene;
+
+  return {
+    ...sceneWithTemporality,
+    temporalite: next.temporalite,
+    phaseDecrement: Math.max(1, Number(next.phaseDecrement) || defaultPhaseDecrement),
+    phaseRerollEachRound: !!next.phaseRerollEachRound,
+    equalityRule: next.equalityRule || defaultEqualityRule,
+    categoryOrder: Array.isArray(next.categoryOrder) && next.categoryOrder.length ? next.categoryOrder : defaultCategoryOrder,
+  };
+}
+
+function createBlankScene(rules = {}) {
   return {
     id: uid('scene'),
     title: 'Nouvelle scène',
     type: 'Scène',
     round: 1,
+    phase: 1,
     activeId: '',
     notes: '',
     reserve: [],
     participants: [],
+    ...initiativeRulesFromScene(rules),
+  };
+}
+
+function duplicateSceneData(scene) {
+  return {
+    ...clone(scene),
+    id: uid('scene'),
+    title: `${scene?.title || 'Scène'} — copie`,
   };
 }
 
@@ -92,7 +140,7 @@ async function shareOrDownloadCampaign(content, campaignName) {
   return { ok: true, method: 'download' };
 }
 
-export function createCampaignActions({ scenes, dark, campaignName, setScenes, setSceneIndex, setDark, setCampaignNameState }) {
+export function createCampaignActions({ scenes, sceneIndex, dark, campaignName, templateStore, setScenes, setSceneIndex, setDark, setCampaignNameState, setTemplateStore }) {
   return {
     setSceneIndex,
     setDark,
@@ -100,12 +148,40 @@ export function createCampaignActions({ scenes, dark, campaignName, setScenes, s
       setCampaignNameState(normalizeCampaignName(name));
     },
     newScene() {
-      setScenes((currentScenes) => [...currentScenes, createBlankScene()]);
+      const sourceRules = initiativeRulesFromScene(scenes[sceneIndex] || scenes[0]);
+      setScenes((currentScenes) => [...currentScenes, createBlankScene(sourceRules)]);
       setSceneIndex(scenes.length);
+    },
+    updateSceneMeta(index, patch) {
+      setScenes((currentScenes) => currentScenes.map((scene, scenePosition) => scenePosition === index ? { ...scene, ...patch } : scene));
+    },
+    duplicateScene(index) {
+      const sourceIndex = Number.isInteger(index) ? index : sceneIndex;
+      setScenes((currentScenes) => {
+        const source = currentScenes[sourceIndex] || currentScenes[0];
+        if (!source) return currentScenes;
+        const nextScenes = [...currentScenes];
+        nextScenes.splice(sourceIndex + 1, 0, duplicateSceneData(source));
+        return nextScenes;
+      });
+      setSceneIndex(sourceIndex + 1);
+    },
+    deleteScene(index) {
+      const sourceIndex = Number.isInteger(index) ? index : sceneIndex;
+      setScenes((currentScenes) => {
+        if (currentScenes.length <= 1) return currentScenes;
+        const nextScenes = currentScenes.filter((_, scenePosition) => scenePosition !== sourceIndex);
+        const nextIndex = Math.min(sourceIndex, nextScenes.length - 1);
+        setSceneIndex(Math.max(0, nextIndex));
+        return nextScenes;
+      });
+    },
+    updateCampaignInitiativeRules(patch) {
+      setScenes((currentScenes) => currentScenes.map((scene) => applyInitiativeRules(scene, patch)));
     },
     async exportCampaign(name = campaignName) {
       const exportName = normalizeCampaignName(name);
-      const result = await shareOrDownloadCampaign(serializeCampaign(scenes, dark, exportName), exportName);
+      const result = await shareOrDownloadCampaign(serializeCampaign(scenes, dark, exportName, templateStore), exportName);
       if (result?.ok) setCampaignNameState(exportName);
       return result;
     },
@@ -117,15 +193,29 @@ export function createCampaignActions({ scenes, dark, campaignName, setScenes, s
         setScenes(data.scenes);
         setDark(data.settings?.dark || false);
         setCampaignNameState(campaignNameFromPayload(data));
+        setTemplateStore(campaignTemplatesFromPayload(data));
         setSceneIndex(0);
         return { ok: true };
       } catch {
         return { ok: false, message: 'Impossible de lire ce fichier Cadence.' };
       }
     },
+    async importTemplatesFromCampaign(file) {
+      try {
+        const data = JSON.parse(await file.text());
+        if (!isValidCampaign(data)) return { ok: false, message: 'Le fichier choisi n’est pas une campagne Cadence valide.' };
+        const importedTemplates = campaignTemplatesFromPayload(data);
+        const result = mergeTemplateStores(templateStore, importedTemplates);
+        setTemplateStore(result.store);
+        return { ok: true, added: result.added.length, skipped: result.skipped.length };
+      } catch {
+        return { ok: false, message: 'Impossible de lire les templates de cette campagne.' };
+      }
+    },
     resetDemo() {
       const fresh = makeDefaultCampaign();
       setScenes(fresh.scenes);
+      setTemplateStore(campaignTemplatesFromPayload(fresh));
       setCampaignNameState(campaignNameFromPayload(fresh));
       setSceneIndex(0);
     },

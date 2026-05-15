@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { defaultCategoryOrder, defaultEqualityRule, temporalityModes } from './constants.js';
 import { groupeEgalitePourParticipant, participantsPourPhase, phaseSuivanteExiste } from './domain/initiative.js';
 import { FenetresSuperposees } from './interface/app/FenetresSuperposees.jsx';
+import { HubCampagne } from './interface/campaign/HubCampagne.jsx';
+import { FenetreExportCampagne } from './interface/dialogues/FenetreExportCampagne.jsx';
 import { BarreActionBas } from './interface/scene/BarreActionBas.jsx';
 import { EnteteScene } from './interface/scene/EnteteScene.jsx';
 import { ListeInitiative } from './interface/scene/ListeInitiative.jsx';
@@ -13,9 +15,10 @@ import { createBlankParticipant } from './templates.js';
 
 export default function App() {
   const campaign = useCampaign();
-  const { scenes, campaignName, scene, restorePoints, dark, active, blocked, nextStartsRound, nextClass, roundEffect, actions } = campaign;
+  const { scenes, templateStore, setTemplateStore, campaignName, scene, restorePoints, dark, active, blocked, nextStartsRound, nextClass, roundEffect, actions } = campaign;
   const characters = useCharacterInteractions(scene, actions);
-  const templates = useTemplates();
+  const templates = useTemplates(templateStore, setTemplateStore);
+  const [currentView, setCurrentView] = useState('hub');
   const [openMenu, setOpenMenu] = useState(false);
   const [addSheetOpen, setAddSheetOpen] = useState(false);
   const [notice, setNotice] = useState(null);
@@ -25,6 +28,7 @@ export default function App() {
   const [initiativeEntryOpen, setInitiativeEntryOpen] = useState(false);
   const [templateTarget, setTemplateTarget] = useState(null);
   const [templateError, setTemplateError] = useState(null);
+  const [exportOpen, setExportOpen] = useState(false);
   const previousRoundRef = useRef(scene.round);
 
   const temporaliteSouple = scene.temporalite === temporalityModes.FLEXIBLE;
@@ -35,9 +39,6 @@ export default function App() {
     equalityRule: scene.equalityRule || defaultEqualityRule,
   };
 
-  // En mode Phases, l’affichage et le participant actif reposent sur des copies
-  // de participants dont l’initiative est recalculée pour la phase courante.
-  // On évite ainsi d’écrire l’initiative diminuée dans la scène réelle.
   const phaseParticipants = temporalitePhases && !phaseAttendRelanceInitiative
     ? participantsPourPhase(scene.participants, scene.phase, scene.phaseDecrement, optionsInitiative)
     : [];
@@ -53,17 +54,15 @@ export default function App() {
   const toutLeMondeAJoueSouple = temporaliteSouple && scene.participants.length > 0 && scene.participants.every((participant) => (scene.jouesSouples || []).includes(participant.id));
   const globalAutoTick = roundEffect === 'next' && !!scene.globalTracker?.enabled && !!scene.globalTracker?.auto;
 
-  // Les égalités simultanées doivent suivre l’initiative affichée : en Phases,
-  // on compare donc les initiatives courantes de phase, pas les valeurs de base.
   const participantsPourEgalites = temporalitePhases ? phaseParticipants : scene.participants;
   const idActifPourEgalites = temporalitePhases ? phaseActiveId : scene.activeId;
   const activeGroup = !temporaliteSouple && idActifPourEgalites ? groupeEgalitePourParticipant(participantsPourEgalites, idActifPourEgalites, optionsInitiative) : [];
 
   useEffect(() => {
-    if (!scene.activeId) return;
+    if (currentView !== 'scene' || !scene.activeId) return;
     const element = document.querySelector(`[data-participant-id="${scene.activeId}"]`);
     element?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-  }, [scene.activeId]);
+  }, [currentView, scene.activeId]);
 
   useEffect(() => {
     if (clockModalOpen && blocked.length === 0) setClockModalOpen(false);
@@ -72,13 +71,11 @@ export default function App() {
   useEffect(() => {
     const roundAvant = previousRoundRef.current;
     previousRoundRef.current = scene.round;
-    if (scene.round > roundAvant && scene.temporalite === temporalityModes.PHASES && scene.phaseRerollEachRound) {
+    if (currentView === 'scene' && scene.round > roundAvant && scene.temporalite === temporalityModes.PHASES && scene.phaseRerollEachRound) {
       setInitiativeEntryOpen(true);
     }
-  }, [scene.phaseRerollEachRound, scene.round, scene.temporalite]);
+  }, [currentView, scene.phaseRerollEachRound, scene.round, scene.temporalite]);
 
-  // Une horloge bloquante interrompt volontairement le passage au tour suivant :
-  // elle doit être résolue avant que les états/horloges avancent.
   const nextTurn = (direction) => {
     if (temporaliteSouple && direction > 0 && !toutLeMondeAJoueSouple) return;
     if (temporalitePhases && direction > 0 && !phaseParticipants.length) return;
@@ -112,7 +109,7 @@ export default function App() {
     characters.addCharacter(createBlankParticipant(), options);
     setAddSheetOpen(false);
   };
-  const createFromTemplate = (templateId, options) => {
+  const createFromTemplate = (templateId, options = { placement: 'reserve' }) => {
     const participant = templates.createParticipantFromTemplate(templateId);
     if (!participant) return;
     characters.addCharacter(participant, options);
@@ -122,6 +119,10 @@ export default function App() {
     actions.newScene();
     setOpenMenu(false);
   };
+  const chooseScene = (index) => {
+    actions.setSceneIndex(index);
+    setCurrentView('scene');
+  };
   const importCampaign = async (file) => {
     const result = await actions.importCampaign(file);
     if (result?.ok === false) {
@@ -130,11 +131,21 @@ export default function App() {
     }
     setOpenMenu(false);
     characters.closeCharacterPanels();
+    setCurrentView('hub');
+  };
+  const importTemplatesFromCampaign = async (file) => {
+    const result = await actions.importTemplatesFromCampaign(file);
+    if (result?.ok === false) {
+      setNotice({ title: 'Import impossible', message: result.message });
+      return;
+    }
+    setNotice({ title: 'Templates importés', message: `${result.added} ajouté(s), ${result.skipped} ignoré(s) car déjà présents.` });
   };
   const resetDemo = () => {
     actions.resetDemo();
     setOpenMenu(false);
     characters.closeCharacterPanels();
+    setCurrentView('hub');
   };
   const restoreScene = (pointId) => {
     actions.restoreScene(pointId);
@@ -170,8 +181,6 @@ export default function App() {
     actions.deleteTracker(participantId, trackerId);
   };
 
-  // Le libellé du bouton suivant est calculé ici parce qu’il dépend de l’état UI
-  // courant : mode souple, horloge bloquante, fin de phase ou nouveau round.
   const nextLabel = temporaliteSouple
     ? toutLeMondeAJoueSouple ? 'Nouveau round' : 'Mode souple : choisir dans la liste'
     : blocked.length
@@ -207,6 +216,68 @@ export default function App() {
             : `Suivant · P${scene.phase}`
       : undefined;
 
+  const fenetresCommunes = (
+    <>
+      <FenetresSuperposees
+        campaignName={campaignName}
+        scene={scene}
+        restorePoints={restorePoints}
+        dark={dark}
+        characters={characters}
+        templates={templates}
+        actions={actions}
+        etatInterface={{ addSheetOpen, openMenu: currentView === 'scene' && openMenu, notice, globalSheetOpen, clockModalOpen, initiativeEntryOpen: currentView === 'scene' && initiativeEntryOpen }}
+        commandesInterface={{
+          ouvrirAjoutPersonnage: openAddCharacter,
+          ouvrirSaisieInitiatives: openInitiativeEntry,
+          ouvrirHubCampagne: () => setCurrentView('hub'),
+          fermerAjoutPersonnage: () => setAddSheetOpen(false),
+          fermerMenu: () => setOpenMenu(false),
+          fermerNotice: () => setNotice(null),
+          fermerCompteurGlobal: () => setGlobalSheetOpen(false),
+          fermerResolutionHorloge: () => setClockModalOpen(false),
+          fermerSaisieInitiatives: () => setInitiativeEntryOpen(false),
+          ouvrirSauvegardeTemplate: openTemplateSave,
+          creerPersonnageVierge: createBlankCharacter,
+          creerDepuisTemplate: createFromTemplate,
+          restaurerScene: restoreScene,
+        }}
+        compteurGlobal={{ horlogesBloquantes: blocked }}
+        resolutionHorloge={{ resetClock, deleteClock }}
+        templatesUi={{ templateTarget, templateError, fermerSauvegardeTemplate: () => setTemplateTarget(null), enregistrerTemplate: saveTemplate }}
+      />
+      {exportOpen && <FenetreExportCampagne nomInitial={campaignName} onFermer={() => setExportOpen(false)} onExporter={actions.exportCampaign} />}
+    </>
+  );
+
+  if (currentView === 'hub') {
+    return (
+      <div className={`app ${dark ? 'dark' : ''}`}>
+        <HubCampagne
+          campaignName={campaignName}
+          scene={scene}
+          scenes={scenes}
+          templates={templates.templates}
+          dark={dark}
+          onChangerTheme={actions.setDark}
+          onChoisirScene={chooseScene}
+          onNouvelleScene={newScene}
+          onModifierScene={actions.updateSceneMeta}
+          onDupliquerScene={actions.duplicateScene}
+          onSupprimerScene={actions.deleteScene}
+          onModifierReglesInitiative={actions.updateCampaignInitiativeRules}
+          onExporter={() => setExportOpen(true)}
+          onImporter={importCampaign}
+          onReinitialiser={resetDemo}
+          onAjouterDepuisTemplate={(templateId) => createFromTemplate(templateId, { placement: 'reserve' })}
+          onSupprimerTemplate={templates.deleteTemplate}
+          onImporterTemplates={importTemplatesFromCampaign}
+        />
+        {fenetresCommunes}
+      </div>
+    );
+  }
+
   return (
     <div className={`app ${dark ? 'dark' : ''}`}>
       <div className="shell">
@@ -224,6 +295,7 @@ export default function App() {
           temporalitePhases={temporalitePhases}
           suivantDesactive={suivantDesactive}
           onBasculerNotes={() => setShowNotes(!showNotes)}
+          onRetourHub={() => setCurrentView('hub')}
           onTourPrecedent={() => nextTurn(-1)}
           onTourSuivant={() => nextTurn(1)}
           onModifierCompteurGlobal={actions.stepGlobal}
@@ -243,6 +315,7 @@ export default function App() {
         horlogeBloquee={blocked.length > 0}
         suivantDesactive={suivantDesactive}
         libelleSuivant={libelleBas}
+        onRetourHub={() => setCurrentView('hub')}
         onTourPrecedent={() => nextTurn(-1)}
         onTourSuivant={() => nextTurn(1)}
         onAjouterPersonnage={openAddCharacter}
@@ -250,37 +323,7 @@ export default function App() {
         onOuvrirMenu={() => setOpenMenu(true)}
       />
 
-      <FenetresSuperposees
-        campaignName={campaignName}
-        scene={scene}
-        scenes={scenes}
-        restorePoints={restorePoints}
-        dark={dark}
-        characters={characters}
-        templates={templates}
-        actions={actions}
-        etatInterface={{ addSheetOpen, openMenu, notice, globalSheetOpen, clockModalOpen, initiativeEntryOpen }}
-        commandesInterface={{
-          ouvrirAjoutPersonnage: openAddCharacter,
-          ouvrirSaisieInitiatives: openInitiativeEntry,
-          fermerAjoutPersonnage: () => setAddSheetOpen(false),
-          fermerMenu: () => setOpenMenu(false),
-          fermerNotice: () => setNotice(null),
-          fermerCompteurGlobal: () => setGlobalSheetOpen(false),
-          fermerResolutionHorloge: () => setClockModalOpen(false),
-          fermerSaisieInitiatives: () => setInitiativeEntryOpen(false),
-          ouvrirSauvegardeTemplate: openTemplateSave,
-          creerPersonnageVierge: createBlankCharacter,
-          creerDepuisTemplate: createFromTemplate,
-          nouvelleScene: newScene,
-          importerCampagne: importCampaign,
-          reinitialiserDemo: resetDemo,
-          restaurerScene: restoreScene,
-        }}
-        compteurGlobal={{ horlogesBloquantes: blocked }}
-        resolutionHorloge={{ resetClock, deleteClock }}
-        templatesUi={{ templateTarget, templateError, fermerSauvegardeTemplate: () => setTemplateTarget(null), enregistrerTemplate: saveTemplate }}
-      />
+      {fenetresCommunes}
     </div>
   );
 }

@@ -9,13 +9,12 @@ export function EnteteScene(props) {
     horlogesBloquantes,
     effetRound,
     compteurGlobalAuto,
-    notesVisibles,
     classeSuivant,
     libelleSuivant,
     temporaliteSouple,
     temporalitePhases,
     suivantDesactive,
-    onBasculerNotes,
+    onRetourHub,
     onTourPrecedent,
     onTourSuivant,
     onModifierCompteurGlobal,
@@ -33,21 +32,18 @@ export function EnteteScene(props) {
     ? 'Horloge à gérer'
     : tourSimultane
       ? 'Tour simultané'
-      : temporalitePhases
-        ? 'Tour actif'
-        : 'Tour actif';
+      : 'Tour actif';
 
   return (
     <header className="top compact">
-      <div className="scene-head">
-        <button className="icon-btn" onClick={onBasculerNotes}>{notesVisibles ? '⌃' : '⌄'}</button>
-        <div>
+      <div className="scene-head scene-head-with-logo" style={{ display: 'grid', gridTemplateColumns: 'auto minmax(0, 1fr) auto', alignItems: 'center', gap: 8 }}>
+        <button className="hub-return-logo" onClick={onRetourHub} aria-label="Retour au Hub de campagne" style={{ width: 46, height: 46, minWidth: 46, padding: 5, display: 'grid', placeItems: 'center', borderRadius: 999 }}><img src="/branding/logo-cadence-light.svg" alt="" style={{ width: 32, height: 32, display: 'block' }} /></button>
+        <div className="scene-title-block" style={{ minWidth: 0 }}>
           <h1>{scene.title}</h1>
           <div className="muted">{scene.type} · {scene.participants.length} en initiative{suffixeTemporalite}</div>
         </div>
         <BadgeRound round={scene.round} effect={effetRound} phase={temporalitePhases ? scene.phase || 1 : null} />
       </div>
-      {notesVisibles && <div className="scene-notes panel">{scene.notes}</div>}
       <div className="turn-row">
         <button className="turn-btn" onClick={onTourPrecedent} aria-label="Participant précédent">↶</button>
         <div className={`active-box panel ${tourSimultane ? 'simultaneous-turn' : ''} ${temporaliteSouple ? 'flexible-turn' : ''} ${temporalitePhases ? 'phase-turn' : ''}`}>

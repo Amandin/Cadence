@@ -1,3 +1,5 @@
+import { temporalityModes } from './constants.js';
+
 export const symbols = ['●●', '⚔', '🗡', '🛡', '🪓', '🏹', '🔮', '🗝', '📜', '⏳', '⚙', '🔥', '☁', '🌳', '🐺', '☠', '✦', '🦴', '🧪', '🕯'];
 export const colors = ['slate', 'red', 'orange', 'amber', 'emerald', 'cyan', 'blue', 'violet', 'pink', 'rose'];
 
@@ -117,7 +119,43 @@ export function makeDefaultCampaign() {
           { id: 'incendie', name: 'Incendie rampant', kind: 'Environnement', symbol: '🔥', color: 'orange', initiative: 8, departage: '', description: 'Égalité parfaite pour tester l’ordre des catégories.', stats: [], statuses: [], trackers: [{ id: 'fire-clock', type: 'clock', name: 'Propagation', visible: true, current: 4, max: 6, auto: true }] },
           { id: 'renforts', name: 'Renforts en approche', kind: 'Environnement', symbol: '⏳', color: 'amber', initiative: 3, departage: '', description: 'Horloge environnementale proche de la fin.', stats: [], statuses: [], trackers: [{ id: 'clock', type: 'clock', name: 'Arrivée', visible: true, current: 5, max: 6, auto: true }] },
         ],
-      }
+      },
+      {
+        id: 'conseil', title: 'Conseil sous tension', type: 'Négociation', round: 1, activeId: '', reserveOpen: true,
+        temporalite: temporalityModes.FLEXIBLE,
+        notes: 'Exemple pour tester le mode souple : le MJ coche librement qui a déjà pris la parole.',
+        reserveNotes: 'Les observateurs peuvent rejoindre la scène si la discussion dégénère.',
+        globalTracker: { enabled: true, name: 'Tension', mode: 'clock', current: 1, max: 6, auto: false },
+        jouesSouples: [], historiqueSouple: [],
+        reserve: [
+          { id: 'scribe', name: 'Scribe nerveux', kind: 'Allié', symbol: '📜', color: 'amber', initiative: 0, departage: '', description: 'Prend des notes, peut révéler un détail.', stats: ['Observateur'], statuses: [], trackers: [{ id: 'scribe-stress', type: 'dots', name: 'Nervosité', visible: true, current: 1, max: 4 }] },
+          { id: 'garde-porte', name: 'Garde à la porte', kind: 'Opposant', symbol: '🛡', color: 'slate', initiative: 0, departage: '', description: 'Intervient seulement si la salle s’agite.', stats: ['Patient'], statuses: [], trackers: [{ id: 'alerte-garde', type: 'clock', name: 'Alerte', visible: true, current: 0, max: 4, auto: false }] },
+        ],
+        participants: [
+          { id: 'diplomate', name: 'Diplomate tenace', kind: 'PJ', symbol: '🗝', color: 'blue', initiative: 12, departage: 2, description: 'Veut maintenir le dialogue ouvert.', stats: ['Influence 2'], statuses: [], trackers: [{ id: 'aplomb', type: 'dots', name: 'Aplomb', visible: true, current: 3, max: 5 }] },
+          { id: 'ancienne', name: 'Ancienne méfiante', kind: 'Allié', symbol: '🕯', color: 'violet', initiative: 10, departage: 1, description: 'Aide si on lui laisse le temps de parler.', stats: ['Mémoire'], statuses: [{ id: 'mefiante', name: 'Méfiante', duration: null, remaining: null, loop: false, expired: false }], trackers: [{ id: 'confiance', type: 'bar', name: 'Confiance', visible: true, current: 8, min: 0, max: 15, step: 1, minAbsolute: true, maxAbsolute: true }] },
+          { id: 'emissaire', name: 'Émissaire hostile', kind: 'Opposant', symbol: '⚔', color: 'red', initiative: 11, departage: 3, description: 'Cherche à provoquer une rupture.', stats: ['Pression'], statuses: [], trackers: [{ id: 'influence', type: 'bar', name: 'Influence', visible: true, current: 12, min: 0, max: 20, step: 2, minAbsolute: true, maxAbsolute: false }] },
+          { id: 'rumeur', name: 'Rumeur dans la salle', kind: 'Environnement', symbol: '☁', color: 'pink', initiative: 6, departage: '', description: 'Fait monter la tension quand elle progresse.', stats: [], statuses: [], trackers: [{ id: 'rumeur-clock', type: 'clock', name: 'Propagation', visible: true, current: 2, max: 6, auto: false }] },
+        ],
+      },
+      {
+        id: 'poursuite', title: 'Poursuite sur les toits', type: 'Action', round: 1, phase: 1, activeId: 'coursiere', reserveOpen: false,
+        temporalite: temporalityModes.PHASES,
+        phaseDecrement: 10,
+        phaseRerollEachRound: false,
+        notes: 'Exemple pour tester les phases : 23 / 14 / 8 donne trois phases avant le nouveau round.',
+        reserveNotes: 'La réserve reste à 0 et sert à tester l’entrée tardive.',
+        globalTracker: { enabled: true, name: 'Distance', mode: 'clock', current: 2, max: 8, auto: true },
+        reserve: [
+          { id: 'passants', name: 'Passants affolés', kind: 'Environnement', symbol: '☁', color: 'cyan', initiative: 0, departage: '', description: 'Obstacle possible si la course redescend dans la rue.', stats: [], statuses: [], trackers: [{ id: 'foule', type: 'clock', name: 'Panique', visible: true, current: 1, max: 5, auto: false }] },
+        ],
+        participants: [
+          { id: 'coursiere', name: 'Coursière des toits', kind: 'PJ', symbol: '🗡', color: 'emerald', initiative: 23, departage: 2, description: 'Très rapide : agit en phase 1, 2 et 3.', stats: ['Agile'], statuses: [], trackers: [{ id: 'souffle-coursiere', type: 'dots', name: 'Souffle', visible: true, current: 1, max: 5 }] },
+          { id: 'traqueur', name: 'Traqueur masqué', kind: 'Opposant', symbol: '🏹', color: 'red', initiative: 14, departage: 3, description: 'Reste dangereux en phase 2.', stats: ['Précis'], statuses: [], trackers: [{ id: 'pv-traqueur', type: 'bar', name: 'PV', visible: true, current: 18, min: 0, max: 25, step: 5, minAbsolute: true, maxAbsolute: false }] },
+          { id: 'vigie', name: 'Vigie alliée', kind: 'Allié', symbol: '🔮', color: 'blue', initiative: 8, departage: 1, description: 'Agit seulement en première phase.', stats: ['Soutien'], statuses: [], trackers: [{ id: 'focus-vigie', type: 'number', name: 'Focus', visible: true, current: 2, step: 1, min: 0, max: 4, minAbsolute: true, maxAbsolute: true }] },
+          { id: 'toits', name: 'Tuiles glissantes', kind: 'Environnement', symbol: '⚙', color: 'amber', initiative: 5, departage: '', description: 'Danger lent mais régulier.', stats: [], statuses: [], trackers: [{ id: 'chute-clock', type: 'clock', name: 'Chute', visible: true, current: 3, max: 6, auto: true }] },
+        ],
+      },
     ],
   };
 }
