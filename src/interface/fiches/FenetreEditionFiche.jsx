@@ -16,9 +16,14 @@ function nombreOuDefaut(valeur, defaut = 0) {
   return Number.isFinite(nombre) ? nombre : defaut;
 }
 
+function normaliserStats(stats = []) {
+  return stats.map((stat) => String(stat || '').trim()).filter(Boolean);
+}
+
 function normaliserFiche(brouillon) {
   return {
     ...brouillon,
+    stats: normaliserStats(brouillon.stats),
     initiative: nombreOuDefaut(brouillon.initiative, 0),
     departage: brouillon.departage === '' ? '' : nombreOuDefaut(brouillon.departage, 0),
     trackers: brouillon.trackers.map((suivi) => {
@@ -75,6 +80,15 @@ function ChampNombre({ label, valeur, onChange }) {
   return <label className="field">{label}<input type="number" inputMode="numeric" value={valeur ?? ''} onChange={(e) => onChange(e.target.value === '' ? '' : Number(e.target.value))} /></label>;
 }
 
+function EditeurInfosRapides({ stats = [], onChange }) {
+  const lignes = stats.length ? stats : [''];
+  const modifier = (index, valeur) => onChange(lignes.map((stat, position) => position === index ? valeur : stat));
+  const supprimer = (index) => onChange(lignes.filter((_, position) => position !== index));
+  const ajouter = () => onChange([...normaliserStats(lignes), '']);
+
+  return <div className="stack quick-stats-editor">{lignes.map((stat, index) => <div className="quick-stat-row" key={index}><input value={stat} placeholder="Défense 3, Attaque +6, Dégâts 2d6…" onChange={(e) => modifier(index, e.target.value)} /><button className="small-btn subtle-danger" onClick={() => supprimer(index)} disabled={lignes.length <= 1 && !stat}>×</button></div>)}<button className="small-btn" onClick={ajouter}>+ info rapide</button></div>;
+}
+
 function EditeurSuivi({ suivi, onChange, onDelete }) {
   const modifierSuivi = (valeur) => onChange({ ...suivi, ...valeur });
 
@@ -82,11 +96,11 @@ function EditeurSuivi({ suivi, onChange, onDelete }) {
 }
 
 export function FenetreEditionFiche({ participant, title = 'Modifier', saveTemplateVisible = true, deleteLabel = 'Supprimer la fiche', onClose, onSave, onDelete, onSaveTemplate }) {
-  const [brouillon, setBrouillon] = useState(clone(participant));
+  const [brouillon, setBrouillon] = useState({ ...clone(participant), stats: participant.stats || [] });
   const [confirmationSuppression, setConfirmationSuppression] = useState(false);
   const modifierChamp = (clef, valeur) => setBrouillon((courant) => ({ ...courant, [clef]: valeur }));
   const modifierSuivi = (id, suivant) => setBrouillon((courant) => ({ ...courant, trackers: courant.trackers.map((suivi) => suivi.id === id ? suivant : suivi) }));
   const enregistrerCommeTemplate = () => onSaveTemplate?.(normaliserFiche(brouillon));
 
-  return <><Fenetre title={title} onClose={onClose}><label className="field">Nom<input value={brouillon.name} onChange={(e) => modifierChamp('name', e.target.value)} /></label><label className="field">Description<textarea value={brouillon.description || ''} onChange={(e) => modifierChamp('description', e.target.value)} /></label><div className="grid2"><label className="field">Type<select value={brouillon.kind} onChange={(e) => modifierChamp('kind', e.target.value)}>{participantKinds.map((type) => <option key={type}>{type}</option>)}</select></label><ChampNombre label="Initiative" valeur={brouillon.initiative} onChange={(valeur) => modifierChamp('initiative', valeur)} /></div><div className="grid2"><ChampNombre label="Départage" valeur={brouillon.departage} onChange={(valeur) => modifierChamp('departage', valeur)} /><div /></div><div className="grid2"><label className="field">Symbole<select value={brouillon.symbol || symbols[0]} onChange={(e) => modifierChamp('symbol', e.target.value)}>{symbols.map((symbole) => <option key={symbole} value={symbole}>{symbole}</option>)}</select></label><label className="field">Couleur<select value={brouillon.color || colors[0]} onChange={(e) => modifierChamp('color', e.target.value)}>{colors.map((couleur) => <option key={couleur} value={couleur}>{colorNames[couleur] || couleur}</option>)}</select></label></div><h3>Suivis</h3><div className="stack tracker-list">{brouillon.trackers.map((suivi) => <EditeurSuivi key={suivi.id} suivi={suivi} onChange={(suivant) => modifierSuivi(suivi.id, suivant)} onDelete={() => setBrouillon((courant) => ({ ...courant, trackers: courant.trackers.filter((item) => item.id !== suivi.id) }))} />)}<button className="primary add-tracker-btn" onClick={() => setBrouillon((courant) => ({ ...courant, trackers: [...courant.trackers, newTracker('bar')] }))}>Ajouter un suivi</button></div>{saveTemplateVisible && <button className="small-btn" style={{ width: '100%', marginTop: 12 }} onClick={enregistrerCommeTemplate}>Enregistrer comme template</button>}<div className="grid2" style={{ marginTop: 12 }}><button className="primary" onClick={() => onSave(normaliserFiche(brouillon))}>Valider</button><button className="danger-btn" onClick={() => setConfirmationSuppression(true)}>{deleteLabel}</button></div></Fenetre>{confirmationSuppression && <FenetreConfirmationSuppression nom={brouillon.name} onAnnuler={() => setConfirmationSuppression(false)} onConfirmer={onDelete} />}</>;
+  return <><Fenetre title={title} onClose={onClose}><label className="field">Nom<input value={brouillon.name} onChange={(e) => modifierChamp('name', e.target.value)} /></label><label className="field">Description<textarea value={brouillon.description || ''} onChange={(e) => modifierChamp('description', e.target.value)} /></label><div className="grid2"><label className="field">Type<select value={brouillon.kind} onChange={(e) => modifierChamp('kind', e.target.value)}>{participantKinds.map((type) => <option key={type}>{type}</option>)}</select></label><ChampNombre label="Initiative" valeur={brouillon.initiative} onChange={(valeur) => modifierChamp('initiative', valeur)} /></div><div className="grid2"><ChampNombre label="Départage" valeur={brouillon.departage} onChange={(valeur) => modifierChamp('departage', valeur)} /><div /></div><div className="grid2"><label className="field">Symbole<select value={brouillon.symbol || symbols[0]} onChange={(e) => modifierChamp('symbol', e.target.value)}>{symbols.map((symbole) => <option key={symbole} value={symbole}>{symbole}</option>)}</select></label><label className="field">Couleur<select value={brouillon.color || colors[0]} onChange={(e) => modifierChamp('color', e.target.value)}>{colors.map((couleur) => <option key={couleur} value={couleur}>{colorNames[couleur] || couleur}</option>)}</select></label></div><h3>Infos rapides</h3><EditeurInfosRapides stats={brouillon.stats || []} onChange={(stats) => modifierChamp('stats', stats)} /><h3>Suivis</h3><div className="stack tracker-list">{brouillon.trackers.map((suivi) => <EditeurSuivi key={suivi.id} suivi={suivi} onChange={(suivant) => modifierSuivi(suivi.id, suivant)} onDelete={() => setBrouillon((courant) => ({ ...courant, trackers: courant.trackers.filter((item) => item.id !== suivi.id) }))} />)}<button className="primary add-tracker-btn" onClick={() => setBrouillon((courant) => ({ ...courant, trackers: [...courant.trackers, newTracker('bar')] }))}>Ajouter un suivi</button></div>{saveTemplateVisible && <button className="small-btn" style={{ width: '100%', marginTop: 12 }} onClick={enregistrerCommeTemplate}>Enregistrer comme template</button>}<div className="grid2" style={{ marginTop: 12 }}><button className="primary" onClick={() => onSave(normaliserFiche(brouillon))}>Valider</button><button className="danger-btn" onClick={() => setConfirmationSuppression(true)}>{deleteLabel}</button></div></Fenetre>{confirmationSuppression && <FenetreConfirmationSuppression nom={brouillon.name} onAnnuler={() => setConfirmationSuppression(false)} onConfirmer={onDelete} />}</>;
 }
