@@ -1,6 +1,6 @@
 import { defaultCategoryOrder, defaultEqualityRule, defaultPhaseDecrement, defaultPhaseRerollEachRound, defaultTemporalityMode, temporalityModes } from '../constants.js';
 import { campaignNameFromPayload, campaignTemplatesFromPayload, isValidCampaign, normalizeCampaignName, serializeCampaign } from '../storage.js';
-import { makeDefaultCampaign, uid } from '../logic.js';
+import { clone, makeDefaultCampaign, uid } from '../logic.js';
 import { mergeTemplateStores } from '../templates.js';
 
 function initiativeRulesFromScene(scene = {}) {
@@ -51,6 +51,14 @@ function createBlankScene(rules = {}) {
     reserve: [],
     participants: [],
     ...initiativeRulesFromScene(rules),
+  };
+}
+
+function duplicateSceneData(scene) {
+  return {
+    ...clone(scene),
+    id: uid('scene'),
+    title: `${scene?.title || 'Scène'} — copie`,
   };
 }
 
@@ -143,6 +151,30 @@ export function createCampaignActions({ scenes, sceneIndex, dark, campaignName, 
       const sourceRules = initiativeRulesFromScene(scenes[sceneIndex] || scenes[0]);
       setScenes((currentScenes) => [...currentScenes, createBlankScene(sourceRules)]);
       setSceneIndex(scenes.length);
+    },
+    updateSceneMeta(index, patch) {
+      setScenes((currentScenes) => currentScenes.map((scene, scenePosition) => scenePosition === index ? { ...scene, ...patch } : scene));
+    },
+    duplicateScene(index) {
+      const sourceIndex = Number.isInteger(index) ? index : sceneIndex;
+      setScenes((currentScenes) => {
+        const source = currentScenes[sourceIndex] || currentScenes[0];
+        if (!source) return currentScenes;
+        const nextScenes = [...currentScenes];
+        nextScenes.splice(sourceIndex + 1, 0, duplicateSceneData(source));
+        return nextScenes;
+      });
+      setSceneIndex(sourceIndex + 1);
+    },
+    deleteScene(index) {
+      const sourceIndex = Number.isInteger(index) ? index : sceneIndex;
+      setScenes((currentScenes) => {
+        if (currentScenes.length <= 1) return currentScenes;
+        const nextScenes = currentScenes.filter((_, scenePosition) => scenePosition !== sourceIndex);
+        const nextIndex = Math.min(sourceIndex, nextScenes.length - 1);
+        setSceneIndex(Math.max(0, nextIndex));
+        return nextScenes;
+      });
     },
     updateCampaignInitiativeRules(patch) {
       setScenes((currentScenes) => currentScenes.map((scene) => applyInitiativeRules(scene, patch)));
