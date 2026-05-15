@@ -8,14 +8,18 @@ import {
 } from '../constants.js';
 import { trierParInitiative } from './initiative.js';
 
-export function initiativeRulesFromScene(scene = {}) {
+export function normalizeCampaignRules(rules = {}) {
   return {
-    temporalite: scene.temporalite || defaultTemporalityMode,
-    phaseDecrement: Math.max(1, Number(scene.phaseDecrement) || defaultPhaseDecrement),
-    phaseRerollEachRound: scene.phaseRerollEachRound ?? defaultPhaseRerollEachRound,
-    equalityRule: scene.equalityRule || defaultEqualityRule,
-    categoryOrder: Array.isArray(scene.categoryOrder) && scene.categoryOrder.length ? scene.categoryOrder : defaultCategoryOrder,
+    temporalite: rules.temporalite || defaultTemporalityMode,
+    phaseDecrement: Math.max(1, Number(rules.phaseDecrement) || defaultPhaseDecrement),
+    phaseRerollEachRound: rules.phaseRerollEachRound ?? defaultPhaseRerollEachRound,
+    equalityRule: rules.equalityRule || defaultEqualityRule,
+    categoryOrder: Array.isArray(rules.categoryOrder) && rules.categoryOrder.length ? rules.categoryOrder : defaultCategoryOrder,
   };
+}
+
+export function initiativeRulesFromScene(scene = {}) {
+  return normalizeCampaignRules(scene);
 }
 
 function premierParticipantId(scene, rules) {
@@ -35,16 +39,16 @@ function applyTemporality(scene, rules) {
 }
 
 export function applyInitiativeRules(scene, patch = {}) {
-  const next = { ...initiativeRulesFromScene(scene), ...patch };
+  const next = normalizeCampaignRules({ ...initiativeRulesFromScene(scene), ...patch });
   const sceneWithTemporality = applyTemporality(scene, next);
 
   return {
     ...sceneWithTemporality,
     temporalite: next.temporalite,
-    phaseDecrement: Math.max(1, Number(next.phaseDecrement) || defaultPhaseDecrement),
+    phaseDecrement: next.phaseDecrement,
     phaseRerollEachRound: !!next.phaseRerollEachRound,
-    equalityRule: next.equalityRule || defaultEqualityRule,
-    categoryOrder: Array.isArray(next.categoryOrder) && next.categoryOrder.length ? next.categoryOrder : defaultCategoryOrder,
+    equalityRule: next.equalityRule,
+    categoryOrder: next.categoryOrder,
   };
 }
 
@@ -52,6 +56,11 @@ export function campaignRulesFromScenes(scenes = []) {
   return initiativeRulesFromScene(scenes[0] || {});
 }
 
+export function campaignRulesFromPayload(data = {}) {
+  return normalizeCampaignRules(data.initiativeRules || data.rules || campaignRulesFromScenes(data.scenes || []));
+}
+
 export function unifyCampaignScenes(scenes = [], rules = campaignRulesFromScenes(scenes)) {
-  return scenes.map((scene) => applyInitiativeRules(scene, rules));
+  const campaignRules = normalizeCampaignRules(rules);
+  return scenes.map((scene) => applyInitiativeRules(scene, campaignRules));
 }
