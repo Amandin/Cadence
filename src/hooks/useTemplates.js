@@ -1,3 +1,4 @@
+import { clone, uid } from '../logic.js';
 import { categoryExists, instantiateTemplate, makeTemplateFromParticipant, mergeTemplateStores, normalizeTemplateStore, templateNameExists } from '../templates.js';
 
 export function useTemplates(store, setStore) {
@@ -30,6 +31,49 @@ export function useTemplates(store, setStore) {
     return instantiateTemplate(template);
   };
 
+  const getTemplate = (templateId) => templateStore.templates.find((template) => template.id === templateId) || null;
+
+  const updateTemplateParticipant = (templateId, participant) => {
+    const cleanParticipant = { ...clone(participant), id: 'template-participant', statuses: [] };
+    const cleanName = cleanParticipant.name?.trim() || 'Template sans nom';
+    setStore((current) => {
+      const currentStore = normalizeTemplateStore(current);
+      return normalizeTemplateStore({
+        ...currentStore,
+        templates: currentStore.templates.map((template) => template.id === templateId
+          ? { ...template, name: cleanName, updatedAt: new Date().toISOString(), participant: { ...cleanParticipant, name: cleanName } }
+          : template),
+      });
+    });
+  };
+
+  const duplicateTemplate = (templateId) => {
+    const source = getTemplate(templateId);
+    if (!source) return null;
+    const baseName = `${source.name || source.participant?.name || 'Template'} — copie`;
+    const duplicate = {
+      ...clone(source),
+      id: uid('tpl'),
+      name: baseName,
+      createdAt: new Date().toISOString(),
+      updatedAt: undefined,
+      participant: {
+        ...clone(source.participant),
+        id: 'template-participant',
+        name: baseName,
+        statuses: [],
+      },
+    };
+    setStore((current) => {
+      const currentStore = normalizeTemplateStore(current);
+      return normalizeTemplateStore({
+        ...currentStore,
+        templates: [...currentStore.templates, duplicate],
+      });
+    });
+    return duplicate;
+  };
+
   const deleteTemplate = (templateId) => {
     setStore((current) => {
       const currentStore = normalizeTemplateStore(current);
@@ -51,6 +95,9 @@ export function useTemplates(store, setStore) {
     templates: templateStore.templates,
     saveParticipantAsTemplate,
     createParticipantFromTemplate,
+    getTemplate,
+    updateTemplateParticipant,
+    duplicateTemplate,
     deleteTemplate,
     importTemplates,
   };
