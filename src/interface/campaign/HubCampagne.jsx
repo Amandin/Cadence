@@ -273,7 +273,7 @@ function OngletSauvegarde({ onExporter, onImporter, onReinitialiser }) {
   );
 }
 
-function OngletTemplates({ templates = [], onAjouterDepuisTemplate, onSupprimerTemplate, onImporterTemplates }) {
+function OngletTemplates({ templates = [], onAjouterDepuisTemplate, onEditerTemplate, onDupliquerTemplate, onSupprimerTemplate, onImporterTemplates }) {
   const groupes = useMemo(() => grouperTemplates(templates), [templates]);
   const importInputRef = useRef(null);
   const choisirFichier = () => importInputRef.current?.click();
@@ -303,7 +303,7 @@ function OngletTemplates({ templates = [], onAjouterDepuisTemplate, onSupprimerT
   return (
     <div className="stack hub-section panel">
       {entete}
-      <p className="muted compact-help">Ajoute rapidement un template à la scène courante ou supprime les fiches devenues inutiles.</p>
+      <p className="muted compact-help">Ajoute rapidement un template à la scène courante, modifie sa fiche modèle, ou nettoie la bibliothèque de campagne.</p>
       {groupes.map((groupe) => (
         <section className="hub-template-group" key={groupe.categorie}>
           <div className="flexible-section-title"><span>{groupe.categorie}</span><strong>{groupe.templates.length}</strong></div>
@@ -313,6 +313,8 @@ function OngletTemplates({ templates = [], onAjouterDepuisTemplate, onSupprimerT
                 <span><strong>{template.name}</strong><small>{template.participant?.kind || 'Personnage'}</small></span>
                 <div className="compact-arrows">
                   <button className="small-btn" onClick={() => onAjouterDepuisTemplate(template.id)}>Ajouter</button>
+                  <button className="small-btn" onClick={() => onEditerTemplate(template.id)}>Modifier</button>
+                  <button className="small-btn" onClick={() => onDupliquerTemplate(template.id)}>Dupliquer</button>
                   <button className="danger-btn mini-danger" onClick={() => onSupprimerTemplate(template.id)}>Suppr.</button>
                 </div>
               </div>
@@ -341,6 +343,8 @@ export function HubCampagne({
   onImporter,
   onReinitialiser,
   onAjouterDepuisTemplate,
+  onEditerTemplate,
+  onDupliquerTemplate,
   onSupprimerTemplate,
   onImporterTemplates,
 }) {
@@ -373,7 +377,7 @@ export function HubCampagne({
         {onglet === 'scenes' && <OngletScenes scenes={scenes} editingSceneId={editingSceneId} onEditerScene={setEditingSceneId} onFermerEditionScene={() => setEditingSceneId('')} onChoisirScene={onChoisirScene} onNouvelleScene={creerNouvelleScene} onModifierScene={onModifierScene} onDupliquerScene={dupliquerScene} onSupprimerScene={onSupprimerScene} />}
         {onglet === 'regles' && <OngletRegles scene={scene} onModifierRegles={onModifierReglesInitiative} />}
         {onglet === 'sauvegarde' && <OngletSauvegarde onExporter={onExporter} onImporter={onImporter} onReinitialiser={onReinitialiser} />}
-        {onglet === 'templates' && <OngletTemplates templates={templates} onAjouterDepuisTemplate={onAjouterDepuisTemplate} onSupprimerTemplate={onSupprimerTemplate} onImporterTemplates={onImporterTemplates} />}
+        {onglet === 'templates' && <OngletTemplates templates={templates} onAjouterDepuisTemplate={onAjouterDepuisTemplate} onEditerTemplate={onEditerTemplate} onDupliquerTemplate={onDupliquerTemplate} onSupprimerTemplate={onSupprimerTemplate} onImporterTemplates={onImporterTemplates} />}
       </main>
     </div>
   );
