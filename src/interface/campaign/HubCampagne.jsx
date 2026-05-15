@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   APP_VERSION,
   defaultCategoryOrder,
@@ -58,11 +58,17 @@ function EnteteHub({ campaignName, sombre, onChangerTheme }) {
   );
 }
 
-function CarteScene({ scene, index, active, canDelete, onChoisirScene, onModifierScene, onDupliquerScene, onSupprimerScene }) {
-  const [edition, setEdition] = useState(false);
+function CarteScene({ scene, index, active, canDelete, editing, onEditer, onFermerEdition, onChoisirScene, onModifierScene, onDupliquerScene, onSupprimerScene }) {
   const [titre, setTitre] = useState(scene.title || 'Scène');
   const [type, setType] = useState(scene.type || 'Scène');
   const [notes, setNotes] = useState(scene.notes || '');
+
+  useEffect(() => {
+    if (!editing) return;
+    setTitre(scene.title || 'Scène');
+    setType(scene.type || 'Scène');
+    setNotes(scene.notes || '');
+  }, [editing, scene.notes, scene.title, scene.type]);
 
   const enregistrer = () => {
     onModifierScene(index, {
@@ -70,12 +76,12 @@ function CarteScene({ scene, index, active, canDelete, onChoisirScene, onModifie
       type: type.trim() || 'Scène',
       notes,
     });
-    setEdition(false);
+    onFermerEdition();
   };
 
   return (
     <div className={`hub-scene-card ${active ? 'selected' : ''}`}>
-      {edition ? (
+      {editing ? (
         <div className="stack hub-scene-edit">
           <label className="field">
             Nom
@@ -91,7 +97,7 @@ function CarteScene({ scene, index, active, canDelete, onChoisirScene, onModifie
           </label>
           <div className="grid2">
             <button className="primary" onClick={enregistrer}>Enregistrer</button>
-            <button className="small-btn" onClick={() => setEdition(false)}>Annuler</button>
+            <button className="small-btn" onClick={onFermerEdition}>Annuler</button>
           </div>
         </div>
       ) : (
@@ -103,7 +109,7 @@ function CarteScene({ scene, index, active, canDelete, onChoisirScene, onModifie
           {scene.notes && <p className="muted compact-help hub-scene-notes">{scene.notes}</p>}
           <div className="hub-scene-actions explicit">
             <button className="primary" onClick={() => onChoisirScene(index)}>Ouvrir</button>
-            <button className="small-btn" onClick={() => setEdition(true)}>Modifier</button>
+            <button className="small-btn" onClick={() => onEditer(scene.id)}>Modifier</button>
             <button className="small-btn" onClick={() => onDupliquerScene(index)}>Dupliquer</button>
             <button className="danger-btn mini-danger" onClick={() => onSupprimerScene(index)} disabled={!canDelete}>Suppr.</button>
           </div>
@@ -113,7 +119,7 @@ function CarteScene({ scene, index, active, canDelete, onChoisirScene, onModifie
   );
 }
 
-function OngletScenes({ scenes, sceneActiveId, onChoisirScene, onNouvelleScene, onModifierScene, onDupliquerScene, onSupprimerScene }) {
+function OngletScenes({ scenes, sceneActiveId, editingSceneId, onEditerScene, onFermerEditionScene, onChoisirScene, onNouvelleScene, onModifierScene, onDupliquerScene, onSupprimerScene }) {
   return (
     <div className="stack hub-section panel">
       <div className="hub-section-head">
@@ -127,7 +133,10 @@ function OngletScenes({ scenes, sceneActiveId, onChoisirScene, onNouvelleScene, 
             scene={scene}
             index={index}
             active={scene.id === sceneActiveId}
+            editing={scene.id === editingSceneId}
             canDelete={scenes.length > 1}
+            onEditer={onEditerScene}
+            onFermerEdition={onFermerEditionScene}
             onChoisirScene={onChoisirScene}
             onModifierScene={onModifierScene}
             onDupliquerScene={onDupliquerScene}
@@ -337,13 +346,27 @@ export function HubCampagne({
   onImporterTemplates,
 }) {
   const [onglet, setOnglet] = useState('scenes');
+  const [editingSceneId, setEditingSceneId] = useState('');
+  const [editNewSceneWhenReady, setEditNewSceneWhenReady] = useState(false);
+
+  useEffect(() => {
+    if (!editNewSceneWhenReady || !scene?.id) return;
+    setOnglet('scenes');
+    setEditingSceneId(scene.id);
+    setEditNewSceneWhenReady(false);
+  }, [editNewSceneWhenReady, scene?.id]);
+
+  const creerNouvelleScene = () => {
+    onNouvelleScene();
+    setEditNewSceneWhenReady(true);
+  };
 
   return (
     <div className="campaign-page shell">
       <EnteteHub campaignName={campaignName} sombre={dark} onChangerTheme={onChangerTheme} />
       <main className="campaign-hub-page">
         <OngletsHub onglet={onglet} setOnglet={setOnglet} />
-        {onglet === 'scenes' && <OngletScenes scenes={scenes} sceneActiveId={scene?.id} onChoisirScene={onChoisirScene} onNouvelleScene={onNouvelleScene} onModifierScene={onModifierScene} onDupliquerScene={onDupliquerScene} onSupprimerScene={onSupprimerScene} />}
+        {onglet === 'scenes' && <OngletScenes scenes={scenes} sceneActiveId={scene?.id} editingSceneId={editingSceneId} onEditerScene={setEditingSceneId} onFermerEditionScene={() => setEditingSceneId('')} onChoisirScene={onChoisirScene} onNouvelleScene={creerNouvelleScene} onModifierScene={onModifierScene} onDupliquerScene={onDupliquerScene} onSupprimerScene={onSupprimerScene} />}
         {onglet === 'regles' && <OngletRegles scene={scene} onModifierRegles={onModifierReglesInitiative} />}
         {onglet === 'sauvegarde' && <OngletSauvegarde onExporter={onExporter} onImporter={onImporter} onReinitialiser={onReinitialiser} />}
         {onglet === 'templates' && <OngletTemplates templates={templates} onAjouterDepuisTemplate={onAjouterDepuisTemplate} onSupprimerTemplate={onSupprimerTemplate} onImporterTemplates={onImporterTemplates} />}
