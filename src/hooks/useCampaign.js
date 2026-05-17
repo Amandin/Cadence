@@ -1,61 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createCampaignActions } from '../actions/campaignActions.js';
 import { createSceneActions } from '../actions/sceneActions.js';
-import { campaignRulesFromPayload, applyInitiativeRules, normalizeCampaignRules, unifyCampaignScenes } from '../domain/campaignRules.js';
+import { applyInitiativeRules, campaignRulesFromPayload, normalizeCampaignRules, unifyCampaignScenes } from '../domain/campaignRules.js';
 import { normalizeGlobalTracker, stepGlobalTracker } from '../domain/globalTracker.js';
 import { clone, hasTriggeredClock, nextTurnInfo, uid } from '../logic.js';
-import { campaignNameFromPayload, campaignTemplatesFromPayload, loadCampaign, saveCampaign } from '../storage.js';
-import { defaultCategoryOrder, defaultEqualityRule, defaultPhaseDecrement, defaultPhaseRerollEachRound, defaultTemporalityMode, legacyParticipantKinds } from '../constants.js';
-
-function normalizeKind(kind) {
-  return legacyParticipantKinds[kind] || kind;
-}
-
-function normalizeParticipant(participant) {
-  return {
-    ...participant,
-    kind: normalizeKind(participant?.kind || 'Environnement'),
-  };
-}
-
-function normalizeReserveParticipant(participant) {
-  return {
-    ...normalizeParticipant(participant),
-    initiative: 0,
-  };
-}
-
-function normalizeScene(scene) {
-  return {
-    id: scene?.id || 'scene-secours',
-    title: scene?.title || 'Scène',
-    type: scene?.type || 'Scène',
-    round: scene?.round || 1,
-    phase: Math.max(1, Number(scene?.phase) || 1),
-    phaseDecrement: Math.max(1, Number(scene?.phaseDecrement) || defaultPhaseDecrement),
-    phaseRerollEachRound: scene?.phaseRerollEachRound ?? defaultPhaseRerollEachRound,
-    activeId: scene?.activeId || '',
-    notes: scene?.notes || '',
-    reserveNotes: scene?.reserveNotes || '',
-    temporalite: scene?.temporalite || defaultTemporalityMode,
-    jouesSouples: Array.isArray(scene?.jouesSouples) ? scene.jouesSouples : [],
-    historiqueSouple: Array.isArray(scene?.historiqueSouple) ? scene.historiqueSouple : [],
-    equalityRule: scene?.equalityRule || defaultEqualityRule,
-    categoryOrder: Array.isArray(scene?.categoryOrder) && scene.categoryOrder.length ? scene.categoryOrder : defaultCategoryOrder,
-    globalTracker: normalizeGlobalTracker(scene?.globalTracker),
-    reserve: Array.isArray(scene?.reserve) ? scene.reserve.map(normalizeReserveParticipant) : [],
-    participants: Array.isArray(scene?.participants) ? scene.participants.map(normalizeParticipant) : [],
-  };
-}
+import { campaignNameFromPayload, campaignTemplatesFromPayload, loadCampaign, normalizeCampaignScene, normalizeCampaignScenes, saveCampaign } from '../storage.js';
 
 function normalizeScenesWithCampaignRules(rawScenes, rules) {
-  const normalizedScenes = (rawScenes || []).map(normalizeScene);
+  const normalizedScenes = normalizeCampaignScenes(rawScenes);
   return unifyCampaignScenes(normalizedScenes, rules);
 }
 
 function initialRestorePoints(scenes) {
   return Object.fromEntries((scenes || []).map((rawScene) => {
-    const scene = normalizeScene(rawScene);
+    const scene = normalizeCampaignScene(rawScene);
     return [scene.id, [{ id: uid('restore'), round: scene.round || 1, activeId: scene.activeId, title: `Début R${scene.round || 1}`, scene: clone(scene) }]];
   }));
 }
@@ -72,7 +30,7 @@ export function useCampaign() {
   const [roundEffect, setRoundEffect] = useState(null);
 
   const rawScene = scenes[sceneIndex] || scenes[0];
-  const scene = normalizeScene(applyInitiativeRules(rawScene, campaignRules));
+  const scene = normalizeCampaignScene(applyInitiativeRules(rawScene, campaignRules));
   const syncedScenes = normalizeScenesWithCampaignRules(scenes, campaignRules);
   const participants = scene.participants;
   const active = participants.find((p) => p.id === scene.activeId);
