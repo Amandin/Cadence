@@ -205,8 +205,8 @@
   min-width: 0;
 }
 
-.campaign-hub-header .menu-brand strong,
-.campaign-hub-header .menu-brand span {
+.campaign-hub-header .menu-brand > div strong,
+.campaign-hub-header .menu-brand > div span {
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -222,6 +222,46 @@
 .campaign-hub-header .theme-toggle span {
   width: 30px;
   height: 30px;
+  color: transparent;
+  overflow: visible;
+  position: relative;
+}
+
+.campaign-hub-header .theme-toggle span::before {
+  color: var(--theme-purple-deep);
+  display: block;
+  font-size: 12px;
+  font-weight: 900;
+  left: 50%;
+  line-height: 1;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.campaign-hub-header .theme-toggle span:first-of-type::before {
+  background: currentColor;
+  border-radius: 999px;
+  box-shadow:
+    0 -5px 0 -2px currentColor,
+    0 5px 0 -2px currentColor,
+    5px 0 0 -2px currentColor,
+    -5px 0 0 -2px currentColor,
+    4px -4px 0 -2px currentColor,
+    -4px -4px 0 -2px currentColor,
+    4px 4px 0 -2px currentColor,
+    -4px 4px 0 -2px currentColor;
+  content: '';
+  height: 6px;
+  width: 6px;
+}
+
+.campaign-hub-header .theme-toggle span:last-of-type::before {
+  content: '☾';
+}
+
+.dark .campaign-hub-header .theme-toggle span::before {
+  color: var(--theme-dark-text);
 }
 
 .campaign-hub-header .theme-toggle i {
@@ -230,7 +270,7 @@
 }
 
 .campaign-hub-header .theme-toggle.dark-on i {
-  transform: translateX(44px);
+  transform: translateX(40px);
 }
 
 .campaign-hub-header.panel,

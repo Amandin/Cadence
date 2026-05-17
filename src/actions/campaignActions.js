@@ -1,5 +1,5 @@
 import { applyInitiativeRules, campaignRulesFromPayload, normalizeCampaignRules, unifyCampaignScenes } from '../domain/campaignRules.js';
-import { campaignNameFromPayload, campaignTemplatesFromPayload, isValidCampaign, normalizeCampaignName, serializeCampaign } from '../storage.js';
+import { campaignNameFromPayload, campaignTemplatesFromPayload, isValidCampaign, normalizeCampaignName, normalizeCampaignPayload, serializeCampaign } from '../storage.js';
 import { clone, makeDefaultCampaign, uid } from '../logic.js';
 import { mergeTemplateStores } from '../templates.js';
 
@@ -177,12 +177,12 @@ export function createCampaignActions({ scenes, campaignRules, setCampaignRules,
       try {
         const data = JSON.parse(await file.text());
         if (!isValidCampaign(data)) return { ok: false, message: 'Le fichier choisi n’est pas une campagne Cadence valide.' };
-        const rules = campaignRulesFromPayload(data);
-        setCampaignRules(rules);
-        setScenes(unifyCampaignScenes(data.scenes, rules));
-        setDark(data.settings?.dark || false);
-        setCampaignNameState(campaignNameFromPayload(data));
-        setTemplateStore(campaignTemplatesFromPayload(data));
+        const campaign = normalizeCampaignPayload(data);
+        setCampaignRules(campaign.initiativeRules);
+        setScenes(campaign.scenes);
+        setDark(campaign.settings?.dark || false);
+        setCampaignNameState(campaignNameFromPayload(campaign));
+        setTemplateStore(campaignTemplatesFromPayload(campaign));
         setSceneIndex(0);
         return { ok: true };
       } catch {
@@ -193,7 +193,7 @@ export function createCampaignActions({ scenes, campaignRules, setCampaignRules,
       try {
         const data = JSON.parse(await file.text());
         if (!isValidCampaign(data)) return { ok: false, message: 'Le fichier choisi n’est pas une campagne Cadence valide.' };
-        const importedTemplates = campaignTemplatesFromPayload(data);
+        const importedTemplates = campaignTemplatesFromPayload(normalizeCampaignPayload(data));
         const result = mergeTemplateStores(templateStore, importedTemplates);
         setTemplateStore(result.store);
         return { ok: true, added: result.added.length, skipped: result.skipped.length };
@@ -202,10 +202,9 @@ export function createCampaignActions({ scenes, campaignRules, setCampaignRules,
       }
     },
     resetDemo() {
-      const fresh = makeDefaultCampaign();
-      const rules = campaignRulesFromPayload(fresh);
-      setCampaignRules(rules);
-      setScenes(unifyCampaignScenes(fresh.scenes, rules));
+      const fresh = normalizeCampaignPayload(makeDefaultCampaign());
+      setCampaignRules(campaignRulesFromPayload(fresh));
+      setScenes(fresh.scenes);
       setTemplateStore(campaignTemplatesFromPayload(fresh));
       setCampaignNameState(campaignNameFromPayload(fresh));
       setSceneIndex(0);
