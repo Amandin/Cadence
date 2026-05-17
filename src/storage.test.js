@@ -118,6 +118,30 @@ describe('campaign storage', () => {
     expect(campaign.scenes[0]).toMatchObject({ temporalite: 'phases', phaseDecrement: 10 });
   });
 
+  it('keeps editable quick stats as objects when normalizing and serializing', () => {
+    const sourceScene = {
+      id: 'scene-stats',
+      title: 'Infos rapides',
+      participants: [{
+        id: 'pj-stats',
+        name: 'Stat Keeper',
+        stats: [
+          { label: 'CA', value: '21', editable: true },
+          { label: 'Armure lourde', value: '', editable: false },
+        ],
+      }],
+    };
+
+    const campaign = normalizeCampaignPayload({ version: '0.2.4', scenes: [sourceScene] });
+    expect(campaign.scenes[0].participants[0].stats).toEqual([
+      { label: 'CA', value: '21', editable: true },
+      { label: 'Armure lourde', value: '', editable: false },
+    ]);
+
+    const serialized = JSON.parse(serializeCampaign(campaign.scenes, false, 'Stats', null, campaign.initiativeRules));
+    expect(serialized.scenes[0].participants[0].stats[0]).toEqual({ label: 'CA', value: '21', editable: true });
+  });
+
   it('rejects random JSON with only a scenes array', () => {
     expect(isValidCampaign({ scenes: [scene] })).toBe(false);
   });

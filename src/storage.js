@@ -43,6 +43,17 @@ function normalizeKind(kind) {
   return typeof normalized === 'string' && normalized.trim() ? normalized : 'Environnement';
 }
 
+function normalizeQuickStat(stat) {
+  if (isPlainObject(stat)) {
+    const label = stringOr(stat.label || stat.titre).trim();
+    const value = stringOr(stat.value || stat.valeur).trim();
+    if (!label && !value) return null;
+    return { label, value, editable: booleanOr(stat.editable) };
+  }
+  const text = String(stat || '').trim();
+  return text ? text : null;
+}
+
 function normalizeStatus(status) {
   if (!isPlainObject(status)) return null;
   return {
@@ -118,7 +129,7 @@ export function normalizeCampaignParticipant(participant, { reserve = false } = 
     initiative: reserve ? 0 : numberOr(participant.initiative, 0),
     departage: participant.departage === '' || participant.departage == null ? '' : numberOr(participant.departage, 0),
     description: stringOr(participant.description),
-    stats: normalizeArray(participant.stats).map((stat) => String(stat)),
+    stats: normalizeArray(participant.stats).map(normalizeQuickStat).filter(Boolean),
     statuses: normalizeArray(participant.statuses).map(normalizeStatus).filter(Boolean),
     trackers: normalizeArray(participant.trackers).map(normalizeTracker).filter(Boolean),
   };
