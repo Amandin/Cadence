@@ -5,6 +5,7 @@ import {
   defaultEqualityRule,
   defaultPhaseDecrement,
   defaultPhaseRerollEachRound,
+  defaultStartRound,
   defaultTemporalityMode,
   legacyParticipantKinds,
 } from './constants.js';
@@ -63,6 +64,7 @@ function normalizeStatus(status) {
     duration: status.duration == null ? null : Math.max(1, numberOr(status.duration, 1)),
     remaining: status.remaining == null ? null : Math.max(0, numberOr(status.remaining, status.duration || 0)),
     loop: booleanOr(status.loop),
+    inactive: booleanOr(status.inactive),
     expired: booleanOr(status.expired),
   };
 }
@@ -142,7 +144,7 @@ export function normalizeCampaignScene(scene) {
     id: stringOr(scene.id, uid('scene')),
     title: stringOr(scene.title, 'Scène'),
     type: stringOr(scene.type, 'Scène'),
-    round: Math.max(1, numberOr(scene.round, 1)),
+    round: Math.max(-1, numberOr(scene.round, -1)),
     phase: Math.max(1, numberOr(scene.phase, 1)),
     phaseDecrement: Math.max(1, numberOr(scene.phaseDecrement, defaultPhaseDecrement)),
     phaseRerollEachRound: booleanOr(scene.phaseRerollEachRound, defaultPhaseRerollEachRound),

@@ -54,6 +54,20 @@ export default function App() {
   const phaseDemarreNouveauRound = temporalitePhases && phaseEnFin && !phaseSuivanteDisponible;
   const toutLeMondeAJoueSouple = temporaliteSouple && scene.participants.length > 0 && scene.participants.every((participant) => (scene.jouesSouples || []).includes(participant.id));
   const globalAutoTick = roundEffect === 'next' && !!scene.globalTracker?.enabled && !!scene.globalTracker?.auto;
+  const currentIndex = scene.participants.findIndex((participant) => participant.id === scene.activeId);
+  const phaseCurrentIndex = phaseParticipants.findIndex((participant) => participant.id === phaseActiveId);
+  const libelleRoundCourant = scene.round === 0 ? 'Surprise' : `R${scene.round}`;
+  const roundDepartScene = [0, 1].includes(Number(scene.startRound)) ? Number(scene.startRound) : 0;
+  const retourPreparationVisible = scene.round >= 0 && (temporaliteSouple
+    ? (scene.historiqueSouple || []).length === 0 && scene.round === roundDepartScene
+    : temporalitePhases
+      ? scene.round === roundDepartScene && (scene.phase || 1) <= 1 && (phaseCurrentIndex <= 0 || !phaseParticipants.length)
+      : scene.round === roundDepartScene && currentIndex <= 0);
+  const retourPossible = scene.round < 0 ? false : temporaliteSouple
+    ? (scene.historiqueSouple || []).length > 0 || scene.round === scene.startRound
+    : temporalitePhases
+      ? phaseCurrentIndex > 0 || (scene.round === scene.startRound && (scene.phase || 1) <= 1 && (phaseCurrentIndex <= 0 || !phaseParticipants.length))
+      : scene.participants.length > 0 && (scene.round > 0 || currentIndex > 0);
 
   const participantsPourEgalites = temporalitePhases ? phaseParticipants : scene.participants;
   const idActifPourEgalites = temporalitePhases ? phaseActiveId : scene.activeId;
@@ -79,6 +93,7 @@ export default function App() {
   }, [currentView, scene.phaseRerollEachRound, scene.round, scene.temporalite]);
 
   const nextTurn = (direction) => {
+    if (direction < 0 && !retourPossible) return;
     if (temporaliteSouple && direction > 0 && !toutLeMondeAJoueSouple) return;
     if (temporalitePhases && direction > 0 && !phaseParticipants.length) return;
     if (direction > 0 && blocked.length) {
@@ -125,12 +140,13 @@ export default function App() {
   const importCampaign = async (file) => {
     const result = await actions.importCampaign(file);
     if (result?.ok === false) {
-      setNotice({ title: 'Import impossible', message: result.message });
+      setNotice({ title: 'Import impossible', message: result.message || 'Le fichier n’a pas pu être lu. Essaie avec un export .cad récent, et note le nom du fichier si le problème revient.' });
       return;
     }
     setOpenMenu(false);
     characters.closeCharacterPanels();
     setCurrentView('hub');
+    setNotice({ title: 'Import terminé', message: 'La campagne a bien été chargée.' });
   };
   const importTemplatesFromCampaign = async (file) => {
     const result = await actions.importTemplatesFromCampaign(file);
@@ -184,6 +200,22 @@ export default function App() {
     setOpenMenu(false);
     characters.closeCharacterPanels();
   };
+  const returnToPreparation = () => {
+    actions.returnToPreparation();
+    setOpenMenu(false);
+    characters.closeCharacterPanels();
+  };
+  const exportCampaign = async (name) => {
+    try {
+      const result = await actions.exportCampaign(name);
+      if (result?.ok) setNotice({ title: 'Export terminé', message: 'La campagne a bien été exportée.' });
+      if (result?.ok === false && !result.cancelled) setNotice({ title: 'Export impossible', message: result.message || 'Le navigateur a refusé l’enregistrement. Réessaie depuis Opera ou choisis un autre emplacement.' });
+      return result;
+    } catch (error) {
+      setNotice({ title: 'Export impossible', message: `Le navigateur a interrompu l’export : ${error?.message || 'erreur inconnue'}.` });
+      return { ok: false, message: error?.message };
+    }
+  };
   const openTemplateSave = (participant) => {
     setTemplateTarget(participant);
     setTemplateError(null);
@@ -213,7 +245,7 @@ export default function App() {
     actions.deleteTracker(participantId, trackerId);
   };
 
-  const nextLabel = temporaliteSouple
+  const nextLabel = scene.round < 0 ? 'Commencer' : temporaliteSouple
     ? toutLeMondeAJoueSouple ? 'Nouveau round' : 'Mode souple : choisir dans la liste'
     : blocked.length
       ? 'Gérer horloge bloquante'
@@ -228,15 +260,15 @@ export default function App() {
                 ? 'Nouveau round'
                 : 'Participant suivant'
         : nextStartsRound ? 'Nouveau round' : 'Participant suivant';
-  const classeSuivantEffective = temporaliteSouple && toutLeMondeAJoueSouple
+  const classeSuivantEffective = scene.round < 0 ? 'next-round' : temporaliteSouple && toutLeMondeAJoueSouple
     ? 'next-round'
     : blocked.length
       ? 'blocked'
       : temporalitePhases
         ? phaseDemarreNouveauRound ? 'next-round' : phaseEnFin && phaseSuivanteDisponible ? 'next-phase' : ''
         : nextClass;
-  const suivantDesactive = (temporaliteSouple && !toutLeMondeAJoueSouple) || (temporalitePhases && !phaseParticipants.length);
-  const libelleBas = temporaliteSouple
+  const suivantDesactive = scene.round < 0 ? false : (temporaliteSouple && !toutLeMondeAJoueSouple) || (temporalitePhases && !phaseParticipants.length);
+  const libelleBas = scene.round < 0 ? 'Commencer' : temporaliteSouple
     ? toutLeMondeAJoueSouple ? `Nouveau round · R${scene.round + 1}` : 'Choisir'
     : temporalitePhases
       ? phaseAttendRelanceInitiative
@@ -246,7 +278,7 @@ export default function App() {
           : phaseEnFin && phaseSuivanteDisponible
             ? `Phase ${scene.phase + 1}`
             : `Suivant · P${scene.phase}`
-      : undefined;
+      : nextStartsRound ? `Nouveau round · R${scene.round + 1}` : `Suivant · ${libelleRoundCourant}`;
 
   const fenetresCommunes = (
     <>
@@ -273,12 +305,13 @@ export default function App() {
           creerPersonnageVierge: createBlankCharacter,
           creerDepuisTemplate: createFromTemplate,
           restaurerScene: restoreScene,
+          retourPreparation: returnToPreparation,
         }}
         compteurGlobal={{ horlogesBloquantes: blocked }}
         resolutionHorloge={{ resetClock, deleteClock }}
         templatesUi={{ templateTarget, templateError, fermerSauvegardeTemplate: () => setTemplateTarget(null), enregistrerTemplate: saveTemplate }}
       />
-      {exportOpen && <FenetreExportCampagne nomInitial={campaignName} onFermer={() => setExportOpen(false)} onExporter={actions.exportCampaign} />}
+      {exportOpen && <FenetreExportCampagne nomInitial={campaignName} onFermer={() => setExportOpen(false)} onExporter={exportCampaign} />}
       {editingTemplate && <FenetreEditionFiche participant={editingTemplate.participant} title={`Modifier le template · ${editingTemplate.name}`} saveTemplateVisible={false} deleteLabel="Supprimer le template" onClose={() => setEditingTemplateId('')} onSave={saveEditedTemplate} onDelete={deleteEditedTemplate} />}
     </>
   );
@@ -334,10 +367,12 @@ export default function App() {
           temporaliteSouple={temporaliteSouple}
           temporalitePhases={temporalitePhases}
           suivantDesactive={suivantDesactive}
+          retourDesactive={!retourPossible}
           dark={dark}
           onRetourHub={() => setCurrentView('hub')}
           onTourPrecedent={() => nextTurn(-1)}
           onTourSuivant={() => nextTurn(1)}
+          onRetourPreparation={retourPreparationVisible ? returnToPreparation : null}
           onModifierCompteurGlobal={actions.stepGlobal}
           onOuvrirCompteurGlobal={() => setGlobalSheetOpen(true)}
         />
@@ -355,11 +390,12 @@ export default function App() {
         round={scene.round}
         horlogeBloquee={blocked.length > 0}
         suivantDesactive={suivantDesactive}
+        retourDesactive={!retourPossible}
         libelleSuivant={libelleBas}
         onRetourHub={() => setCurrentView('hub')}
         onTourPrecedent={() => nextTurn(-1)}
         onTourSuivant={() => nextTurn(1)}
-        onAjouterPersonnage={openAddCharacter}
+        onRetourPreparation={retourPreparationVisible ? returnToPreparation : null}
         onSaisirInitiatives={openInitiativeEntry}
         onOuvrirMenu={() => setOpenMenu(true)}
       />

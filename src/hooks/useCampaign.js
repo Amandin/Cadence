@@ -14,8 +14,13 @@ function normalizeScenesWithCampaignRules(rawScenes, rules) {
 function initialRestorePoints(scenes) {
   return Object.fromEntries((scenes || []).map((rawScene) => {
     const scene = normalizeCampaignScene(rawScene);
-    return [scene.id, [{ id: uid('restore'), round: scene.round || 1, activeId: scene.activeId, title: `Début R${scene.round || 1}`, scene: clone(scene) }]];
+    const round = Math.max(1, scene.round || 1);
+    return [scene.id, [{ id: uid('restore'), round, activeId: scene.activeId, title: `Début R${round}`, scene: clone({ ...scene, round }) }]];
   }));
+}
+
+function devicePrefersDark() {
+  return typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches;
 }
 
 export function useCampaign() {
@@ -26,7 +31,7 @@ export function useCampaign() {
   const [campaignName, setCampaignName] = useState(() => campaignNameFromPayload(initialCampaign));
   const [sceneIndex, setSceneIndex] = useState(0);
   const [restorePoints, setRestorePoints] = useState(() => initialRestorePoints(initialCampaign.scenes));
-  const [dark, setDark] = useState(initialCampaign.settings?.dark || false);
+  const [dark, setDark] = useState(devicePrefersDark);
   const [roundEffect, setRoundEffect] = useState(null);
 
   const rawScene = scenes[sceneIndex] || scenes[0];
@@ -39,6 +44,14 @@ export function useCampaign() {
   const nextClass = blocked.length ? 'blocked' : nextStartsRound ? 'next-round' : '';
 
   useEffect(() => saveCampaign(syncedScenes, dark, campaignName, templateStore, campaignRules), [syncedScenes, dark, campaignName, templateStore, campaignRules]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return undefined;
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const updateTheme = (event) => setDark(event.matches);
+    mediaQuery.addEventListener?.('change', updateTheme);
+    return () => mediaQuery.removeEventListener?.('change', updateTheme);
+  }, []);
 
   const sceneActions = useMemo(() => createSceneActions({ scene, sceneIndex, blocked, restorePoints, setScenes, setRestorePoints, setRoundEffect }), [blocked, scene, restorePoints, sceneIndex]);
   const campaignActions = useMemo(() => createCampaignActions({ scenes: syncedScenes, campaignRules, setCampaignRules, sceneIndex, dark, campaignName, templateStore, setScenes, setSceneIndex, setDark, setCampaignNameState: setCampaignName, setTemplateStore }), [campaignName, campaignRules, dark, sceneIndex, syncedScenes, templateStore]);

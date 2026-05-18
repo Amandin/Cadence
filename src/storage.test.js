@@ -118,6 +118,17 @@ describe('campaign storage', () => {
     expect(campaign.scenes[0]).toMatchObject({ temporalite: 'phases', phaseDecrement: 10 });
   });
 
+  it('keeps preparation as the scene start state and applies the campaign start round rule', () => {
+    const campaign = normalizeCampaignPayload({
+      version: '0.2.4',
+      initiativeRules: { startRound: 1 },
+      scenes: [{ id: 'scene-prep', title: 'Preparation', round: -1, participants: [] }],
+    });
+
+    expect(campaign.initiativeRules.startRound).toBe(1);
+    expect(campaign.scenes[0]).toMatchObject({ round: -1, startRound: 1 });
+  });
+
   it('keeps editable quick stats as objects when normalizing and serializing', () => {
     const sourceScene = {
       id: 'scene-stats',

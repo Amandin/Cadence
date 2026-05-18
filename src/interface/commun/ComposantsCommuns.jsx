@@ -8,6 +8,17 @@ export function AvatarParticipant({ participant }) {
   return <div className={`avatar ${participant.color || 'slate'}`}>{participant.symbol || '●'}</div>;
 }
 
+export function BoutonRepliFichette({ repliee = false, onClick, className = '' }) {
+  return (
+    <button className={`icon-btn collapse-btn fiche-collapse-btn ${className}`} onClick={onClick} aria-label={repliee ? 'Dérouler la fichette' : 'Enrouler la fichette'} type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true" className={repliee ? 'is-collapsed' : ''}>
+        <path d="M7 13.5 12 9l5 4.5" />
+        <path d="M7 17.5 12 13l5 4.5" />
+      </svg>
+    </button>
+  );
+}
+
 function libelleEtat(etat) {
   if (etat.duration == null) return '∞';
   if (etat.expired && etat.loop) return '↻ 0';
@@ -22,10 +33,28 @@ function typeEtat(etat) {
 }
 
 export function EtiquetteEtat({ etat, onRetirer }) {
-  return <span className={`status ${typeEtat(etat)} ${etat.inactive ? 'inactive-status' : ''} ${etat.expired ? 'expired' : ''}`}>{etat.name} · {etat.inactive ? '⏸ ' : ''}{libelleEtat(etat)}<button onClick={onRetirer}>×</button></span>;
+  return <span className={`status ${typeEtat(etat)} ${etat.inactive ? 'inactive-status' : ''} ${etat.expired ? 'expired' : ''}`}>{etat.inactive ? <span className="inactive-status-mark" aria-label="Rend inactif">🌀</span> : null}{etat.name} · {libelleEtat(etat)}<button onClick={onRetirer}>×</button></span>;
 }
 
 export function BadgeRound({ round, effect, phase }) {
+  if (round < 0) {
+    return (
+      <div className="round prep-round">
+        <small>Scène</small>
+        <strong>Préparation</strong>
+      </div>
+    );
+  }
+
+  if (round === 0) {
+    return (
+      <div className="round surprise-round">
+        <small>Round</small>
+        <strong>Surprise</strong>
+      </div>
+    );
+  }
+
   return (
     <div className={`round ${effect === 'next' ? 'new' : ''} ${phase ? 'phase-aware' : ''}`}>
       <small>{effect === 'next' ? 'Nouveau round' : 'Round'}</small>

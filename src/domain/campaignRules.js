@@ -3,6 +3,7 @@ import {
   defaultEqualityRule,
   defaultPhaseDecrement,
   defaultPhaseRerollEachRound,
+  defaultStartRound,
   defaultTemporalityMode,
   temporalityModes,
 } from '../constants.js';
@@ -11,6 +12,7 @@ import { trierParInitiative } from './initiative.js';
 export function normalizeCampaignRules(rules = {}) {
   return {
     temporalite: rules.temporalite || defaultTemporalityMode,
+    startRound: [0, 1].includes(Number(rules.startRound)) ? Number(rules.startRound) : defaultStartRound,
     phaseDecrement: Math.max(1, Number(rules.phaseDecrement) || defaultPhaseDecrement),
     phaseRerollEachRound: rules.phaseRerollEachRound ?? defaultPhaseRerollEachRound,
     equalityRule: rules.equalityRule || defaultEqualityRule,
@@ -45,6 +47,7 @@ export function applyInitiativeRules(scene, patch = {}) {
   return {
     ...sceneWithTemporality,
     temporalite: next.temporalite,
+    startRound: next.startRound,
     phaseDecrement: next.phaseDecrement,
     phaseRerollEachRound: !!next.phaseRerollEachRound,
     equalityRule: next.equalityRule,

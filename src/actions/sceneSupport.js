@@ -24,6 +24,16 @@ export function placerEnReserve(participant) {
 }
 
 export function createRestorePoint(scene) {
+  if (scene.round < 0) {
+    return {
+      id: uid('restore'),
+      round: -1,
+      activeId: scene.activeId,
+      title: 'Préparation',
+      scene: clone(scene),
+    };
+  }
+
   return {
     id: uid('restore'),
     round: scene.round,

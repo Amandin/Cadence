@@ -33,7 +33,7 @@ function premierParticipantId(scene, rules) {
 function remettreSceneAuDepartInitiative(scene, rules) {
   const resetScene = {
     ...scene,
-    round: 1,
+    round: -1,
     phase: 1,
     activeId: premierParticipantId(scene, rules),
     jouesSouples: [],
@@ -50,7 +50,7 @@ function createBlankScene(rules = {}) {
     id: uid('scene'),
     title: 'Nouvelle scène',
     type: 'Scène',
-    round: 1,
+    round: -1,
     phase: 1,
     activeId: '',
     notes: '',
@@ -81,8 +81,14 @@ function downloadBlob(blob, fileName) {
   const link = document.createElement('a');
   link.href = url;
   link.download = fileName;
+  link.rel = 'noopener';
+  link.style.display = 'none';
+  document.body.appendChild(link);
   link.click();
-  URL.revokeObjectURL(url);
+  window.setTimeout(() => {
+    URL.revokeObjectURL(url);
+    link.remove();
+  }, 1000);
 }
 
 async function saveWithPicker(blob, fileName) {
@@ -96,7 +102,7 @@ async function saveWithPicker(blob, fileName) {
 
 async function shareOrDownloadCampaign(content, campaignName) {
   const fileName = campaignExportFileName(campaignName);
-  const blob = new Blob([content], { type: 'application/json' });
+  const blob = new Blob([content], { type: 'application/json;charset=utf-8' });
 
   try {
     if (await saveWithPicker(blob, fileName)) return { ok: true, method: 'picker' };
@@ -106,8 +112,13 @@ async function shareOrDownloadCampaign(content, campaignName) {
   }
 
   if (typeof File !== 'undefined' && navigator.canShare && navigator.share) {
-    const file = new File([blob], fileName, { type: 'application/json' });
-    if (navigator.canShare({ files: [file] })) {
+    const files = [
+      new File([blob], fileName, { type: 'application/json' }),
+      new File([blob], fileName, { type: 'text/plain' }),
+      new File([blob], fileName, { type: 'application/octet-stream' }),
+    ];
+    const file = files.find((candidate) => navigator.canShare({ files: [candidate] }));
+    if (file) {
       try {
         await navigator.share({ files: [file], title: normalizeCampaignName(campaignName), text: 'Export de campagne Cadence' });
         return { ok: true, method: 'share' };
@@ -120,6 +131,12 @@ async function shareOrDownloadCampaign(content, campaignName) {
 
   downloadBlob(blob, fileName);
   return { ok: true, method: 'download' };
+}
+
+async function lireJsonCadence(file) {
+  const raw = await file.text();
+  const text = raw.replace(/^\uFEFF/, '').trim();
+  return JSON.parse(text);
 }
 
 export function createCampaignActions({ scenes, campaignRules, setCampaignRules, sceneIndex, dark, campaignName, templateStore, setScenes, setSceneIndex, setDark, setCampaignNameState, setTemplateStore }) {
@@ -175,23 +192,22 @@ export function createCampaignActions({ scenes, campaignRules, setCampaignRules,
     },
     async importCampaign(file) {
       try {
-        const data = JSON.parse(await file.text());
-        if (!isValidCampaign(data)) return { ok: false, message: 'Le fichier choisi n’est pas une campagne Cadence valide.' };
+        const data = await lireJsonCadence(file);
+        if (!isValidCampaign(data)) return { ok: false, message: `Le fichier choisi n’est pas une campagne Cadence valide. Fichier : ${file?.name || 'sans nom'} (${file?.type || 'type inconnu'}, ${file?.size || 0} octets).` };
         const campaign = normalizeCampaignPayload(data);
         setCampaignRules(campaign.initiativeRules);
         setScenes(campaign.scenes);
-        setDark(campaign.settings?.dark || false);
         setCampaignNameState(campaignNameFromPayload(campaign));
         setTemplateStore(campaignTemplatesFromPayload(campaign));
         setSceneIndex(0);
         return { ok: true };
-      } catch {
-        return { ok: false, message: 'Impossible de lire ce fichier Cadence.' };
+      } catch (error) {
+        return { ok: false, message: `Impossible de lire ce fichier Cadence. ${file?.name ? `Fichier : ${file.name}. ` : ''}${error?.message || 'Erreur inconnue.'}` };
       }
     },
     async importTemplatesFromCampaign(file) {
       try {
-        const data = JSON.parse(await file.text());
+        const data = await lireJsonCadence(file);
         if (!isValidCampaign(data)) return { ok: false, message: 'Le fichier choisi n’est pas une campagne Cadence valide.' };
         const importedTemplates = campaignTemplatesFromPayload(normalizeCampaignPayload(data));
         const result = mergeTemplateStores(templateStore, importedTemplates);

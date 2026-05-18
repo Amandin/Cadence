@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   APP_VERSION,
   defaultCategoryOrder,
   defaultEqualityRule,
   defaultPhaseDecrement,
   defaultPhaseRerollEachRound,
+  defaultStartRound,
   defaultTemporalityMode,
   equalityRuleDescriptions,
   equalityRuleLabels,
@@ -60,11 +61,7 @@ function CarteScene({ scene, index, canDelete, editing, onEditer, onFermerEditio
   }, [editing, scene.notes, scene.title, scene.type]);
 
   const enregistrer = () => {
-    onModifierScene(index, {
-      title: titre.trim() || 'Scène',
-      type: type.trim() || 'Scène',
-      notes,
-    });
+    onModifierScene(index, { title: titre.trim() || 'Scène', type: type.trim() || 'Scène', notes });
     onFermerEdition();
   };
 
@@ -83,15 +80,18 @@ function CarteScene({ scene, index, canDelete, editing, onEditer, onFermerEditio
       ) : (
         <>
           <div className="hub-scene-summary">
-            <strong>{scene.title || 'Scène'}</strong>
-            <div className="hub-scene-meta">
-              <span className="hub-scene-type">{scene.type || 'Scène'}</span>
-              {canDelete && (suppressionVisible ? (
-                <button className="danger-btn mini-danger scene-delete-confirm" onClick={() => onSupprimerScene(index)}>Suppr.</button>
-              ) : (
-                <button className="small-btn scene-delete-reveal" onClick={() => setSuppressionVisible(true)} aria-label={`Afficher la suppression de ${scene.title || 'Scène'}`}>×</button>
-              ))}
-            </div>
+            <strong className="hub-scene-title">{scene.title || 'Scène'}</strong>
+            <span className="hub-scene-type">{scene.type || 'Scène'}</span>
+            {canDelete && (
+              <div className={`hub-scene-delete-actions ${suppressionVisible ? 'confirming' : ''}`}>
+                {suppressionVisible && <button className="small-btn scene-delete-cancel" onClick={() => setSuppressionVisible(false)}>Annuler</button>}
+                {suppressionVisible ? (
+                  <button className="danger-btn mini-danger scene-delete-confirm" onClick={() => onSupprimerScene(index)}>Suppr.</button>
+                ) : (
+                  <button className="small-btn scene-delete-reveal" onClick={() => setSuppressionVisible(true)} aria-label={`Afficher la suppression de ${scene.title || 'Scène'}`}>×</button>
+                )}
+              </div>
+            )}
           </div>
           {scene.notes && <p className="muted compact-help hub-scene-notes">{scene.notes}</p>}
           <div className="hub-scene-actions explicit">
@@ -133,6 +133,26 @@ function OptionsTemporaliteCampagne({ temporalite = defaultTemporalityMode, onMo
             <span><strong>{temporalityLabels[mode]}</strong><small>{temporalityDescriptions[mode]}</small></span>
           </label>
         ))}
+      </div>
+    </div>
+  );
+}
+
+function OptionsDepartCampagne({ startRound = defaultStartRound, onModifier }) {
+  const valeur = [0, 1].includes(Number(startRound)) ? Number(startRound) : defaultStartRound;
+  return (
+    <div className="scene-options compact-options advanced-rule-block">
+      <h3>Après préparation</h3>
+      <p className="muted compact-help">Chaque scène s’ouvre en préparation. Ce réglage choisit ce que lance Commencer.</p>
+      <div className="advanced-radio-list">
+        <label className={`advanced-radio ${valeur === 0 ? 'selected' : ''}`}>
+          <input type="radio" name="campaign-start-round" checked={valeur === 0} onChange={() => onModifier({ startRound: 0 })} />
+          <span><strong>Surprise</strong><small>Commencer lance un round de surprise avant le Début R1.</small></span>
+        </label>
+        <label className={`advanced-radio ${valeur === 1 ? 'selected' : ''}`}>
+          <input type="radio" name="campaign-start-round" checked={valeur === 1} onChange={() => onModifier({ startRound: 1 })} />
+          <span><strong>Round 1 direct</strong><small>Commencer place directement la scène au Début R1.</small></span>
+        </label>
       </div>
     </div>
   );
@@ -209,6 +229,7 @@ function OngletRegles({ scene, onModifierRegles }) {
   return (
     <div className="stack hub-section panel">
       <div><h3>Règles d’initiative</h3><p className="muted compact-help">Ces réglages sont appliqués à toutes les scènes de la campagne et servent de base aux nouvelles scènes.</p></div>
+      <OptionsDepartCampagne startRound={scene?.startRound} onModifier={onModifierRegles} />
       <OptionsTemporaliteCampagne temporalite={temporalite} onModifier={onModifierRegles} />
       {temporalite === temporalityModes.PHASES && <OptionsPhasesCampagne scene={scene} onModifier={onModifierRegles} />}
       <OptionsEgalitesCampagne scene={scene} onModifier={onModifierRegles} />
@@ -218,8 +239,6 @@ function OngletRegles({ scene, onModifierRegles }) {
 }
 
 function OngletSauvegarde({ onExporter, onImporter, onReinitialiser }) {
-  const importInputRef = useRef(null);
-  const choisirFichier = () => importInputRef.current?.click();
   const importerFichier = (event) => {
     const file = event.target.files?.[0];
     event.target.value = '';
@@ -231,8 +250,10 @@ function OngletSauvegarde({ onExporter, onImporter, onReinitialiser }) {
       <p className="muted compact-help">Exporte une campagne .cad, importe une sauvegarde Cadence ou réinitialise la démo.</p>
       <div className="grid2">
         <button className="primary" onClick={onExporter}>Exporter</button>
-        <button className="small-btn" onClick={choisirFichier}>Importer</button>
-        <input ref={importInputRef} type="file" accept=".cad,.json,application/json" style={{ display: 'none' }} onChange={importerFichier} />
+        <label className="small-btn import-file-label">
+          Importer
+          <input className="file-input-bridge" type="file" accept=".cad,.json,application/json,text/json,text/plain,application/octet-stream" onChange={importerFichier} />
+        </label>
       </div>
       <button className="danger-btn" onClick={onReinitialiser}>Réinitialiser la démo</button>
     </div>

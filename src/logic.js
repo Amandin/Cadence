@@ -102,10 +102,11 @@ export function nextTurnInfo(scene, blocked = false) {
 export function makeDefaultCampaign() {
   return {
     version: '0.1.5',
+    initiativeRules: { startRound: 0 },
     scenes: [
       {
-        id: 'entrepot', title: 'Entrepôt sous la pluie', type: 'Combat', round: 1, activeId: 'ombre', reserveOpen: true,
-        notes: 'Scène de démo volontairement chargée : égalités d’initiative, départage, catégories et suivis variés.',
+        id: 'entrepot', title: 'Entrepôt sous la pluie', type: 'Combat', round: -1, activeId: 'ombre', reserveOpen: true,
+        notes: 'Scène de démo volontairement chargée : préparation, surprise, égalités d’initiative, départage, catégories et suivis variés.',
         reserveNotes: 'Tester ici : rejoindre l’initiative, ordre des catégories et retri instantané.',
         globalTracker: { enabled: true, name: 'Menace', mode: 'clock', current: 3, max: 10, auto: true },
         reserve: [
@@ -121,9 +122,9 @@ export function makeDefaultCampaign() {
         ],
       },
       {
-        id: 'conseil', title: 'Conseil sous tension', type: 'Négociation', round: 1, activeId: '', reserveOpen: true,
+        id: 'conseil', title: 'Conseil sous tension', type: 'Négociation', round: -1, activeId: '', reserveOpen: true,
         temporalite: temporalityModes.FLEXIBLE,
-        notes: 'Exemple pour tester le mode souple : le MJ coche librement qui a déjà pris la parole.',
+        notes: 'Exemple pour tester le mode souple : le MJ coche librement qui a déjà pris la parole. Dans Règles, basculer en Round 1 direct permet de comparer le départ.',
         reserveNotes: 'Les observateurs peuvent rejoindre la scène si la discussion dégénère.',
         globalTracker: { enabled: true, name: 'Tension', mode: 'clock', current: 1, max: 6, auto: false },
         jouesSouples: [], historiqueSouple: [],
@@ -139,7 +140,7 @@ export function makeDefaultCampaign() {
         ],
       },
       {
-        id: 'poursuite', title: 'Poursuite sur les toits', type: 'Action', round: 1, phase: 1, activeId: 'coursiere', reserveOpen: false,
+        id: 'poursuite', title: 'Poursuite sur les toits', type: 'Action', round: -1, phase: 1, activeId: 'coursiere', reserveOpen: false,
         temporalite: temporalityModes.PHASES,
         phaseDecrement: 10,
         phaseRerollEachRound: false,

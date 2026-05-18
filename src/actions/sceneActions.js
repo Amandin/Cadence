@@ -38,6 +38,33 @@ function recalerActifPhaseSiBesoin(scene) {
     : scene;
 }
 
+function roundDepart(scene) {
+  return [0, 1].includes(Number(scene.startRound)) ? Number(scene.startRound) : 0;
+}
+
+function demarrerScene(scene) {
+  const round = roundDepart(scene);
+  if (estModeSouple(scene)) return { ...scene, round, activeId: '', jouesSouples: [], historiqueSouple: [] };
+  if (estModePhases(scene)) {
+    const scenePrete = { ...scene, round, phase: 1 };
+    return { ...scenePrete, activeId: scenePrete.phaseRerollEachRound ? '' : premierParticipantPhase(scenePrete) };
+  }
+  const participants = trierParInitiative(scene.participants || [], optionsTri(scene));
+  return { ...scene, round, participants, activeId: participants[0]?.id || scene.activeId };
+}
+
+function remettreEnPreparation(scene) {
+  return {
+    ...scene,
+    round: -1,
+    phase: 1,
+    activeId: '',
+    jouesSouples: [],
+    historiqueSouple: [],
+    reserve: (scene.reserve || []).map(placerEnReserve),
+  };
+}
+
 export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, setScenes, setRestorePoints, setRoundEffect }) {
   const updateScene = (updater) => setScenes((list) => list.map((s, i) => i === sceneIndex ? updater(s) : s));
   const updateParticipant = (id, updater) => updateScene((s) => {
@@ -156,6 +183,10 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
       setRoundEffect(null);
       updateScene(() => clone(point.scene));
     },
+    returnToPreparation() {
+      setRoundEffect(null);
+      updateScene(remettreEnPreparation);
+    },
     deleteParticipant(id) {
       updateScene((s) => recalerActifPhaseSiBesoin({
         ...s,
@@ -180,8 +211,21 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
       updateParticipant(pid, (p) => ({ ...p, statuses: (p.statuses || []).filter((s) => s.id !== sid) }));
     },
     nextTurn(direction = 1) {
+      if (direction > 0 && scene.round < 0) {
+        setRoundEffect('next');
+        updateScene((s) => {
+          const nextScene = demarrerScene(s);
+          if (nextScene.round >= 1) setRestorePoints((points) => addRestorePoint(points, s.id, nextScene));
+          return nextScene;
+        });
+        return;
+      }
+
       if (estModeSouple(scene)) {
-        if (direction < 0) updateScene(annulerDernierJoueSouple);
+        if (direction < 0) {
+          if ((scene.historiqueSouple || []).length === 0 && scene.round === roundDepart(scene)) updateScene(remettreEnPreparation);
+          else updateScene(annulerDernierJoueSouple);
+        }
         if (direction > 0 && !blocked.length && toutLeMondeAJoueSouple(scene)) {
           setRoundEffect('next');
           updateScene((s) => {
@@ -195,6 +239,11 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
 
       if (estModePhases(scene)) {
         const phaseParticipants = participantsPhase(scene);
+        if (direction < 0 && !phaseParticipants.length && scene.round === roundDepart(scene) && (scene.phase || 1) <= 1) {
+          setRoundEffect(null);
+          updateScene(remettreEnPreparation);
+          return;
+        }
         if (!phaseParticipants.length) return;
         const currentIndex = phaseParticipants.findIndex((p) => p.id === scene.activeId);
         if (currentIndex < 0) {
@@ -203,6 +252,11 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
           return;
         }
         if (direction < 0) {
+          if (scene.round === roundDepart(scene) && (scene.phase || 1) <= 1 && currentIndex <= 0) {
+            setRoundEffect(null);
+            updateScene(remettreEnPreparation);
+            return;
+          }
           const previousIndex = Math.max(0, currentIndex - 1);
           setRoundEffect(null);
           updateScene((s) => ({ ...s, activeId: phaseParticipants[previousIndex]?.id || s.activeId }));
@@ -242,12 +296,17 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
         : (currentIndex - 1 + participants.length) % participants.length;
 
       if (direction < 0) {
+        if (scene.round === roundDepart(scene) && currentIndex <= 0) {
+          setRoundEffect(null);
+          updateScene(remettreEnPreparation);
+          return;
+        }
         const roundDelta = currentIndex === 0 ? -1 : 0;
         setRoundEffect(null);
         updateScene((s) => ({
           ...s,
           activeId: s.participants[nextIndex].id,
-          round: Math.max(1, s.round + roundDelta),
+          round: Math.max(0, s.round + roundDelta),
           globalTracker: roundDelta < 0 ? stepAutoGlobalTracker(s.globalTracker, -1) : s.globalTracker,
           participants: s.participants.map((p, i) => i === currentIndex ? untickParticipant(p) : p),
           reserve: roundDelta < 0 ? (s.reserve || []).map(untickParticipant).map(placerEnReserve) : (s.reserve || []).map(placerEnReserve),

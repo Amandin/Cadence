@@ -49,6 +49,20 @@ function ActionsScene({ onAjouterParticipant, onSaisirInitiatives }) {
   );
 }
 
+function OptionsDerouleScene({ scene, onRetourPreparation }) {
+  if (!scene || scene.round < 0) return null;
+
+  return (
+    <div className="scene-options compact-options">
+      <div className="compact-option-title">
+        <h3>Déroulé</h3>
+        <button className="small-btn" onClick={onRetourPreparation}>Retour préparation</button>
+      </div>
+      <p className="muted" style={{ marginTop: 4, fontSize: 12 }}>Replace la scène avant le lancement de l’initiative.</p>
+    </div>
+  );
+}
+
 function RestaurationScene({ points, pointActif, onChoisirPoint, onRestaurer }) {
   if (points.length === 0) return null;
 
@@ -63,7 +77,7 @@ function RestaurationScene({ points, pointActif, onChoisirPoint, onRestaurer }) 
   );
 }
 
-export function MenuPrincipal({ scene, restorePoints = [], onRestore, onClose, dark, setDark, onAddParticipant, onOpenInitiativeRoller, onOpenCampaignHub, onGlobalTracker }) {
+export function MenuPrincipal({ scene, restorePoints = [], onRestore, onReturnToPreparation, onClose, dark, setDark, onAddParticipant, onOpenInitiativeRoller, onOpenCampaignHub, onGlobalTracker }) {
   const pointsRestauration = [...restorePoints].sort((a, b) => a.round - b.round);
   const [pointRestaurationId, setPointRestaurationId] = useState(pointsRestauration.at(-1)?.id || '');
 
@@ -71,6 +85,7 @@ export function MenuPrincipal({ scene, restorePoints = [], onRestore, onClose, d
     <Fenetre title="Menu" onClose={onClose} header={<MenuEntete sombre={dark} onChangerTheme={setDark} onClose={onClose} />}>
       <button className="primary hub-menu-main-action" onClick={onOpenCampaignHub}>Hub de campagne</button>
       <OptionsCompteurScene compteur={scene?.globalTracker} onModifier={onGlobalTracker} />
+      <OptionsDerouleScene scene={scene} onRetourPreparation={onReturnToPreparation} />
       <ActionsScene onAjouterParticipant={onAddParticipant} onSaisirInitiatives={onOpenInitiativeRoller} />
       <RestaurationScene points={pointsRestauration} pointActif={pointRestaurationId} onChoisirPoint={setPointRestaurationId} onRestaurer={onRestore} />
     </Fenetre>
