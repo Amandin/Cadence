@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   APP_VERSION,
   defaultCategoryOrder,
@@ -239,6 +239,20 @@ function OngletRegles({ scene, onModifierRegles }) {
 }
 
 function OngletSauvegarde({ onExporter, onImporter, onReinitialiser }) {
+  const inputImportRef = useRef(null);
+  const ouvrirImport = async () => {
+    if (window.showOpenFilePicker) {
+      try {
+        const [handle] = await window.showOpenFilePicker({ multiple: false });
+        const file = await handle?.getFile();
+        if (file) onImporter(file);
+        return;
+      } catch (error) {
+        if (error?.name === 'AbortError') return;
+      }
+    }
+    inputImportRef.current?.click();
+  };
   const importerFichier = (event) => {
     const file = event.target.files?.[0];
     event.target.value = '';
@@ -250,10 +264,8 @@ function OngletSauvegarde({ onExporter, onImporter, onReinitialiser }) {
       <p className="muted compact-help">Exporte une campagne .cad, importe une sauvegarde Cadence ou réinitialise la démo.</p>
       <div className="grid2">
         <button className="primary" onClick={onExporter}>Exporter</button>
-        <label className="small-btn import-file-label">
-          Importer
-          <input className="file-input-bridge" type="file" accept=".cad,.json,application/json,text/json,text/plain,application/octet-stream" onChange={importerFichier} />
-        </label>
+        <button className="small-btn" onClick={ouvrirImport}>Importer</button>
+        <input ref={inputImportRef} className="import-file-input" type="file" aria-label="Importer une campagne" accept=".cad,.json,application/json,text/json,text/plain,application/octet-stream,*/*" onChange={importerFichier} />
       </div>
       <button className="danger-btn" onClick={onReinitialiser}>Réinitialiser la démo</button>
     </div>

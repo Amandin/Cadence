@@ -8,7 +8,7 @@ export function BarreActionBas({ dark, classeSuivant, prochainRound, round, horl
   return (
     <div className="bottom" style={{ gridTemplateColumns: 'auto auto minmax(0, .82fr) auto auto', gap: 6, padding: 6 }}>
       <button className="small-btn hub-bottom-logo" onClick={onRetourHub} aria-label="Retour au Hub de campagne"><img src={logo} alt="" /></button>
-      {onRetourPreparation ? <button className="turn-btn compact prep-return-btn" onClick={onRetourPreparation} aria-label="Retour en préparation">Prépa</button> : <BoutonTourPrecedent compact disabled={retourDesactive} onClick={onTourPrecedent} />}
+      {onRetourPreparation ? <button className="turn-btn compact prep-return-btn bottom-prep-return" onClick={onRetourPreparation} aria-label="Retour en préparation" title="Retour en préparation">↤</button> : <BoutonTourPrecedent compact disabled={retourDesactive} onClick={onTourPrecedent} />}
       <button className={`primary ${classeSuivant}`} style={{ minWidth: 0, padding: '10px 11px', fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} onClick={onTourSuivant} disabled={suivantDesactive}>{texteSuivant}</button>
       <button className="small-btn" onClick={onSaisirInitiatives}>Init</button>
       <button className="small-btn" onClick={onOuvrirMenu}>☰</button>

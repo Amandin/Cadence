@@ -3,6 +3,7 @@ import { defaultCategoryOrder, defaultEqualityRule, temporalityModes } from './c
 import { groupeEgalitePourParticipant, participantsPourPhase, phaseSuivanteExiste } from './domain/initiative.js';
 import { FenetresSuperposees } from './interface/app/FenetresSuperposees.jsx';
 import { HubCampagne } from './interface/campaign/HubCampagne.jsx';
+import { Fenetre } from './interface/commun/ComposantsCommuns.jsx';
 import { FenetreExportCampagne } from './interface/dialogues/FenetreExportCampagne.jsx';
 import { FenetreEditionFiche } from './interface/fiches/FenetreEditionFiche.jsx';
 import { BarreActionBas } from './interface/scene/BarreActionBas.jsx';
@@ -30,7 +31,9 @@ export default function App() {
   const [editingTemplateId, setEditingTemplateId] = useState('');
   const [templateError, setTemplateError] = useState(null);
   const [exportOpen, setExportOpen] = useState(false);
+  const [timerDoneOpen, setTimerDoneOpen] = useState(false);
   const previousRoundRef = useRef(scene.round);
+  const timerDoneRef = useRef(false);
 
   const temporaliteSouple = scene.temporalite === temporalityModes.FLEXIBLE;
   const temporalitePhases = scene.temporalite === temporalityModes.PHASES;
@@ -91,6 +94,30 @@ export default function App() {
       setInitiativeEntryOpen(true);
     }
   }, [currentView, scene.phaseRerollEachRound, scene.round, scene.temporalite]);
+
+  useEffect(() => {
+    const compteur = scene.globalTracker;
+    if (scene.round < 0 || !compteur?.enabled || compteur.mode !== 'timer') {
+      timerDoneRef.current = false;
+      return undefined;
+    }
+    const duree = Math.max(1, Number(compteur.max || 60)) * 1000;
+    const verifier = () => {
+      const elapsed = Math.max(0, Number(compteur.elapsedMs || 0)) + (compteur.running && compteur.startedAt ? Math.max(0, Date.now() - Number(compteur.startedAt)) : 0);
+      if (elapsed < duree) {
+        timerDoneRef.current = false;
+        return;
+      }
+      if (timerDoneRef.current) return;
+      timerDoneRef.current = true;
+      actions.updateGlobalTracker({ running: false, startedAt: null, elapsedMs: duree });
+      setTimerDoneOpen(true);
+    };
+    verifier();
+    if (!compteur.running) return undefined;
+    const id = window.setInterval(verifier, 500);
+    return () => window.clearInterval(id);
+  }, [actions, scene.globalTracker]);
 
   const nextTurn = (direction) => {
     if (direction < 0 && !retourPossible) return;
@@ -205,6 +232,44 @@ export default function App() {
     setOpenMenu(false);
     characters.closeCharacterPanels();
   };
+  const advanceRound = () => {
+    actions.advanceRound();
+    setOpenMenu(false);
+    characters.closeCharacterPanels();
+  };
+  const resetSceneTrackers = () => {
+    actions.resetSceneTrackers();
+    setOpenMenu(false);
+    characters.closeCharacterPanels();
+  };
+  const clearSceneStatuses = () => {
+    actions.clearSceneStatuses();
+    setOpenMenu(false);
+    characters.closeCharacterPanels();
+  };
+  const toggleGlobalRealtime = () => {
+    const compteur = scene.globalTracker;
+    if (scene.round < 0) return;
+    if (!['stopwatch', 'timer'].includes(compteur?.mode)) return;
+    const elapsed = Math.max(0, Number(compteur.elapsedMs || 0)) + (compteur.running && compteur.startedAt ? Math.max(0, Date.now() - Number(compteur.startedAt)) : 0);
+    actions.updateGlobalTracker(compteur.running
+      ? { running: false, startedAt: null, elapsedMs: elapsed }
+      : { running: true, startedAt: Date.now() });
+  };
+  const restartTimer = () => {
+    actions.updateGlobalTracker({ running: true, startedAt: Date.now(), elapsedMs: 0 });
+    timerDoneRef.current = false;
+    setTimerDoneOpen(false);
+  };
+  const resetTimer = () => {
+    actions.updateGlobalTracker({ running: false, startedAt: null, elapsedMs: 0 });
+    timerDoneRef.current = false;
+    setTimerDoneOpen(false);
+  };
+  const openTimerMenu = () => {
+    setTimerDoneOpen(false);
+    setOpenMenu(true);
+  };
   const exportCampaign = async (name) => {
     try {
       const result = await actions.exportCampaign(name);
@@ -306,12 +371,25 @@ export default function App() {
           creerDepuisTemplate: createFromTemplate,
           restaurerScene: restoreScene,
           retourPreparation: returnToPreparation,
+          avancerRound: advanceRound,
+          resetSuivisScene: resetSceneTrackers,
+          effacerEtatsScene: clearSceneStatuses,
         }}
         compteurGlobal={{ horlogesBloquantes: blocked }}
         resolutionHorloge={{ resetClock, deleteClock }}
         templatesUi={{ templateTarget, templateError, fermerSauvegardeTemplate: () => setTemplateTarget(null), enregistrerTemplate: saveTemplate }}
       />
       {exportOpen && <FenetreExportCampagne nomInitial={campaignName} onFermer={() => setExportOpen(false)} onExporter={exportCampaign} />}
+      {timerDoneOpen && <Fenetre title="Minuteur terminé" onClose={() => setTimerDoneOpen(false)}>
+        <div className="stack">
+          <p className="muted compact-help">Le minuteur est arrivé à zéro.</p>
+          <div className="grid2">
+            <button className="primary" onClick={restartTimer}>Relancer</button>
+            <button className="small-btn" onClick={resetTimer}>Reset</button>
+          </div>
+          <button className="small-btn" onClick={openTimerMenu}>Ouvrir le menu</button>
+        </div>
+      </Fenetre>}
       {editingTemplate && <FenetreEditionFiche participant={editingTemplate.participant} title={`Modifier le template · ${editingTemplate.name}`} saveTemplateVisible={false} deleteLabel="Supprimer le template" onClose={() => setEditingTemplateId('')} onSave={saveEditedTemplate} onDelete={deleteEditedTemplate} />}
     </>
   );
@@ -374,7 +452,7 @@ export default function App() {
           onTourSuivant={() => nextTurn(1)}
           onRetourPreparation={retourPreparationVisible ? returnToPreparation : null}
           onModifierCompteurGlobal={actions.stepGlobal}
-          onOuvrirCompteurGlobal={() => setGlobalSheetOpen(true)}
+          onToggleCompteurTemps={toggleGlobalRealtime}
         />
 
         <main>

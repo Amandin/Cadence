@@ -22,7 +22,7 @@ export function EnteteScene(props) {
     onTourSuivant,
     onRetourPreparation,
     onModifierCompteurGlobal,
-    onOuvrirCompteurGlobal,
+    onToggleCompteurTemps,
   } = props;
   const horlogeABloquee = horlogesBloquantes.length > 0;
   const enPreparation = scene.round < 0;
@@ -55,7 +55,7 @@ export function EnteteScene(props) {
         <BadgeRound round={scene.round} effect={effetRound} phase={temporalitePhases ? scene.phase || 1 : null} />
       </div>
       <div className="turn-row">
-        {onRetourPreparation ? <button className="turn-btn prep-return-btn" onClick={onRetourPreparation} aria-label="Retour en préparation">Prépa</button> : <BoutonTourPrecedent disabled={retourDesactive} onClick={onTourPrecedent} />}
+        {onRetourPreparation ? <button className="turn-btn prep-return-btn" onClick={onRetourPreparation} aria-label="Retour en préparation" title="Retour en préparation">↤</button> : <BoutonTourPrecedent disabled={retourDesactive} onClick={onTourPrecedent} />}
         <div className={`active-box panel ${tourSimultane ? 'simultaneous-turn' : ''} ${temporaliteSouple ? 'flexible-turn' : ''} ${temporalitePhases ? 'phase-turn' : ''}`}>
           <div className="turn-active-line">
             <div className="active-name">
@@ -63,7 +63,7 @@ export function EnteteScene(props) {
             </div>
             {tourSimultane && <span className="chip simultaneous-chip">Même temps</span>}
             {temporaliteSouple && !horlogeABloquee && !enPreparation && <span className="chip flexible-chip">Souple</span>}
-            <CompteurGlobal compteur={scene.globalTracker} onChanger={onModifierCompteurGlobal} onOuvrir={onOuvrirCompteurGlobal} animationTick={compteurGlobalAuto} />
+            <CompteurGlobal compteur={scene.globalTracker} onChanger={onModifierCompteurGlobal} onToggleTemps={onToggleCompteurTemps} animationTick={compteurGlobalAuto} />
           </div>
         </div>
         <button className={`turn-btn next ${classeSuivant}`} onClick={onTourSuivant} disabled={suivantDesactive} aria-label={libelleSuivant}>{horlogeABloquee ? '⏸' : '➜'}</button>

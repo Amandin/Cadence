@@ -5,12 +5,22 @@ import { Fenetre } from '../commun/ComposantsCommuns.jsx';
 export function FenetreExportCampagne({ nomInitial, onFermer, onExporter }) {
   const [nom, setNom] = useState(nomInitial || 'Campagne Cadence');
   const [exportEnCours, setExportEnCours] = useState(false);
+  const [message, setMessage] = useState('');
 
   const valider = async () => {
+    setMessage('');
     setExportEnCours(true);
     const result = await onExporter(normalizeCampaignName(nom));
     setExportEnCours(false);
-    if (!result?.cancelled) onFermer();
+    if (result?.ok) {
+      onFermer();
+      return;
+    }
+    if (result?.cancelled) {
+      setMessage('Export annulé ou non confirmé par le navigateur.');
+      return;
+    }
+    setMessage(result?.message || 'Le navigateur n’a pas confirmé l’export.');
   };
 
   return (
@@ -34,6 +44,7 @@ export function FenetreExportCampagne({ nomInitial, onFermer, onExporter }) {
           <button className="primary" onClick={valider} disabled={exportEnCours}>{exportEnCours ? 'Enregistrement…' : 'Enregistrer'}</button>
           <button className="small-btn" onClick={onFermer} disabled={exportEnCours}>Annuler</button>
         </div>
+        {message && <p className="export-feedback">{message}</p>}
       </div>
     </Fenetre>
   );

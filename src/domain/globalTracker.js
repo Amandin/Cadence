@@ -5,6 +5,9 @@ const DEFAULT_GLOBAL_TRACKER = {
   current: 0,
   max: 6,
   auto: false,
+  running: false,
+  startedAt: null,
+  elapsedMs: 0,
 };
 
 function finiteNumberOr(value, fallback) {
@@ -25,6 +28,9 @@ export function normalizeGlobalTracker(tracker) {
     ...safe,
     current: Math.max(0, finiteNumberOr(safe.current, 0)),
     max: Math.max(1, finiteNumberOr(safe.max, DEFAULT_GLOBAL_TRACKER.max)),
+    elapsedMs: Math.max(0, finiteNumberOr(safe.elapsedMs, 0)),
+    startedAt: safe.startedAt == null ? null : finiteNumberOr(safe.startedAt, null),
+    running: !!safe.running,
   };
 }
 
