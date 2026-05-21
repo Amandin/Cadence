@@ -11,7 +11,7 @@ import {
 } from './constants.js';
 import { campaignRulesFromPayload, normalizeCampaignRules, unifyCampaignScenes } from './domain/campaignRules.js';
 import { normalizeGlobalTracker } from './domain/globalTracker.js';
-import { makeDefaultCampaign, uid } from './logic.js';
+import { isPointsTracker, normalizeThresholds, makeDefaultCampaign, uid } from './logic.js';
 import { isTemplateStoreLike, loadTemplateStore, normalizeTemplateStore } from './templates.js';
 
 export const CADENCE_CAMPAIGN_FORMAT = 'cadence-campaign';
@@ -69,9 +69,21 @@ function normalizeStatus(status) {
   };
 }
 
+function normalizeResetRule(rule = {}) {
+  return {
+    mode: ['initial', 'zero', 'max', 'checked', 'delta', 'boxDelta', 'towardDefault'].includes(rule.mode) ? rule.mode : 'towardDefault',
+    delta: numberOr(rule.delta, 1),
+    step: numberOr(rule.step, 1),
+    amount: Math.max(1, numberOr(rule.amount, 1)),
+    targetRowId: stringOr(rule.targetRowId, ''),
+    after: ['none', 'zero', 'max', 'initial'].includes(rule.after) ? rule.after : 'none',
+  };
+}
+
 function normalizeTracker(tracker) {
   if (!isPlainObject(tracker)) return null;
-  const type = ['bar', 'dots', 'clock', 'boxes', 'number'].includes(tracker.type) ? tracker.type : 'bar';
+  const rawType = ['bar', 'points', 'dots', 'clock', 'boxes', 'boxesFree', 'boxesSorted', 'number'].includes(tracker.type) ? tracker.type : 'bar';
+  const type = rawType === 'dots' ? 'points' : ['boxesFree', 'boxesSorted'].includes(rawType) ? 'boxes' : rawType;
   const base = {
     ...tracker,
     id: stringOr(tracker.id, uid('t')),
@@ -83,8 +95,25 @@ function normalizeTracker(tracker) {
   if (type === 'boxes') {
     return {
       ...base,
+      type: 'boxes',
+      boxMode: tracker.boxMode === 'free' || rawType === 'boxesFree' ? 'free' : 'sorted',
+      secret: booleanOr(tracker.secret),
+      autoReset: ['never', 'round', 'activation'].includes(tracker.autoReset) ? tracker.autoReset : 'never',
+      autoResetPaused: booleanOr(tracker.autoResetPaused),
+      resetMode: ['initial', 'zero', 'checked', 'boxDelta'].includes(tracker.resetMode) ? tracker.resetMode : 'initial',
+      resetRule: normalizeResetRule(tracker.resetRule),
+      resetDefaultMode: ['full', 'empty', 'custom'].includes(tracker.resetDefaultMode) ? tracker.resetDefaultMode : 'empty',
       fillLevels: Math.max(1, Math.min(5, numberOr(tracker.fillLevels, 5))),
+      levelLabels: normalizeArray(tracker.levelLabels).map((label) => String(label || '').trim()).filter(Boolean).slice(0, 5),
+      levelPriorities: normalizeArray(tracker.levelPriorities).map((priority) => Math.max(1, numberOr(priority, 1))).slice(0, 5),
+      globalSort: tracker.globalSort !== false,
       rows: normalizeArray(tracker.rows).filter(isPlainObject).map((row) => ({
+        ...row,
+        id: stringOr(row.id, uid('r')),
+        label: stringOr(row.label, 'Ligne'),
+        marks: normalizeArray(row.marks).map((mark) => Math.max(0, numberOr(mark, 0))),
+      })),
+      initialRows: normalizeArray(tracker.initialRows).filter(isPlainObject).map((row) => ({
         ...row,
         id: stringOr(row.id, uid('r')),
         label: stringOr(row.label, 'Ligne'),
@@ -93,11 +122,32 @@ function normalizeTracker(tracker) {
     };
   }
 
-  if (type === 'clock' || type === 'dots') {
+  if (type === 'clock' || isPointsTracker(type)) {
     return {
       ...base,
+      type,
       current: Math.max(0, numberOr(tracker.current, 0)),
+      initial: Math.max(0, numberOr(tracker.initial, tracker.current ?? 0)),
+      min: tracker.min == null || tracker.min === '' ? 0 : numberOr(tracker.min, 0),
       max: Math.max(1, numberOr(tracker.max, type === 'clock' ? 6 : 5)),
+      step: Math.max(1, numberOr(tracker.step, 1)),
+      direction: tracker.direction === 'countdown' ? 'countdown' : 'progression',
+      limitMode: type === 'clock'
+        ? (['manual', 'increment', 'overflow'].includes(tracker.limitMode) ? tracker.limitMode : 'manual')
+        : (['clamp', 'loop'].includes(tracker.limitMode) ? tracker.limitMode : 'clamp'),
+      cycles: numberOr(tracker.cycles, 0),
+      cyclesInitial: numberOr(tracker.cyclesInitial, 0),
+      cyclesMin: tracker.cyclesMin == null || tracker.cyclesMin === '' ? null : numberOr(tracker.cyclesMin, 0),
+      cyclesMax: tracker.cyclesMax == null || tracker.cyclesMax === '' ? null : numberOr(tracker.cyclesMax, 0),
+      currentThresholds: (isPointsTracker(type) || type === 'clock') ? normalizeThresholds(tracker.currentThresholds || tracker.thresholds) : tracker.currentThresholds,
+      totalThresholds: (isPointsTracker(type) || type === 'clock') ? normalizeThresholds(tracker.totalThresholds) : tracker.totalThresholds,
+      thresholds: normalizeThresholds(tracker.thresholds),
+      secret: booleanOr(tracker.secret),
+      autoReset: ['never', 'round', 'activation'].includes(tracker.autoReset) ? tracker.autoReset : 'never',
+      autoResetPaused: booleanOr(tracker.autoResetPaused),
+      resetMode: ['initial', 'zero', 'max', 'delta'].includes(tracker.resetMode) ? tracker.resetMode : 'initial',
+      resetRule: normalizeResetRule(tracker.resetRule),
+      resetDefaultMode: ['full', 'empty', 'custom'].includes(tracker.resetDefaultMode) ? tracker.resetDefaultMode : 'empty',
       auto: type === 'clock' ? booleanOr(tracker.auto, true) : tracker.auto,
       frozen: type === 'clock' ? booleanOr(tracker.frozen) : tracker.frozen,
     };
@@ -106,11 +156,30 @@ function normalizeTracker(tracker) {
   return {
     ...base,
     current: numberOr(tracker.current, type === 'bar' ? 10 : 0),
+    initial: numberOr(tracker.initial, type === 'bar' ? tracker.max ?? tracker.current ?? 10 : tracker.current ?? 0),
     min: tracker.min == null || tracker.min === '' ? null : numberOr(tracker.min, 0),
     max: tracker.max == null || tracker.max === '' ? null : numberOr(tracker.max, type === 'bar' ? 20 : 0),
     step: Math.max(1, numberOr(tracker.step, type === 'bar' ? 5 : 1)),
-    minAbsolute: booleanOr(tracker.minAbsolute),
-    maxAbsolute: booleanOr(tracker.maxAbsolute),
+    direction: type === 'bar' && tracker.direction === 'progression' ? 'progression' : 'countdown',
+    thresholds: normalizeThresholds(tracker.thresholds),
+    secret: booleanOr(tracker.secret),
+    autoReset: ['never', 'round', 'activation'].includes(tracker.autoReset) ? tracker.autoReset : 'never',
+    autoResetPaused: booleanOr(tracker.autoResetPaused),
+    resetMode: ['initial', 'zero', 'max', 'delta'].includes(tracker.resetMode) ? tracker.resetMode : 'initial',
+    resetRule: normalizeResetRule(tracker.resetRule),
+    resetDefaultMode: ['full', 'empty', 'custom'].includes(tracker.resetDefaultMode) ? tracker.resetDefaultMode : (type === 'bar' ? 'full' : 'empty'),
+    counterSize: ['compact', 'normal', 'wide'].includes(tracker.counterSize) ? tracker.counterSize : 'compact',
+    counters: type === 'number' ? normalizeArray(tracker.counters).filter(isPlainObject).map((counter) => ({
+      ...counter,
+      id: stringOr(counter.id, uid('counter')),
+      label: stringOr(counter.label, 'Compteur'),
+      current: numberOr(counter.current, 0),
+      initial: numberOr(counter.initial, counter.current ?? 0),
+      step: Math.max(1, numberOr(counter.step, 1)),
+      size: ['compact', 'normal', 'wide'].includes(counter.size) ? counter.size : 'compact',
+    })) : tracker.counters,
+    minAbsolute: type === 'bar' ? booleanOr(tracker.minAbsolute, true) : booleanOr(tracker.minAbsolute),
+    maxAbsolute: type === 'bar' ? booleanOr(tracker.maxAbsolute, true) : booleanOr(tracker.maxAbsolute),
   };
 }
 
