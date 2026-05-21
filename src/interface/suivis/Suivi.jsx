@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { applyDelta, boxVisualRank, cycleBoxMark, isTriggeredClock } from '../../logic.js';
+import { applyDelta, boxGroups, boxVisualRank, cycleBoxMark, isTriggeredClock, sortBoxGroups } from '../../logic.js';
 
 function TitreSuivi({ titre, avantTitre }) {
   return <span className="tracker-title">{avantTitre}{titre}</span>;
@@ -26,7 +26,16 @@ export function Suivi({ suivi, onModifier, onSupprimer, avantTitre = null }) {
   const appliquerPas = (direction) => suivi.type !== 'boxes' && onModifier(applyDelta(suivi, direction * Number(suivi.step || 1)));
   const ouvrirDelta = () => setDeltaOuvert((ouvert) => !ouvert);
   const appliquerDeltaManuel = () => { onModifier(applyDelta(suivi, Number(delta))); setDelta(''); setDeltaOuvert(false); };
-  const cocherCase = (ligneId, index) => modifier({ rows: suivi.rows.map((ligne) => ligne.id !== ligneId ? ligne : { ...ligne, marks: ligne.marks.map((valeur, i) => i === index ? cycleBoxMark(valeur, suivi.fillLevels || 5) : valeur) }) });
+  const cocherCase = (groupeId, ligneId, index) => {
+    const groups = boxGroups(suivi).map((groupe) => groupe.id !== groupeId ? groupe : {
+      ...groupe,
+      rows: groupe.rows.map((ligne) => ligne.id !== ligneId ? ligne : {
+        ...ligne,
+        marks: ligne.marks.map((valeur, i) => i === index ? cycleBoxMark(valeur, suivi.fillLevels || 5) : valeur),
+      }),
+    });
+    modifier({ groups: sortBoxGroups(groups), rows: undefined, boxMode: 'sorted' });
+  };
 
   useEffect(() => {
     if (!deltaOuvert) return;
@@ -41,7 +50,7 @@ export function Suivi({ suivi, onModifier, onSupprimer, avantTitre = null }) {
     return <div className="tracker"><div className="tracker-top"><TitreSuivi titre={suivi.name} avantTitre={avantTitre} /></div><CasesSuivi suivi={suivi} cocher={cocherCase} /></div>;
   }
 
-  return <div className={`tracker ${declenche ? 'triggered' : ''}`}><div className="tracker-top"><TitreSuivi titre={suivi.name} avantTitre={avantTitre} />{declenche && <span className="chip hot">À résoudre</span>}</div>{accepteDelta && deltaOuvert && <div className="delta-pop"><input ref={champDeltaRef} type="number" inputMode="numeric" value={delta} onChange={(event) => setDelta(event.target.value)} onKeyDown={(event) => event.key === 'Enter' && appliquerDeltaManuel()} placeholder="+50" /><button onClick={appliquerDeltaManuel}>OK</button></div>}<div className="controls"><button onClick={() => appliquerPas(-1)}>−</button><div>{suivi.type === 'bar' && <BarreSuivi suivi={suivi} onDelta={ouvrirDelta} />}{suivi.type === 'dots' && <PointsSuivi suivi={suivi} onModifier={modifier} />}{suivi.type === 'number' && <><div className="delta"><button onClick={ouvrirDelta}>+/-</button></div><div className="panel" style={{ borderRadius: 14, padding: 10, textAlign: 'center', fontWeight: 900 }}>{suivi.current}</div></>}</div><button onClick={() => appliquerPas(1)}>+</button></div>{declenche && <div className="stack" style={{ marginTop: 8 }}><button className="primary" onClick={() => modifier({ current: 0 })}>Relancer à 0</button><button className="danger-btn" onClick={onSupprimer}>Supprimer</button></div>}</div>;
+  return <div className={`tracker ${declenche ? 'triggered' : ''}`}><div className="tracker-top"><TitreSuivi titre={suivi.name} avantTitre={avantTitre} />{declenche && <span className="chip hot">À résoudre</span>}</div>{accepteDelta && deltaOuvert && <div className="delta-pop"><input ref={champDeltaRef} type="number" inputMode="numeric" value={delta} onChange={(event) => setDelta(event.target.value)} onKeyDown={(event) => event.key === 'Enter' && appliquerDeltaManuel()} placeholder="+50" /><button onClick={appliquerDeltaManuel}>OK</button></div>}<div className="controls"><button onClick={() => appliquerPas(-1)}>−</button><div>{suivi.type === 'bar' && <BarreSuivi suivi={suivi} onDelta={ouvrirDelta} />}{suivi.type === 'points' && <PointsSuivi suivi={suivi} onModifier={modifier} />}{suivi.type === 'dots' && <PointsSuivi suivi={suivi} onModifier={modifier} />}{suivi.type === 'number' && <><div className="delta"><button onClick={ouvrirDelta}>+/-</button></div><div className="panel" style={{ borderRadius: 14, padding: 10, textAlign: 'center', fontWeight: 900 }}>{suivi.current}</div></>}</div><button onClick={() => appliquerPas(1)}>+</button></div>{declenche && <div className="stack" style={{ marginTop: 8 }}><button className="primary" onClick={() => modifier({ current: 0 })}>Relancer à 0</button><button className="danger-btn" onClick={onSupprimer}>Supprimer</button></div>}</div>;
 }
 
 function BarreSuivi({ suivi, onDelta }) {
@@ -54,7 +63,8 @@ function BarreSuivi({ suivi, onDelta }) {
 }
 
 function PointsSuivi({ suivi, onModifier }) {
-  return <div className="dots">{Array.from({ length: suivi.max }).map((_, i) => <button key={i} className={`dot ${i < suivi.current ? 'on' : ''}`} onClick={() => onModifier({ current: i + 1 === suivi.current ? i : i + 1 })} />)}</div>;
+  const max = Math.max(1, Number(suivi.max || 1));
+  return <div className="dots">{Array.from({ length: max }).map((_, i) => <button key={i} className={`dot ${i < suivi.current ? 'on' : ''}`} onClick={() => onModifier({ current: i + 1 === suivi.current ? i : i + 1 })} />)}{Number(suivi.cycles || 0) !== 0 && <span className="chip">×{suivi.cycles}</span>}</div>;
 }
 
 function HorlogeSuivi({ suivi }) {
@@ -71,5 +81,5 @@ function HorlogeSuivi({ suivi }) {
 
 function CasesSuivi({ suivi, cocher }) {
   const max = suivi.fillLevels || 5;
-  return <div className="boxes">{suivi.rows.map((ligne) => <div className="box-row" key={ligne.id}><div className="box-label">{ligne.label}</div><div className="boxes">{ligne.marks.map((valeur, i) => <button key={i} className={`box mark-${boxVisualRank(valeur, max)} ${boxVisualRank(valeur, max) >= 5 ? 'full' : ''}`} onClick={() => cocher(ligne.id, i)} aria-label={`${ligne.label} case ${i + 1}`} />)}</div></div>)}</div>;
+  return <div className="boxes grouped-boxes">{boxGroups(suivi).map((groupe) => <div className="box-group" key={groupe.id}>{groupe.rows.map((ligne, rowIndex) => <div className="box-row" key={ligne.id}><div className="box-label">{rowIndex === 0 ? groupe.label : ''}</div><div className="boxes">{ligne.marks.map((valeur, i) => <button key={i} className={`box mark-${boxVisualRank(valeur, max)} ${boxVisualRank(valeur, max) >= 5 ? 'full' : ''}`} onClick={() => cocher(groupe.id, ligne.id, i)} aria-label={`${groupe.label} ${ligne.label} case ${i + 1}`} />)}</div><div className="box-label right">{ligne.label}</div></div>)}</div>)}</div>;
 }

@@ -1,6 +1,7 @@
 import {
   defaultCategoryOrder,
   defaultEqualityRule,
+  defaultPhaseActivateOncePerRound,
   defaultPhaseDecrement,
   defaultPhaseRerollEachRound,
   defaultStartRound,
@@ -15,6 +16,7 @@ export function normalizeCampaignRules(rules = {}) {
     startRound: [0, 1].includes(Number(rules.startRound)) ? Number(rules.startRound) : defaultStartRound,
     phaseDecrement: Math.max(1, Number(rules.phaseDecrement) || defaultPhaseDecrement),
     phaseRerollEachRound: rules.phaseRerollEachRound ?? defaultPhaseRerollEachRound,
+    phaseActivateOncePerRound: rules.phaseActivateOncePerRound ?? defaultPhaseActivateOncePerRound,
     equalityRule: rules.equalityRule || defaultEqualityRule,
     categoryOrder: Array.isArray(rules.categoryOrder) && rules.categoryOrder.length ? rules.categoryOrder : defaultCategoryOrder,
     rounding: ['nearest', 'floor', 'ceil'].includes(rules.rounding) ? rules.rounding : 'nearest',
@@ -51,6 +53,7 @@ export function applyInitiativeRules(scene, patch = {}) {
     startRound: next.startRound,
     phaseDecrement: next.phaseDecrement,
     phaseRerollEachRound: !!next.phaseRerollEachRound,
+    phaseActivateOncePerRound: !!next.phaseActivateOncePerRound,
     equalityRule: next.equalityRule,
     categoryOrder: next.categoryOrder,
     rounding: next.rounding,
