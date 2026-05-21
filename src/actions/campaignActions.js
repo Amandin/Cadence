@@ -1,6 +1,6 @@
 import { applyInitiativeRules, campaignRulesFromPayload, normalizeCampaignRules, unifyCampaignScenes } from '../domain/campaignRules.js';
 import { campaignNameFromPayload, campaignTemplatesFromPayload, isValidCampaign, normalizeCampaignName, normalizeCampaignPayload, serializeCampaign } from '../storage.js';
-import { clone, makeDefaultCampaign, uid } from '../logic.js';
+import { clone, isBoxesTracker, isNumericTracker, makeDefaultCampaign, uid } from '../logic.js';
 import { mergeTemplateStores } from '../templates.js';
 
 function valeurNumerique(value, fallback = 0) {
@@ -9,11 +9,10 @@ function valeurNumerique(value, fallback = 0) {
 }
 
 function resetTrackerPourDepartScene(tracker) {
-  if (tracker.type === 'bar') return { ...tracker, current: valeurNumerique(tracker.max, valeurNumerique(tracker.current, 0)) };
-  if (tracker.type === 'boxes') {
+  if (isBoxesTracker(tracker)) {
     return { ...tracker, rows: (tracker.rows || []).map((row) => ({ ...row, marks: (row.marks || []).map(() => 0) })) };
   }
-  if (['clock', 'dots', 'number'].includes(tracker.type)) return { ...tracker, current: 0 };
+  if (isNumericTracker(tracker)) return { ...tracker, current: valeurNumerique(tracker.initial, 0), cycles: 0 };
   return { ...tracker };
 }
 
