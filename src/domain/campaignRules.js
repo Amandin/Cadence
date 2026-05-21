@@ -17,6 +17,7 @@ export function normalizeCampaignRules(rules = {}) {
     phaseRerollEachRound: rules.phaseRerollEachRound ?? defaultPhaseRerollEachRound,
     equalityRule: rules.equalityRule || defaultEqualityRule,
     categoryOrder: Array.isArray(rules.categoryOrder) && rules.categoryOrder.length ? rules.categoryOrder : defaultCategoryOrder,
+    rounding: ['nearest', 'floor', 'ceil'].includes(rules.rounding) ? rules.rounding : 'nearest',
   };
 }
 
@@ -52,6 +53,7 @@ export function applyInitiativeRules(scene, patch = {}) {
     phaseRerollEachRound: !!next.phaseRerollEachRound,
     equalityRule: next.equalityRule,
     categoryOrder: next.categoryOrder,
+    rounding: next.rounding,
   };
 }
 
