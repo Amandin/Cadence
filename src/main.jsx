@@ -8,6 +8,7 @@ import './theme-cadence.css';
 import './initiative-rules.css';
 import './refinements.css';
 import './template-hub.css';
+import './trackers-clarity.css';
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
