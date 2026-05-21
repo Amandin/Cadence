@@ -2,7 +2,7 @@ import { temporalityModes } from '../constants.js';
 import { trierParInitiative } from '../domain/initiative.js';
 import { stepAutoGlobalTracker } from '../domain/globalTracker.js';
 import { createStatus } from '../domain/statuses.js';
-import { clone, tickParticipant, untickParticipant } from '../logic.js';
+import { clone, isBoxesTracker, isNumericTracker, resetAutoTrackers, resetTracker, tickParticipant, untickParticipant } from '../logic.js';
 import { ajouterJoueSouple, annulerDernierJoueSouple, retirerHistoriqueSouple, retirerJoueSouple, toutLeMondeAJoueSouple } from './flexibleTurnState.js';
 import { addRestorePoint, createBlankParticipant, optionsTri, placerEnReserve, valeurInitiativeRenseignee } from './sceneSupport.js';
 import {
@@ -77,10 +77,7 @@ function remettreEnPreparation(scene) {
 }
 
 function resetSuivi(suivi) {
-  if (suivi.type === 'bar') return { ...suivi, current: Number.isFinite(Number(suivi.max)) ? Number(suivi.max) : Number(suivi.current) || 0 };
-  if (suivi.type === 'boxes') return { ...suivi, rows: (suivi.rows || []).map((row) => ({ ...row, marks: (row.marks || []).map(() => 0) })) };
-  if (['clock', 'dots', 'number'].includes(suivi.type)) return { ...suivi, current: 0 };
-  return { ...suivi };
+  return resetTracker(suivi);
 }
 
 function resetSuivisParticipant(participant) {
@@ -186,6 +183,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
       updateScene((s) => ({
         ...s,
         activeId: participantId,
+        participants: (s.participants || []).map((participant) => participant.id === participantId ? resetAutoTrackers(participant, 'activation') : participant),
         jouesSouples: ajouterJoueSouple(s, participantId),
         historiqueSouple: (s.jouesSouples || []).includes(participantId)
           ? (s.historiqueSouple || [])
@@ -324,7 +322,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
         const nextIndex = currentIndex + 1;
         if (nextIndex < phaseParticipants.length) {
           setRoundEffect(null);
-          updateScene((s) => ({ ...s, activeId: phaseParticipants[nextIndex].id }));
+          updateScene((s) => ({ ...s, activeId: phaseParticipants[nextIndex].id, participants: (s.participants || []).map((participant) => participant.id === phaseParticipants[nextIndex].id ? resetAutoTrackers(participant, 'activation') : participant) }));
           return;
         }
         if (blocked.length) return;
@@ -333,7 +331,8 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
           updateScene((s) => {
             const phase = (s.phase || 1) + 1;
             const nextParticipants = participantsPhase({ ...s, phase });
-            return { ...s, phase, activeId: nextParticipants[0]?.id || '' };
+            const activeId = nextParticipants[0]?.id || '';
+            return { ...s, phase, activeId, participants: (s.participants || []).map((participant) => participant.id === activeId ? resetAutoTrackers(participant, 'activation') : participant) };
           });
           return;
         }
@@ -384,8 +383,11 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
           activeId: s.participants[nextIndex].id,
           round: Math.max(1, s.round + roundDelta),
           globalTracker: roundDelta > 0 ? stepAutoGlobalTracker(s.globalTracker, 1) : s.globalTracker,
-          participants: s.participants.map((p, i) => i === nextIndex ? tickParticipant(p) : p),
-          reserve: roundDelta > 0 ? (s.reserve || []).map(tickParticipant).map(placerEnReserve) : (s.reserve || []).map(placerEnReserve),
+          participants: s.participants.map((p, i) => {
+            const afterRound = roundDelta > 0 ? resetAutoTrackers(p, 'round') : p;
+            return i === nextIndex ? resetAutoTrackers(tickParticipant(afterRound), 'activation') : afterRound;
+          }),
+          reserve: roundDelta > 0 ? (s.reserve || []).map((participant) => tickParticipant(resetAutoTrackers(participant, 'round'))).map(placerEnReserve) : (s.reserve || []).map(placerEnReserve),
         };
 
         if (roundDelta > 0) setRestorePoints((points) => addRestorePoint(points, s.id, nextScene));
