@@ -64,7 +64,7 @@ export function FichetteParticipant({
       {hasQuickStats && <div className="quick-stats-full">{showInitiative && <span className="chip init-chip">Init {participant.initiative}</span>}<InfosRapides stats={participant.stats || []} /></div>}
       {secondaryActions && <div className="fiche-secondary-actions">{secondaryActions}</div>}
       <div className="trackers">
-        {suivisVisibles.map((suivi) => <Suivi key={suivi.id} suivi={suivi} onModifier={(suivant) => onSuivi(suivi.id, suivant)} onSupprimer={() => onSupprimerSuivi(suivi.id)} />)}
+        {suivisVisibles.map((suivi) => <Suivi key={suivi.id} suivi={suivi} couleur={participant.color} onModifier={(suivant) => onSuivi(suivi.id, suivant)} onSupprimer={() => onSupprimerSuivi(suivi.id)} />)}
         <div className="statuses status-control-row">
           {participant.statuses?.map((etat) => <EtiquetteEtat key={etat.id} etat={etat} onRetirer={() => onRetirerEtat(etat.id)} />)}
           <button className="small-btn" onClick={onAjouterEtat}>+ état</button>
