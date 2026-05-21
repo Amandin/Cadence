@@ -73,7 +73,7 @@ export function Suivi({ suivi, onModifier, onSupprimer, avantTitre = null }) {
   const validerPas = () => { const valeur = Math.max(1, Number(pas) || 1); modifier({ step: valeur }); setPas(String(valeur)); setPasOuvert(false); };
   const couleurSeuil = seuilActif?.color || 'neutral';
   const secondCouleurSeuil = seuilsActifs[1]?.color || '';
-  const marqueSecret = suivi.secret ? <span className="chip secret-chip" title="Secret MJ">{'F977'}</span> : null;
+  const marqueSecret = suivi.secret ? <span className="chip secret-chip" title="Secret MJ">{'🥷'}</span> : null;
   const seuilsTitre = suivi.type === 'number' ? [] : seuilsActifs;
   const marqueSeuil = seuilsTitre.length ? <span className="threshold-chip-stack">{seuilsTitre.map((seuil, index) => <span key={`${seuil.counterId || (seuil.total ? 'total' : 'current')}-${index}`} className={`chip threshold-chip threshold-${seuil.color || couleurSeuil}`}>{seuil.label}</span>)}</span> : null;
   const controlePas = <StepControl value={suivi.step || 1} open={pasOuvert} draft={pas} onOpen={() => { setPas(String(suivi.step || 1)); setPasOuvert(true); }} onDraft={setPas} onSave={validerPas} />;
