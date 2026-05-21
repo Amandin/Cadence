@@ -1,4 +1,4 @@
-export const APP_VERSION = '0.2.6';
+export const APP_VERSION = '0.2.8';
 export const STORAGE_KEY = 'cadence:campaign:v1';
 export const TEMPLATE_STORAGE_KEY = 'cadence:templates:v1';
 
@@ -57,10 +57,10 @@ export const equalityRuleDescriptions = {
 
 export const trackerTypeLabels = {
   bar: 'Barre',
-  dots: 'Points',
+  points: 'Puces',
+  number: 'Compteur',
   clock: 'Horloge',
   boxes: 'Cases',
-  number: 'Compteur',
 };
 
 export const colorNames = {
