@@ -1,7 +1,7 @@
 import { temporalityModes } from '../constants.js';
 import { phaseSuivanteExiste, participantsPourPhase, valeurInitiative } from '../domain/initiative.js';
 import { stepAutoGlobalTracker } from '../domain/globalTracker.js';
-import { tickParticipant } from '../logic.js';
+import { resetAutoTrackers, tickParticipant } from '../logic.js';
 import { optionsTri, placerEnReserve } from './sceneSupport.js';
 
 export function estModeSouple(scene) {
@@ -46,8 +46,11 @@ export function appliquerDebutNouveauRound(scene, activeId) {
     activeId,
     round: Math.max(1, scene.round + 1),
     globalTracker: stepAutoGlobalTracker(scene.globalTracker, 1),
-    participants: scene.participants.map((participant) => participant.id === activeId ? tickParticipant(participant) : participant),
-    reserve: (scene.reserve || []).map(tickParticipant).map(placerEnReserve),
+    participants: scene.participants.map((participant) => {
+      const afterRound = resetAutoTrackers(participant, 'round');
+      return participant.id === activeId ? resetAutoTrackers(tickParticipant(afterRound), 'activation') : afterRound;
+    }),
+    reserve: (scene.reserve || []).map((participant) => tickParticipant(resetAutoTrackers(participant, 'round'))).map(placerEnReserve),
   };
 }
 
@@ -57,8 +60,8 @@ export function appliquerNouveauRoundSouple(scene) {
     activeId: '',
     round: Math.max(1, scene.round + 1),
     globalTracker: stepAutoGlobalTracker(scene.globalTracker, 1),
-    participants: (scene.participants || []).map(tickParticipant),
-    reserve: (scene.reserve || []).map(tickParticipant).map(placerEnReserve),
+    participants: (scene.participants || []).map((participant) => tickParticipant(resetAutoTrackers(participant, 'round'))),
+    reserve: (scene.reserve || []).map((participant) => tickParticipant(resetAutoTrackers(participant, 'round'))).map(placerEnReserve),
     jouesSouples: [],
     historiqueSouple: [],
   };
@@ -71,11 +74,11 @@ export function appliquerNouveauRoundPhases(scene) {
     phase: 1,
     round: Math.max(1, scene.round + 1),
     globalTracker: stepAutoGlobalTracker(scene.globalTracker, 1),
-    participants: (scene.participants || []).map(tickParticipant),
-    reserve: (scene.reserve || []).map(tickParticipant).map(placerEnReserve),
+    participants: (scene.participants || []).map((participant) => tickParticipant(resetAutoTrackers(participant, 'round'))),
+    reserve: (scene.reserve || []).map((participant) => tickParticipant(resetAutoTrackers(participant, 'round'))).map(placerEnReserve),
   };
 
   return scene.phaseRerollEachRound
     ? sceneSuivante
-    : { ...sceneSuivante, activeId: premierParticipantPhase(sceneSuivante) };
+    : { ...sceneSuivante, activeId: premierParticipantPhase(sceneSuivante), participants: sceneSuivante.participants.map((participant) => participant.id === premierParticipantPhase(sceneSuivante) ? resetAutoTrackers(participant, 'activation') : participant) };
 }
