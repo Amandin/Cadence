@@ -153,6 +153,49 @@ describe('campaign storage', () => {
     expect(serialized.scenes[0].participants[0].stats[0]).toEqual({ label: 'CA', value: '21', editable: true });
   });
 
+  it('keeps numeric tracker reset configuration when normalizing and serializing', () => {
+    const sourceScene = {
+      id: 'scene-trackers',
+      title: 'Suivis',
+      participants: [{
+        id: 'pj-trackers',
+        name: 'Gardienne',
+        trackers: [{
+          id: 'bar-overflow',
+          type: 'bar',
+          current: 15,
+          min: 0,
+          max: 10,
+          resetRule: { excessReductionPercent: 50 },
+        }],
+      }],
+    };
+
+    const campaign = normalizeCampaignPayload({ version: '0.2.8.5', scenes: [sourceScene] });
+    const tracker = campaign.scenes[0].participants[0].trackers[0];
+    expect(tracker.resetRule).toMatchObject({ excessReductionPercent: 50, rounding: 'floor' });
+
+    const serialized = JSON.parse(serializeCampaign(campaign.scenes, false, 'Suivis', null, campaign.initiativeRules));
+    expect(serialized.scenes[0].participants[0].trackers[0].resetRule).toMatchObject({ excessReductionPercent: 50, rounding: 'floor' });
+  });
+
+  it('gives legacy clocks their previous activation behavior when no moment is stored', () => {
+    const campaign = normalizeCampaignPayload({
+      version: '0.2.8.6',
+      scenes: [{
+        id: 'scene-clocks',
+        title: 'Horloges',
+        participants: [{
+          id: 'pj-clock',
+          name: 'Veilleuse',
+          trackers: [{ id: 'clock', type: 'clock', current: 0, max: 4 }],
+        }],
+      }],
+    });
+
+    expect(campaign.scenes[0].participants[0].trackers[0].autoReset).toBe('activation');
+  });
+
   it('rejects random JSON with only a scenes array', () => {
     expect(isValidCampaign({ scenes: [scene] })).toBe(false);
   });

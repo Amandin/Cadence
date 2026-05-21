@@ -40,6 +40,14 @@ export function phaseSuivanteDisponible(scene) {
   return phaseSuivanteExiste(scene.participants, scene.phase || 1, scene.phaseDecrement || 10);
 }
 
+function preparerActivationRound(participant) {
+  return { ...participant, _activationAutomationsDone: false };
+}
+
+function declencherActivation(participant, activeId) {
+  return participant.id === activeId ? resetAutoTrackers(tickParticipant(participant), 'activation') : participant;
+}
+
 export function appliquerDebutNouveauRound(scene, activeId) {
   return {
     ...scene,
@@ -68,17 +76,25 @@ export function appliquerNouveauRoundSouple(scene) {
 }
 
 export function appliquerNouveauRoundPhases(scene) {
+  const phaseOnce = scene.phaseActivateOncePerRound !== false;
   const sceneSuivante = {
     ...scene,
     activeId: '',
     phase: 1,
     round: Math.max(1, scene.round + 1),
     globalTracker: stepAutoGlobalTracker(scene.globalTracker, 1),
-    participants: (scene.participants || []).map((participant) => tickParticipant(resetAutoTrackers(participant, 'round'))),
+    participants: (scene.participants || []).map((participant) => {
+      const afterRound = tickParticipant(resetAutoTrackers(participant, 'round'));
+      return phaseOnce ? preparerActivationRound(afterRound) : afterRound;
+    }),
     reserve: (scene.reserve || []).map((participant) => tickParticipant(resetAutoTrackers(participant, 'round'))).map(placerEnReserve),
   };
 
-  return scene.phaseRerollEachRound
-    ? sceneSuivante
-    : { ...sceneSuivante, activeId: premierParticipantPhase(sceneSuivante), participants: sceneSuivante.participants.map((participant) => participant.id === premierParticipantPhase(sceneSuivante) ? resetAutoTrackers(participant, 'activation') : participant) };
+  if (scene.phaseRerollEachRound) return sceneSuivante;
+  const activeId = premierParticipantPhase(sceneSuivante);
+  return {
+    ...sceneSuivante,
+    activeId,
+    participants: sceneSuivante.participants.map((participant) => declencherActivation(participant, activeId)),
+  };
 }
