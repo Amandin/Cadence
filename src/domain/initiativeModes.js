@@ -9,7 +9,7 @@ export const isCheckedPhaseMode=s=>s?.phaseActionMode===PA.CHECKED;
 export const usesLabelInitiative=s=>s?.initiativeValueType===IV.LABEL;
 export function normalizeInitiativeModeOptions(r={}){return{phaseActionMode:Object.values(PA).includes(r.phaseActionMode)?r.phaseActionMode:DPA,initiativeValueType:Object.values(IV).includes(r.initiativeValueType)?r.initiativeValueType:DIV,initiativeLabels:uniq(r.initiativeLabels),multipleActionSlots:r.multipleActionSlots!==false,activationAdvancePolicy:Object.values(A).includes(r.activationAdvancePolicy)?r.activationAdvancePolicy:DA,declarationRequireText:!!r.declarationRequireText};}
 export const initiativeLabelRank=(v,labels=[])=>{const i=uniq(labels).findIndex(x=>k(x)===k(v));return i>=0?i:null;};
-export const initiativeSortValue=(v,r={})=>usesLabelInitiative(r)?initiativeLabelRank(v,r.initiativeLabels)??txt(v)||'zzzz':num(v,0);
+export const initiativeSortValue=(v,r={})=>usesLabelInitiative(r)?(initiativeLabelRank(v,r.initiativeLabels)??(txt(v)||'zzzz')):num(v,0);
 export function compareInitiativeValues(a,b,r={}){const d=r.initiativeOrder===IO.ASC?1:-1,av=initiativeSortValue(a,r),bv=initiativeSortValue(b,r);return typeof av==='number'&&typeof bv==='number'?(av-bv)*d:String(av).localeCompare(String(bv),'fr',{numeric:true,sensitivity:'base'})*d;}
 export const normalizeParticipantPhaseActions=p=>uniq(p?.phaseActions||p?.phases||p?.checkedPhases);
 export const participantActsInCheckedPhase=(p,phase=1)=>normalizeParticipantPhaseActions(p).some(x=>k(x)===k(phase));
