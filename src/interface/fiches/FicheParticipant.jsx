@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { initiativesActionParticipant } from '../../domain/initiative.js';
 import { EtiquetteEtat, Fenetre } from '../commun/ComposantsCommuns.jsx';
-import { Suivi } from '../suivis/Suivi.jsx';
 import { IconeOeilMystiqueOuvert, IconeOeilMystiqueFerme } from '../icones/IconesOeilMystique.jsx';
+import { Suivi } from '../suivis/Suivi.jsx';
 import { InfosRapides } from './InfosRapides.jsx';
 
 function valeurNumerique(valeur, defaut = 0) {
@@ -9,33 +10,70 @@ function valeurNumerique(valeur, defaut = 0) {
   return Number.isFinite(nombre) ? nombre : defaut;
 }
 
-function MiniCompteurInitiative({ initiative, departage, onChanger }) {
-  const valeur = Number.isFinite(Number(initiative)) ? Number(initiative) : 0;
+function MiniCompteurInitiative({ participant, departage, onChangerInitiatives }) {
+  const initiatives = initiativesActionParticipant(participant);
+  const [edition, setEdition] = useState(false);
+  const [brouillon, setBrouillon] = useState(() => initiatives.map(String));
+  const libelle = initiatives.join(' / ');
   const valeurDepartage = valeurNumerique(departage, 0);
   const afficherDepartage = valeurDepartage !== 0;
-  const [edition, setEdition] = useState(false);
-  const [saisie, setSaisie] = useState(String(valeur));
+  useEffect(() => {
+    if (!edition) setBrouillon(initiatives.map(String));
+  }, [edition, initiatives.join('|')]);
+
+  const modifier = (index, valeur) => setBrouillon((courant) => courant.map((item, position) => position === index ? valeur : item));
   const valider = () => {
-    const nombre = Number(saisie);
-    if (Number.isFinite(nombre)) onChanger(nombre);
+    const valeurs = brouillon.map((valeur) => Number(valeur)).filter(Number.isFinite);
+    if (valeurs.length > 0) onChangerInitiatives(valeurs);
     setEdition(false);
   };
 
+  if (!edition) {
+    return (
+      <button className="mini-init-counter compact-init-display" onClick={() => setEdition(true)} aria-label="Modifier les initiatives">
+        <small>Init</small>
+        <strong>{libelle}{afficherDepartage && <em className="init-tiebreak">{valeurDepartage > 0 ? `+${valeurDepartage}` : valeurDepartage}</em>}</strong>
+      </button>
+    );
+  }
+
   return (
-    <div className="mini-init-counter" aria-label="Initiative">
-      <button className="small-btn" onClick={() => onChanger(valeur - 1)} aria-label="Réduire l’initiative">−</button>
-      {edition ? <input value={saisie} type="number" inputMode="numeric" autoFocus onChange={(event) => setSaisie(event.target.value)} onBlur={valider} onKeyDown={(event) => { if (event.key === 'Enter') valider(); if (event.key === 'Escape') setEdition(false); }} aria-label="Valeur d’initiative" /> : <button className="init-value" onClick={() => { setSaisie(String(valeur)); setEdition(true); }}><small>Init</small><strong>{valeur}{afficherDepartage && <em className="init-tiebreak">{valeurDepartage > 0 ? `+${valeurDepartage}` : valeurDepartage}</em>}</strong></button>}
-      <button className="small-btn" onClick={() => onChanger(valeur + 1)} aria-label="Augmenter l’initiative">+</button>
+    <div className="mini-init-counter multi-init-counter" aria-label="Initiative">
+      {initiatives.map((initiative, index) => (
+        <div className="mini-init-slot" key={index}>
+          <label className="init-value editable-init-value">
+            <small>Init {index + 1}</small>
+            <input value={brouillon[index] ?? initiative} type="number" inputMode="numeric" onChange={(event) => modifier(index, event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') valider(); if (event.key === 'Escape') setEdition(false); }} aria-label={`Initiative ${index + 1}`} />
+            {index === 0 && afficherDepartage && <em className="init-tiebreak">{valeurDepartage > 0 ? `+${valeurDepartage}` : valeurDepartage}</em>}
+          </label>
+        </div>
+      ))}
+      <button className="small-btn close-init-edit" onClick={valider}>OK</button>
     </div>
   );
 }
 
-export function FicheParticipant({ participant, enInitiative, onFermer, onModifier, onChangerInitiative, onRejoindreInitiative, onQuitterInitiative, onInfoRapide, onSuivi, onSupprimerSuivi, onAjouterEtat, onRetirerEtat, onNote }) {
+export function FicheParticipant({ participant, enInitiative, onFermer, onModifier, onChangerInitiatives, onRejoindreInitiative, onQuitterInitiative, onInfoRapide, onSuivi, onSupprimerSuivi, onAjouterEtat, onRetirerEtat, onNote }) {
   const basculerVisibilite = (suivi) => onSuivi(suivi.id, { ...suivi, visible: suivi.visible === false });
   const boutonOeil = (suivi) => {
     const visible = suivi.visible !== false;
-    return <button className={`eye-toggle ${visible ? 'active' : 'inactive'}`} onClick={(event) => { event.stopPropagation(); basculerVisibilite(suivi); }} aria-label={visible ? 'Masquer sur la fichette' : 'Afficher sur la fichette'} title={visible ? 'Visible sur la fichette' : 'Masqué sur la fichette'} type="button">{visible ? <IconeOeilMystiqueOuvert /> : <IconeOeilMystiqueFerme />}</button>;
+    return <button className={`eye-toggle ${visible ? 'active' : 'inactive'}`} onClick={(event) => { event.stopPropagation(); basculerVisibilite(suivi); }} aria-label={visible ? 'Masquer sur la fichette' : 'Afficher sur la fichette'} title={visible ? 'Visible sur la fichette' : 'Masque sur la fichette'} type="button">{visible ? <IconeOeilMystiqueOuvert /> : <IconeOeilMystiqueFerme />}</button>;
   };
 
-  return <Fenetre title={participant.name} onClose={onFermer}><p>{participant.description}</p><div className="sheet-action-row"><button className="primary" onClick={onModifier}>Modifier</button>{enInitiative && <MiniCompteurInitiative initiative={participant.initiative} departage={participant.departage} onChanger={onChangerInitiative} />}{enInitiative ? <button className="small-btn" onClick={onQuitterInitiative}>Quitter l’init</button> : <button className="small-btn join-init-wide" onClick={onRejoindreInitiative}>Rejoindre init</button>}</div><InfosRapides stats={participant.stats || []} editable onChanger={onInfoRapide} /><h3>Suivis</h3><div className="stack sheet-trackers">{participant.trackers.map((suivi) => <Suivi key={suivi.id} suivi={suivi} avantTitre={boutonOeil(suivi)} couleur={participant.color} onModifier={(suivant) => onSuivi(suivi.id, suivant)} onSupprimer={() => onSupprimerSuivi(suivi.id)} />)}</div><h3>États</h3><div className="statuses">{participant.statuses?.map((etat) => <EtiquetteEtat key={etat.id} etat={etat} onRetirer={() => onRetirerEtat(etat.id)} />)}<button className="small-btn" onClick={onAjouterEtat}>+ état</button></div><label className="field">Note<textarea value={participant.note || ''} onChange={(event) => onNote(event.target.value)} /></label></Fenetre>;
+  return (
+    <Fenetre title={participant.name} onClose={onFermer}>
+      <p>{participant.description}</p>
+      <div className={`sheet-action-row ${enInitiative ? '' : 'without-init-counter'}`}>
+        <button className="primary" onClick={onModifier}>Modifier</button>
+        {enInitiative && <MiniCompteurInitiative participant={participant} departage={participant.departage} onChangerInitiatives={onChangerInitiatives} />}
+        {enInitiative ? <button className="small-btn" onClick={onQuitterInitiative}>Quitter l'init</button> : <button className="small-btn join-init-wide" onClick={onRejoindreInitiative}>Rejoindre init</button>}
+      </div>
+      <InfosRapides stats={participant.stats || []} editable onChanger={onInfoRapide} />
+      <h3>Suivis</h3>
+      <div className="stack sheet-trackers">{participant.trackers.map((suivi) => <Suivi key={suivi.id} suivi={suivi} avantTitre={boutonOeil(suivi)} couleur={participant.color} onModifier={(suivant) => onSuivi(suivi.id, suivant)} onSupprimer={() => onSupprimerSuivi(suivi.id)} />)}</div>
+      <h3>Etats</h3>
+      <div className="statuses">{participant.statuses?.map((etat) => <EtiquetteEtat key={etat.id} etat={etat} onRetirer={() => onRetirerEtat(etat.id)} />)}<button className="small-btn" onClick={onAjouterEtat}>+ etat</button></div>
+      <label className="field">Note<textarea value={participant.note || ''} onChange={(event) => onNote(event.target.value)} /></label>
+    </Fenetre>
+  );
 }

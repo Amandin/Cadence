@@ -5,7 +5,7 @@ function aDuContenuOperationnel(participant, suivisVisibles) {
   return suivisVisibles.length > 0 || (participant.statuses || []).length > 0;
 }
 
-export function FichetteInitiative({ participant, actif, groupeSimultane, temporaliteSouple, dejaJoue, onMarquerAJoue, onAnnulerAJoue, onOuvrir, onSuivi, onSupprimerSuivi, onAjouterEtat, onRetirerEtat, onQuitterInitiative }) {
+export function FichetteInitiative({ participant, actif, groupeSimultane, temporaliteSouple, dejaJoue, actionsRestantes = 0, onMarquerAJoue, onAnnulerAJoue, onOuvrir, onSuivi, onSupprimerSuivi, onAjouterEtat, onRetirerEtat, onQuitterInitiative }) {
   const declenchee = hasTriggeredClock(participant);
   const estPJ = participant.kind === 'PJ';
   const suivisVisibles = participant.trackers.filter(isVisible);
@@ -14,6 +14,7 @@ export function FichetteInitiative({ participant, actif, groupeSimultane, tempor
   const boutonSouple = temporaliteSouple && !groupeSimultane;
   const afficherTourActif = actif && !temporaliteSouple;
   const badges = [
+    temporaliteSouple && actionsRestantes > 1 && { className: 'slot-chip', label: `${actionsRestantes} actions` },
     dejaJoue && { className: 'played-chip', label: 'A joué' },
     declenchee && { className: 'hot', label: 'À résoudre' },
     sortieConseillee && { className: 'hot', label: 'Aucun suivi' },

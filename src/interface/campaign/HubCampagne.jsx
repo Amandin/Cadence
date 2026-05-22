@@ -3,6 +3,7 @@ import {
   APP_VERSION,
   defaultCategoryOrder,
   defaultEqualityRule,
+  defaultInitiativeOrder,
   defaultPhaseDecrement,
   defaultPhaseRerollEachRound,
   defaultStartRound,
@@ -10,6 +11,9 @@ import {
   equalityRuleDescriptions,
   equalityRuleLabels,
   equalityRules,
+  initiativeOrderDescriptions,
+  initiativeOrderLabels,
+  initiativeOrders,
   temporalityDescriptions,
   temporalityLabels,
   temporalityModes,
@@ -196,6 +200,24 @@ function OptionsEgalitesCampagne({ scene, onModifier }) {
   );
 }
 
+function OptionsOrdreInitiativeCampagne({ scene, onModifier }) {
+  const initiativeOrder = scene?.initiativeOrder || defaultInitiativeOrder;
+  return (
+    <div className="scene-options compact-options advanced-rule-block">
+      <h3>Ordre d’initiative</h3>
+      <p className="muted compact-help">Sens de parcours des valeurs d’initiative.</p>
+      <div className="advanced-radio-list">
+        {Object.values(initiativeOrders).map((order) => (
+          <label className={`advanced-radio ${initiativeOrder === order ? 'selected' : ''}`} key={order}>
+            <input type="radio" name="campaign-initiative-order" value={order} checked={initiativeOrder === order} onChange={(event) => onModifier({ initiativeOrder: event.target.value })} />
+            <span><strong>{initiativeOrderLabels[order]}</strong><small>{initiativeOrderDescriptions[order]}</small></span>
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function OptionsOrdreCategoriesCampagne({ scene, onModifier }) {
   const order = scene?.categoryOrder || defaultCategoryOrder;
   const deplacer = (index, delta) => {
@@ -232,6 +254,7 @@ function OngletRegles({ scene, onModifierRegles }) {
       <OptionsDepartCampagne startRound={scene?.startRound} onModifier={onModifierRegles} />
       <OptionsTemporaliteCampagne temporalite={temporalite} onModifier={onModifierRegles} />
       {temporalite === temporalityModes.PHASES && <OptionsPhasesCampagne scene={scene} onModifier={onModifierRegles} />}
+      <OptionsOrdreInitiativeCampagne scene={scene} onModifier={onModifierRegles} />
       <OptionsEgalitesCampagne scene={scene} onModifier={onModifierRegles} />
       <OptionsOrdreCategoriesCampagne scene={scene} onModifier={onModifierRegles} />
     </div>

@@ -51,7 +51,8 @@ export function useCharacterInteractions(scene, actions) {
 
   const addCharacter = (participant, { placement = 'init', initiative = 1 } = {}) => {
     if (!participant) return;
-    const nextParticipant = placement === 'init' ? { ...participant, initiative: Number.isFinite(Number(initiative)) ? Number(initiative) : participant.initiative } : participant;
+    const initiativeValue = Number.isFinite(Number(initiative)) ? Number(initiative) : participant.initiative;
+    const nextParticipant = placement === 'init' ? { ...participant, initiative: initiativeValue, actionSlots: [{ id: 'slot-1', initiative: initiativeValue, order: 0 }] } : participant;
     actions.addParticipant(nextParticipant, placement === 'reserve' ? 'reserve' : 'init');
     setEditingId(nextParticipant.id);
     setSelectedId(null);

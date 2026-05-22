@@ -1,4 +1,4 @@
-import { defaultCategoryOrder, defaultEqualityRule, equalityRules, legacyParticipantKinds } from '../constants.js';
+import { defaultCategoryOrder, defaultEqualityRule, defaultInitiativeOrder, equalityRules, initiativeOrders, legacyParticipantKinds } from '../constants.js';
 
 function numberOr(value, fallback = 0) {
   const next = Number(value);
@@ -11,6 +11,107 @@ export function valeurInitiative(participant) {
 
 export function valeurDepartage(participant) {
   return numberOr(participant?.departage ?? 0, 0);
+}
+
+function slotId(participantId, slot) {
+  return `${participantId}:${slot.id}`;
+}
+
+export function normaliserCreneauxAction(participant = {}) {
+  const fallback = valeurInitiative(participant);
+  const rawSlots = Array.isArray(participant.actionSlots) ? participant.actionSlots : [];
+  const slots = rawSlots
+    .map((slot, index) => {
+      const source = slot && typeof slot === 'object' ? slot : { initiative: slot };
+      const initiative = numberOr(source.initiative, fallback);
+      return {
+        id: source.id ? String(source.id) : `slot-${index + 1}`,
+        initiative,
+        order: Number.isFinite(Number(source.order)) ? Number(source.order) : index,
+      };
+    })
+    .filter((slot) => Number.isFinite(slot.initiative));
+
+  const normalized = slots.length ? slots : [{ id: 'slot-1', initiative: fallback, order: 0 }];
+  return normalized
+    .sort((a, b) => b.initiative - a.initiative || a.order - b.order)
+    .map((slot, index) => ({ id: slot.id || `slot-${index + 1}`, initiative: slot.initiative, order: index }));
+}
+
+export function creneauxActionParticipant(participant = {}) {
+  return normaliserCreneauxAction(participant).map((slot, index) => ({
+    ...slot,
+    index,
+    participantId: participant.id,
+    actionSlotId: slotId(participant.id, slot),
+  }));
+}
+
+export function creneauxActionIdsParticipant(participant = {}) {
+  return creneauxActionParticipant(participant).map((slot) => slot.actionSlotId);
+}
+
+export function initiativesActionParticipant(participant = {}) {
+  return creneauxActionParticipant(participant).map((slot) => slot.initiative);
+}
+
+export function nombreCreneauxAction(participant = {}) {
+  return creneauxActionParticipant(participant).length;
+}
+
+export function participantAvecCreneau(participant, slot) {
+  const slots = creneauxActionParticipant(participant);
+  return {
+    ...participant,
+    initiative: slot.initiative,
+    actionSlotId: slot.actionSlotId,
+    actionSlotIndex: slot.index,
+    actionSlotCount: slots.length,
+    actionSlotInitiatives: slots.map((item) => item.initiative),
+  };
+}
+
+export function ordreCreneauxClassique(participants = [], options = {}) {
+  const categoryOrder = options.categoryOrder || defaultCategoryOrder;
+  const equalityRule = options.equalityRule || defaultEqualityRule;
+  const initiativeDirection = options.initiativeOrder === initiativeOrders.ASC ? 1 : -1;
+
+  return participants
+    .flatMap((participant) => creneauxActionParticipant(participant).map((slot) => ({ participant, slot })))
+    .sort((a, b) => {
+      const base = (a.slot.initiative - b.slot.initiative) * initiativeDirection
+        || (valeurDepartage(a.participant) - valeurDepartage(b.participant)) * initiativeDirection;
+      if (base) return base;
+
+      if (equalityRule === equalityRules.LOOSE) return 0;
+
+      const categorie = ordreCategorie(a.participant.kind, categoryOrder) - ordreCategorie(b.participant.kind, categoryOrder);
+      if (categorie) return categorie;
+
+      if (equalityRule === equalityRules.NEVER) return comparerNoms(a.participant, b.participant);
+      return 0;
+    })
+    .map(({ participant, slot }) => participantAvecCreneau(participant, slot));
+}
+
+export function premierCreneauClassique(participants = [], options = {}) {
+  return ordreCreneauxClassique(participants, options)[0] || null;
+}
+
+export function indexCreneauActif(scene, slots = ordreCreneauxClassique(scene?.participants || [], optionsTriSafe(scene))) {
+  if (!slots.length) return -1;
+  const bySlot = scene?.activeSlotId ? slots.findIndex((slot) => slot.actionSlotId === scene.activeSlotId) : -1;
+  if (bySlot >= 0) return bySlot;
+  const byParticipant = slots.findIndex((slot) => slot.id === scene?.activeId);
+  return byParticipant >= 0 ? byParticipant : 0;
+}
+
+function optionsTriSafe(scene = {}) {
+  return {
+    categoryOrder: scene.categoryOrder || defaultCategoryOrder,
+    equalityRule: scene.equalityRule || defaultEqualityRule,
+    initiativeOrder: scene.initiativeOrder || defaultInitiativeOrder,
+  };
 }
 
 // Mode Phases, type SR5 : chaque nouvelle phase utilise l’initiative de base
@@ -64,10 +165,11 @@ function comparerNoms(a, b) {
 export function trierParInitiative(participants = [], options = {}) {
   const categoryOrder = options.categoryOrder || defaultCategoryOrder;
   const equalityRule = options.equalityRule || defaultEqualityRule;
+  const initiativeDirection = options.initiativeOrder === initiativeOrders.ASC ? 1 : -1;
 
   return [...participants].sort((a, b) => {
-    const base = valeurInitiative(b) - valeurInitiative(a)
-      || valeurDepartage(b) - valeurDepartage(a);
+    const base = (valeurInitiative(a) - valeurInitiative(b)) * initiativeDirection
+      || (valeurDepartage(a) - valeurDepartage(b)) * initiativeDirection;
     if (base) return base;
 
     if (equalityRule === equalityRules.LOOSE) return 0;

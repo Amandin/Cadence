@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { participantKinds } from '../../constants.js';
+import { normaliserCreneauxAction } from '../../domain/initiative.js';
 import { Fenetre } from '../commun/ComposantsCommuns.jsx';
 
 function estPersonnage(participant) {
@@ -11,7 +12,14 @@ function filtrerParticipants(participants, inclureEnvironnements) {
 }
 
 function champRempli(valeur) {
+  if (Array.isArray(valeur)) return valeur.some(champRempli);
   return valeur !== '' && valeur != null && Number.isFinite(Number(valeur));
+}
+
+function champsParticipant(participant, valeurs) {
+  const courant = valeurs[participant.id];
+  if (Array.isArray(courant) && courant.length) return courant;
+  return normaliserCreneauxAction(participant).map(() => '');
 }
 
 function participantsParType(participants, inclureEnvironnements) {
@@ -22,13 +30,13 @@ function participantsParType(participants, inclureEnvironnements) {
 }
 
 function valeursVides(participants) {
-  return Object.fromEntries(participants.map((participant) => [participant.id, '']));
+  return Object.fromEntries(participants.map((participant) => [participant.id, normaliserCreneauxAction(participant).map(() => '')]));
 }
 
 function valeursRenseignees(participants, valeurs) {
   return Object.fromEntries(participants
     .filter((participant) => champRempli(valeurs[participant.id]))
-    .map((participant) => [participant.id, valeurs[participant.id]]));
+    .map((participant) => [participant.id, champsParticipant(participant, valeurs).filter(champRempli)]));
 }
 
 function BoutonChoixInitiative({ titre, detail, onClick, disabled = false, variant = 'standard' }) {
@@ -40,7 +48,7 @@ function BoutonChoixInitiative({ titre, detail, onClick, disabled = false, varia
   );
 }
 
-function SectionSaisieInitiative({ titre, participants, inclureEnvironnements, valeurs, changerValeur }) {
+function SectionSaisieInitiative({ titre, participants, inclureEnvironnements, valeurs, changerValeur, ajouterAction, retirerAction }) {
   const groupes = participantsParType(participants, inclureEnvironnements);
   if (groupes.length === 0) return null;
 
@@ -52,12 +60,24 @@ function SectionSaisieInitiative({ titre, participants, inclureEnvironnements, v
           <section className="initiative-roll-group" key={`${titre}-${groupe.type}`}>
             <h4>{groupe.type}</h4>
             <div className="initiative-roll-list">
-              {groupe.participants.map((participant) => (
-                <label className="initiative-roll-row" key={participant.id}>
-                  <span>{participant.name}</span>
-                  <input type="number" inputMode="numeric" placeholder="—" value={valeurs[participant.id] ?? ''} onChange={(event) => changerValeur(participant.id, event.target.value)} />
-                </label>
-              ))}
+              {groupe.participants.map((participant) => {
+                const champs = champsParticipant(participant, valeurs);
+                return (
+                  <div className="initiative-roll-row multi-roll-row" key={participant.id}>
+                    <span>{participant.name}</span>
+                    <div className="initiative-roll-slots">
+                      {champs.map((valeur, index) => (
+                        <label className="initiative-roll-slot" key={index}>
+                          <small>Init {index + 1}</small>
+                          <input type="number" inputMode="numeric" placeholder="-" value={valeur ?? ''} onChange={(event) => changerValeur(participant.id, index, event.target.value)} />
+                          {champs.length > 1 && <button className="small-btn subtle-danger" onClick={() => retirerAction(participant.id, index)} type="button">x</button>}
+                        </label>
+                      ))}
+                      <button className="small-btn add-roll-slot" onClick={() => ajouterAction(participant.id)} type="button">+ action</button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </section>
         ))}
@@ -81,7 +101,19 @@ export function FenetreLancerInitiatives({ participants = [], reserve = [], onFe
   const participantsActifsSansValeur = participantsEnAttente.filter((participant) => !champRempli(valeurs[participant.id]));
   const saisiePartielle = restantsAvecValeur.length > 0 && restantsSansValeur.length > 0;
 
-  const changerValeur = (id, valeur) => setValeurs((courant) => ({ ...courant, [id]: valeur }));
+  const changerValeur = (id, index, valeur) => setValeurs((courant) => {
+    const champs = Array.isArray(courant[id]) && courant[id].length ? courant[id] : [''];
+    return { ...courant, [id]: champs.map((champ, position) => position === index ? valeur : champ) };
+  });
+  const ajouterAction = (id) => setValeurs((courant) => {
+    const champs = Array.isArray(courant[id]) && courant[id].length ? courant[id] : [''];
+    return { ...courant, [id]: [...champs, ''] };
+  });
+  const retirerAction = (id, index) => setValeurs((courant) => {
+    const champs = Array.isArray(courant[id]) && courant[id].length ? courant[id] : [''];
+    const suivants = champs.filter((_, position) => position !== index);
+    return { ...courant, [id]: suivants.length ? suivants : [''] };
+  });
 
   const vider = () => setValeurs((courant) => ({ ...courant, ...valeursVides(tousEnAttente) }));
 
@@ -115,22 +147,22 @@ export function FenetreLancerInitiatives({ participants = [], reserve = [], onFe
     <Fenetre title="Saisir les initiatives" onClose={onFermer}>
       <div className="initiative-roll-panel">
         <div className="initiative-roll-toolbar manual-entry">
-          <p className="muted compact-help">Renseigne les valeurs au fur et à mesure. Les réservistes renseignés rejoignent l’initiative.</p>
+          <p className="muted compact-help">Renseigne les valeurs au fur et a mesure. Les reservistes renseignes rejoignent l'initiative.</p>
           <div className="row compact-toolbar-actions">
             <button className={`small-btn ${inclureEnvironnements ? 'selected-toggle' : ''}`} onClick={() => setInclureEnvironnements((valeur) => !valeur)}>{inclureEnvironnements ? 'Masquer env.' : 'Inclure env.'}</button>
             <button className="small-btn" onClick={vider}>Vider</button>
           </div>
         </div>
-        {saisiePartielle && <div className="initiative-entry-warning">Certaines valeurs sont renseignées, d’autres non. Choisis quoi faire des champs vides.</div>}
-        {aucunCandidatAffiche ? <p className="muted">Aucun personnage à renseigner.</p> : <>
-          <SectionSaisieInitiative titre="En initiative" participants={participantsEnAttente} inclureEnvironnements={inclureEnvironnements} valeurs={valeurs} changerValeur={changerValeur} />
-          <SectionSaisieInitiative titre="Réserve" participants={reserveEnAttente} inclureEnvironnements={inclureEnvironnements} valeurs={valeurs} changerValeur={changerValeur} />
+        {saisiePartielle && <div className="initiative-entry-warning">Certaines valeurs sont renseignees, d'autres non. Choisis quoi faire des champs vides.</div>}
+        {aucunCandidatAffiche ? <p className="muted">Aucun personnage a renseigner.</p> : <>
+          <SectionSaisieInitiative titre="En initiative" participants={participantsEnAttente} inclureEnvironnements={inclureEnvironnements} valeurs={valeurs} changerValeur={changerValeur} ajouterAction={ajouterAction} retirerAction={retirerAction} />
+          <SectionSaisieInitiative titre="Reserve" participants={reserveEnAttente} inclureEnvironnements={inclureEnvironnements} valeurs={valeurs} changerValeur={changerValeur} ajouterAction={ajouterAction} retirerAction={retirerAction} />
         </>}
         <div className="initiative-actions">
           <div className="initiative-decision-actions">
             <BoutonChoixInitiative
               titre="Continuer"
-              detail={saisiePartielle ? 'Valider, puis compléter les champs vides.' : 'Valider les valeurs renseignées.'}
+              detail={saisiePartielle ? 'Valider, puis completer les champs vides.' : 'Valider les valeurs renseignees.'}
               onClick={appliquer}
               disabled={restantsAvecValeur.length === 0}
               variant="primary-choice"
@@ -143,7 +175,7 @@ export function FenetreLancerInitiatives({ participants = [], reserve = [], onFe
             />}
             {saisiePartielle && participantsActifsSansValeur.length > 0 && <BoutonChoixInitiative
               titre="Ignorer"
-              detail="Valider et sortir les non renseignés."
+              detail="Valider et sortir les non renseignes."
               onClick={appliquerEtPasserRestantsHorsInitiative}
               variant="out-choice"
             />}

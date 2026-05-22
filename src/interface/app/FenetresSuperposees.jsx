@@ -1,3 +1,4 @@
+import { normaliserCreneauxAction } from '../../domain/initiative.js';
 import { FenetreEtat } from '../dialogues/FenetreEtat.jsx';
 import { FenetreInformation } from '../dialogues/FenetreInformation.jsx';
 import { FenetreLancerInitiatives } from '../dialogues/FenetreLancerInitiatives.jsx';
@@ -68,10 +69,28 @@ export function FenetresSuperposees({
     ...participant,
     stats: (participant.stats || []).map((stat, position) => position === index ? valeur : stat),
   }));
+  const changerInitiativeCreneau = (participantId, indexCreneau, initiative) => characters.updateCharacter(participantId, (participant) => {
+    const valeur = Number(initiative);
+    if (!Number.isFinite(valeur)) return participant;
+    const slots = normaliserCreneauxAction(participant);
+    const modifies = slots.map((slot, index) => index === indexCreneau ? { ...slot, initiative: valeur, order: index } : { ...slot, order: index });
+    const actionSlots = normaliserCreneauxAction({ ...participant, initiative: modifies[0]?.initiative ?? valeur, actionSlots: modifies });
+    return { ...participant, initiative: actionSlots[0]?.initiative ?? valeur, actionSlots };
+  });
+  const changerInitiativesCreneaux = (participantId, initiatives) => characters.updateCharacter(participantId, (participant) => {
+    const valeurs = (initiatives || []).map(Number).filter(Number.isFinite);
+    if (!valeurs.length) return participant;
+    const actionSlots = normaliserCreneauxAction({
+      ...participant,
+      initiative: valeurs[0],
+      actionSlots: valeurs.map((initiative, index) => ({ id: `slot-${index + 1}`, initiative, order: index })),
+    });
+    return { ...participant, initiative: actionSlots[0]?.initiative ?? valeurs[0], actionSlots };
+  });
 
   return (
     <>
-      {characters.selected && <FicheParticipant participant={characters.selected} enInitiative={characters.isInInit(characters.selected.id)} onFermer={characters.closeCharacter} onModifier={() => characters.editCharacter(characters.selected.id)} onChangerInitiative={(initiative) => characters.updateCharacter(characters.selected.id, (participant) => ({ ...participant, initiative }))} onRejoindreInitiative={() => characters.requestJoin(characters.selected.id)} onQuitterInitiative={() => characters.leaveInit(characters.selected.id)} onInfoRapide={(index, valeur) => changerInfoRapide(characters.selected.id, index, valeur)} onSuivi={(trackerId, next) => characters.updateCharacterTracker(characters.selected.id, trackerId, next)} onSupprimerSuivi={(trackerId) => characters.deleteCharacterTracker(characters.selected.id, trackerId)} onAjouterEtat={() => characters.requestStatus(characters.selected.id)} onRetirerEtat={(statusId) => characters.removeCharacterStatus(characters.selected.id, statusId)} onNote={(note) => characters.updateCharacter(characters.selected.id, (participant) => ({ ...participant, note }))} />}
+      {characters.selected && <FicheParticipant participant={characters.selected} enInitiative={characters.isInInit(characters.selected.id)} onFermer={characters.closeCharacter} onModifier={() => characters.editCharacter(characters.selected.id)} onChangerInitiative={(indexCreneau, initiative) => changerInitiativeCreneau(characters.selected.id, indexCreneau, initiative)} onChangerInitiatives={(initiatives) => changerInitiativesCreneaux(characters.selected.id, initiatives)} onRejoindreInitiative={() => characters.requestJoin(characters.selected.id)} onQuitterInitiative={() => characters.leaveInit(characters.selected.id)} onInfoRapide={(index, valeur) => changerInfoRapide(characters.selected.id, index, valeur)} onSuivi={(trackerId, next) => characters.updateCharacterTracker(characters.selected.id, trackerId, next)} onSupprimerSuivi={(trackerId) => characters.deleteCharacterTracker(characters.selected.id)} onAjouterEtat={() => characters.requestStatus(characters.selected.id)} onRetirerEtat={(statusId) => characters.removeCharacterStatus(characters.selected.id, statusId)} onNote={(note) => characters.updateCharacter(characters.selected.id, (participant) => ({ ...participant, note }))} />}
       {characters.editing && <FenetreEditionFiche participant={characters.editing} onClose={characters.closeEditor} onSave={characters.saveCharacter} onDelete={() => characters.deleteCharacter(characters.editing.id)} onSaveTemplate={ouvrirSauvegardeTemplate} />}
       {characters.statusTarget && <FenetreEtat participant={characters.statusTarget} onFermer={characters.cancelStatus} onValider={characters.saveStatus} />}
       {characters.joinTarget && <FenetreRejoindreInitiative participant={characters.joinTarget} onFermer={characters.cancelJoin} onValider={characters.joinInit} />}

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { defaultCategoryOrder, defaultEqualityRule, temporalityModes } from './constants.js';
-import { groupeEgalitePourParticipant, participantsPourPhase, phaseSuivanteExiste } from './domain/initiative.js';
+import { toutLeMondeAJoueSouple as tousCreneauxSouplesJoues } from './actions/flexibleTurnState.js';
+import { defaultCategoryOrder, defaultEqualityRule, defaultInitiativeOrder, temporalityModes } from './constants.js';
+import { groupeEgalitePourParticipant, indexCreneauActif, ordreCreneauxClassique, participantsPourPhase, phaseSuivanteExiste } from './domain/initiative.js';
 import { FenetresSuperposees } from './interface/app/FenetresSuperposees.jsx';
 import { HubCampagne } from './interface/campaign/HubCampagne.jsx';
 import { Fenetre } from './interface/commun/ComposantsCommuns.jsx';
@@ -43,6 +44,7 @@ export default function App() {
   const optionsInitiative = {
     categoryOrder: scene.categoryOrder || defaultCategoryOrder,
     equalityRule: scene.equalityRule || defaultEqualityRule,
+    initiativeOrder: scene.initiativeOrder || defaultInitiativeOrder,
   };
 
   const phaseParticipants = temporalitePhases && !phaseAttendRelanceInitiative
@@ -57,9 +59,10 @@ export default function App() {
   const phaseSuivanteDisponible = temporalitePhases && !phaseAttendRelanceInitiative && phaseSuivanteExiste(scene.participants, scene.phase, scene.phaseDecrement);
   const phaseEnFin = temporalitePhases && phaseParticipants.length > 0 && phaseActiveId === phaseParticipants.at(-1)?.id;
   const phaseDemarreNouveauRound = temporalitePhases && phaseEnFin && !phaseSuivanteDisponible;
-  const toutLeMondeAJoueSouple = temporaliteSouple && scene.participants.length > 0 && scene.participants.every((participant) => (scene.jouesSouples || []).includes(participant.id));
+  const toutLeMondeAJoueSouple = temporaliteSouple && tousCreneauxSouplesJoues(scene);
   const globalAutoTick = roundEffect === 'next' && !!scene.globalTracker?.enabled && !!scene.globalTracker?.auto;
-  const currentIndex = scene.participants.findIndex((participant) => participant.id === scene.activeId);
+  const creneauxClassiques = !temporaliteSouple && !temporalitePhases ? ordreCreneauxClassique(scene.participants, optionsInitiative) : [];
+  const currentIndex = !temporaliteSouple && !temporalitePhases ? indexCreneauActif(scene, creneauxClassiques) : scene.participants.findIndex((participant) => participant.id === scene.activeId);
   const phaseCurrentIndex = phaseParticipants.findIndex((participant) => participant.id === phaseActiveId);
   const libelleRoundCourant = scene.round === 0 ? 'Surprise' : `R${scene.round}`;
   const roundDepartScene = [0, 1].includes(Number(scene.startRound)) ? Number(scene.startRound) : 0;
@@ -149,7 +152,8 @@ export default function App() {
     setInitiativeEntryOpen(true);
   };
   const createBlankCharacter = (options) => {
-    characters.addCharacter(createBlankParticipant(), options);
+    const initiative = Number(options?.initiative);
+    characters.addCharacter(Number.isFinite(initiative) ? { ...createBlankParticipant(), initiative, actionSlots: [{ id: 'slot-1', initiative, order: 0 }] } : createBlankParticipant(), options);
     setAddSheetOpen(false);
   };
   const createFromTemplate = (templateId, options = { placement: 'reserve' }) => {

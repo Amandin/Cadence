@@ -3,14 +3,17 @@ import {
   STORAGE_KEY,
   defaultCategoryOrder,
   defaultEqualityRule,
+  defaultInitiativeOrder,
   defaultPhaseDecrement,
   defaultPhaseRerollEachRound,
   defaultStartRound,
   defaultTemporalityMode,
+  initiativeOrders,
   legacyParticipantKinds,
 } from './constants.js';
 import { campaignRulesFromPayload, normalizeCampaignRules, unifyCampaignScenes } from './domain/campaignRules.js';
 import { normalizeGlobalTracker } from './domain/globalTracker.js';
+import { normaliserCreneauxAction } from './domain/initiative.js';
 import { isPointsTracker, normalizeBoxTracker, normalizeThresholds, normalizeTrackerThresholds, makeDefaultCampaign, uid } from './logic.js';
 import { isTemplateStoreLike, loadTemplateStore, normalizeTemplateStore } from './templates.js';
 
@@ -187,6 +190,8 @@ export function normalizeCampaignName(name) {
 
 export function normalizeCampaignParticipant(participant, { reserve = false } = {}) {
   if (!isPlainObject(participant)) return null;
+  const initiative = reserve ? 0 : numberOr(participant.initiative, 0);
+  const actionSlots = reserve ? [] : normaliserCreneauxAction({ ...participant, initiative });
   return {
     ...participant,
     id: stringOr(participant.id, uid('p')),
@@ -194,7 +199,8 @@ export function normalizeCampaignParticipant(participant, { reserve = false } = 
     kind: normalizeKind(participant.kind),
     symbol: stringOr(participant.symbol, '⚙'),
     color: stringOr(participant.color, 'slate'),
-    initiative: reserve ? 0 : numberOr(participant.initiative, 0),
+    initiative,
+    actionSlots,
     departage: participant.departage === '' || participant.departage == null ? '' : numberOr(participant.departage, 0),
     description: stringOr(participant.description),
     stats: normalizeArray(participant.stats).map(normalizeQuickStat).filter(Boolean),
@@ -215,6 +221,7 @@ export function normalizeCampaignScene(scene) {
     phaseDecrement: Math.max(1, numberOr(scene.phaseDecrement, defaultPhaseDecrement)),
     phaseRerollEachRound: booleanOr(scene.phaseRerollEachRound, defaultPhaseRerollEachRound),
     activeId: stringOr(scene.activeId),
+    activeSlotId: stringOr(scene.activeSlotId),
     notes: stringOr(scene.notes),
     reserveNotes: stringOr(scene.reserveNotes),
     statuses: normalizeArray(scene.statuses).map(normalizeStatus).filter(Boolean),
@@ -222,6 +229,7 @@ export function normalizeCampaignScene(scene) {
     jouesSouples: normalizeArray(scene.jouesSouples).map((id) => String(id)),
     historiqueSouple: normalizeArray(scene.historiqueSouple).map((id) => String(id)),
     equalityRule: stringOr(scene.equalityRule, defaultEqualityRule),
+    initiativeOrder: Object.values(initiativeOrders).includes(scene.initiativeOrder) ? scene.initiativeOrder : defaultInitiativeOrder,
     categoryOrder: normalizeArray(scene.categoryOrder).length ? normalizeArray(scene.categoryOrder).map((category) => String(category)) : defaultCategoryOrder,
     globalTracker: normalizeGlobalTracker(scene.globalTracker),
     reserve: normalizeArray(scene.reserve).map((participant) => normalizeCampaignParticipant(participant, { reserve: true })).filter(Boolean),

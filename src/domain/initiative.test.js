@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { equalityRules } from '../constants.js';
+import { equalityRules, initiativeOrders } from '../constants.js';
 import {
   grouperAffichageParticipants,
   initiativeDePhase,
+  nombreCreneauxAction,
+  ordreCreneauxClassique,
   participantActifEnPhase,
   participantsEnAttentePhase,
   participantsPourPhase,
@@ -65,6 +67,33 @@ describe('initiative phases', () => {
 });
 
 describe('initiative sorting and simultaneous groups', () => {
+  it('expands action slots for classic turn order without duplicating participant data', () => {
+    const boss = participant({ id: 'boss', name: 'Boss', initiative: 18, actionSlots: [{ initiative: 18 }, { initiative: 12 }, { initiative: 6 }] });
+    const rogue = participant({ id: 'rogue', name: 'Rogue', initiative: 15 });
+    const order = ordreCreneauxClassique([boss, rogue], { categoryOrder: baseOrder, equalityRule: equalityRules.NEVER });
+
+    expect(nombreCreneauxAction(boss)).toBe(3);
+    expect(order.map((slot) => [slot.id, slot.initiative, slot.actionSlotIndex, slot.actionSlotCount])).toEqual([
+      ['boss', 18, 0, 3],
+      ['rogue', 15, 0, 1],
+      ['boss', 12, 1, 3],
+      ['boss', 6, 2, 3],
+    ]);
+  });
+
+  it('can walk classic action slots in ascending initiative order', () => {
+    const boss = participant({ id: 'boss', name: 'Boss', initiative: 18, actionSlots: [{ initiative: 18 }, { initiative: 12 }, { initiative: 6 }] });
+    const rogue = participant({ id: 'rogue', name: 'Rogue', initiative: 15 });
+    const order = ordreCreneauxClassique([boss, rogue], { categoryOrder: baseOrder, equalityRule: equalityRules.NEVER, initiativeOrder: initiativeOrders.ASC });
+
+    expect(order.map((slot) => [slot.id, slot.initiative])).toEqual([
+      ['boss', 6],
+      ['boss', 12],
+      ['rogue', 15],
+      ['boss', 18],
+    ]);
+  });
+
   it('sorts initiative by initiative, tie breaker, then configured category order', () => {
     const sorted = trierParInitiative([
       participant({ id: 'ally', kind: 'Allié', initiative: 10, departage: 0 }),
@@ -75,6 +104,16 @@ describe('initiative sorting and simultaneous groups', () => {
     ], { categoryOrder: baseOrder, equalityRule: equalityRules.NEVER });
 
     expect(sorted.map((item) => item.id)).toEqual(['fast', 'tie', 'player', 'opponent', 'ally']);
+  });
+
+  it('sorts participants by low initiative first when configured', () => {
+    const sorted = trierParInitiative([
+      participant({ id: 'slow', kind: 'PJ', initiative: 5, departage: 0 }),
+      participant({ id: 'fast', kind: 'PJ', initiative: 12, departage: 0 }),
+      participant({ id: 'middle', kind: 'PJ', initiative: 8, departage: 0 }),
+    ], { categoryOrder: baseOrder, equalityRule: equalityRules.NEVER, initiativeOrder: initiativeOrders.ASC });
+
+    expect(sorted.map((item) => item.id)).toEqual(['slow', 'middle', 'fast']);
   });
 
   it('keeps strict simultaneous groups when initiative, tie breaker and category are identical', () => {

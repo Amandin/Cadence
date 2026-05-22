@@ -1,11 +1,13 @@
-import { defaultCategoryOrder, defaultEqualityRule } from '../../constants.js';
-import { grouperAffichageParticipants, grouperParInitiative, participantsEnAttentePhase, participantsPourPhase } from '../../domain/initiative.js';
+import { defaultCategoryOrder, defaultEqualityRule, defaultInitiativeOrder } from '../../constants.js';
+import { actionsRestantesSouples } from '../../actions/flexibleTurnState.js';
+import { grouperAffichageParticipants, grouperParInitiative, ordreCreneauxClassique, participantsEnAttentePhase, participantsPourPhase } from '../../domain/initiative.js';
 import { FichetteInitiative } from '../fiches/FichetteInitiative.jsx';
 
 function optionsEgalite(scene) {
   return {
     categoryOrder: scene?.categoryOrder || defaultCategoryOrder,
     equalityRule: scene?.equalityRule || defaultEqualityRule,
+    initiativeOrder: scene?.initiativeOrder || defaultInitiativeOrder,
   };
 }
 
@@ -40,13 +42,15 @@ function GroupeSimultane({ groupe, actifId, interactions }) {
   );
 }
 
-function FichetteLibre({ participant, actifId, interactions, temporaliteSouple, onMarquerAJoue, onAnnulerAJoue, dejaJoue }) {
+function FichetteLibre({ scene, participant, actifId, activeSlotId, interactions, temporaliteSouple, onMarquerAJoue, onAnnulerAJoue, dejaJoue }) {
+  const actionsRestantes = temporaliteSouple ? actionsRestantesSouples(scene, participant.id) : 0;
   return (
     <FichetteInitiative
       participant={participant}
-      actif={participant.id === actifId}
+      actif={participant.actionSlotId ? participant.actionSlotId === activeSlotId : participant.id === actifId}
       temporaliteSouple={temporaliteSouple}
       dejaJoue={dejaJoue}
+      actionsRestantes={actionsRestantes}
       onMarquerAJoue={() => onMarquerAJoue?.(participant.id)}
       onAnnulerAJoue={() => onAnnulerAJoue?.(participant.id)}
       onOuvrir={() => interactions.openCharacter(participant.id)}
@@ -60,11 +64,11 @@ function FichetteLibre({ participant, actifId, interactions, temporaliteSouple, 
   );
 }
 
-function ListeParPaliers({ scene, participants, actifId, interactions, temporaliteSouple, onMarquerAJoue, onAnnulerAJoue, dejaJoue = false }) {
+function ListeParPaliers({ scene, participants, actifId, activeSlotId, interactions, temporaliteSouple, onMarquerAJoue, onAnnulerAJoue, dejaJoue = false }) {
   const options = optionsEgalite(scene);
 
   if (temporaliteSouple) {
-    return <div className="initiative-tier-cards flexible-cards">{participants.map((participant) => <FichetteLibre key={participant.id} participant={participant} actifId={actifId} interactions={interactions} temporaliteSouple onMarquerAJoue={onMarquerAJoue} onAnnulerAJoue={onAnnulerAJoue} dejaJoue={dejaJoue} />)}</div>;
+    return <div className="initiative-tier-cards flexible-cards">{participants.map((participant) => <FichetteLibre key={participant.actionSlotId || participant.id} scene={scene} participant={participant} actifId={actifId} activeSlotId={activeSlotId} interactions={interactions} temporaliteSouple onMarquerAJoue={onMarquerAJoue} onAnnulerAJoue={onAnnulerAJoue} dejaJoue={dejaJoue} />)}</div>;
   }
 
   return grouperParInitiative(participants).map((groupe) => (
@@ -79,8 +83,10 @@ function ListeParPaliers({ scene, participants, actifId, interactions, temporali
             ? <GroupeSimultane key={bloc.id} groupe={bloc} actifId={actifId} interactions={interactions} />
             : <FichetteLibre
                 key={bloc.id}
+                scene={scene}
                 participant={bloc.participants[0]}
                 actifId={actifId}
+                activeSlotId={activeSlotId}
                 interactions={interactions}
               />
         ))}
@@ -110,12 +116,12 @@ export function ListeInitiative({ scene, participants, actifId, interactions, te
           {phaseAttendRelanceInitiative
             ? <div className="empty-section panel">Initiatives à ressaisir pour ce nouveau round.</div>
             : actifs.length > 0
-              ? <ListeParPaliers scene={scene} participants={actifs} actifId={actifId} interactions={interactions} />
+          ? <ListeParPaliers scene={scene} participants={actifs} actifId={actifId} activeSlotId={scene.activeSlotId || ''} interactions={interactions} />
               : <div className="empty-section panel">Aucun participant ne peut agir dans cette phase.</div>}
         </section>
         {attente.length > 0 && <section className="flexible-section already-played-section phase-waiting-section">
           <EnteteSectionSouple titre={phaseAttendRelanceInitiative ? 'En attente d’initiative' : 'En attente du prochain round'} compteur={attente.length} variant="played" />
-          <ListeParPaliers scene={scene} participants={attente} actifId="" interactions={interactions} />
+          <ListeParPaliers scene={scene} participants={attente} actifId="" activeSlotId="" interactions={interactions} />
         </section>}
       </div>
     );
@@ -124,24 +130,23 @@ export function ListeInitiative({ scene, participants, actifId, interactions, te
   if (!temporaliteSouple) {
     return (
       <div className="initiative-list">
-        <ListeParPaliers scene={scene} participants={participants} actifId={actifId} interactions={interactions} />
+        <ListeParPaliers scene={scene} participants={ordreCreneauxClassique(participants, optionsEgalite(scene))} actifId={actifId} activeSlotId={scene.activeSlotId || ''} interactions={interactions} />
       </div>
     );
   }
 
-  const dejaJouesIds = new Set(scene.jouesSouples || []);
-  const doitJouer = participants.filter((participant) => !dejaJouesIds.has(participant.id));
-  const dejaJoues = participants.filter((participant) => dejaJouesIds.has(participant.id));
+  const doitJouer = participants.filter((participant) => actionsRestantesSouples(scene, participant.id) > 0);
+  const dejaJoues = participants.filter((participant) => actionsRestantesSouples(scene, participant.id) === 0);
 
   return (
     <div className="initiative-list flexible-list">
       <section className="flexible-section">
         <EnteteSectionSouple titre="Doit jouer" compteur={doitJouer.length} />
-        <ListeParPaliers scene={scene} participants={doitJouer} actifId={actifId} interactions={interactions} temporaliteSouple onMarquerAJoue={onMarquerAJoue} onAnnulerAJoue={onAnnulerAJoue} />
+        <ListeParPaliers scene={scene} participants={doitJouer} actifId={actifId} activeSlotId={scene.activeSlotId || ''} interactions={interactions} temporaliteSouple onMarquerAJoue={onMarquerAJoue} onAnnulerAJoue={onAnnulerAJoue} />
       </section>
       {dejaJoues.length > 0 && <section className="flexible-section already-played-section">
         <EnteteSectionSouple titre="Déjà joués" compteur={dejaJoues.length} variant="played" />
-        <ListeParPaliers scene={scene} participants={dejaJoues} actifId={actifId} interactions={interactions} temporaliteSouple onMarquerAJoue={onMarquerAJoue} onAnnulerAJoue={onAnnulerAJoue} dejaJoue />
+        <ListeParPaliers scene={scene} participants={dejaJoues} actifId={actifId} activeSlotId={scene.activeSlotId || ''} interactions={interactions} temporaliteSouple onMarquerAJoue={onMarquerAJoue} onAnnulerAJoue={onAnnulerAJoue} dejaJoue />
       </section>}
     </div>
   );

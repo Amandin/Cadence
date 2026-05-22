@@ -120,19 +120,45 @@ describe('campaign storage', () => {
     expect(campaign.scenes[0].reserve[0].id).toMatch(/^p-/);
   });
 
+  it('normalizes multiple action slots on participants', () => {
+    const campaign = normalizeCampaignPayload({
+      version: '0.2.10.1',
+      scenes: [{
+        id: 'scene-slots',
+        title: 'Créneaux',
+        participants: [{
+          id: 'boss',
+          name: 'Boss',
+          initiative: 18,
+          actionSlots: [{ initiative: 6 }, { initiative: 18 }, { initiative: 12 }],
+        }],
+      }],
+    });
+
+    expect(campaign.scenes[0].participants[0]).toMatchObject({
+      initiative: 18,
+      actionSlots: [
+        { initiative: 18, order: 0 },
+        { initiative: 12, order: 1 },
+        { initiative: 6, order: 2 },
+      ],
+    });
+  });
+
   it('repairs hand-edited initiative rules before saving them', () => {
     const campaign = normalizeCampaignPayload({
       version: '0.2.4',
-      initiativeRules: { temporalite: 'phases', phaseDecrement: 'bad', categoryOrder: [] },
+      initiativeRules: { temporalite: 'phases', phaseDecrement: 'bad', categoryOrder: [], initiativeOrder: 'asc' },
       scenes: [{ id: 'scene-rules', title: 'Règles', participants: [] }],
     });
 
     expect(campaign.initiativeRules).toMatchObject({
       temporalite: 'phases',
       phaseDecrement: 10,
+      initiativeOrder: 'asc',
       categoryOrder: ['PJ', 'Opposant', 'Allié', 'Environnement'],
     });
-    expect(campaign.scenes[0]).toMatchObject({ temporalite: 'phases', phaseDecrement: 10 });
+    expect(campaign.scenes[0]).toMatchObject({ temporalite: 'phases', phaseDecrement: 10, initiativeOrder: 'asc' });
   });
 
   it('keeps preparation as the scene start state and applies the campaign start round rule', () => {

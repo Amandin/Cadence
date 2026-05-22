@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { activeThresholds, applyBoxMarkAction, applyDelta, boxBlocks, newTracker, resetAutoTrackers, sortBoxBlocks, tickStatuses } from './logic.js';
+import { activeThresholds, applyBoxMarkAction, applyDelta, boxBlocks, newTracker, resetAutoTrackers, sortBoxBlocks, tickStatuses, triggerActivation } from './logic.js';
 
 describe('trackers updated behavior', () => {
   it('uses block based boxes by default', () => {
@@ -119,6 +119,21 @@ describe('trackers updated behavior', () => {
     };
 
     expect(resetAutoTrackers(participant, 'activation').trackers[0].current).toBe(12);
+  });
+
+  it('protects activation statuses and clocks from multiple action slots in the same round', () => {
+    const participant = {
+      statuses: [{ id: 'haste', name: 'Hâte', duration: 3, remaining: 3, advanceOn: 'activation', expired: false }],
+      trackers: [{ type: 'clock', current: 0, min: 0, max: 6, step: 1, autoReset: 'activation' }],
+    };
+
+    const first = triggerActivation(participant);
+    const second = triggerActivation(first);
+
+    expect(first.statuses[0].remaining).toBe(2);
+    expect(first.trackers[0].current).toBe(1);
+    expect(second.statuses[0].remaining).toBe(2);
+    expect(second.trackers[0].current).toBe(1);
   });
 
   it('uses a distinct automation rule for bar values under the minimum', () => {

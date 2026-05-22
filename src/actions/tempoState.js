@@ -1,7 +1,7 @@
 import { temporalityModes } from '../constants.js';
-import { phaseSuivanteExiste, participantsPourPhase, valeurInitiative } from '../domain/initiative.js';
+import { indexCreneauActif, ordreCreneauxClassique, phaseSuivanteExiste, participantsPourPhase, premierCreneauClassique, valeurInitiative } from '../domain/initiative.js';
 import { stepAutoGlobalTracker } from '../domain/globalTracker.js';
-import { resetAutoTrackers, tickParticipant, tickStatuses } from '../logic.js';
+import { resetAutoTrackers, tickParticipant, tickStatuses, triggerActivation } from '../logic.js';
 import { optionsTri, placerEnReserve } from './sceneSupport.js';
 
 export function estModeSouple(scene) {
@@ -18,13 +18,13 @@ export function phasesAttendRelanceInitiative(scene) {
 
 export function trouverTourActifParInitiative(scene, participantsTries) {
   const actifAvant = scene.participants.find((participant) => participant.id === scene.activeId);
-  if (!actifAvant) return { activeId: scene.activeId, nouveauRound: false };
+  if (!actifAvant) return { activeId: scene.activeId, activeSlotId: scene.activeSlotId || '', nouveauRound: false };
 
   const initiativeActive = valeurInitiative(actifAvant);
   const actifMemeOuPlusBas = participantsTries.find((participant) => valeurInitiative(participant) <= initiativeActive);
-  if (actifMemeOuPlusBas) return { activeId: actifMemeOuPlusBas.id, nouveauRound: false };
+  if (actifMemeOuPlusBas) return { activeId: actifMemeOuPlusBas.id, activeSlotId: scene.activeSlotId || '', nouveauRound: false };
 
-  return { activeId: participantsTries[0]?.id || scene.activeId, nouveauRound: participantsTries.length > 0 };
+  return { activeId: participantsTries[0]?.id || scene.activeId, activeSlotId: '', nouveauRound: participantsTries.length > 0 };
 }
 
 export function participantsPhase(scene, phase = scene.phase || 1) {
@@ -45,7 +45,7 @@ function preparerActivationRound(participant) {
 }
 
 function declencherActivation(participant, activeId) {
-  return participant.id === activeId ? resetAutoTrackers(tickParticipant(participant), 'activation') : participant;
+  return participant.id === activeId ? triggerActivation(participant) : participant;
 }
 
 function tickSceneRoundStatuses(scene) {
@@ -54,14 +54,18 @@ function tickSceneRoundStatuses(scene) {
 
 export function appliquerDebutNouveauRound(scene, activeId) {
   const sceneAvecEtats = tickSceneRoundStatuses(scene);
+  const premierCreneau = premierCreneauClassique(sceneAvecEtats.participants || [], optionsTri(sceneAvecEtats));
+  const nextActiveId = activeId || premierCreneau?.id || '';
+  const nextActiveSlotId = premierCreneau?.id === nextActiveId ? premierCreneau.actionSlotId : '';
   return {
     ...sceneAvecEtats,
-    activeId,
+    activeId: nextActiveId,
+    activeSlotId: nextActiveSlotId,
     round: Math.max(1, sceneAvecEtats.round + 1),
     globalTracker: stepAutoGlobalTracker(sceneAvecEtats.globalTracker, 1),
     participants: sceneAvecEtats.participants.map((participant) => {
       const afterRound = tickParticipant(resetAutoTrackers(participant, 'round'), 'round');
-      return participant.id === activeId ? resetAutoTrackers(tickParticipant(afterRound), 'activation') : afterRound;
+      return participant.id === nextActiveId ? triggerActivation(afterRound) : afterRound;
     }),
     reserve: (sceneAvecEtats.reserve || []).map((participant) => tickParticipant(resetAutoTrackers(participant, 'round'), 'round')).map(placerEnReserve),
   };
@@ -72,6 +76,7 @@ export function appliquerNouveauRoundSouple(scene) {
   return {
     ...sceneAvecEtats,
     activeId: '',
+    activeSlotId: '',
     round: Math.max(1, sceneAvecEtats.round + 1),
     globalTracker: stepAutoGlobalTracker(sceneAvecEtats.globalTracker, 1),
     participants: (sceneAvecEtats.participants || []).map((participant) => tickParticipant(resetAutoTrackers(participant, 'round'), 'round')),
@@ -87,6 +92,7 @@ export function appliquerNouveauRoundPhases(scene) {
   const sceneSuivante = {
     ...sceneAvecEtats,
     activeId: '',
+    activeSlotId: '',
     phase: 1,
     round: Math.max(1, sceneAvecEtats.round + 1),
     globalTracker: stepAutoGlobalTracker(sceneAvecEtats.globalTracker, 1),
@@ -102,6 +108,16 @@ export function appliquerNouveauRoundPhases(scene) {
   return {
     ...sceneSuivante,
     activeId,
+    activeSlotId: '',
     participants: sceneSuivante.participants.map((participant) => declencherActivation(participant, activeId)),
   };
+}
+
+export function creneauxClassiques(scene) {
+  return ordreCreneauxClassique(scene.participants || [], optionsTri(scene));
+}
+
+export function creneauActifClassique(scene) {
+  const slots = creneauxClassiques(scene);
+  return slots[indexCreneauActif(scene, slots)] || null;
 }

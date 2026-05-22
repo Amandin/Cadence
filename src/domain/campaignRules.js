@@ -1,11 +1,13 @@
 import {
   defaultCategoryOrder,
   defaultEqualityRule,
+  defaultInitiativeOrder,
   defaultPhaseActivateOncePerRound,
   defaultPhaseDecrement,
   defaultPhaseRerollEachRound,
   defaultStartRound,
   defaultTemporalityMode,
+  initiativeOrders,
   temporalityModes,
 } from '../constants.js';
 import { trierParInitiative } from './initiative.js';
@@ -18,6 +20,7 @@ export function normalizeCampaignRules(rules = {}) {
     phaseRerollEachRound: rules.phaseRerollEachRound ?? defaultPhaseRerollEachRound,
     phaseActivateOncePerRound: rules.phaseActivateOncePerRound ?? defaultPhaseActivateOncePerRound,
     equalityRule: rules.equalityRule || defaultEqualityRule,
+    initiativeOrder: Object.values(initiativeOrders).includes(rules.initiativeOrder) ? rules.initiativeOrder : defaultInitiativeOrder,
     categoryOrder: Array.isArray(rules.categoryOrder) && rules.categoryOrder.length ? rules.categoryOrder : defaultCategoryOrder,
     rounding: ['nearest', 'floor', 'ceil'].includes(rules.rounding) ? rules.rounding : 'nearest',
   };
@@ -38,6 +41,7 @@ function applyTemporality(scene, rules) {
     temporalite: rules.temporalite,
     phase: rules.temporalite === temporalityModes.PHASES ? Math.max(1, Number(scene.phase) || 1) : 1,
     activeId: premierParticipantId(scene, rules),
+    activeSlotId: rules.temporalite === temporalityModes.CLASSIC ? (scene.activeSlotId || '') : '',
     jouesSouples: rules.temporalite === temporalityModes.FLEXIBLE ? (scene.jouesSouples || []) : [],
     historiqueSouple: rules.temporalite === temporalityModes.FLEXIBLE ? (scene.historiqueSouple || []) : [],
   };
@@ -55,6 +59,7 @@ export function applyInitiativeRules(scene, patch = {}) {
     phaseRerollEachRound: !!next.phaseRerollEachRound,
     phaseActivateOncePerRound: !!next.phaseActivateOncePerRound,
     equalityRule: next.equalityRule,
+    initiativeOrder: next.initiativeOrder,
     categoryOrder: next.categoryOrder,
     rounding: next.rounding,
   };

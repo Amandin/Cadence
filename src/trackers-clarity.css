@@ -95,6 +95,39 @@
   align-items: center;
 }
 
+.chip.slot-chip {
+  background: rgba(14, 116, 144, .12);
+  border: 1px solid rgba(14, 116, 144, .28);
+  color: #0e7490;
+}
+
+.dark .chip.slot-chip {
+  background: rgba(103, 232, 249, .12);
+  border-color: rgba(103, 232, 249, .24);
+  color: #a5f3fc;
+}
+
+.action-slots-editor {
+  display: grid;
+  gap: 8px;
+  margin: 8px 0 4px;
+}
+
+.action-slot-list {
+  gap: 8px;
+}
+
+.initiative-action-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 8px;
+}
+
+.initiative-action-row .field {
+  margin: 0;
+}
+
 .status.round-status {
   background-image:
     repeating-linear-gradient(135deg, rgba(255, 247, 237, .18) 0 2px, transparent 2px 7px);

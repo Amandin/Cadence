@@ -142,6 +142,7 @@ export function createBlankParticipant() {
     symbol: '🛡',
     color: 'emerald',
     initiative: 1,
+    actionSlots: [{ id: 'slot-1', initiative: 1, order: 0 }],
     description: '',
     stats: [],
     statuses: [],

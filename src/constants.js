@@ -1,4 +1,4 @@
-export const APP_VERSION = '0.2.10';
+export const APP_VERSION = '0.2.10.2';
 export const STORAGE_KEY = 'cadence:campaign:v1';
 export const TEMPLATE_STORAGE_KEY = 'cadence:templates:v1';
 
@@ -43,6 +43,23 @@ export const equalityRules = {
 };
 
 export const defaultEqualityRule = equalityRules.STRICT;
+
+export const initiativeOrders = {
+  DESC: 'desc',
+  ASC: 'asc',
+};
+
+export const defaultInitiativeOrder = initiativeOrders.DESC;
+
+export const initiativeOrderLabels = {
+  [initiativeOrders.DESC]: 'Décroissant',
+  [initiativeOrders.ASC]: 'Croissant',
+};
+
+export const initiativeOrderDescriptions = {
+  [initiativeOrders.DESC]: 'Les valeurs hautes agissent d’abord.',
+  [initiativeOrders.ASC]: 'Les valeurs basses agissent d’abord.',
+};
 
 export const equalityRuleLabels = {
   [equalityRules.NEVER]: 'Jamais',

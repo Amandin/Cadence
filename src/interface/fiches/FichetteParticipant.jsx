@@ -1,9 +1,17 @@
 import { useState } from 'react';
+import { initiativesActionParticipant } from '../../domain/initiative.js';
 import { participantEstInactif } from '../../domain/statuses.js';
 import { isVisible } from '../../logic.js';
 import { AvatarParticipant, BoutonRepliFichette, EtiquetteEtat, couleurVersAccent } from '../commun/ComposantsCommuns.jsx';
 import { Suivi } from '../suivis/Suivi.jsx';
 import { InfosRapides } from './InfosRapides.jsx';
+
+function libelleInitiative(participant) {
+  const initiatives = Array.isArray(participant.actionSlotInitiatives) && participant.actionSlotInitiatives.length
+    ? participant.actionSlotInitiatives
+    : initiativesActionParticipant(participant);
+  return initiatives.join(' / ');
+}
 
 export function FichetteParticipant({
   participant,
@@ -61,7 +69,7 @@ export function FichetteParticipant({
         </button>
         {primaryAction}
       </div>
-      {hasQuickStats && <div className="quick-stats-full">{showInitiative && <span className="chip init-chip">Init {participant.initiative}</span>}<InfosRapides stats={participant.stats || []} /></div>}
+      {hasQuickStats && <div className="quick-stats-full">{showInitiative && <span className="chip init-chip">Init {libelleInitiative(participant)}</span>}<InfosRapides stats={participant.stats || []} /></div>}
       {secondaryActions && <div className="fiche-secondary-actions">{secondaryActions}</div>}
       <div className="trackers">
         {suivisVisibles.map((suivi) => <Suivi key={suivi.id} suivi={suivi} couleur={participant.color} onModifier={(suivant) => onSuivi(suivi.id, suivant)} onSupprimer={() => onSupprimerSuivi(suivi.id)} />)}

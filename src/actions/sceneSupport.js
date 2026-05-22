@@ -1,4 +1,4 @@
-import { defaultCategoryOrder, defaultEqualityRule } from '../constants.js';
+import { defaultCategoryOrder, defaultEqualityRule, defaultInitiativeOrder } from '../constants.js';
 import { clone, newTracker, uid } from '../logic.js';
 
 export function createBlankParticipant() {
@@ -9,6 +9,7 @@ export function createBlankParticipant() {
     symbol: '🛡',
     color: 'emerald',
     initiative: 1,
+    actionSlots: [{ id: 'slot-1', initiative: 1, order: 0 }],
     departage: '',
     description: '',
     stats: [],
@@ -20,7 +21,7 @@ export function createBlankParticipant() {
 // Un participant en réserve est hors initiative : on neutralise donc toujours
 // son initiative pour éviter qu’un ancien score influence l’affichage ou le tri.
 export function placerEnReserve(participant) {
-  return { ...participant, initiative: 0 };
+  return { ...participant, initiative: 0, actionSlots: [] };
 }
 
 export function createRestorePoint(scene) {
@@ -53,6 +54,7 @@ export function optionsTri(scene) {
   return {
     categoryOrder: scene.categoryOrder || defaultCategoryOrder,
     equalityRule: scene.equalityRule || defaultEqualityRule,
+    initiativeOrder: scene.initiativeOrder || defaultInitiativeOrder,
   };
 }
 
@@ -61,4 +63,21 @@ export function valeurInitiativeRenseignee(valuesById, participantId) {
   if (raw === '' || raw == null) return null;
   const initiative = Number(raw);
   return Number.isFinite(initiative) ? initiative : null;
+}
+
+export function initiativesRenseignees(valuesById, participantId) {
+  const raw = valuesById?.[participantId];
+  const valeurs = Array.isArray(raw) ? raw : [raw];
+  const initiatives = valeurs
+    .map((valeur) => Number(valeur))
+    .filter(Number.isFinite);
+  return initiatives.length ? initiatives : null;
+}
+
+export function actionSlotsDepuisInitiatives(initiatives = []) {
+  return initiatives
+    .map((initiative, index) => ({ id: `slot-${index + 1}`, initiative: Number(initiative), order: index }))
+    .filter((slot) => Number.isFinite(slot.initiative))
+    .sort((a, b) => b.initiative - a.initiative || a.order - b.order)
+    .map((slot, index) => ({ id: `slot-${index + 1}`, initiative: slot.initiative, order: index }));
 }

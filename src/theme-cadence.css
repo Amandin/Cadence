@@ -261,6 +261,13 @@ body { background: var(--theme-light-bg); color: var(--theme-light-text); }
 .sheet-action-row.without-init-counter { grid-template-columns: 1fr 2fr; }
 .sheet-action-row.without-init-counter .join-init-wide { width: 100%; min-height: 44px; }
 .mini-init-counter { display: grid; grid-template-columns: 34px minmax(56px,1fr) 34px; gap: 5px; align-items: center; min-width: 0; padding: 4px; border-radius: 16px; border: 1px solid rgba(49, 18, 54, .14); background: rgba(255, 250, 245, .72); }
+.mini-init-counter.compact-init-display { grid-template-columns: auto 1fr; width: 100%; min-height: 42px; justify-items: center; cursor: pointer; }
+.mini-init-counter.compact-init-display strong { font-size: 20px; }
+.mini-init-counter.multi-init-counter { grid-template-columns: repeat(auto-fit, minmax(64px, 1fr)); width: 100%; margin: 0; align-items: stretch; }
+.mini-init-slot { min-width: 0; }
+.multi-init-counter .editable-init-value { height: auto; min-height: 42px; gap: 2px; padding: 4px 6px; }
+.multi-init-counter .editable-init-value input { height: 26px; padding: 0 4px; }
+.multi-init-counter .close-init-edit { grid-column: 1 / -1; height: 28px; padding: 0 10px; }
 .mini-init-counter .small-btn { min-width: 0; padding: 0; height: 34px; border-radius: 12px; font-size: 16px; }
 .mini-init-counter .init-value,.mini-init-counter input { min-width: 0; width: 100%; height: 34px; padding: 0 4px; display: grid; place-items: center; line-height: 1; border: 0; border-radius: 12px; background: transparent; color: var(--theme-light-text); text-align: center; cursor: pointer; }
 .mini-init-counter input { border: 1px solid rgba(49, 18, 54, .22); background: #fffaf5; font-weight: 900; font-size: 18px; }

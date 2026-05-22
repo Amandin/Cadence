@@ -44,13 +44,51 @@ function nombreOuDefaut(valeur, defaut = 0) {
   return Number.isFinite(nombre) ? nombre : defaut;
 }
 
+function texteCreneauxAction(participant) {
+  const slots = Array.isArray(participant.actionSlots) && participant.actionSlots.length ? participant.actionSlots : [{ initiative: participant.initiative ?? 0 }];
+  return slots.map((slot) => slot.initiative ?? 0).join(' / ');
+}
+
+function brouillonCreneauxAction(participant) {
+  const slots = Array.isArray(participant.actionSlots) && participant.actionSlots.length ? participant.actionSlots : [{ initiative: participant.initiative ?? 0 }];
+  return slots.map((slot, index) => ({
+    id: slot.id || `slot-${index + 1}`,
+    initiative: slot.initiative ?? participant.initiative ?? 0,
+  }));
+}
+
+function lireCreneauxAction(texte, fallback = 0) {
+  const valeurs = String(texte || '').match(/-?\d+(?:[.,]\d+)?/g)?.map((valeur) => Number(valeur.replace(',', '.'))).filter(Number.isFinite) || [];
+  const initiatives = valeurs.length ? valeurs : [nombreOuDefaut(fallback, 0)];
+  return initiatives
+    .sort((a, b) => b - a)
+    .map((initiative, index) => ({ id: `slot-${index + 1}`, initiative, order: index }));
+}
+
+function normaliserCreneauxDepuisBrouillon(brouillon) {
+  const slots = Array.isArray(brouillon._actionSlotsDraft) && brouillon._actionSlotsDraft.length
+    ? brouillon._actionSlotsDraft
+    : lireCreneauxAction(brouillon._actionSlotsInput, brouillon.initiative);
+  return slots
+    .map((slot, index) => ({
+      id: slot.id || `slot-${index + 1}`,
+      initiative: nombreOuDefaut(slot.initiative, brouillon.initiative),
+      order: index,
+    }))
+    .sort((a, b) => b.initiative - a.initiative || a.order - b.order)
+    .map((slot, index) => ({ id: `slot-${index + 1}`, initiative: slot.initiative, order: index }));
+}
+
 function normaliserFiche(brouillon) {
+  const { _actionSlotsInput, _actionSlotsDraft, ...fiche } = brouillon;
+  const actionSlots = normaliserCreneauxDepuisBrouillon(brouillon);
   return {
-    ...brouillon,
-    stats: serialiserInfosRapides(brouillon.stats),
-    initiative: nombreOuDefaut(brouillon.initiative, 0),
-    departage: brouillon.departage === '' ? '' : nombreOuDefaut(brouillon.departage, 0),
-    trackers: brouillon.trackers.map((suivi) => {
+    ...fiche,
+    stats: serialiserInfosRapides(fiche.stats),
+    initiative: actionSlots[0]?.initiative ?? nombreOuDefaut(fiche.initiative, 0),
+    actionSlots,
+    departage: fiche.departage === '' ? '' : nombreOuDefaut(fiche.departage, 0),
+    trackers: fiche.trackers.map((suivi) => {
       if (isBoxesTracker(suivi)) {
         return normalizeBoxTracker({
           ...suivi,
@@ -415,13 +453,68 @@ function EditeurSuivi({ suivi, onChange, onDelete }) {
 }
 
 export function FenetreEditionFiche({ participant, title = 'Modifier', saveTemplateVisible = true, deleteLabel = 'Supprimer la fiche', onClose, onSave, onDelete, onSaveTemplate }) {
-  const [brouillon, setBrouillon] = useState({ ...clone(participant), stats: normaliserInfosRapides(participant.stats || []) });
+  const [brouillon, setBrouillon] = useState({ ...clone(participant), _actionSlotsInput: texteCreneauxAction(participant), _actionSlotsDraft: brouillonCreneauxAction(participant), stats: normaliserInfosRapides(participant.stats || []) });
   const [confirmationSuppression, setConfirmationSuppression] = useState(false);
+  const creneauxAction = Array.isArray(brouillon._actionSlotsDraft) && brouillon._actionSlotsDraft.length ? brouillon._actionSlotsDraft : brouillonCreneauxAction(brouillon);
+  const modifierCreneauAction = (index, valeur) => setBrouillon((courant) => ({
+    ...courant,
+    _actionSlotsDraft: (courant._actionSlotsDraft || brouillonCreneauxAction(courant)).map((slot, position) => position === index ? { ...slot, initiative: valeur } : slot),
+  }));
+  const ajouterCreneauAction = () => setBrouillon((courant) => {
+    const slots = courant._actionSlotsDraft || brouillonCreneauxAction(courant);
+    const dernier = slots.at(-1)?.initiative ?? courant.initiative ?? 0;
+    return { ...courant, _actionSlotsDraft: [...slots, { id: uid('slot'), initiative: dernier }] };
+  });
+  const retirerCreneauAction = (index) => setBrouillon((courant) => {
+    const slots = courant._actionSlotsDraft || brouillonCreneauxAction(courant);
+    const suivants = slots.filter((_, position) => position !== index);
+    return { ...courant, _actionSlotsDraft: suivants.length ? suivants : slots.slice(0, 1) };
+  });
+  const basculerActionsMultiples = (actif) => setBrouillon((courant) => {
+    const slots = courant._actionSlotsDraft || brouillonCreneauxAction(courant);
+    if (!actif) return { ...courant, _actionSlotsDraft: slots.slice(0, 1) };
+    return { ...courant, _actionSlotsDraft: slots.length > 1 ? slots : [...slots, { id: uid('slot'), initiative: slots[0]?.initiative ?? courant.initiative ?? 0 }] };
+  });
+  const renduEditionMultiple = (entete, valider, enregistrerCommeTemplate) => (
+    <>
+      <Fenetre title={title} onClose={onClose} header={entete}>
+        <label className="field">Nom<input value={brouillon.name} onChange={(e) => modifierChamp('name', e.target.value)} /></label>
+        <label className="field">Description<textarea value={brouillon.description || ''} onChange={(e) => modifierChamp('description', e.target.value)} /></label>
+        <div className="grid2">
+          <label className="field">Type<select value={brouillon.kind} onChange={(e) => modifierChamp('kind', e.target.value)}>{participantKinds.map((type) => <option key={type}>{type}</option>)}</select></label>
+          <ChampNombre label="Initiative 1" valeur={creneauxAction[0]?.initiative ?? brouillon.initiative ?? 0} onChange={(valeur) => modifierCreneauAction(0, valeur)} />
+        </div>
+        <div className="action-slots-editor">
+          <label className="row"><input type="checkbox" checked={creneauxAction.length > 1} onChange={(e) => basculerActionsMultiples(e.target.checked)} /> plusieurs actions</label>
+          {creneauxAction.length > 1 && <div className="stack action-slot-list">
+            {creneauxAction.slice(1).map((slot, index) => (
+              <div className="initiative-action-row" key={slot.id || index}>
+                <ChampNombre label={`Initiative ${index + 2}`} valeur={slot.initiative} onChange={(valeur) => modifierCreneauAction(index + 1, valeur)} />
+                <button className="small-btn subtle-danger" onClick={() => retirerCreneauAction(index + 1)}>x</button>
+              </div>
+            ))}
+            <button className="small-btn" onClick={ajouterCreneauAction}>+ action</button>
+          </div>}
+        </div>
+        <div className="grid2"><ChampNombre label="Departage" valeur={brouillon.departage} onChange={(valeur) => modifierChamp('departage', valeur)} /><div /></div>
+        <div className="grid2"><label className="field">Symbole<select value={brouillon.symbol || symbols[0]} onChange={(e) => modifierChamp('symbol', e.target.value)}>{symbols.map((symbole) => <option key={symbole} value={symbole}>{symbole}</option>)}</select></label><label className="field">Couleur<select value={brouillon.color || colors[0]} onChange={(e) => modifierChamp('color', e.target.value)}>{colors.map((couleur) => <option key={couleur} value={couleur}>{colorNames[couleur] || couleur}</option>)}</select></label></div>
+        <h3>Infos rapides</h3>
+        <EditeurInfosRapides stats={brouillon.stats || []} onChange={(stats) => modifierChamp('stats', stats)} />
+        <h3>Suivis</h3>
+        <div className="stack tracker-list">{brouillon.trackers.map((suivi) => <EditeurSuivi key={suivi.id} suivi={suivi} onChange={(suivant) => modifierSuivi(suivi.id, suivant)} onDelete={() => setBrouillon((courant) => ({ ...courant, trackers: courant.trackers.filter((item) => item.id !== suivi.id) }))} />)}<button className="primary add-tracker-btn" onClick={() => setBrouillon((courant) => ({ ...courant, trackers: [...courant.trackers, newTracker('bar')] }))}>Ajouter un suivi</button></div>
+        {saveTemplateVisible && <button className="small-btn" style={{ width: '100%', marginTop: 12 }} onClick={enregistrerCommeTemplate}>Enregistrer comme template</button>}
+        <div className="edit-actions-row" style={{ marginTop: 12 }}><button className="small-btn" onClick={onClose}>Annuler</button><button className="primary" onClick={valider}>Valider</button><button className="danger-btn" onClick={() => setConfirmationSuppression(true)}>{deleteLabel}</button></div>
+      </Fenetre>
+      {confirmationSuppression && <FenetreConfirmationSuppression nom={brouillon.name} onAnnuler={() => setConfirmationSuppression(false)} onConfirmer={onDelete} />}
+    </>
+  );
   const modifierChamp = (clef, valeur) => setBrouillon((courant) => ({ ...courant, [clef]: valeur }));
   const modifierSuivi = (id, suivant) => setBrouillon((courant) => ({ ...courant, trackers: courant.trackers.map((suivi) => suivi.id === id ? suivant : suivi) }));
   const valider = () => onSave(normaliserFiche(brouillon));
   const enregistrerCommeTemplate = () => onSaveTemplate?.(normaliserFiche(brouillon));
+  const enteteMultiple = <div className="edit-sheet-header"><h2>{title}</h2><button className="icon-btn validate-edit-btn" onClick={valider} aria-label="Valider les modifications">{'✓'}</button></div>;
+  return renduEditionMultiple(enteteMultiple, valider, enregistrerCommeTemplate);
   const entete = <div className="edit-sheet-header"><h2>{title}</h2><button className="icon-btn validate-edit-btn" onClick={valider} aria-label="Valider les modifications">{'✓'}</button></div>;
 
-  return <><Fenetre title={title} onClose={onClose} header={entete}><label className="field">Nom<input value={brouillon.name} onChange={(e) => modifierChamp('name', e.target.value)} /></label><label className="field">Description<textarea value={brouillon.description || ''} onChange={(e) => modifierChamp('description', e.target.value)} /></label><div className="grid2"><label className="field">Type<select value={brouillon.kind} onChange={(e) => modifierChamp('kind', e.target.value)}>{participantKinds.map((type) => <option key={type}>{type}</option>)}</select></label><ChampNombre label="Initiative" valeur={brouillon.initiative} onChange={(valeur) => modifierChamp('initiative', valeur)} /></div><div className="grid2"><ChampNombre label="Departage" valeur={brouillon.departage} onChange={(valeur) => modifierChamp('departage', valeur)} /><div /></div><div className="grid2"><label className="field">Symbole<select value={brouillon.symbol || symbols[0]} onChange={(e) => modifierChamp('symbol', e.target.value)}>{symbols.map((symbole) => <option key={symbole} value={symbole}>{symbole}</option>)}</select></label><label className="field">Couleur<select value={brouillon.color || colors[0]} onChange={(e) => modifierChamp('color', e.target.value)}>{colors.map((couleur) => <option key={couleur} value={couleur}>{colorNames[couleur] || couleur}</option>)}</select></label></div><h3>Infos rapides</h3><EditeurInfosRapides stats={brouillon.stats || []} onChange={(stats) => modifierChamp('stats', stats)} /><h3>Suivis</h3><div className="stack tracker-list">{brouillon.trackers.map((suivi) => <EditeurSuivi key={suivi.id} suivi={suivi} onChange={(suivant) => modifierSuivi(suivi.id, suivant)} onDelete={() => setBrouillon((courant) => ({ ...courant, trackers: courant.trackers.filter((item) => item.id !== suivi.id) }))} />)}<button className="primary add-tracker-btn" onClick={() => setBrouillon((courant) => ({ ...courant, trackers: [...courant.trackers, newTracker('bar')] }))}>Ajouter un suivi</button></div>{saveTemplateVisible && <button className="small-btn" style={{ width: '100%', marginTop: 12 }} onClick={enregistrerCommeTemplate}>Enregistrer comme template</button>}<div className="edit-actions-row" style={{ marginTop: 12 }}><button className="small-btn" onClick={onClose}>Annuler</button><button className="primary" onClick={valider}>Valider</button><button className="danger-btn" onClick={() => setConfirmationSuppression(true)}>{deleteLabel}</button></div></Fenetre>{confirmationSuppression && <FenetreConfirmationSuppression nom={brouillon.name} onAnnuler={() => setConfirmationSuppression(false)} onConfirmer={onDelete} />}</>;
+  return <><Fenetre title={title} onClose={onClose} header={entete}><label className="field">Nom<input value={brouillon.name} onChange={(e) => modifierChamp('name', e.target.value)} /></label><label className="field">Description<textarea value={brouillon.description || ''} onChange={(e) => modifierChamp('description', e.target.value)} /></label><div className="grid2"><label className="field">Type<select value={brouillon.kind} onChange={(e) => modifierChamp('kind', e.target.value)}>{participantKinds.map((type) => <option key={type}>{type}</option>)}</select></label><ChampNombre label="Initiative" valeur={brouillon.initiative} onChange={(valeur) => modifierChamp('initiative', valeur)} /></div><label className="field">Créneaux d'action<input value={brouillon._actionSlotsInput || ''} placeholder="18 / 12 / 6" onChange={(e) => modifierChamp('_actionSlotsInput', e.target.value)} /></label><div className="grid2"><ChampNombre label="Departage" valeur={brouillon.departage} onChange={(valeur) => modifierChamp('departage', valeur)} /><div /></div><div className="grid2"><label className="field">Symbole<select value={brouillon.symbol || symbols[0]} onChange={(e) => modifierChamp('symbol', e.target.value)}>{symbols.map((symbole) => <option key={symbole} value={symbole}>{symbole}</option>)}</select></label><label className="field">Couleur<select value={brouillon.color || colors[0]} onChange={(e) => modifierChamp('color', e.target.value)}>{colors.map((couleur) => <option key={couleur} value={couleur}>{colorNames[couleur] || couleur}</option>)}</select></label></div><h3>Infos rapides</h3><EditeurInfosRapides stats={brouillon.stats || []} onChange={(stats) => modifierChamp('stats', stats)} /><h3>Suivis</h3><div className="stack tracker-list">{brouillon.trackers.map((suivi) => <EditeurSuivi key={suivi.id} suivi={suivi} onChange={(suivant) => modifierSuivi(suivi.id, suivant)} onDelete={() => setBrouillon((courant) => ({ ...courant, trackers: courant.trackers.filter((item) => item.id !== suivi.id) }))} />)}<button className="primary add-tracker-btn" onClick={() => setBrouillon((courant) => ({ ...courant, trackers: [...courant.trackers, newTracker('bar')] }))}>Ajouter un suivi</button></div>{saveTemplateVisible && <button className="small-btn" style={{ width: '100%', marginTop: 12 }} onClick={enregistrerCommeTemplate}>Enregistrer comme template</button>}<div className="edit-actions-row" style={{ marginTop: 12 }}><button className="small-btn" onClick={onClose}>Annuler</button><button className="primary" onClick={valider}>Valider</button><button className="danger-btn" onClick={() => setConfirmationSuppression(true)}>{deleteLabel}</button></div></Fenetre>{confirmationSuppression && <FenetreConfirmationSuppression nom={brouillon.name} onAnnuler={() => setConfirmationSuppression(false)} onConfirmer={onDelete} />}</>;
 }
