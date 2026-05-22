@@ -18,6 +18,7 @@ export function createStatus(data) {
     remaining: duration,
     loop: duration !== null && !!data.loop,
     inactive: !!data.inactive,
+    advanceOn: data.advanceOn === 'round' ? 'round' : 'activation',
     expired: false,
   };
 }

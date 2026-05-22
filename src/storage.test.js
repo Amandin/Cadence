@@ -78,8 +78,25 @@ describe('campaign storage', () => {
       departage: 2,
       stats: [],
     });
-    expect(campaign.scenes[0].participants[0].trackers[0]).toMatchObject({ type: 'bar', current: 7, max: 10, visible: true });
+    expect(campaign.scenes[0].participants[0].trackers[0]).toMatchObject({ type: 'bar', current: 7, max: 10, visible: true, thresholds: [{ value: 0, label: '< 0', color: 'red', operator: 'lt' }] });
     expect(campaign.scenes[0].participants[0].statuses[0]).toMatchObject({ duration: 2, remaining: 1, expired: false });
+  });
+
+  it('keeps scene statuses through normalization and serialization', () => {
+    const campaign = normalizeCampaignPayload({
+      version: '0.2.9.4',
+      scenes: [{
+        id: 'scene-statuses',
+        title: 'Orage',
+        statuses: [{ id: 'fog', name: 'Brouillard', duration: 3, remaining: 2, advanceOn: 'round' }],
+        participants: [],
+      }],
+    });
+
+    expect(campaign.scenes[0].statuses[0]).toMatchObject({ name: 'Brouillard', duration: 3, remaining: 2, advanceOn: 'round' });
+
+    const serialized = JSON.parse(serializeCampaign(campaign.scenes, false, 'Scene statuses', null, campaign.initiativeRules));
+    expect(serialized.scenes[0].statuses[0]).toMatchObject({ name: 'Brouillard', duration: 3, remaining: 2, advanceOn: 'round' });
   });
 
   it('keeps reserve participants safe and out of initiative after hand edits', () => {
@@ -166,17 +183,82 @@ describe('campaign storage', () => {
           current: 15,
           min: 0,
           max: 10,
-          resetRule: { excessReductionPercent: 50 },
+          resetRule: { excessReductionPercent: 50, underflowRecoveryPercent: 25 },
         }],
       }],
     };
 
     const campaign = normalizeCampaignPayload({ version: '0.2.8.5', scenes: [sourceScene] });
     const tracker = campaign.scenes[0].participants[0].trackers[0];
-    expect(tracker.resetRule).toMatchObject({ excessReductionPercent: 50, rounding: 'floor' });
+    expect(tracker.resetRule).toMatchObject({ excessReductionPercent: 50, underflowRecoveryPercent: 25, rounding: 'floor' });
 
     const serialized = JSON.parse(serializeCampaign(campaign.scenes, false, 'Suivis', null, campaign.initiativeRules));
-    expect(serialized.scenes[0].participants[0].trackers[0].resetRule).toMatchObject({ excessReductionPercent: 50, rounding: 'floor' });
+    expect(serialized.scenes[0].participants[0].trackers[0].resetRule).toMatchObject({ excessReductionPercent: 50, underflowRecoveryPercent: 25, rounding: 'floor' });
+  });
+
+  it('keeps more than two thresholds through normalization and serialization', () => {
+    const sourceScene = {
+      id: 'scene-thresholds',
+      title: 'Seuils',
+      participants: [{
+        id: 'pj-thresholds',
+        name: 'Vigie',
+        trackers: [{
+          id: 'ressources',
+          type: 'number',
+          current: 10,
+          thresholds: [
+            { value: 3, label: 'bas', operator: 'gte', color: 'green' },
+            { value: 6, label: 'moyen', operator: 'gte', color: 'amber' },
+            { value: 9, label: 'haut', operator: 'gte', color: 'red' },
+            { value: 10, label: 'exact', operator: 'eq', color: 'violet' },
+            { value: 12, operator: 'gte', color: 'blue' },
+          ],
+        }],
+      }],
+    };
+
+    const campaign = normalizeCampaignPayload({ version: '0.2.9.2', scenes: [sourceScene] });
+    expect(campaign.scenes[0].participants[0].trackers[0].thresholds).toHaveLength(5);
+
+    const serialized = JSON.parse(serializeCampaign(campaign.scenes, false, 'Seuils', null, campaign.initiativeRules));
+    expect(serialized.scenes[0].participants[0].trackers[0].thresholds.map((threshold) => threshold.label)).toEqual(['bas', 'moyen', 'haut', 'exact', '']);
+  });
+
+  it('keeps the block based box tracker structure and ignores old rows', () => {
+    const campaign = normalizeCampaignPayload({
+      version: '0.2.9.1',
+      scenes: [{
+        id: 'scene-boxes',
+        title: 'Cases',
+        participants: [{
+          id: 'pj-boxes',
+          name: 'Cartographe',
+          trackers: [{
+            id: 'boxes',
+            type: 'boxes',
+            fillLevels: 3,
+            rows: [{ id: 'old-row', label: 'Ancien', marks: [3, 3, 3] }],
+            blocks: [{
+              id: 'block-b',
+              label: 'B',
+              order: 1,
+              lines: [{ id: 'line-b', label: 'B1', order: 0, boxes: [{ id: 'b2', position: 2, mark: 1 }, { id: 'b0', position: 0, mark: 2 }] }],
+            }, {
+              id: 'block-a',
+              label: 'A',
+              order: 0,
+              lines: [{ id: 'line-a', label: 'A1', order: 0, boxes: [{ id: 'a0', position: 0, mark: 3 }] }],
+            }],
+          }],
+        }],
+      }],
+    });
+
+    const tracker = campaign.scenes[0].participants[0].trackers[0];
+    expect(tracker.rows).toBeUndefined();
+    expect(tracker.blocks.map((block) => block.id)).toEqual(['block-a', 'block-b']);
+    expect(tracker.blocks[1].lines[0].boxes.map((box) => box.position)).toEqual([0, 1]);
   });
 
   it('gives legacy clocks their previous activation behavior when no moment is stored', () => {

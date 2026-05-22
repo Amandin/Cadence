@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { colorNames, participantKinds, trackerTypeLabels } from '../../constants.js';
-import { boxVisualRank, clone, colors, cycleBoxMark, isBoxesTracker, isNumericTracker, isPointsTracker, isVisible, newTracker, normalizeThresholds, resetTracker, symbols, uid } from '../../logic.js';
+import { boxBlocks, boxVisualRank, clone, colors, cycleBoxMark, isBoxesTracker, isNumericTracker, isPointsTracker, isVisible, newTracker, normalizeBoxTracker, normalizeThresholds, normalizeTrackerThresholds, resetTracker, sortBoxBlocks, symbols, uid } from '../../logic.js';
 import { Fenetre } from '../commun/ComposantsCommuns.jsx';
 import { FenetreConfirmationSuppression } from '../dialogues/FenetreConfirmationSuppression.jsx';
 import { IconeOeilMystiqueFerme, IconeOeilMystiqueOuvert } from '../icones/IconesOeilMystique.jsx';
@@ -18,6 +18,8 @@ const thresholdColors = [
 const thresholdOperators = [
   ['gte', '>='],
   ['lte', '<='],
+  ['gt', '>'],
+  ['lt', '<'],
   ['eq', '='],
 ];
 
@@ -50,12 +52,11 @@ function normaliserFiche(brouillon) {
     departage: brouillon.departage === '' ? '' : nombreOuDefaut(brouillon.departage, 0),
     trackers: brouillon.trackers.map((suivi) => {
       if (isBoxesTracker(suivi)) {
-        return {
+        return normalizeBoxTracker({
           ...suivi,
           fillLevels: entierPositif(suivi.fillLevels, 1),
-          rows: (suivi.rows || []).map((ligne) => ({ ...ligne, marks: ligne.marks?.length ? ligne.marks : [0] })),
           resetRule: normaliserResetRule(suivi),
-        };
+        });
       }
       if (suivi.type === 'number') {
         return {
@@ -64,7 +65,7 @@ function normaliserFiche(brouillon) {
           initial: nombreOuDefaut(suivi.initial, suivi.current ?? 0),
           step: entierPositif(suivi.step, 1),
           counterSize: ['compact', 'normal', 'wide'].includes(suivi.counterSize) ? suivi.counterSize : 'compact',
-          thresholds: normalizeThresholds(suivi.thresholds),
+          thresholds: normalizeTrackerThresholds(suivi.type, suivi.thresholds),
           resetRule: normaliserResetRule(suivi),
           counters: (suivi.counters || []).map((compteur) => ({
             ...compteur,
@@ -99,7 +100,7 @@ function normaliserFiche(brouillon) {
         max: suivi.max === null ? null : entierPositif(suivi.max, 1),
         min: suivi.min === null ? null : nombreOuDefaut(suivi.min, 0),
         step: entierPositif(suivi.step, 1),
-        thresholds: normalizeThresholds(suivi.thresholds),
+        thresholds: normalizeTrackerThresholds(suivi.type, suivi.thresholds),
         resetRule: normaliserResetRule(suivi),
       };
     }),
@@ -115,30 +116,17 @@ function normaliserResetRule(suivi) {
     stepMode: rule.stepMode === 'percent' ? 'percent' : 'flat',
     pointsAutoMode: ['increase', 'decrease', 'default'].includes(rule.pointsAutoMode) ? rule.pointsAutoMode : 'default',
     counterRules: rule.counterRules && typeof rule.counterRules === 'object' ? rule.counterRules : {},
-    boxRows: rule.boxRows && typeof rule.boxRows === 'object' ? rule.boxRows : {},
+    boxBlocks: rule.boxBlocks && typeof rule.boxBlocks === 'object' ? rule.boxBlocks : {},
     minCap: rule.minCap === '' ? '' : rule.minCap ?? '',
     maxCap: rule.maxCap === '' ? '' : rule.maxCap ?? '',
     overflowTrimPercent: nombreOuDefaut(rule.overflowTrimPercent, 0),
     excessReductionPercent: rule.excessReductionPercent === '' ? '' : rule.excessReductionPercent ?? '',
+    underflowRecoveryPercent: rule.underflowRecoveryPercent === '' ? '' : rule.underflowRecoveryPercent ?? '',
     rounding: ['nearest', 'floor', 'ceil'].includes(rule.rounding) ? rule.rounding : 'floor',
     amount: entierPositif(rule.amount, 1),
     skipLevels: Array.isArray(rule.skipLevels) ? rule.skipLevels.map(Number).filter((level) => Number.isFinite(level) && level > 0) : [],
-    targetRowId: rule.targetRowId || suivi.rows?.[0]?.id || '',
     after: ['none', 'zero', 'max', 'initial'].includes(rule.after) ? rule.after : 'none',
   };
-}
-
-function retirerCase(marques = []) {
-  return marques.length > 1 ? marques.slice(0, -1) : marques;
-}
-
-function ajouterCase(marques = []) {
-  return [...marques, 0];
-}
-
-function ApercuCases({ marques, niveaux }) {
-  const maximum = entierPositif(niveaux, 5);
-  return <div className="boxes-preview">{marques.map((valeur, index) => <span key={index} className={`box preview mark-${boxVisualRank(valeur, maximum)} ${boxVisualRank(valeur, maximum) >= 5 ? 'full' : ''}`} />)}</div>;
 }
 
 function ApercuNiveaux({ niveaux }) {
@@ -151,35 +139,75 @@ function ChampNombre({ label, valeur, onChange, placeholder = '', className = ''
   return <label className={`field ${className}`.trim()}>{label}<input type="number" inputMode="numeric" value={valeur ?? ''} placeholder={placeholder} onChange={(e) => onChange(e.target.value === '' ? '' : Number(e.target.value))} /></label>;
 }
 
+function creerCasesDepuis(cases = [], total = 1) {
+  const ordonnees = [...(cases || [])].sort((a, b) => Number(a.position ?? 0) - Number(b.position ?? 0));
+  return Array.from({ length: Math.max(1, total) }, (_, position) => {
+    const existante = ordonnees[position];
+    return existante ? { ...existante, position } : { id: uid('box'), position, mark: 0, initial: 0 };
+  });
+}
+
 function EditeurCases({ suivi, onChange, resetOptions = null }) {
-  const lignes = suivi.rows?.length ? suivi.rows : [{ id: uid('r'), label: 'Case 1', marks: [0] }];
-  const mode = suivi.boxMode === 'free' ? 'free' : suivi.fillLevels === 1 ? 'sorted1' : 'sorted3';
   const niveaux = entierPositif(suivi.fillLevels, 1);
   const nomsDefaut = niveaux === 1 ? ['Marque'] : ['Leger', 'Normal', 'Grave', 'Critique', 'Fatal'];
   const libellesNiveaux = Array.from({ length: niveaux }, (_, index) => suivi.levelLabels?.[index] || nomsDefaut[index] || `Niveau ${index + 1}`);
-  const modifierLigne = (ligneId, modification) => onChange({ ...suivi, rows: lignes.map((ligne) => ligne.id === ligneId ? modification(ligne) : ligne) });
-  const ajouterLigne = () => onChange({ ...suivi, rows: [...lignes, { id: uid('r'), label: mode === 'free' ? `Case ${lignes.length + 1}` : `Ligne ${lignes.length + 1}`, marks: mode === 'free' ? [0] : [0, 0, 0] }] });
-  const retirerLigne = (ligneId) => onChange({ ...suivi, rows: lignes.length > 1 ? lignes.filter((ligne) => ligne.id !== ligneId) : lignes });
+  const suiviNormalise = normalizeBoxTracker({ ...suivi, fillLevels: niveaux });
+  const blocs = suiviNormalise.blocks;
+  const appliquerBlocs = (blocks) => onChange(sortBoxBlocks({ ...suiviNormalise, blocks }));
+  const ajouterBloc = () => {
+    const order = blocs.length;
+    appliquerBlocs([...blocs, { id: uid('block'), label: `Bloc ${order + 1}`, order, lines: [{ id: uid('line'), label: 'Ligne 1', order: 0, boxes: creerCasesDepuis([], 4) }] }]);
+  };
+  const modifierBloc = (blocId, modification) => appliquerBlocs(blocs.map((bloc) => bloc.id === blocId ? modification(bloc) : bloc));
+  const retirerBloc = (blocId) => appliquerBlocs(blocs.length > 1 ? blocs.filter((bloc) => bloc.id !== blocId) : blocs);
+  const ajouterLigne = (blocId) => modifierBloc(blocId, (bloc) => ({ ...bloc, lines: [...bloc.lines, { id: uid('line'), label: `Ligne ${bloc.lines.length + 1}`, order: bloc.lines.length, boxes: creerCasesDepuis([], 4) }] }));
+  const modifierLigne = (blocId, ligneId, modification) => modifierBloc(blocId, (bloc) => ({ ...bloc, lines: bloc.lines.map((ligne) => ligne.id === ligneId ? modification(ligne) : ligne) }));
+  const retirerLigne = (blocId, ligneId) => modifierBloc(blocId, (bloc) => ({ ...bloc, lines: bloc.lines.length > 1 ? bloc.lines.filter((ligne) => ligne.id !== ligneId) : bloc.lines }));
   const changerNiveaux = (delta) => {
     const prochain = Math.max(1, Math.min(5, niveaux + delta));
     const labels = Array.from({ length: prochain }, (_, index) => suivi.levelLabels?.[index] || (prochain === 1 ? ['Marque'][index] : ['Leger', 'Normal', 'Grave', 'Critique', 'Fatal'][index]) || `Niveau ${index + 1}`);
-    onChange({ ...suivi, fillLevels: prochain, levelLabels: mode !== 'free' ? labels : suivi.levelLabels, levelPriorities: Array.from({ length: prochain }, (_, index) => suivi.levelPriorities?.[index] || index + 1) });
-  };
-  const changerMode = (choix) => {
-    const boxMode = choix === 'free' ? 'free' : 'sorted';
-    const fillLevels = choix === 'sorted1' ? 1 : choix === 'sorted3' ? 3 : 1;
-    onChange({
-      ...suivi,
-      boxMode,
-      fillLevels,
-      levelLabels: boxMode === 'free' ? [] : (fillLevels === 1 ? ['Marque'] : ['Leger', 'Normal', 'Grave']),
-      levelPriorities: boxMode === 'free' ? [] : Array.from({ length: fillLevels }, (_, index) => index + 1),
-      rows: boxMode === 'free' ? lignes.map((ligne) => ({ ...ligne, marks: ligne.marks?.length ? ligne.marks : [0] })) : [{ id: uid('r'), label: 'Ligne 1', marks: [0, 0, 0] }],
-    });
+    onChange(normalizeBoxTracker({ ...suiviNormalise, fillLevels: prochain, levelLabels: labels, levelPriorities: Array.from({ length: prochain }, (_, index) => suivi.levelPriorities?.[index] || index + 1) }));
   };
   const changerLibelleNiveau = (index, label) => onChange({ ...suivi, levelLabels: libellesNiveaux.map((courant, position) => position === index ? label : courant) });
 
-  return <div className="box-editor"><label className="field">Famille de cases<select value={mode} onChange={(e) => changerMode(e.target.value)}><option value="free">Cases libres</option><option value="sorted1">Cases triees simples</option><option value="sorted3">Cases triees 3 niveaux</option></select></label>{mode === 'free' && <><div className="line-count-row"><label>Groupes de cases</label><strong>{lignes.length}</strong><button className="small-btn" onClick={ajouterLigne}>+ groupe</button></div><div className="stack">{lignes.map((ligne) => <div className="free-box-edit-line" key={ligne.id}><input value={ligne.label} placeholder="Nom" onChange={(e) => modifierLigne(ligne.id, (courante) => ({ ...courante, label: e.target.value }))} /><input type="number" inputMode="numeric" min="1" value={(ligne.marks || []).length || 1} onChange={(e) => modifierLigne(ligne.id, (courante) => ({ ...courante, marks: Array.from({ length: entierPositif(e.target.value, 1) }, (_, index) => courante.marks?.[index] || 0) }))} /><button className="small-btn subtle-danger" onClick={() => retirerLigne(ligne.id)} disabled={lignes.length <= 1}>x</button></div>)}</div><details className="advanced-options"><summary>Options avancees</summary><div className="box-level-row"><span>Niveaux de coche</span><button className="small-btn" onClick={() => changerNiveaux(-1)} disabled={niveaux <= 1}>-</button><ApercuNiveaux niveaux={niveaux} /><button className="small-btn" onClick={() => changerNiveaux(1)} disabled={niveaux >= 5}>+</button></div>{resetOptions}</details></>}{mode !== 'free' && <><div className="line-count-row"><label>Lignes du moniteur</label><strong>{lignes.length}</strong><button className="small-btn" onClick={ajouterLigne}>+ ligne</button></div><div className="stack">{lignes.map((ligne) => <div className="free-box-edit-line sorted-line-edit" key={ligne.id}><input value={ligne.label || ''} placeholder="Nom de ligne" onChange={(e) => modifierLigne(ligne.id, (courante) => ({ ...courante, label: e.target.value || 'Ligne' }))} /><input type="number" inputMode="numeric" min="1" value={(ligne.marks || []).length || 1} onChange={(e) => modifierLigne(ligne.id, (courante) => ({ ...courante, marks: Array.from({ length: entierPositif(e.target.value, 1) }, (_, index) => courante.marks?.[index] || 0) }))} /><button className="small-btn subtle-danger" onClick={() => retirerLigne(ligne.id)} disabled={lignes.length <= 1}>x</button></div>)}</div><p className="muted tracker-help">Les lignes se suivent dans une seule jauge. Cadence range les marques selon leur priorite.</p><details className="advanced-options"><summary>Options avancees</summary><label className="row"><input type="checkbox" checked={suivi.globalSort !== false} onChange={(e) => onChange({ ...suivi, globalSort: e.target.checked })} /> trier sur l'ensemble des lignes</label><div className="box-level-row"><span>Niveaux actifs</span><button className="small-btn" onClick={() => changerNiveaux(-1)} disabled={niveaux <= 1}>-</button><ApercuNiveaux niveaux={niveaux} /><button className="small-btn" onClick={() => changerNiveaux(1)} disabled={niveaux >= 5}>+</button></div>{niveaux > 1 && <div className="stack">{libellesNiveaux.map((label, index) => <div className="level-visual-row" key={index}><input value={label} onChange={(e) => changerLibelleNiveau(index, e.target.value)} /><span className={`box preview mark-${boxVisualRank(index + 1, niveaux)} ${boxVisualRank(index + 1, niveaux) >= 5 ? 'full' : ''}`} /></div>)}</div>}{resetOptions}</details></>}</div>;
+  return (
+    <div className="box-editor">
+      <div className="box-level-row">
+        <span>Niveaux actifs</span>
+        <button className="small-btn" onClick={() => changerNiveaux(-1)} disabled={niveaux <= 1}>-</button>
+        <ApercuNiveaux niveaux={niveaux} />
+        <button className="small-btn" onClick={() => changerNiveaux(1)} disabled={niveaux >= 5}>+</button>
+      </div>
+      <div className="line-count-row"><label>Blocs</label><strong>{blocs.length}</strong><button className="small-btn" onClick={ajouterBloc}>+ bloc</button></div>
+      <div className="stack">
+        {blocs.map((bloc) => (
+          <div className="box-block-edit" key={bloc.id}>
+            <div className="box-block-edit-head">
+              <input value={bloc.label || ''} placeholder="Nom du bloc" onChange={(e) => modifierBloc(bloc.id, (courant) => ({ ...courant, label: e.target.value || 'Bloc' }))} />
+              <button className="small-btn" onClick={() => ajouterLigne(bloc.id)}>+ ligne</button>
+              <button className="small-btn subtle-danger" onClick={() => retirerBloc(bloc.id)} disabled={blocs.length <= 1}>x</button>
+            </div>
+            <div className="stack">
+              {bloc.lines.map((ligne) => (
+                <div className="free-box-edit-line box-line-edit" key={ligne.id}>
+                  <input value={ligne.label || ''} placeholder="Nom de ligne" onChange={(e) => modifierLigne(bloc.id, ligne.id, (courante) => ({ ...courante, label: e.target.value || 'Ligne' }))} />
+                  <input type="number" inputMode="numeric" min="1" value={(ligne.boxes || []).length || 1} onChange={(e) => modifierLigne(bloc.id, ligne.id, (courante) => ({ ...courante, boxes: creerCasesDepuis(courante.boxes, entierPositif(e.target.value, 1)) }))} />
+                  <button className="small-btn subtle-danger" onClick={() => retirerLigne(bloc.id, ligne.id)} disabled={bloc.lines.length <= 1}>x</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      <details className="advanced-options">
+        <summary>Options avancees</summary>
+        <div className="stack">
+          {libellesNiveaux.map((label, index) => <div className="level-visual-row" key={index}><input value={label} onChange={(e) => changerLibelleNiveau(index, e.target.value)} /><span className={`box preview mark-${boxVisualRank(index + 1, niveaux)} ${boxVisualRank(index + 1, niveaux) >= 5 ? 'full' : ''}`} /></div>)}
+        </div>
+        {resetOptions}
+      </details>
+    </div>
+  );
 }
 
 function basculerInfoModifiable(info, modifiable) {
@@ -233,26 +261,40 @@ function ToggleIconeSuivi({ suivi, onChange }) {
 
 function OptionsReset({ suivi, onChange }) {
   const rule = suivi.resetRule || {};
-  const rows = suivi.rows || [];
+  const blocks = isBoxesTracker(suivi) ? boxBlocks(suivi) : [];
   const autoActif = suivi.autoReset === 'activation';
   const defaultMode = suivi.resetDefaultMode || 'empty';
   const estCompteur = suivi.type === 'number';
   const estBarre = suivi.type === 'bar';
   const estPuces = isPointsTracker(suivi);
   const compteurs = estCompteur ? [{ id: '__main', label: suivi.name || 'Compteur', current: suivi.current ?? 0 }, ...(suivi.counters || [])] : [];
-  const initialRows = rows.map((row, index) => {
-    const initial = suivi.initialRows?.find((item) => item.id === row.id) || suivi.initialRows?.[index];
-    return initial ? { ...row, marks: (row.marks || []).map((_, markIndex) => Number(initial.marks?.[markIndex] || 0)) } : { ...row, marks: (row.marks || []).map(() => 0) };
+  const normaliserBlocks = (nextBlocks) => sortBoxBlocks({ ...suivi, blocks: nextBlocks }).blocks;
+  const modifierInitialBox = (blockId, lineId, boxId) => onChange({
+    blocks: normaliserBlocks(blocks.map((block) => block.id !== blockId ? block : {
+      ...block,
+      lines: block.lines.map((line) => line.id !== lineId ? line : {
+        ...line,
+        boxes: line.boxes.map((box) => box.id === boxId ? { ...box, initial: cycleBoxMark(box.initial, suivi.fillLevels || 1) } : box),
+      }),
+    })),
   });
-  const modifierInitialRow = (rowId, index) => onChange({ initialRows: initialRows.map((row) => row.id === rowId ? { ...row, marks: (row.marks || []).map((mark, position) => position === index ? cycleBoxMark(mark, suivi.fillLevels || 1) : mark) } : row) });
+  const patchInitialBoxes = (valeur) => ({
+    blocks: normaliserBlocks(blocks.map((block) => ({
+      ...block,
+      lines: block.lines.map((line) => ({
+        ...line,
+        boxes: line.boxes.map((box) => ({ ...box, initial: valeur === 'current' ? box.mark : valeur })),
+      })),
+    }))),
+  });
   const presetPatch = (choix) => {
-    if (choix === 'current') return isBoxesTracker(suivi) ? { initialRows: clone(rows) } : { initial: suivi.current ?? 0, cyclesInitial: suivi.cycles ?? suivi.cyclesInitial ?? 0 };
-    if (choix === 'empty') return isBoxesTracker(suivi) ? { initialRows: rows.map((row) => ({ ...row, marks: (row.marks || []).map(() => 0) })) } : { initial: 0, cyclesInitial: 0 };
-    return isBoxesTracker(suivi) ? { initialRows: rows.map((row) => ({ ...row, marks: (row.marks || []).map(() => Number(suivi.fillLevels || 1)) })) } : { initial: suivi.max ?? suivi.current ?? 0 };
+    if (choix === 'current') return isBoxesTracker(suivi) ? patchInitialBoxes('current') : { initial: suivi.current ?? 0, cyclesInitial: suivi.cycles ?? suivi.cyclesInitial ?? 0 };
+    if (choix === 'empty') return isBoxesTracker(suivi) ? patchInitialBoxes(0) : { initial: 0, cyclesInitial: 0 };
+    return isBoxesTracker(suivi) ? patchInitialBoxes(Number(suivi.fillLevels || 1)) : { initial: suivi.max ?? suivi.current ?? 0 };
   };
   const modifierRegle = (patch) => onChange({ resetRule: { ...rule, ...patch } });
   const modifierRegleCompteur = (id, patch) => modifierRegle({ counterRules: { ...(rule.counterRules || {}), [id]: { ...((rule.counterRules || {})[id] || {}), ...patch } } });
-  const modifierRegleLigne = (id, patch) => modifierRegle({ boxRows: { ...(rule.boxRows || {}), [id]: { ...((rule.boxRows || {})[id] || {}), ...patch } } });
+  const modifierRegleBloc = (id, patch) => modifierRegle({ boxBlocks: { ...(rule.boxBlocks || {}), [id]: { ...((rule.boxBlocks || {})[id] || {}), ...patch } } });
   const switchAuto = <label className={`reset-switch ${autoActif ? 'active' : ''}`}><span>Automatisation</span><input type="checkbox" checked={autoActif} onChange={(e) => onChange({ autoReset: e.target.checked ? 'activation' : 'never', resetRule: { ...rule, mode: 'towardDefault' } })} /></label>;
   const optionsNiveaux = Array.from({ length: Number(suivi.fillLevels || 1) }, (_, index) => ({ value: index + 1, label: suivi.levelLabels?.[index] || ['Leger', 'Normal', 'Grave', 'Critique', 'Fatal'][index] || `Coche ${index + 1}` }));
 
@@ -275,13 +317,13 @@ function OptionsReset({ suivi, onChange }) {
           <button className={`small-btn ${defaultMode === 'empty' ? 'suggested' : ''}`} onClick={() => onChange({ ...presetPatch('empty'), resetDefaultMode: 'empty' })}>vide</button>
           <button className={`small-btn ${defaultMode === 'custom' ? 'suggested' : ''}`} onClick={() => onChange({ resetDefaultMode: 'custom' })}>personnalisé</button>
         </div>
-        {defaultMode === 'custom' && <div className="reset-box-preview">{initialRows.map((row) => <div className="sorted-monitor-line" key={row.id}><div className="boxes">{(row.marks || []).map((mark, index) => <button key={index} className={`box mark-${boxVisualRank(mark, suivi.fillLevels || 1)} ${boxVisualRank(mark, suivi.fillLevels || 1) >= 5 ? 'full' : ''}`} onClick={() => modifierInitialRow(row.id, index)} />)}</div><span className="box-label">{row.label}</span></div>)}</div>}
+        {defaultMode === 'custom' && <div className="reset-box-preview">{blocks.map((block) => <div className="reset-box-block" key={block.id}><strong>{block.label}</strong>{block.lines.map((line) => <div className="box-row" key={line.id}><div className="box-label"></div><div className="boxes">{line.boxes.map((box) => <button key={box.id} className={`box mark-${boxVisualRank(box.initial, suivi.fillLevels || 1)} ${boxVisualRank(box.initial, suivi.fillLevels || 1) >= 5 ? 'full' : ''}`} onClick={() => modifierInitialBox(block.id, line.id, box.id)} />)}</div><span className="box-label right">{line.label}</span></div>)}</div>)}</div>}
       </div>
       {switchAuto}
-      {autoActif && <div className="box-auto-grid">{(suivi.boxMode === 'free' ? rows : [{ id: '__all', label: 'Jauge' }]).map((row) => {
-        const regle = (rule.boxRows || {})[row.id] || {};
+      {autoActif && <div className="box-auto-grid">{blocks.map((block) => {
+        const regle = (rule.boxBlocks || {})[block.id] || {};
         const maxLevel = regle.maxLevel ?? suivi.fillLevels ?? 1;
-        return <div className="box-auto-row" key={row.id}><strong>{row.label || 'Zone'}</strong><ChampNombre label="Cases" valeur={regle.amount ?? 1} onChange={(valeur) => modifierRegleLigne(row.id, { amount: valeur })} /><ChampNombre label="Cran" valeur={regle.levels ?? 1} onChange={(valeur) => modifierRegleLigne(row.id, { levels: valeur })} /><label className="field">Coche max<select value={maxLevel} onChange={(e) => modifierRegleLigne(row.id, { maxLevel: Number(e.target.value) })}>{optionsNiveaux.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label></div>;
+        return <div className="box-auto-row" key={block.id}><strong>{block.label || 'Bloc'}</strong><ChampNombre label="Cases" valeur={regle.amount ?? 1} onChange={(valeur) => modifierRegleBloc(block.id, { amount: valeur })} /><ChampNombre label="Cran" valeur={regle.levels ?? 1} onChange={(valeur) => modifierRegleBloc(block.id, { levels: valeur })} /><label className="field">Coche max<select value={maxLevel} onChange={(e) => modifierRegleBloc(block.id, { maxLevel: Number(e.target.value) })}>{optionsNiveaux.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label></div>;
       })}</div>}
     </div>
   );
@@ -298,7 +340,7 @@ function OptionsReset({ suivi, onChange }) {
         {defaultMode === 'custom' && <ChampNombre label="Valeur" valeur={suivi.initial ?? 0} onChange={(valeur) => onChange({ initial: valeur })} />}
       </div>
       {switchAuto}
-      {autoActif && <div className="grid2"><ChampNombre label="Valeur additive" valeur={rule.step ?? 0} onChange={(valeur) => modifierRegle({ step: valeur })} /><ChampNombre label="% reduction exces" valeur={rule.excessReductionPercent ?? ''} placeholder="aucun" onChange={(valeur) => modifierRegle({ excessReductionPercent: valeur, rounding: rule.rounding || 'floor' })} /></div>}
+      {autoActif && <><div className="grid2"><ChampNombre label="Valeur additive" valeur={rule.step ?? 0} onChange={(valeur) => modifierRegle({ step: valeur })} /><ChampNombre label="% au-dessus max" valeur={rule.excessReductionPercent ?? ''} placeholder="aucun" onChange={(valeur) => modifierRegle({ excessReductionPercent: valeur, rounding: rule.rounding || 'floor' })} /></div><div className="grid2"><ChampNombre label="% sous minimum" valeur={rule.underflowRecoveryPercent ?? ''} placeholder="aucun" onChange={(valeur) => modifierRegle({ underflowRecoveryPercent: valeur, rounding: rule.rounding || 'floor' })} /><div /></div></>}
     </div>
   );
 
@@ -330,16 +372,12 @@ function OptionsReset({ suivi, onChange }) {
           </div>
           {estPuces && defaultMode === 'full' && (suivi.max === null || suivi.max === '') && <p className="threshold-warning">definir un maximum pour utiliser plein</p>}
           {estPuces && defaultMode === 'empty' && (suivi.min === null || suivi.min === '') && <p className="threshold-warning">definir un minimum pour utiliser vide</p>}
-          {defaultMode === 'custom' && (isBoxesTracker(suivi) ? (
-            <div className="reset-box-preview">
-              {initialRows.map((row) => <div className="sorted-monitor-line" key={row.id}><div className="boxes">{(row.marks || []).map((mark, index) => <button key={index} className={`box mark-${boxVisualRank(mark, suivi.fillLevels || 1)} ${boxVisualRank(mark, suivi.fillLevels || 1) >= 5 ? 'full' : ''}`} onClick={() => modifierInitialRow(row.id, index)} />)}</div><span className="box-label">{row.label}</span></div>)}
-            </div>
-          ) : (
+          {defaultMode === 'custom' && (
             <div className="grid2">
               <ChampNombre label="Valeur" valeur={suivi.initial ?? 0} onChange={(valeur) => onChange({ initial: valeur })} />
               {estPuces && suivi.limitMode === 'loop' && <ChampNombre label="Compteur" valeur={suivi.cyclesInitial ?? 0} onChange={(valeur) => onChange({ cyclesInitial: valeur })} />}
             </div>
-          ))}
+          )}
         </div>
       )}
       {estCompteur && <p className="muted tracker-help">Le retour par defaut d'un compteur utilise ses valeurs initiales. Le pas automatique peut etre borne par les limites ci-dessous.</p>}
@@ -349,21 +387,13 @@ function OptionsReset({ suivi, onChange }) {
       </label>
       {autoActif && (
         <div className="grid2">
-          <ChampNombre label={estPuces ? 'Pas non signe' : rule.stepMode === 'percent' ? 'Pas en %' : 'Pas'} valeur={rule.step ?? (isBoxesTracker(suivi) ? -1 : 1)} onChange={(valeur) => onChange({ resetRule: { ...rule, mode: 'towardDefault', step: valeur } })} />
+          <ChampNombre label={estPuces ? 'Pas non signe' : rule.stepMode === 'percent' ? 'Pas en %' : 'Pas'} valeur={rule.step ?? 1} onChange={(valeur) => onChange({ resetRule: { ...rule, mode: 'towardDefault', step: valeur } })} />
           {estCompteur && <label className="field">Mode du pas<select value={rule.stepMode || 'flat'} onChange={(e) => onChange({ resetRule: { ...rule, stepMode: e.target.value } })}><option value="flat">Valeur fixe</option><option value="percent">Pourcentage</option></select></label>}
-          {isBoxesTracker(suivi) && <ChampNombre label={suivi.boxMode === 'free' ? 'Cases par groupe' : 'Cases au total'} valeur={rule.amount ?? 1} onChange={(valeur) => onChange({ resetRule: { ...rule, amount: valeur } })} />}
         </div>
       )}
       {autoActif && estCompteur && <div className="grid2"><ChampNombre label="Min optionnel" valeur={rule.minCap ?? ''} placeholder="pas de borne" onChange={(valeur) => onChange({ resetRule: { ...rule, minCap: valeur } })} /><ChampNombre label="Max optionnel" valeur={rule.maxCap ?? ''} placeholder="pas de borne" onChange={(valeur) => onChange({ resetRule: { ...rule, maxCap: valeur } })} /></div>}
       {autoActif && estCompteur && rule.stepMode === 'percent' && <label className="field">Arrondi<select value={rule.rounding || 'nearest'} onChange={(e) => onChange({ resetRule: { ...rule, rounding: e.target.value } })}><option value="nearest">Mathematique</option><option value="floor">Inferieur</option><option value="ceil">Superieur</option></select></label>}
       {autoActif && estBarre && <div className="grid2"><ChampNombre label="% du depassement retire" valeur={rule.overflowTrimPercent ?? 0} onChange={(valeur) => onChange({ resetRule: { ...rule, overflowTrimPercent: valeur } })} /><div /></div>}
-      {autoActif && isBoxesTracker(suivi) && <p className="muted tracker-help">{suivi.boxMode === 'free' ? 'Cases libres : chaque groupe avance separement vers son image par defaut.' : 'Cases triees : Cadence corrige la jauge globale dans l ordre des lignes, puis retrie les marques.'} {Number(suivi.fillLevels || 1) > 1 ? 'Avec plusieurs niveaux, une marque descend ou monte d un cran par tic jusqu a rejoindre l etat choisi. Les niveaux exclus ci-dessous ne seront pas regenes automatiquement.' : ''}</p>}
-      {autoActif && isBoxesTracker(suivi) && Number(suivi.fillLevels || 1) > 1 && (
-        <div className="level-lock-row">
-          <span>Niveaux regeneres</span>
-          {Array.from({ length: Number(suivi.fillLevels || 1) }, (_, index) => <label key={index}><input type="checkbox" checked={!(rule.skipLevels || []).includes(index + 1)} onChange={(e) => onChange({ resetRule: { ...rule, skipLevels: e.target.checked ? (rule.skipLevels || []).filter((level) => level !== index + 1) : [...(rule.skipLevels || []), index + 1] } })} />{suivi.levelLabels?.[index] || `N${index + 1}`}</label>)}
-        </div>
-      )}
     </div>
   );
 }

@@ -31,6 +31,7 @@ function scene(overrides = {}) {
     phaseRerollEachRound: false,
     activeId: 'a',
     globalTracker: { enabled: true, auto: true, current: 0, max: 6 },
+    statuses: [],
     participants: [participant('a', 23), participant('b', 14), participant('c', 8)],
     reserve: [participant('reserve', 0)],
     ...overrides,
@@ -63,6 +64,20 @@ describe('phase tempo state', () => {
     expect(next.phase).toBe(1);
     expect(next.activeId).toBe('a');
     expect(next.globalTracker.current).toBe(1);
+  });
+
+  it('advances phase scene and participant round statuses once on the new round', () => {
+    const next = appliquerNouveauRoundPhases(scene({
+      phase: 3,
+      statuses: [{ id: 'rain', name: 'Pluie', duration: 2, remaining: 2, advanceOn: 'round', expired: false }],
+      participants: [
+        participant('a', 23, { statuses: [{ id: 'round', name: 'Tour', duration: 2, remaining: 2, advanceOn: 'round', expired: false }, { id: 'activation', name: 'Activation', duration: 2, remaining: 2, advanceOn: 'activation', expired: false }] }),
+        participant('b', 14),
+      ],
+    }));
+
+    expect(next.statuses[0].remaining).toBe(1);
+    expect(next.participants[0].statuses.map((status) => [status.id, status.remaining])).toEqual([['round', 1], ['activation', 1]]);
   });
 
   it('leaves no active participant while waiting for initiative reroll', () => {

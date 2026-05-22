@@ -1,7 +1,7 @@
 import { temporalityModes } from '../constants.js';
 import { phaseSuivanteExiste, participantsPourPhase, valeurInitiative } from '../domain/initiative.js';
 import { stepAutoGlobalTracker } from '../domain/globalTracker.js';
-import { resetAutoTrackers, tickParticipant } from '../logic.js';
+import { resetAutoTrackers, tickParticipant, tickStatuses } from '../logic.js';
 import { optionsTri, placerEnReserve } from './sceneSupport.js';
 
 export function estModeSouple(scene) {
@@ -48,28 +48,34 @@ function declencherActivation(participant, activeId) {
   return participant.id === activeId ? resetAutoTrackers(tickParticipant(participant), 'activation') : participant;
 }
 
+function tickSceneRoundStatuses(scene) {
+  return { ...scene, statuses: tickStatuses(scene.statuses, 'round') };
+}
+
 export function appliquerDebutNouveauRound(scene, activeId) {
+  const sceneAvecEtats = tickSceneRoundStatuses(scene);
   return {
-    ...scene,
+    ...sceneAvecEtats,
     activeId,
-    round: Math.max(1, scene.round + 1),
-    globalTracker: stepAutoGlobalTracker(scene.globalTracker, 1),
-    participants: scene.participants.map((participant) => {
-      const afterRound = resetAutoTrackers(participant, 'round');
+    round: Math.max(1, sceneAvecEtats.round + 1),
+    globalTracker: stepAutoGlobalTracker(sceneAvecEtats.globalTracker, 1),
+    participants: sceneAvecEtats.participants.map((participant) => {
+      const afterRound = tickParticipant(resetAutoTrackers(participant, 'round'), 'round');
       return participant.id === activeId ? resetAutoTrackers(tickParticipant(afterRound), 'activation') : afterRound;
     }),
-    reserve: (scene.reserve || []).map((participant) => tickParticipant(resetAutoTrackers(participant, 'round'))).map(placerEnReserve),
+    reserve: (sceneAvecEtats.reserve || []).map((participant) => tickParticipant(resetAutoTrackers(participant, 'round'), 'round')).map(placerEnReserve),
   };
 }
 
 export function appliquerNouveauRoundSouple(scene) {
+  const sceneAvecEtats = tickSceneRoundStatuses(scene);
   return {
-    ...scene,
+    ...sceneAvecEtats,
     activeId: '',
-    round: Math.max(1, scene.round + 1),
-    globalTracker: stepAutoGlobalTracker(scene.globalTracker, 1),
-    participants: (scene.participants || []).map((participant) => tickParticipant(resetAutoTrackers(participant, 'round'))),
-    reserve: (scene.reserve || []).map((participant) => tickParticipant(resetAutoTrackers(participant, 'round'))).map(placerEnReserve),
+    round: Math.max(1, sceneAvecEtats.round + 1),
+    globalTracker: stepAutoGlobalTracker(sceneAvecEtats.globalTracker, 1),
+    participants: (sceneAvecEtats.participants || []).map((participant) => tickParticipant(resetAutoTrackers(participant, 'round'), 'round')),
+    reserve: (sceneAvecEtats.reserve || []).map((participant) => tickParticipant(resetAutoTrackers(participant, 'round'), 'round')).map(placerEnReserve),
     jouesSouples: [],
     historiqueSouple: [],
   };
@@ -77,17 +83,18 @@ export function appliquerNouveauRoundSouple(scene) {
 
 export function appliquerNouveauRoundPhases(scene) {
   const phaseOnce = scene.phaseActivateOncePerRound !== false;
+  const sceneAvecEtats = tickSceneRoundStatuses(scene);
   const sceneSuivante = {
-    ...scene,
+    ...sceneAvecEtats,
     activeId: '',
     phase: 1,
-    round: Math.max(1, scene.round + 1),
-    globalTracker: stepAutoGlobalTracker(scene.globalTracker, 1),
-    participants: (scene.participants || []).map((participant) => {
-      const afterRound = tickParticipant(resetAutoTrackers(participant, 'round'));
+    round: Math.max(1, sceneAvecEtats.round + 1),
+    globalTracker: stepAutoGlobalTracker(sceneAvecEtats.globalTracker, 1),
+    participants: (sceneAvecEtats.participants || []).map((participant) => {
+      const afterRound = tickParticipant(resetAutoTrackers(participant, 'round'), 'round');
       return phaseOnce ? preparerActivationRound(afterRound) : afterRound;
     }),
-    reserve: (scene.reserve || []).map((participant) => tickParticipant(resetAutoTrackers(participant, 'round'))).map(placerEnReserve),
+    reserve: (sceneAvecEtats.reserve || []).map((participant) => tickParticipant(resetAutoTrackers(participant, 'round'), 'round')).map(placerEnReserve),
   };
 
   if (scene.phaseRerollEachRound) return sceneSuivante;

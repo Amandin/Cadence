@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { activeThresholds, applyDelta, boxGroups, boxVisualRank, cycleBoxMark, isTriggeredClock, sortBoxGroups } from '../../logic.js';
+import { activeThresholds, applyBoxMarkAction, applyDelta, boxBlocks, boxVisualRank, isTriggeredClock, normalizeThresholds, sortBoxBlocks } from '../../logic.js';
 
 function TitreSuivi({ titre, avantTitre, suffixe = null }) {
   return <span className="tracker-title">{avantTitre}{titre}{suffixe}</span>;
@@ -38,33 +38,54 @@ function IconeMetronome({ fige = false }) {
   );
 }
 
+function normaliserPas(valeur) {
+  const nombre = Number(valeur);
+  return Number.isFinite(nombre) ? Math.max(1, nombre) : 1;
+}
+
+function ControlePas({ valeur, onChange, className = '' }) {
+  const [edition, setEdition] = useState(false);
+  const [saisie, setSaisie] = useState(String(normaliserPas(valeur)));
+  const valider = () => {
+    onChange(saisie);
+    setEdition(false);
+  };
+
+  if (edition) {
+    return <input className={`step-chip-input ${className}`.trim()} type="number" inputMode="numeric" min="1" value={saisie} autoFocus onChange={(event) => setSaisie(event.target.value)} onBlur={valider} onKeyDown={(event) => { if (event.key === 'Enter') valider(); if (event.key === 'Escape') setEdition(false); }} aria-label="Pas" />;
+  }
+
+  return <button className={`step-chip ${className}`.trim()} onClick={() => { setSaisie(String(normaliserPas(valeur))); setEdition(true); }} title="Modifier le pas" aria-label={`Modifier le pas, actuellement ${normaliserPas(valeur)}`}>+/-{normaliserPas(valeur)}</button>;
+}
+
 export function Suivi({ suivi, onModifier, onSupprimer, avantTitre = null, couleur = 'slate' }) {
   const [deltaOuvert, setDeltaOuvert] = useState(false);
   const [delta, setDelta] = useState('');
+  const [actionCases, setActionCases] = useState('fill');
   const champDeltaRef = useRef(null);
   const declenche = isTriggeredClock(suivi);
   const seuils = activeThresholds(suivi) || [];
   const classeSeuils = seuils.length ? 'threshold-glow' : '';
   const styleSeuil = styleSeuils(seuils);
-  const accepteDelta = suivi.type === 'bar';
   const cyclesPuces = Number(suivi.cycles ?? suivi.cyclesInitial ?? 0) || 0;
   const suffixePuces = (suivi.type === 'points' || suivi.type === 'dots') && suivi.limitMode === 'loop'
     ? <span className={`title-counter color-${couleur || 'slate'}`}>{cyclesPuces}</span>
     : null;
   const estPuces = suivi.type === 'points' || suivi.type === 'dots';
   const modifier = (valeur) => onModifier({ ...suivi, ...valeur });
-  const appliquerPas = (direction) => suivi.type !== 'boxes' && onModifier(applyDelta(suivi, direction * Number(suivi.step || 1)));
+  const appliquerPas = (direction) => suivi.type !== 'boxes' && onModifier(applyDelta(suivi, direction * normaliserPas(suivi.step)));
+  const changerPas = (valeur) => modifier({ step: normaliserPas(valeur) });
   const ouvrirDelta = () => setDeltaOuvert((ouvert) => !ouvert);
   const appliquerDeltaManuel = () => { onModifier(applyDelta(suivi, Number(delta))); setDelta(''); setDeltaOuvert(false); };
-  const cocherCase = (groupeId, ligneId, index) => {
-    const groups = boxGroups(suivi).map((groupe) => groupe.id !== groupeId ? groupe : {
-      ...groupe,
-      rows: groupe.rows.map((ligne) => ligne.id !== ligneId ? ligne : {
+  const cocherCase = (blocId, ligneId, caseId) => {
+    const blocks = boxBlocks(suivi).map((bloc) => bloc.id !== blocId ? bloc : {
+      ...bloc,
+      lines: bloc.lines.map((ligne) => ligne.id !== ligneId ? ligne : {
         ...ligne,
-        marks: ligne.marks.map((valeur, i) => i === index ? cycleBoxMark(valeur, suivi.fillLevels || 5) : valeur),
+        boxes: ligne.boxes.map((caseSuivi) => caseSuivi.id === caseId ? { ...caseSuivi, mark: applyBoxMarkAction(caseSuivi.mark, suivi.fillLevels || 5, actionCases) } : caseSuivi),
       }),
     });
-    modifier({ groups: sortBoxGroups(groups), rows: undefined, boxMode: 'sorted' });
+    onModifier(sortBoxBlocks({ ...suivi, blocks }));
   };
 
   useEffect(() => {
@@ -77,26 +98,41 @@ export function Suivi({ suivi, onModifier, onSupprimer, avantTitre = null, coule
   }
 
   if (suivi.type === 'boxes') {
-    return <div className="tracker"><div className="tracker-top"><TitreSuivi titre={suivi.name} avantTitre={avantTitre} /></div><CasesSuivi suivi={suivi} cocher={cocherCase} /></div>;
+    return <div className="tracker"><div className="tracker-top"><TitreSuivi titre={suivi.name} avantTitre={avantTitre} /><div className="box-action-toggle" role="group" aria-label="Action sur les cases"><button className={actionCases === 'fill' ? 'active' : ''} onClick={() => setActionCases('fill')} title="Ajouter ou remplir les cases">+</button><button className={actionCases === 'empty' ? 'active' : ''} onClick={() => setActionCases('empty')} title="Retirer ou vider les cases">-</button></div></div><CasesSuivi suivi={suivi} cocher={cocherCase} /></div>;
   }
 
   if (suivi.type === 'number') {
     return <div className={`tracker ${classeSeuils} ${declenche ? 'triggered' : ''}`} style={styleSeuil}><div className="tracker-top"><TitreSuivi titre={suivi.name} avantTitre={avantTitre} /><SeuilsActifs seuils={seuils} />{declenche && <span className="chip hot">A resoudre</span>}</div><CompteursSuivi suivi={suivi} onModifier={modifier} />{declenche && <div className="stack" style={{ marginTop: 8 }}><button className="danger-btn" onClick={onSupprimer}>Supprimer</button></div>}</div>;
   }
 
-  return <div className={`tracker ${classeSeuils} ${declenche ? 'triggered' : ''}`} style={styleSeuil}><div className="tracker-top"><TitreSuivi titre={suivi.name} avantTitre={avantTitre} suffixe={suffixePuces} /><SeuilsActifs seuils={seuils} />{declenche && <span className="chip hot">A resoudre</span>}</div>{accepteDelta && deltaOuvert && <div className="delta-pop"><input ref={champDeltaRef} type="number" inputMode="numeric" value={delta} onChange={(event) => setDelta(event.target.value)} onKeyDown={(event) => event.key === 'Enter' && appliquerDeltaManuel()} placeholder="+50" /><button onClick={appliquerDeltaManuel}>OK</button></div>}<div className={`controls ${estPuces ? 'points-controls' : ''}`}><button onClick={() => appliquerPas(-1)}>-</button><div>{suivi.type === 'bar' && <BarreSuivi suivi={suivi} onDelta={ouvrirDelta} />}{suivi.type === 'points' && <PointsSuivi suivi={suivi} onModifier={modifier} />}{suivi.type === 'dots' && <PointsSuivi suivi={suivi} onModifier={modifier} />}</div><button onClick={() => appliquerPas(1)}>+</button></div>{declenche && <div className="stack" style={{ marginTop: 8 }}><button className="primary" onClick={() => modifier({ current: 0 })}>Relancer a 0</button><button className="danger-btn" onClick={onSupprimer}>Supprimer</button></div>}</div>;
+  if (suivi.type === 'bar') {
+    return <div className={`tracker ${classeSeuils} ${declenche ? 'triggered' : ''}`} style={styleSeuil}><div className="tracker-top"><TitreSuivi titre={suivi.name} avantTitre={avantTitre} /><SeuilsActifs seuils={seuils} />{declenche && <span className="chip hot">A resoudre</span>}</div>{deltaOuvert && <div className="delta-pop tracker-action-pop"><input ref={champDeltaRef} type="number" inputMode="numeric" value={delta} onChange={(event) => setDelta(event.target.value)} onKeyDown={(event) => event.key === 'Enter' && appliquerDeltaManuel()} placeholder="+50" /><button onClick={appliquerDeltaManuel}>OK</button></div>}<div className="controls bar-controls"><button onClick={() => appliquerPas(-1)}>-</button><button className="bar-action-zone" onClick={ouvrirDelta} aria-label={`Modifier ${suivi.name}`}><BarreSuivi suivi={suivi} /></button><div className="step-side"><button onClick={() => appliquerPas(1)}>+</button><ControlePas valeur={suivi.step} onChange={changerPas} /></div></div>{declenche && <div className="stack" style={{ marginTop: 8 }}><button className="primary" onClick={() => modifier({ current: 0 })}>Relancer a 0</button><button className="danger-btn" onClick={onSupprimer}>Supprimer</button></div>}</div>;
+  }
+
+  return <div className={`tracker ${classeSeuils} ${declenche ? 'triggered' : ''}`} style={styleSeuil}><div className="tracker-top"><TitreSuivi titre={suivi.name} avantTitre={avantTitre} suffixe={suffixePuces} /><SeuilsActifs seuils={seuils} />{declenche && <span className="chip hot">A resoudre</span>}</div><div className={`controls ${estPuces ? 'points-controls' : ''}`}><button onClick={() => appliquerPas(-1)}>-</button><div>{suivi.type === 'points' && <PointsSuivi suivi={suivi} onModifier={modifier} />}{suivi.type === 'dots' && <PointsSuivi suivi={suivi} onModifier={modifier} />}</div><button onClick={() => appliquerPas(1)}>+</button></div>{declenche && <div className="stack" style={{ marginTop: 8 }}><button className="primary" onClick={() => modifier({ current: 0 })}>Relancer a 0</button><button className="danger-btn" onClick={onSupprimer}>Supprimer</button></div>}</div>;
 }
 
-function BarreSuivi({ suivi, onDelta }) {
+function BarreSuivi({ suivi }) {
   const max = Number(suivi.max || 1), min = Number(suivi.min ?? 0), courant = Number(suivi.current || 0), amplitude = Math.max(1, max - min);
   const ratio = Math.max(0, Math.min(1, (courant - min) / amplitude));
   const exces = Math.max(0, courant - max);
   const manqueValeur = Math.max(0, min - courant);
+  const sousMinimum = manqueValeur > 0;
+  const sousZero = courant < 0;
+  const entreZeroEtMinimum = sousMinimum && !sousZero && min > 0;
   const depassement = exces / Math.max(1, amplitude + exces);
   const manque = manqueValeur / Math.max(1, amplitude + manqueValeur);
+  const largeurDepassement = depassement > 0 ? Math.min(100, Math.max(8, depassement * 100)) : 0;
+  const largeurManque = manque > 0 ? Math.min(100, Math.max(8, manque * 100)) : 0;
+  const largeurNormale = Math.max(0, 100 - largeurManque - largeurDepassement);
   const classeRemplissage = courant / max <= .25 ? 'danger' : courant / max <= .5 ? 'warn' : '';
+  const seuilActif = activeThresholds(suivi)?.[0];
+  const couleurSeuilActif = thresholdGlowColors[seuilActif?.color] || null;
+  const styleRemplissage = { width: `${ratio * 100}%`, ...(couleurSeuilActif ? { background: couleurSeuilActif } : {}) };
+  const seuils = normalizeThresholds(suivi.thresholds).filter((seuil) => seuil.value >= min && seuil.value <= max);
+  const classesBarre = `bar-bg ${sousMinimum ? 'under-min' : ''} ${entreZeroEtMinimum ? 'between-zero-and-min' : ''} ${sousZero ? 'under-zero' : ''} ${exces > 0 || sousMinimum ? 'overflowing' : ''}`.trim();
 
-  return <><div className="delta"><button onClick={onDelta}>+/-</button></div><div className="bar-bg"><div className={`bar-fill ${classeRemplissage}`} style={{ width: `${ratio * 100}%` }} />{depassement > 0 && <div className="bar-over" style={{ width: `${Math.min(100, Math.max(8, depassement * 100))}%` }} />}{manque > 0 && <div className="bar-under" style={{ width: `${Math.min(100, Math.max(8, manque * 100))}%` }} />}</div><div className="muted" style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginTop: 3 }}><span>{min}</span><span>{courant}/{max}</span><span>+/-{suivi.step || 1}</span></div></>;
+  return <><div className={classesBarre}><div className={`bar-fill ${classeRemplissage}`} style={styleRemplissage} />{depassement > 0 && <div className="bar-over" style={{ width: `${largeurDepassement}%` }} />}{manque > 0 && <div className={`bar-under ${entreZeroEtMinimum ? 'between-zero-and-min' : ''} ${sousZero ? 'under-zero' : ''}`.trim()} style={{ width: `${largeurManque}%` }} />}{seuils.map((seuil) => <span className={`bar-threshold-marker threshold-${seuil.color || 'neutral'}`} key={`${seuil.value}-${seuil.label}`} title={seuil.label || `Seuil ${seuil.value}`} style={{ left: `${largeurManque + ((seuil.value - min) / amplitude) * largeurNormale}%`, '--marker-color': thresholdGlowColors[seuil.color] || thresholdGlowColors.neutral }} />)}</div><div className="muted" style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginTop: 3 }}><span>{min}</span><span>{courant}/{max}</span></div></>;
 }
 
 function PointsSuivi({ suivi, onModifier }) {
@@ -105,15 +141,33 @@ function PointsSuivi({ suivi, onModifier }) {
 }
 
 function CompteursSuivi({ suivi, onModifier }) {
-  const step = Math.max(1, Number(suivi.step || 1));
+  const [compteurOuvert, setCompteurOuvert] = useState('');
+  const [valeurManuelle, setValeurManuelle] = useState('');
+  const step = normaliserPas(suivi.step);
   const compteurs = [{ id: '__main', label: suivi.name || 'Compteur', current: suivi.current ?? 0, size: suivi.counterSize || 'compact' }, ...(Array.isArray(suivi.counters) ? suivi.counters : [])];
+  const changerPas = (valeur) => onModifier({ step: normaliserPas(valeur) });
   const changer = (compteur, direction) => {
     const delta = direction * step;
+    const current = Number(compteur.current || 0) + delta;
+    setValeurManuelle(String(current));
     if (compteur.id === '__main') return onModifier(applyDelta(suivi, delta));
-    return onModifier({ counters: (suivi.counters || []).map((item) => item.id === compteur.id ? { ...item, current: Number(item.current || 0) + delta } : item) });
+    return onModifier({ counters: (suivi.counters || []).map((item) => item.id === compteur.id ? { ...item, current } : item) });
+  };
+  const saisir = (compteur, valeur) => {
+    const current = Number(valeur);
+    if (!Number.isFinite(current)) return;
+    setCompteurOuvert('');
+    setValeurManuelle('');
+    if (compteur.id === '__main') return onModifier({ current });
+    return onModifier({ counters: (suivi.counters || []).map((item) => item.id === compteur.id ? { ...item, current } : item) });
+  };
+  const ouvrir = (compteur) => {
+    const dejaOuvert = compteurOuvert === compteur.id;
+    setCompteurOuvert(dejaOuvert ? '' : compteur.id);
+    setValeurManuelle(dejaOuvert ? '' : String(compteur.current ?? 0));
   };
 
-  return <div className="counter-grid">{compteurs.map((compteur) => <div className={`counter-unit counter-size-${compteur.size || 'compact'}`} key={compteur.id}><button className="counter-edge" onClick={() => changer(compteur, -1)}>-</button><div className="counter-tile"><span>{compteur.label || 'Compteur'}</span><strong>{compteur.current ?? 0}</strong></div><button className="counter-edge" onClick={() => changer(compteur, 1)}>+</button></div>)}</div>;
+  return <div className="counter-wrap"><div className="counter-step-row"><ControlePas valeur={step} onChange={changerPas} /></div><div className="counter-grid">{compteurs.map((compteur) => <div className={`counter-unit counter-size-${compteur.size || 'compact'}`} key={compteur.id}><button className="counter-edge" onClick={() => changer(compteur, -1)}>-</button><button className="counter-tile" onClick={() => ouvrir(compteur)} aria-label={`Modifier ${compteur.label || 'Compteur'}`}><span>{compteur.label || 'Compteur'}</span><strong>{compteur.current ?? 0}</strong></button><button className="counter-edge" onClick={() => changer(compteur, 1)}>+</button>{compteurOuvert === compteur.id && <div className="counter-pop"><input type="number" inputMode="numeric" value={valeurManuelle} onChange={(event) => setValeurManuelle(event.target.value)} onKeyDown={(event) => event.key === 'Enter' && saisir(compteur, valeurManuelle)} /><button onClick={() => saisir(compteur, valeurManuelle)}>OK</button></div>}</div>)}</div></div>;
 }
 
 function HorlogeSuivi({ suivi }) {
@@ -130,5 +184,5 @@ function HorlogeSuivi({ suivi }) {
 
 function CasesSuivi({ suivi, cocher }) {
   const max = suivi.fillLevels || 5;
-  return <div className="boxes grouped-boxes">{boxGroups(suivi).map((groupe) => <div className="box-group" key={groupe.id}>{groupe.rows.map((ligne, rowIndex) => <div className="box-row" key={ligne.id}><div className="box-label">{rowIndex === 0 ? groupe.label : ''}</div><div className="boxes">{ligne.marks.map((valeur, i) => <button key={i} className={`box mark-${boxVisualRank(valeur, max)} ${boxVisualRank(valeur, max) >= 5 ? 'full' : ''}`} onClick={() => cocher(groupe.id, ligne.id, i)} aria-label={`${groupe.label} ${ligne.label} case ${i + 1}`} />)}</div><div className="box-label right">{ligne.label}</div></div>)}</div>)}</div>;
+  return <div className="boxes grouped-boxes">{boxBlocks(suivi).map((bloc) => <div className="box-group" key={bloc.id}>{bloc.lines.map((ligne, lineIndex) => <div className="box-row" key={ligne.id}><div className="box-label">{lineIndex === 0 ? bloc.label : ''}</div><div className="boxes">{ligne.boxes.map((caseSuivi) => <button key={caseSuivi.id} className={`box mark-${boxVisualRank(caseSuivi.mark, max)} ${boxVisualRank(caseSuivi.mark, max) >= 5 ? 'full' : ''}`} onClick={() => cocher(bloc.id, ligne.id, caseSuivi.id)} aria-label={`${bloc.label} ${ligne.label} case ${caseSuivi.position + 1}`} />)}</div><div className="box-label right">{ligne.label}</div></div>)}</div>)}</div>;
 }

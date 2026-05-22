@@ -1,6 +1,6 @@
 import { applyInitiativeRules, campaignRulesFromPayload, normalizeCampaignRules, unifyCampaignScenes } from '../domain/campaignRules.js';
 import { campaignNameFromPayload, campaignTemplatesFromPayload, isValidCampaign, normalizeCampaignName, normalizeCampaignPayload, serializeCampaign } from '../storage.js';
-import { clone, isBoxesTracker, isNumericTracker, makeDefaultCampaign, uid } from '../logic.js';
+import { boxBlocks, clone, isBoxesTracker, isNumericTracker, makeDefaultCampaign, normalizeBoxTracker, uid } from '../logic.js';
 import { mergeTemplateStores } from '../templates.js';
 
 function valeurNumerique(value, fallback = 0) {
@@ -10,7 +10,16 @@ function valeurNumerique(value, fallback = 0) {
 
 function resetTrackerPourDepartScene(tracker) {
   if (isBoxesTracker(tracker)) {
-    return { ...tracker, rows: (tracker.rows || []).map((row) => ({ ...row, marks: (row.marks || []).map(() => 0) })) };
+    return normalizeBoxTracker({
+      ...tracker,
+      blocks: boxBlocks(tracker).map((block) => ({
+        ...block,
+        lines: block.lines.map((line) => ({
+          ...line,
+          boxes: line.boxes.map((box) => ({ ...box, mark: 0 })),
+        })),
+      })),
+    });
   }
   if (isNumericTracker(tracker)) return { ...tracker, current: valeurNumerique(tracker.initial, 0), cycles: 0 };
   return { ...tracker };
@@ -53,6 +62,7 @@ function createBlankScene(rules = {}) {
     phase: 1,
     activeId: '',
     notes: '',
+    statuses: [],
     reserve: [],
     participants: [],
   }, rules);

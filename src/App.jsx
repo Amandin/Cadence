@@ -4,6 +4,7 @@ import { groupeEgalitePourParticipant, participantsPourPhase, phaseSuivanteExist
 import { FenetresSuperposees } from './interface/app/FenetresSuperposees.jsx';
 import { HubCampagne } from './interface/campaign/HubCampagne.jsx';
 import { Fenetre } from './interface/commun/ComposantsCommuns.jsx';
+import { FenetreEtat } from './interface/dialogues/FenetreEtat.jsx';
 import { FenetreExportCampagne } from './interface/dialogues/FenetreExportCampagne.jsx';
 import { FenetreEditionFiche } from './interface/fiches/FenetreEditionFiche.jsx';
 import { BarreActionBas } from './interface/scene/BarreActionBas.jsx';
@@ -32,6 +33,7 @@ export default function App() {
   const [templateError, setTemplateError] = useState(null);
   const [exportOpen, setExportOpen] = useState(false);
   const [timerDoneOpen, setTimerDoneOpen] = useState(false);
+  const [sceneStatusOpen, setSceneStatusOpen] = useState(false);
   const previousRoundRef = useRef(scene.round);
   const timerDoneRef = useRef(false);
 
@@ -391,6 +393,7 @@ export default function App() {
         </div>
       </Fenetre>}
       {editingTemplate && <FenetreEditionFiche participant={editingTemplate.participant} title={`Modifier le template · ${editingTemplate.name}`} saveTemplateVisible={false} deleteLabel="Supprimer le template" onClose={() => setEditingTemplateId('')} onSave={saveEditedTemplate} onDelete={deleteEditedTemplate} />}
+      {sceneStatusOpen && <FenetreEtat participant={{ name: scene.title }} defaultAdvanceOn="round" afficherChoixEvolution={false} onFermer={() => setSceneStatusOpen(false)} onValider={(data) => { actions.addSceneStatus(data); setSceneStatusOpen(false); }} />}
     </>
   );
 
@@ -453,6 +456,8 @@ export default function App() {
           onRetourPreparation={retourPreparationVisible ? returnToPreparation : null}
           onModifierCompteurGlobal={actions.stepGlobal}
           onToggleCompteurTemps={toggleGlobalRealtime}
+          onAjouterEtatScene={() => setSceneStatusOpen(true)}
+          onRetirerEtatScene={actions.removeSceneStatus}
         />
 
         <main>

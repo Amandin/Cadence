@@ -33,7 +33,7 @@ function typeEtat(etat) {
 }
 
 export function EtiquetteEtat({ etat, onRetirer }) {
-  return <span className={`status ${typeEtat(etat)} ${etat.inactive ? 'inactive-status' : ''} ${etat.expired ? 'expired' : ''}`}>{etat.inactive ? <span className="inactive-status-mark" aria-label="Rend inactif">🌀</span> : null}{etat.name} · {libelleEtat(etat)}<button onClick={onRetirer}>×</button></span>;
+  return <span className={`status ${typeEtat(etat)} ${etat.advanceOn === 'round' ? 'round-status' : ''} ${etat.inactive ? 'inactive-status' : ''} ${etat.expired ? 'expired' : ''}`}>{etat.inactive ? <span className="inactive-status-mark" aria-label="Rend inactif">🌀</span> : null}{etat.name} · {libelleEtat(etat)}<button onClick={onRetirer}>×</button></span>;
 }
 
 export function BadgeRound({ round, effect, phase }) {

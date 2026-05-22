@@ -1,4 +1,4 @@
-import { BadgeRound } from '../commun/ComposantsCommuns.jsx';
+import { BadgeRound, EtiquetteEtat } from '../commun/ComposantsCommuns.jsx';
 import { CompteurGlobal } from '../suivis/CompteurGlobal.jsx';
 import { BoutonTourPrecedent } from './BoutonTourPrecedent.jsx';
 
@@ -23,6 +23,8 @@ export function EnteteScene(props) {
     onRetourPreparation,
     onModifierCompteurGlobal,
     onToggleCompteurTemps,
+    onAjouterEtatScene,
+    onRetirerEtatScene,
   } = props;
   const horlogeABloquee = horlogesBloquantes.length > 0;
   const enPreparation = scene.round < 0;
@@ -67,6 +69,10 @@ export function EnteteScene(props) {
           </div>
         </div>
         <button className={`turn-btn next ${classeSuivant}`} onClick={onTourSuivant} disabled={suivantDesactive} aria-label={libelleSuivant}>{horlogeABloquee ? '⏸' : '➜'}</button>
+      </div>
+      <div className="statuses status-control-row scene-status-row">
+        {(scene.statuses || []).map((etat) => <EtiquetteEtat key={etat.id} etat={etat} onRetirer={() => onRetirerEtatScene?.(etat.id)} />)}
+        <button className="small-btn" onClick={onAjouterEtatScene}>+ état scène</button>
       </div>
     </header>
   );

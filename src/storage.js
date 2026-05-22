@@ -11,7 +11,7 @@ import {
 } from './constants.js';
 import { campaignRulesFromPayload, normalizeCampaignRules, unifyCampaignScenes } from './domain/campaignRules.js';
 import { normalizeGlobalTracker } from './domain/globalTracker.js';
-import { isPointsTracker, normalizeThresholds, makeDefaultCampaign, uid } from './logic.js';
+import { isPointsTracker, normalizeBoxTracker, normalizeThresholds, normalizeTrackerThresholds, makeDefaultCampaign, uid } from './logic.js';
 import { isTemplateStoreLike, loadTemplateStore, normalizeTemplateStore } from './templates.js';
 
 export const CADENCE_CAMPAIGN_FORMAT = 'cadence-campaign';
@@ -65,6 +65,7 @@ function normalizeStatus(status) {
     remaining: status.remaining == null ? null : Math.max(0, numberOr(status.remaining, status.duration || 0)),
     loop: booleanOr(status.loop),
     inactive: booleanOr(status.inactive),
+    advanceOn: status.advanceOn === 'round' ? 'round' : 'activation',
     expired: booleanOr(status.expired),
   };
 }
@@ -77,21 +78,22 @@ function normalizeResetRule(rule = {}) {
     stepMode: rule.stepMode === 'percent' ? 'percent' : 'flat',
     pointsAutoMode: ['increase', 'decrease', 'default'].includes(rule.pointsAutoMode) ? rule.pointsAutoMode : 'default',
     counterRules: isPlainObject(rule.counterRules) ? rule.counterRules : {},
+    boxBlocks: isPlainObject(rule.boxBlocks) ? rule.boxBlocks : {},
     minCap: rule.minCap === '' ? '' : rule.minCap ?? '',
     maxCap: rule.maxCap === '' ? '' : rule.maxCap ?? '',
     excessReductionPercent: rule.excessReductionPercent === '' ? '' : rule.excessReductionPercent ?? '',
+    underflowRecoveryPercent: rule.underflowRecoveryPercent === '' ? '' : rule.underflowRecoveryPercent ?? '',
     overflowTrimPercent: numberOr(rule.overflowTrimPercent, 0),
     rounding: ['nearest', 'floor', 'ceil'].includes(rule.rounding) ? rule.rounding : 'floor',
     amount: Math.max(1, numberOr(rule.amount, 1)),
-    targetRowId: stringOr(rule.targetRowId, ''),
     after: ['none', 'zero', 'max', 'initial'].includes(rule.after) ? rule.after : 'none',
   };
 }
 
 function normalizeTracker(tracker) {
   if (!isPlainObject(tracker)) return null;
-  const rawType = ['bar', 'points', 'dots', 'clock', 'boxes', 'boxesFree', 'boxesSorted', 'number'].includes(tracker.type) ? tracker.type : 'bar';
-  const type = rawType === 'dots' ? 'points' : ['boxesFree', 'boxesSorted'].includes(rawType) ? 'boxes' : rawType;
+  const rawType = ['bar', 'points', 'dots', 'clock', 'boxes', 'number'].includes(tracker.type) ? tracker.type : 'bar';
+  const type = rawType === 'dots' ? 'points' : rawType;
   const base = {
     ...tracker,
     id: stringOr(tracker.id, uid('t')),
@@ -101,33 +103,20 @@ function normalizeTracker(tracker) {
   };
 
   if (type === 'boxes') {
-    return {
+    return normalizeBoxTracker({
       ...base,
       type: 'boxes',
-      boxMode: tracker.boxMode === 'free' || rawType === 'boxesFree' ? 'free' : 'sorted',
       secret: booleanOr(tracker.secret),
       autoReset: ['never', 'round', 'activation'].includes(tracker.autoReset) ? tracker.autoReset : (type === 'clock' ? 'activation' : 'never'),
       autoResetPaused: booleanOr(tracker.autoResetPaused),
       resetMode: ['initial', 'zero', 'checked', 'boxDelta'].includes(tracker.resetMode) ? tracker.resetMode : 'initial',
       resetRule: normalizeResetRule(tracker.resetRule),
       resetDefaultMode: ['full', 'empty', 'custom'].includes(tracker.resetDefaultMode) ? tracker.resetDefaultMode : 'empty',
-      fillLevels: Math.max(1, Math.min(5, numberOr(tracker.fillLevels, 5))),
+      fillLevels: Math.max(1, Math.min(5, numberOr(tracker.fillLevels, 1))),
       levelLabels: normalizeArray(tracker.levelLabels).map((label) => String(label || '').trim()).filter(Boolean).slice(0, 5),
       levelPriorities: normalizeArray(tracker.levelPriorities).map((priority) => Math.max(1, numberOr(priority, 1))).slice(0, 5),
-      globalSort: tracker.globalSort !== false,
-      rows: normalizeArray(tracker.rows).filter(isPlainObject).map((row) => ({
-        ...row,
-        id: stringOr(row.id, uid('r')),
-        label: stringOr(row.label, 'Ligne'),
-        marks: normalizeArray(row.marks).map((mark) => Math.max(0, numberOr(mark, 0))),
-      })),
-      initialRows: normalizeArray(tracker.initialRows).filter(isPlainObject).map((row) => ({
-        ...row,
-        id: stringOr(row.id, uid('r')),
-        label: stringOr(row.label, 'Ligne'),
-        marks: normalizeArray(row.marks).map((mark) => Math.max(0, numberOr(mark, 0))),
-      })),
-    };
+      blocks: normalizeArray(tracker.blocks).filter(isPlainObject),
+    });
   }
 
   if (type === 'clock' || isPointsTracker(type)) {
@@ -169,7 +158,7 @@ function normalizeTracker(tracker) {
     max: tracker.max == null || tracker.max === '' ? null : numberOr(tracker.max, type === 'bar' ? 20 : 0),
     step: Math.max(1, numberOr(tracker.step, type === 'bar' ? 5 : 1)),
     direction: type === 'bar' && tracker.direction === 'progression' ? 'progression' : 'countdown',
-    thresholds: normalizeThresholds(tracker.thresholds),
+    thresholds: normalizeTrackerThresholds(type, tracker.thresholds),
     secret: booleanOr(tracker.secret),
     autoReset: ['never', 'round', 'activation'].includes(tracker.autoReset) ? tracker.autoReset : (type === 'clock' ? 'activation' : 'never'),
     autoResetPaused: booleanOr(tracker.autoResetPaused),
@@ -228,6 +217,7 @@ export function normalizeCampaignScene(scene) {
     activeId: stringOr(scene.activeId),
     notes: stringOr(scene.notes),
     reserveNotes: stringOr(scene.reserveNotes),
+    statuses: normalizeArray(scene.statuses).map(normalizeStatus).filter(Boolean),
     temporalite: stringOr(scene.temporalite, defaultTemporalityMode),
     jouesSouples: normalizeArray(scene.jouesSouples).map((id) => String(id)),
     historiqueSouple: normalizeArray(scene.historiqueSouple).map((id) => String(id)),

@@ -240,7 +240,15 @@ function resetTrackerIds(trackers = []) {
       return {
         ...clone(tracker),
         id: uid('t'),
-        rows: (tracker.rows || []).map((row) => ({ ...clone(row), id: uid('r') })),
+        blocks: (tracker.blocks || []).map((block) => ({
+          ...clone(block),
+          id: uid('block'),
+          lines: (block.lines || []).map((line) => ({
+            ...clone(line),
+            id: uid('line'),
+            boxes: (line.boxes || []).map((box) => ({ ...clone(box), id: uid('box') })),
+          })),
+        })),
       };
     }
     return { ...clone(tracker), id: uid('t') };

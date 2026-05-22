@@ -2,7 +2,7 @@ import { temporalityModes } from '../constants.js';
 import { trierParInitiative } from '../domain/initiative.js';
 import { stepAutoGlobalTracker } from '../domain/globalTracker.js';
 import { createStatus } from '../domain/statuses.js';
-import { clone, isBoxesTracker, isNumericTracker, resetAutoTrackers, resetTracker, tickParticipant, untickParticipant } from '../logic.js';
+import { clone, isBoxesTracker, isNumericTracker, resetAutoTrackers, resetTracker, tickParticipant, tickStatuses, untickParticipant, untickStatuses } from '../logic.js';
 import { ajouterJoueSouple, annulerDernierJoueSouple, retirerHistoriqueSouple, retirerJoueSouple, toutLeMondeAJoueSouple } from './flexibleTurnState.js';
 import { addRestorePoint, createBlankParticipant, optionsTri, placerEnReserve, valeurInitiativeRenseignee } from './sceneSupport.js';
 import {
@@ -86,6 +86,14 @@ function resetSuivisParticipant(participant) {
 
 function effacerEtatsParticipant(participant) {
   return { ...participant, statuses: [] };
+}
+
+function tickSceneRoundStatuses(scene) {
+  return { ...scene, statuses: tickStatuses(scene.statuses, 'round') };
+}
+
+function untickSceneRoundStatuses(scene) {
+  return { ...scene, statuses: untickStatuses(scene.statuses, 'round') };
 }
 
 export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, setScenes, setRestorePoints, setRoundEffect }) {
@@ -240,6 +248,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
     clearSceneStatuses() {
       updateScene((s) => ({
         ...s,
+        statuses: [],
         participants: (s.participants || []).map(effacerEtatsParticipant),
         reserve: (s.reserve || []).map(effacerEtatsParticipant).map(placerEnReserve),
       }));
@@ -266,6 +275,13 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
     },
     removeStatus(pid, sid) {
       updateParticipant(pid, (p) => ({ ...p, statuses: (p.statuses || []).filter((s) => s.id !== sid) }));
+    },
+    addSceneStatus(data) {
+      const status = createStatus({ ...data, advanceOn: data.advanceOn || 'round' });
+      if (status) updateScene((s) => ({ ...s, statuses: [...(s.statuses || []), status] }));
+    },
+    removeSceneStatus(sid) {
+      updateScene((s) => ({ ...s, statuses: (s.statuses || []).filter((status) => status.id !== sid) }));
     },
     nextTurn(direction = 1) {
       if (direction > 0 && scene.round < 0) {
@@ -366,8 +382,12 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
           activeId: s.participants[nextIndex].id,
           round: Math.max(0, s.round + roundDelta),
           globalTracker: roundDelta < 0 ? stepAutoGlobalTracker(s.globalTracker, -1) : s.globalTracker,
-          participants: s.participants.map((p, i) => i === currentIndex ? untickParticipant(p) : p),
-          reserve: roundDelta < 0 ? (s.reserve || []).map(untickParticipant).map(placerEnReserve) : (s.reserve || []).map(placerEnReserve),
+          statuses: roundDelta < 0 ? untickSceneRoundStatuses(s).statuses : s.statuses,
+          participants: s.participants.map((p, i) => {
+            const afterRound = roundDelta < 0 ? untickParticipant(p, 'round') : p;
+            return i === currentIndex ? untickParticipant(afterRound, 'activation') : afterRound;
+          }),
+          reserve: roundDelta < 0 ? (s.reserve || []).map((participant) => untickParticipant(participant, 'round')).map(placerEnReserve) : (s.reserve || []).map(placerEnReserve),
         }));
         return;
       }
@@ -378,16 +398,17 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
 
       setRoundEffect(roundDelta > 0 ? 'next' : null);
       updateScene((s) => {
+        const sceneAvecEtats = roundDelta > 0 ? tickSceneRoundStatuses(s) : s;
         const nextScene = {
-          ...s,
-          activeId: s.participants[nextIndex].id,
-          round: Math.max(1, s.round + roundDelta),
-          globalTracker: roundDelta > 0 ? stepAutoGlobalTracker(s.globalTracker, 1) : s.globalTracker,
-          participants: s.participants.map((p, i) => {
-            const afterRound = roundDelta > 0 ? resetAutoTrackers(p, 'round') : p;
-            return i === nextIndex ? resetAutoTrackers(tickParticipant(afterRound), 'activation') : afterRound;
+          ...sceneAvecEtats,
+          activeId: sceneAvecEtats.participants[nextIndex].id,
+          round: Math.max(1, sceneAvecEtats.round + roundDelta),
+          globalTracker: roundDelta > 0 ? stepAutoGlobalTracker(sceneAvecEtats.globalTracker, 1) : sceneAvecEtats.globalTracker,
+          participants: sceneAvecEtats.participants.map((p, i) => {
+            const afterRound = roundDelta > 0 ? tickParticipant(resetAutoTrackers(p, 'round'), 'round') : p;
+            return i === nextIndex ? resetAutoTrackers(tickParticipant(afterRound, 'activation'), 'activation') : afterRound;
           }),
-          reserve: roundDelta > 0 ? (s.reserve || []).map((participant) => tickParticipant(resetAutoTrackers(participant, 'round'))).map(placerEnReserve) : (s.reserve || []).map(placerEnReserve),
+          reserve: roundDelta > 0 ? (sceneAvecEtats.reserve || []).map((participant) => tickParticipant(resetAutoTrackers(participant, 'round'), 'round')).map(placerEnReserve) : (sceneAvecEtats.reserve || []).map(placerEnReserve),
         };
 
         if (roundDelta > 0) setRestorePoints((points) => addRestorePoint(points, s.id, nextScene));
