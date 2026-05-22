@@ -1,0 +1,31 @@
+import{activationAdvancePolicies as A,defaultActivationAdvancePolicy as DA,defaultInitiativeValueType as DIV,defaultPhaseActionMode as DPA,defaultPhaseDecrement as DPD,initiativeOrders as IO,initiativeValueTypes as IV,phaseActionModes as PA,temporalityModes as TM}from'../constants.js';
+import{ordreCreneauxClassique,participantsPourPhase,phaseSuivanteExiste,trierParInitiative}from'./initiative.js';
+export const declarationStages={DECLARATION:'declaration',RESOLUTION:'resolution'};
+const arr=v=>Array.isArray(v)?v:[],txt=v=>String(v??'').trim(),k=v=>txt(v).toLowerCase(),num=(v,f=0)=>Number.isFinite(Number(v))?Number(v):f,obj=v=>v&&typeof v==='object'&&!Array.isArray(v);
+const uniq=v=>{const s=new Set();return arr(v).map(txt).filter(Boolean).filter(x=>{const y=k(x);if(s.has(y))return false;s.add(y);return true;});};
+const opt=s=>({categoryOrder:s.categoryOrder,equalityRule:s.equalityRule,initiativeOrder:s.initiativeOrder});
+export const isDeclarationMode=s=>s?.temporalite===TM.DECLARATION;
+export const isCheckedPhaseMode=s=>s?.phaseActionMode===PA.CHECKED;
+export const usesLabelInitiative=s=>s?.initiativeValueType===IV.LABEL;
+export function normalizeInitiativeModeOptions(r={}){return{phaseActionMode:Object.values(PA).includes(r.phaseActionMode)?r.phaseActionMode:DPA,initiativeValueType:Object.values(IV).includes(r.initiativeValueType)?r.initiativeValueType:DIV,initiativeLabels:uniq(r.initiativeLabels),multipleActionSlots:r.multipleActionSlots!==false,activationAdvancePolicy:Object.values(A).includes(r.activationAdvancePolicy)?r.activationAdvancePolicy:DA,declarationRequireText:!!r.declarationRequireText};}
+export const initiativeLabelRank=(v,labels=[])=>{const i=uniq(labels).findIndex(x=>k(x)===k(v));return i>=0?i:null;};
+export const initiativeSortValue=(v,r={})=>usesLabelInitiative(r)?initiativeLabelRank(v,r.initiativeLabels)??txt(v)||'zzzz':num(v,0);
+export function compareInitiativeValues(a,b,r={}){const d=r.initiativeOrder===IO.ASC?1:-1,av=initiativeSortValue(a,r),bv=initiativeSortValue(b,r);return typeof av==='number'&&typeof bv==='number'?(av-bv)*d:String(av).localeCompare(String(bv),'fr',{numeric:true,sensitivity:'base'})*d;}
+export const normalizeParticipantPhaseActions=p=>uniq(p?.phaseActions||p?.phases||p?.checkedPhases);
+export const participantActsInCheckedPhase=(p,phase=1)=>normalizeParticipantPhaseActions(p).some(x=>k(x)===k(phase));
+export const checkedPhaseKeys=(participants=[],fallback=[])=>uniq([...fallback,...arr(participants).flatMap(normalizeParticipantPhaseActions)]);
+export function participantsPourPhaseAvancee(scene={},phase=scene.phase||1){return isCheckedPhaseMode(scene)?trierParInitiative(arr(scene.participants).filter(p=>participantActsInCheckedPhase(p,phase)),opt(scene)):participantsPourPhase(scene.participants||[],phase,scene.phaseDecrement||DPD,opt(scene));}
+export function phaseSuivanteAvanceeExiste(scene={},phase=scene.phase||1){if(!isCheckedPhaseMode(scene))return phaseSuivanteExiste(scene.participants||[],phase,scene.phaseDecrement||DPD);const keys=checkedPhaseKeys(scene.participants||[],scene.phaseOrder||scene.phases),i=keys.findIndex(x=>k(x)===k(phase));return i>=0&&keys.slice(i+1).some(x=>participantsPourPhaseAvancee({...scene,phase:x},x).length>0);}
+export function phaseSuivanteAvancee(scene={},phase=scene.phase||1){if(!isCheckedPhaseMode(scene))return Number(phase||1)+1;const keys=checkedPhaseKeys(scene.participants||[],scene.phaseOrder||scene.phases),i=keys.findIndex(x=>k(x)===k(phase));return keys.slice(Math.max(0,i)+1).find(x=>participantsPourPhaseAvancee({...scene,phase:x},x).length>0)||keys[i]||keys[0]||'1';}
+export function normalizeDeclarations(declarations={},participants=[]){const ids=new Set(arr(participants).map(p=>p.id));return Object.fromEntries(Object.entries(obj(declarations)?declarations:{}).map(([id,v])=>[String(id),txt(v)]).filter(([id,v])=>ids.has(id)&&v));}
+export function setDeclaration(scene={},participantId,value){const d=normalizeDeclarations(scene.declarations,scene.participants||[]),v=txt(value);if(v)d[participantId]=v;else delete d[participantId];return{...scene,declarations:d};}
+export const clearDeclarations=scene=>({...scene,declarations:{},resolutionOrder:[],declarationStage:declarationStages.DECLARATION,activeId:'',activeSlotId:''});
+export const declarationStage=scene=>scene?.declarationStage===declarationStages.RESOLUTION?declarationStages.RESOLUTION:declarationStages.DECLARATION;
+function declarants(scene={}){const d=normalizeDeclarations(scene.declarations,scene.participants||[]),decl=arr(scene.participants).filter(p=>d[p.id]);return scene.declarationRequireText&&decl.length?decl:scene.participants||[];}
+export const declarationResolutionSlots=(scene={},rules=scene)=>ordreCreneauxClassique(declarants(scene),{...opt(scene),...opt(rules)});
+export function orderedDeclarationResolutionSlots(scene={},rules=scene){const slots=declarationResolutionSlots(scene,rules),order=arr(scene.resolutionOrder);if(!order.length)return slots;const by=new Map(slots.map(s=>[s.actionSlotId||s.id,s]));const ordered=order.map(id=>by.get(id)).filter(Boolean),used=new Set(ordered.map(s=>s.actionSlotId||s.id));return[...ordered,...slots.filter(s=>!used.has(s.actionSlotId||s.id))];}
+export function enterDeclarationResolution(scene={},rules=scene){const slots=declarationResolutionSlots(scene,rules),first=slots[0];return{...scene,declarationStage:declarationStages.RESOLUTION,resolutionOrder:slots.map(s=>s.actionSlotId||s.id),activeId:first?.id||'',activeSlotId:first?.actionSlotId||''};}
+export const shouldAdvanceActivationForAction=(scene={},pid)=>scene.activationAdvancePolicy===A.EVERY_ACTION?true:!!pid&&!arr(scene.activatedThisRound).includes(String(pid));
+export const markActivationAdvanced=(scene={},pid)=>!pid||scene.activationPolicy===A.EVERY_ACTION?scene:{...scene,activatedThisRound:[...new Set([...arr(scene.activatedThisRound),String(pid)])]};
+export const resetRoundActivationMarks=scene=>({...scene,activatedThisRound:[]});
+export function applyManualActionCost(p={},cost=0){const c=Math.max(0,num(cost,0)),init=num(p.initiative,null);if(!c||init==null)return p;return{...p,initiative:init-c,actionSlots:arr(p.actionSlots).map((s,i)=>i? s:{...s,initiative:num(s.initiative,init)-c})};}
