@@ -10,11 +10,13 @@ import {
   initiativeOrders,
   temporalityModes,
 } from '../constants.js';
+import { declarationStages, normalizeInitiativeModeOptions } from './initiativeModes.js';
 import { trierParInitiative } from './initiative.js';
 
 export function normalizeCampaignRules(rules = {}) {
+  const initiativeModeOptions = normalizeInitiativeModeOptions(rules);
   return {
-    temporalite: rules.temporalite || defaultTemporalityMode,
+    temporalite: Object.values(temporalityModes).includes(rules.temporalite) ? rules.temporalite : defaultTemporalityMode,
     startRound: [0, 1].includes(Number(rules.startRound)) ? Number(rules.startRound) : defaultStartRound,
     phaseDecrement: Math.max(1, Number(rules.phaseDecrement) || defaultPhaseDecrement),
     phaseRerollEachRound: rules.phaseRerollEachRound ?? defaultPhaseRerollEachRound,
@@ -23,6 +25,7 @@ export function normalizeCampaignRules(rules = {}) {
     initiativeOrder: Object.values(initiativeOrders).includes(rules.initiativeOrder) ? rules.initiativeOrder : defaultInitiativeOrder,
     categoryOrder: Array.isArray(rules.categoryOrder) && rules.categoryOrder.length ? rules.categoryOrder : defaultCategoryOrder,
     rounding: ['nearest', 'floor', 'ceil'].includes(rules.rounding) ? rules.rounding : 'nearest',
+    ...initiativeModeOptions,
   };
 }
 
@@ -32,18 +35,26 @@ export function initiativeRulesFromScene(scene = {}) {
 
 function premierParticipantId(scene, rules) {
   if (rules?.temporalite === temporalityModes.FLEXIBLE) return '';
+  if (rules?.temporalite === temporalityModes.DECLARATION) return scene?.activeId || '';
   return scene?.activeId || trierParInitiative(scene?.participants || [], rules)[0]?.id || '';
 }
 
 function applyTemporality(scene, rules) {
+  const flexible = rules.temporalite === temporalityModes.FLEXIBLE;
+  const phases = rules.temporalite === temporalityModes.PHASES;
+  const declaration = rules.temporalite === temporalityModes.DECLARATION;
   return {
     ...scene,
     temporalite: rules.temporalite,
-    phase: rules.temporalite === temporalityModes.PHASES ? Math.max(1, Number(scene.phase) || 1) : 1,
+    phase: phases ? Math.max(1, Number(scene.phase) || 1) : 1,
     activeId: premierParticipantId(scene, rules),
-    activeSlotId: rules.temporalite === temporalityModes.CLASSIC ? (scene.activeSlotId || '') : '',
-    jouesSouples: rules.temporalite === temporalityModes.FLEXIBLE ? (scene.jouesSouples || []) : [],
-    historiqueSouple: rules.temporalite === temporalityModes.FLEXIBLE ? (scene.historiqueSouple || []) : [],
+    activeSlotId: rules.temporalite === temporalityModes.CLASSIC || (declaration && scene.declarationStage === declarationStages.RESOLUTION) ? (scene.activeSlotId || '') : '',
+    jouesSouples: flexible ? (scene.jouesSouples || []) : [],
+    historiqueSouple: flexible ? (scene.historiqueSouple || []) : [],
+    declarationStage: declaration ? (scene.declarationStage === declarationStages.RESOLUTION ? declarationStages.RESOLUTION : declarationStages.DECLARATION) : '',
+    declarations: declaration && scene.declarations && typeof scene.declarations === 'object' && !Array.isArray(scene.declarations) ? scene.declarations : {},
+    resolutionOrder: declaration && Array.isArray(scene.resolutionOrder) ? scene.resolutionOrder : [],
+    activatedThisRound: Array.isArray(scene.activatedThisRound) ? scene.activatedThisRound : [],
   };
 }
 
@@ -62,6 +73,12 @@ export function applyInitiativeRules(scene, patch = {}) {
     initiativeOrder: next.initiativeOrder,
     categoryOrder: next.categoryOrder,
     rounding: next.rounding,
+    phaseActionMode: next.phaseActionMode,
+    initiativeValueType: next.initiativeValueType,
+    initiativeLabels: next.initiativeLabels,
+    multipleActionSlots: next.multipleActionSlots,
+    activationAdvancePolicy: next.activationAdvancePolicy,
+    declarationRequireText: next.declarationRequireText,
   };
 }
 
