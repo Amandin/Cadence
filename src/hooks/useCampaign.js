@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createCampaignActions } from '../actions/campaignActions.js';
 import { createSceneActions } from '../actions/sceneActions.js';
+import { defaultCategoryOrder, defaultEqualityRule, defaultInitiativeOrder } from '../constants.js';
 import { applyInitiativeRules, campaignRulesFromPayload, normalizeCampaignRules, unifyCampaignScenes } from '../domain/campaignRules.js';
 import { normalizeGlobalTracker, stepGlobalTracker } from '../domain/globalTracker.js';
+import { normaliserCreneauxAction, trierParInitiative } from '../domain/initiative.js';
 import { clone, hasTriggeredClock, nextTurnInfo, uid } from '../logic.js';
 import { campaignNameFromPayload, campaignTemplatesFromPayload, loadCampaign, normalizeCampaignScene, normalizeCampaignScenes, saveCampaign } from '../storage.js';
 
@@ -21,6 +23,24 @@ function initialRestorePoints(scenes) {
 
 function devicePrefersDark() {
   return typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches;
+}
+
+function initiativeOptions(scene = {}) {
+  return {
+    categoryOrder: scene.categoryOrder || defaultCategoryOrder,
+    equalityRule: scene.equalityRule || defaultEqualityRule,
+    initiativeOrder: scene.initiativeOrder || defaultInitiativeOrder,
+    initiativeTextOrder: scene.initiativeTextOrder,
+  };
+}
+
+function participantAvecInitiativeAjustee(participant, valeur, slotId, options) {
+  const slots = normaliserCreneauxAction(participant, options);
+  const targetIndex = Math.max(0, slots.findIndex((slot) => slot.actionSlotId === slotId || slot.id === slotId));
+  const index = targetIndex >= 0 ? targetIndex : 0;
+  const modifies = slots.map((slot, position) => position === index ? { ...slot, initiative: valeur, order: position } : { ...slot, order: position });
+  const actionSlots = normaliserCreneauxAction({ ...participant, initiative: modifies[0]?.initiative ?? valeur, actionSlots: modifies }, options);
+  return { ...participant, initiative: actionSlots[0]?.initiative ?? valeur, actionSlots };
 }
 
 export function useCampaign() {
@@ -65,6 +85,16 @@ export function useCampaign() {
     },
     stepGlobal(delta) {
       setScenes((list) => list.map((s, i) => i === sceneIndex ? { ...s, globalTracker: stepGlobalTracker(s.globalTracker, delta) } : s));
+    },
+    adjustParticipantInitiative(participantId, valeur, slotId) {
+      const clean = String(valeur ?? '').trim();
+      if (!clean) return;
+      setScenes((list) => list.map((s, i) => {
+        if (i !== sceneIndex) return s;
+        const options = initiativeOptions(s);
+        const participantsAjustes = (s.participants || []).map((participant) => participant.id === participantId ? participantAvecInitiativeAjustee(participant, clean, slotId, options) : participant);
+        return { ...s, participants: trierParInitiative(participantsAjustes, options) };
+      }));
     },
   }), [sceneIndex]);
 
