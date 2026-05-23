@@ -18,8 +18,8 @@ import {
   temporalityLabels,
   temporalityModes,
 } from '../../constants.js';
-import { initiativeTextOrderPresetIds, initiativeTextOrderPresets, normalizeInitiativeTextOrder, presetInitiativeTextOrder } from '../../domain/initiativeTextOrder.js';
-import { Fenetre } from '../commun/ComposantsCommuns.jsx';
+import { normalizeInitiativeTextOrder } from '../../domain/initiativeTextOrder.js';
+import { FenetreInitiativeTextuelleEdition } from './FenetreInitiativeTextuelleEdition.jsx';
 import { OngletTemplates } from './OngletTemplates.jsx';
 
 function OngletsHub({ onglet, setOnglet }) {
@@ -74,22 +74,6 @@ function OptionsInitiativeTextuelleCampagne({ scene, onConfigurer }) {
   return <div className="scene-options compact-options advanced-rule-block"><div className="hub-section-head"><h3>Initiative par liste</h3><button className="small-btn" onClick={onConfigurer}>Configurer</button></div><p className="muted compact-help">Pour cartes, tarot ou postures. La saisie utilise des menus déroulants ; Cadence calcule un rang numérique invisible.</p><small className="muted">{resume}</small></div>;
 }
 
-function FenetreInitiativeTextuelle({ config, onFermer, onValider }) {
-  const [draft, setDraft] = useState(() => normalizeInitiativeTextOrder(config));
-  const modifierPart = (index, patch) => setDraft((current) => ({ ...current, parts: current.parts.map((part, position) => position === index ? { ...part, ...patch } : part) }));
-  const modifierValeurs = (index, texte) => modifierPart(index, { values: texte.split('\n').map((line) => line.trim()).filter(Boolean) });
-  const appliquerPreset = (id) => setDraft(presetInitiativeTextOrder(id));
-  return <Fenetre title="Initiative par liste" onClose={onFermer}>
-    <div className="stack">
-      <label className="advanced-radio selected"><input type="checkbox" checked={draft.enabled} onChange={(event) => setDraft((current) => ({ ...current, enabled: event.target.checked }))} /><span><strong>Activer l’initiative par menus</strong><small>Remplace les champs numériques par des sélecteurs.</small></span></label>
-      <label className="field">Preset<select value={draft.preset || ''} onChange={(event) => appliquerPreset(event.target.value)}><option value="">Personnalisé</option>{Object.values(initiativeTextOrderPresetIds).map((id) => <option key={id} value={id}>{initiativeTextOrderPresets[id].label}</option>)}</select></label>
-      <label className="field">Séparateur stocké<input type="text" value={draft.separator} onChange={(event) => setDraft((current) => ({ ...current, separator: event.target.value }))} /></label>
-      {(draft.parts.length ? draft.parts : [{ label: 'Partie 1', values: [] }, { label: 'Partie 2', values: [] }]).slice(0, 2).map((part, index) => <div className="scene-options compact-options advanced-rule-block" key={index}><label className="field">Nom de la partie<input type="text" value={part.label} onChange={(event) => modifierPart(index, { label: event.target.value })} /></label><label className="field">Ordre des choix<textarea rows={Math.min(12, Math.max(4, part.values.length + 1))} value={(part.values || []).join('\n')} onChange={(event) => modifierValeurs(index, event.target.value)} /></label><p className="muted compact-help">Un choix par ligne, du plus prioritaire au moins prioritaire.</p></div>)}
-      <div className="grid2"><button className="primary" onClick={() => onValider({ initiativeTextOrder: normalizeInitiativeTextOrder(draft) })}>Enregistrer</button><button className="small-btn" onClick={onFermer}>Annuler</button></div>
-    </div>
-  </Fenetre>;
-}
-
 function OptionsOrdreCategoriesCampagne({ scene, onModifier }) {
   const order = scene?.categoryOrder || defaultCategoryOrder;
   const deplacer = (index, delta) => { const target = index + delta; if (target < 0 || target >= order.length) return; const suivant = [...order]; [suivant[index], suivant[target]] = [suivant[target], suivant[index]]; onModifier({ categoryOrder: suivant }); };
@@ -100,7 +84,7 @@ function OngletRegles({ scene, onModifierRegles }) {
   const temporalite = scene?.temporalite || defaultTemporalityMode;
   const [initiativeTextuelleOuverte, setInitiativeTextuelleOuverte] = useState(false);
   const validerInitiativeTextuelle = (patch) => { onModifierRegles(patch); setInitiativeTextuelleOuverte(false); };
-  return <div className="stack hub-section panel"><div><h3>Règles d’initiative</h3><p className="muted compact-help">Ces réglages sont appliqués à toutes les scènes de la campagne et servent de base aux nouvelles scènes.</p></div><OptionsDepartCampagne startRound={scene?.startRound} onModifier={onModifierRegles} /><OptionsTemporaliteCampagne temporalite={temporalite} onModifier={onModifierRegles} />{temporalite === temporalityModes.PHASES && <OptionsPhasesCampagne scene={scene} onModifier={onModifierRegles} />}<OptionsOrdreInitiativeCampagne scene={scene} onModifier={onModifierRegles} /><OptionsInitiativeTextuelleCampagne scene={scene} onConfigurer={() => setInitiativeTextuelleOuverte(true)} /><OptionsEgalitesCampagne scene={scene} onModifier={onModifierRegles} /><OptionsOrdreCategoriesCampagne scene={scene} onModifier={onModifierRegles} />{initiativeTextuelleOuverte && <FenetreInitiativeTextuelle config={scene?.initiativeTextOrder} onFermer={() => setInitiativeTextuelleOuverte(false)} onValider={validerInitiativeTextuelle} />}</div>;
+  return <div className="stack hub-section panel"><div><h3>Règles d’initiative</h3><p className="muted compact-help">Ces réglages sont appliqués à toutes les scènes de la campagne et servent de base aux nouvelles scènes.</p></div><OptionsDepartCampagne startRound={scene?.startRound} onModifier={onModifierRegles} /><OptionsTemporaliteCampagne temporalite={temporalite} onModifier={onModifierRegles} />{temporalite === temporalityModes.PHASES && <OptionsPhasesCampagne scene={scene} onModifier={onModifierRegles} />}<OptionsOrdreInitiativeCampagne scene={scene} onModifier={onModifierRegles} /><OptionsInitiativeTextuelleCampagne scene={scene} onConfigurer={() => setInitiativeTextuelleOuverte(true)} /><OptionsEgalitesCampagne scene={scene} onModifier={onModifierRegles} /><OptionsOrdreCategoriesCampagne scene={scene} onModifier={onModifierRegles} />{initiativeTextuelleOuverte && <FenetreInitiativeTextuelleEdition config={scene?.initiativeTextOrder} onFermer={() => setInitiativeTextuelleOuverte(false)} onValider={validerInitiativeTextuelle} />}</div>;
 }
 
 function OngletSauvegarde({ onExporter, onImporter, onReinitialiser }) {
