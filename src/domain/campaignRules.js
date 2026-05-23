@@ -12,6 +12,7 @@ import {
 } from '../constants.js';
 import { declarationStages, normalizeInitiativeModeOptions } from './initiativeModes.js';
 import { trierParInitiative } from './initiative.js';
+import { normalizeInitiativeTextOrder } from './initiativeTextOrder.js';
 
 export function normalizeCampaignRules(rules = {}) {
   const initiativeModeOptions = normalizeInitiativeModeOptions(rules);
@@ -25,6 +26,7 @@ export function normalizeCampaignRules(rules = {}) {
     initiativeOrder: Object.values(initiativeOrders).includes(rules.initiativeOrder) ? rules.initiativeOrder : defaultInitiativeOrder,
     categoryOrder: Array.isArray(rules.categoryOrder) && rules.categoryOrder.length ? rules.categoryOrder : defaultCategoryOrder,
     rounding: ['nearest', 'floor', 'ceil'].includes(rules.rounding) ? rules.rounding : 'nearest',
+    initiativeTextOrder: normalizeInitiativeTextOrder(rules.initiativeTextOrder),
     ...initiativeModeOptions,
   };
 }
@@ -79,6 +81,7 @@ export function applyInitiativeRules(scene, patch = {}) {
     multipleActionSlots: next.multipleActionSlots,
     activationAdvancePolicy: next.activationAdvancePolicy,
     declarationRequireText: next.declarationRequireText,
+    initiativeTextOrder: next.initiativeTextOrder,
   };
 }
 
