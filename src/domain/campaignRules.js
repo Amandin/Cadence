@@ -27,6 +27,7 @@ export function normalizeCampaignRules(rules = {}) {
     categoryOrder: Array.isArray(rules.categoryOrder) && rules.categoryOrder.length ? rules.categoryOrder : defaultCategoryOrder,
     rounding: ['nearest', 'floor', 'ceil'].includes(rules.rounding) ? rules.rounding : 'nearest',
     initiativeTextOrder: normalizeInitiativeTextOrder(rules.initiativeTextOrder),
+    promptInitiativeOnNext: !!rules.promptInitiativeOnNext,
     ...initiativeModeOptions,
   };
 }
@@ -82,6 +83,7 @@ export function applyInitiativeRules(scene, patch = {}) {
     activationAdvancePolicy: next.activationAdvancePolicy,
     declarationRequireText: next.declarationRequireText,
     initiativeTextOrder: next.initiativeTextOrder,
+    promptInitiativeOnNext: next.promptInitiativeOnNext,
   };
 }
 
