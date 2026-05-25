@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { APP_VERSION } from '../../constants.js';
+import { activeGlobalTrackerThresholds, globalTrackerDisplayValue, globalTrackerTimerState } from '../../domain/globalTracker.js';
 import { EtiquetteEtat, Fenetre } from '../commun/ComposantsCommuns.jsx';
 
 function MenuEntete({ sombre, onChangerTheme, onClose }) {
@@ -51,10 +52,10 @@ function OptionsCompteurScene({ scene, compteur, onModifier, onChanger, onOuvrir
   return (
     <div className="scene-options compact-options">
       <div className="compact-option-title">
-        <h3>Compteur de scène</h3>
+        <h3>Suivi global</h3>
         <div className="row">
-          <button className="small-btn" onClick={onOuvrirAvance}>Seuils</button>
-          <button className={`scene-clock-toggle ${courant.enabled ? 'active' : ''}`} onClick={() => modifier({ enabled: !courant.enabled })} aria-label="Activer ou désactiver le compteur de scène" title="Compteur de scène">
+          <button className="small-btn" onClick={onOuvrirAvance}>Modifier</button>
+          <button className={`scene-clock-toggle ${courant.enabled ? 'active' : ''}`} onClick={() => modifier({ enabled: !courant.enabled })} aria-label="Activer ou desactiver le suivi global" title="Suivi global">
             <span>{courant.enabled ? '◷' : '○'}</span>
           </button>
         </div>
@@ -78,6 +79,52 @@ function OptionsCompteurScene({ scene, compteur, onModifier, onChanger, onOuvrir
           </div>
         </div>}
       </div>
+    </div>
+  );
+}
+
+function formaterSecondes(secondes) {
+  const total = Math.max(0, Math.floor(secondes));
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+}
+
+function resumeSuiviGlobal(compteur) {
+  if (!compteur?.enabled) return 'Aucun suivi global configure';
+  const nom = compteur.name || (compteur.mode === 'timer' ? 'Minuteur' : compteur.mode === 'stopwatch' ? 'Chrono' : 'Suivi global');
+  if (compteur.mode === 'timer') {
+    const etat = globalTrackerTimerState(compteur);
+    const valeur = compteur.limitMode === 'overflow' && etat.complete ? `+${formaterSecondes(etat.overrunSeconds)}` : formaterSecondes(etat.remainingSeconds);
+    return `${nom} - ${valeur}`;
+  }
+  if (compteur.mode === 'stopwatch') return `${nom} - ${formaterSecondes(globalTrackerDisplayValue(compteur))}`;
+
+  const max = Math.max(1, Number(compteur.max || 1));
+  const valeur = Math.max(0, Number(compteur.current || 0));
+  const seuil = activeGlobalTrackerThresholds(compteur)[0]?.label;
+  if (compteur.mode === 'counter') return `${nom} - ${valeur}${seuil ? `, seuil : ${seuil}` : ''}`;
+  if (compteur.limitMode === 'loop') {
+    const boucles = Math.max(0, Number(compteur.loops || 0));
+    return `${nom} - ${boucles} boucle${boucles > 1 ? 's' : ''}${seuil ? `, seuil : ${seuil}` : ''}`;
+  }
+  if (max === 1 && seuil) return `${nom} - ${seuil}`;
+  return `${nom} - ${valeur} / ${max}${seuil ? `, seuil : ${seuil}` : ''}`;
+}
+
+function OptionsSuiviGlobal({ compteur, onModifier, onOuvrirAvance }) {
+  const courant = compteur || { enabled: false, name: 'Menace', mode: 'clock', current: 0, max: 10 };
+  const modifier = (patch) => onModifier({ ...courant, ...patch });
+
+  return (
+    <div className="scene-options compact-options menu-global-tracker">
+      <div className="compact-option-title">
+        <h3>Suivi global</h3>
+        <label className={`global-switch ${courant.enabled ? 'active' : ''}`}>
+          <span>{courant.enabled ? 'ON' : 'OFF'}</span>
+          <input type="checkbox" checked={!!courant.enabled} onChange={(event) => modifier({ enabled: event.target.checked })} aria-label="Activer ou desactiver le suivi global" />
+        </label>
+      </div>
+      <p className="global-summary">{resumeSuiviGlobal(courant)}</p>
+      <button className="small-btn global-edit-btn" onClick={onOuvrirAvance}>Modifier</button>
     </div>
   );
 }
@@ -163,12 +210,12 @@ export function MenuPrincipal({ scene, restorePoints = [], onRestore, onReturnTo
 
   return (
     <Fenetre title="Menu" onClose={onClose} header={<MenuEntete sombre={dark} onChangerTheme={setDark} onClose={onClose} />}>
-      <button className="primary hub-menu-main-action" onClick={onOpenCampaignHub}>Hub de campagne</button>
+      <button className="primary hub-menu-main-action" onClick={onOpenCampaignHub}>Retour au hub de campagne</button>
       <ActionsScene onAjouterParticipant={onAddParticipant} onSaisirInitiatives={onOpenInitiativeRoller} />
       <EtatsSceneMenu scene={scene} onAjouterEtatScene={onAddSceneStatus} onRetirerEtatScene={onRemoveSceneStatus} onEffacerEtats={onClearStatuses} />
+      <OptionsSuiviGlobal compteur={scene?.globalTracker} onModifier={onGlobalTracker} onOuvrirAvance={onOpenGlobalTracker} />
       <NotesSceneMenu scene={scene} onModifierNotes={onUpdateSceneNotes} />
       <OptionsDerouleScene scene={scene} points={pointsRestauration} pointActif={pointRestaurationId} onChoisirPoint={setPointRestaurationId} onRestaurer={onRestore} onRetourPreparation={onReturnToPreparation} onAvancerRound={onAdvanceRound} onResetSuivis={onResetTrackers} onEffacerEtats={onClearStatuses} />
-      <OptionsCompteurScene scene={scene} compteur={scene?.globalTracker} onModifier={onGlobalTracker} onChanger={onStepGlobalTracker} onOuvrirAvance={onOpenGlobalTracker} />
     </Fenetre>
   );
 }

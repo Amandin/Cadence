@@ -295,13 +295,13 @@ export function useTemplates(store, setStore) {
 
   const getSceneCounterTemplate = (templateId) => templateStore.sceneCounterTemplates.find((template) => template.id === templateId) || null;
   const createSceneCounterTemplate = () => {
-    const counter = { enabled: true, name: 'Nouveau compteur', mode: 'clock', current: 0, max: 6, auto: false, thresholds: [] };
+    const counter = { enabled: true, name: 'Nouveau suivi global', mode: 'clock', current: 0, max: 6, direction: 'progression', trigger: 'manual', limitMode: 'clamp', total: 0, loops: 0, auto: false, thresholds: [] };
     const template = makeSceneCounterTemplateFromCounter(counter, { name: uniqueFlatTemplateName(templateStore.sceneCounterTemplates, counter.name) });
     updateStore((currentStore) => ({ ...currentStore, sceneCounterTemplates: [...currentStore.sceneCounterTemplates, template] }));
     return template;
   };
   const updateSceneCounterTemplate = (templateId, counter, name) => {
-    const cleanName = templateCategoryFromName(name || counter?.name) || 'Compteur de scene';
+    const cleanName = templateCategoryFromName(name || counter?.name) || 'Suivi global';
     updateStore((currentStore) => ({
       ...currentStore,
       sceneCounterTemplates: currentStore.sceneCounterTemplates.map((template) => template.id === templateId

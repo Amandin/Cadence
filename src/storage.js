@@ -23,7 +23,7 @@ import { isPointsTracker, normalizeBoxTracker, normalizeThresholds, normalizeTra
 import { isTemplateStoreLike, loadTemplateStore, normalizeTemplateStore } from './templates.js';
 
 export const CADENCE_CAMPAIGN_FORMAT = 'cadence-campaign';
-export const CADENCE_CAMPAIGN_SCHEMA_VERSION = 1;
+export const CADENCE_CAMPAIGN_SCHEMA_VERSION = 2;
 export const DEFAULT_CAMPAIGN_NAME = 'Campagne Cadence';
 
 function isPlainObject(value) {
@@ -52,6 +52,32 @@ function initiativeOr(value, fallback = 0) {
 
 function normalizeArray(value) {
   return Array.isArray(value) ? value : [];
+}
+
+function slugifyFilePart(value) {
+  const normalized = normalizeCampaignName(value)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return normalized || 'campagne-cadence';
+}
+
+function normalizeCampaignFileName(value, name) {
+  const fallback = `${slugifyFilePart(name)}.cad`;
+  const clean = typeof value === 'string' ? value.trim() : '';
+  return clean.endsWith('.cad') ? clean : fallback;
+}
+
+function normalizeCampaignFolderName(value, name) {
+  const clean = typeof value === 'string' ? value.trim() : '';
+  return clean || slugifyFilePart(name);
+}
+
+function normalizeCampaignId(value, name) {
+  const clean = typeof value === 'string' ? value.trim() : '';
+  return clean || slugifyFilePart(name);
 }
 
 function normalizeKind(kind) {
@@ -264,14 +290,24 @@ export function normalizeCampaignScenes(scenes) {
   return normalizeArray(scenes).map(normalizeCampaignScene).filter(Boolean);
 }
 
-export function createCampaignPayload(scenes, dark, campaignName = DEFAULT_CAMPAIGN_NAME, templates, initiativeRules) {
+export function createCampaignPayload(scenes, dark, campaignName = DEFAULT_CAMPAIGN_NAME, templates, initiativeRules, campaignMeta = {}) {
   const safeScenes = normalizeCampaignScenes(scenes);
   const rules = normalizeCampaignRules(initiativeRules || campaignRulesFromPayload({ scenes: safeScenes }));
+  const name = normalizeCampaignName(campaignMeta.name || campaignName);
+  const folderName = normalizeCampaignFolderName(campaignMeta.folderName, name);
+  const fileName = normalizeCampaignFileName(campaignMeta.fileName, name);
   return {
     format: CADENCE_CAMPAIGN_FORMAT,
     schemaVersion: CADENCE_CAMPAIGN_SCHEMA_VERSION,
-    name: normalizeCampaignName(campaignName),
+    campaign: {
+      id: normalizeCampaignId(campaignMeta.id, name),
+      name,
+      folderName,
+      fileName,
+    },
+    name,
     version: APP_VERSION,
+    savedAt: new Date().toISOString(),
     initiativeRules: rules,
     scenes: unifyCampaignScenes(safeScenes, rules),
     templates: normalizeTemplateStore(templates),
@@ -280,7 +316,18 @@ export function createCampaignPayload(scenes, dark, campaignName = DEFAULT_CAMPA
 }
 
 export function campaignNameFromPayload(data) {
-  return normalizeCampaignName(data?.name || data?.settings?.campaignName);
+  return normalizeCampaignName(data?.campaign?.name || data?.name || data?.settings?.campaignName);
+}
+
+export function campaignMetaFromPayload(data) {
+  const name = campaignNameFromPayload(data);
+  const source = isPlainObject(data?.campaign) ? data.campaign : {};
+  return {
+    id: normalizeCampaignId(source.id, name),
+    name,
+    folderName: normalizeCampaignFolderName(source.folderName, name),
+    fileName: normalizeCampaignFileName(source.fileName, name),
+  };
 }
 
 export function campaignTemplatesFromPayload(data) {
@@ -293,13 +340,16 @@ export function normalizeCampaignPayload(data) {
   const sourceScenes = scenes.length ? scenes : normalizeCampaignScenes(fallback.scenes);
   const initiativeRules = campaignRulesFromPayload({ ...(isPlainObject(data) ? data : {}), scenes: sourceScenes });
   const settings = isPlainObject(data?.settings) ? data.settings : {};
+  const campaign = campaignMetaFromPayload(data);
 
   return {
     ...(isPlainObject(data) ? data : {}),
     format: CADENCE_CAMPAIGN_FORMAT,
     schemaVersion: CADENCE_CAMPAIGN_SCHEMA_VERSION,
-    name: campaignNameFromPayload(data),
+    campaign,
+    name: campaign.name,
     version: APP_VERSION,
+    savedAt: typeof data?.savedAt === 'string' ? data.savedAt : new Date().toISOString(),
     initiativeRules,
     scenes: unifyCampaignScenes(sourceScenes, initiativeRules),
     templates: campaignTemplatesFromPayload(data),
@@ -321,12 +371,12 @@ export function loadCampaign() {
   return normalizeCampaignPayload(makeDefaultCampaign());
 }
 
-export function saveCampaign(scenes, dark, campaignName, templates, initiativeRules) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(createCampaignPayload(scenes, dark, campaignName, templates, initiativeRules)));
+export function saveCampaign(scenes, dark, campaignName, templates, initiativeRules, campaignMeta = {}) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(createCampaignPayload(scenes, dark, campaignName, templates, initiativeRules, campaignMeta)));
 }
 
-export function serializeCampaign(scenes, dark, campaignName, templates, initiativeRules) {
-  return JSON.stringify(createCampaignPayload(scenes, dark, campaignName, templates, initiativeRules), null, 2);
+export function serializeCampaign(scenes, dark, campaignName, templates, initiativeRules, campaignMeta = {}) {
+  return JSON.stringify(createCampaignPayload(scenes, dark, campaignName, templates, initiativeRules, campaignMeta), null, 2);
 }
 
 function hasScenes(data) {
@@ -337,8 +387,14 @@ function hasCurrentSignature(data) {
   return data?.format === CADENCE_CAMPAIGN_FORMAT && data?.schemaVersion === CADENCE_CAMPAIGN_SCHEMA_VERSION;
 }
 
-function hasLegacySignature(data) {
-  return typeof data?.version === 'string' && data.version.length > 0;
+function hasCampaignBlock(data) {
+  return isPlainObject(data?.campaign)
+    && typeof data.campaign.name === 'string'
+    && data.campaign.name.trim().length > 0
+    && typeof data.campaign.fileName === 'string'
+    && data.campaign.fileName.trim().endsWith('.cad')
+    && typeof data.campaign.folderName === 'string'
+    && data.campaign.folderName.trim().length > 0;
 }
 
 export function isValidCampaign(data) {
@@ -348,5 +404,5 @@ export function isValidCampaign(data) {
   if (data.name != null && typeof data.name !== 'string') return false;
   if (data.initiativeRules != null && !isPlainObject(data.initiativeRules)) return false;
   if (!isTemplateStoreLike(data.templates)) return false;
-  return hasCurrentSignature(data) || hasLegacySignature(data);
+  return hasCurrentSignature(data) && hasCampaignBlock(data);
 }

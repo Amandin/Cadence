@@ -1,6 +1,5 @@
 import { BadgeRound, EtiquetteEtat } from '../commun/ComposantsCommuns.jsx';
 import { CompteurGlobal } from '../suivis/CompteurGlobal.jsx';
-import { BoutonTourPrecedent } from './BoutonTourPrecedent.jsx';
 
 export function EnteteScene(props) {
   const {
@@ -16,12 +15,9 @@ export function EnteteScene(props) {
     temporalitePhases,
     temporaliteDeclaration,
     suivantDesactive,
-    retourDesactive,
     dark,
     onRetourHub,
-    onTourPrecedent,
     onTourSuivant,
-    onRetourPreparation,
     onModifierCompteurGlobal,
     onToggleCompteurTemps,
     onRetirerEtatScene,
@@ -43,7 +39,7 @@ export function EnteteScene(props) {
     : horlogeABloquee
       ? 'Horloge à gérer'
       : tourSimultane
-        ? 'Tour simultané'
+        ? 'Tours simultanés'
         : temporaliteDeclaration && !actif ? 'Déclaration' : 'Tour actif';
   const logo = dark ? '/branding/logo-cadence-dark.svg' : '/branding/logo-cadence-light.svg';
 
@@ -57,14 +53,12 @@ export function EnteteScene(props) {
         </div>
         <BadgeRound round={scene.round} effect={effetRound} phase={temporalitePhases ? scene.phase || 1 : null} />
       </div>
-      <div className="turn-row">
-        {onRetourPreparation ? <button className="turn-btn prep-return-btn" onClick={onRetourPreparation} aria-label="Retour en préparation" title="Retour en préparation">↤</button> : <BoutonTourPrecedent disabled={retourDesactive} onClick={onTourPrecedent} />}
+      <div className="turn-row header-turn-row">
         <div className={`active-box panel ${tourSimultane ? 'simultaneous-turn' : ''} ${temporaliteSouple ? 'flexible-turn' : ''} ${temporalitePhases ? 'phase-turn' : ''} ${temporaliteDeclaration ? 'declaration-turn' : ''}`}>
           <div className="turn-active-line">
             <div className="active-name">
               {temporaliteSouple && !horlogeABloquee && !enPreparation ? <><div className="muted">Mode souple</div><strong>Marquer les tours dans la liste</strong></> : <><div className="muted">{libelleTour}</div><strong>{nomTourActif}</strong>{actionDeclaree && <strong className="declaration-header-action">({actionDeclaree})</strong>}</>}
             </div>
-            {tourSimultane && <span className="chip simultaneous-chip">Même temps</span>}
             {temporaliteSouple && !horlogeABloquee && !enPreparation && <span className="chip flexible-chip">Souple</span>}
             <CompteurGlobal compteur={scene.globalTracker} onChanger={onModifierCompteurGlobal} onToggleTemps={onToggleCompteurTemps} animationTick={compteurGlobalAuto} />
           </div>

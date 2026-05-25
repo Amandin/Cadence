@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { activeThresholds, applyBoxMarkAction, applyDelta, boxBlocks, boxVisualRank, isTriggeredClock, normalizeThresholds, sortBoxBlocks, thresholdValue } from '../../logic.js';
+import { activeThresholds, applyBoxMarkAction, applyDelta, boxBlocks, boxVisualRank, isTriggeredClock, normalizeThresholds, sortBoxBlocks, thresholdValue, trackerBounds, trackerLimitMode } from '../../logic.js';
 
 function TitreSuivi({ titre, avantTitre, suffixe = null }) {
   return <span className="tracker-title">{avantTitre}{titre}{suffixe}</span>;
@@ -56,6 +56,45 @@ function ControlePas({ valeur, onChange, className = '' }) {
   }
 
   return <button className={`step-chip ${className}`.trim()} onClick={() => { setSaisie(String(normaliserPas(valeur))); setEdition(true); }} title="Modifier le pas" aria-label={`Modifier le pas, actuellement ${normaliserPas(valeur)}`}>+/-{normaliserPas(valeur)}</button>;
+}
+
+function lignesEquilibrees(elements, maxParLigne = 5) {
+  const liste = Array.from(elements || []);
+  if (liste.length <= maxParLigne) return [liste];
+  const nombreLignes = Math.ceil(liste.length / maxParLigne);
+  const tailleLigne = Math.ceil(liste.length / nombreLignes);
+  return Array.from({ length: nombreLignes }, (_, index) => liste.slice(index * tailleLigne, (index + 1) * tailleLigne));
+}
+
+function capaciteParLigne(largeur, { taille, espace, reserve = 0, min = 2, max = 12, fallback = 5 }) {
+  const disponible = Number(largeur) - reserve;
+  if (!Number.isFinite(disponible) || disponible <= 0) return fallback;
+  const capacite = Math.floor((disponible + espace) / (taille + espace));
+  return Math.max(min, Math.min(max, capacite));
+}
+
+function useLargeurElement() {
+  const ref = useRef(null);
+  const [largeur, setLargeur] = useState(0);
+
+  useEffect(() => {
+    const element = ref.current;
+    if (!element) return undefined;
+    const mesurer = () => setLargeur(element.getBoundingClientRect().width);
+    mesurer();
+    const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver((entries) => {
+      const entree = entries[0];
+      if (entree) setLargeur(entree.contentRect.width);
+    }) : null;
+    observer?.observe(element);
+    window.addEventListener('resize', mesurer);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener('resize', mesurer);
+    };
+  }, []);
+
+  return [ref, largeur];
 }
 
 export function Suivi({ suivi, onModifier, onSupprimer, avantTitre = null, couleur = 'slate' }) {
@@ -146,8 +185,28 @@ function BarreSuivi({ suivi }) {
 }
 
 function PointsSuivi({ suivi, onModifier }) {
+  const [zoneRef, largeurZone] = useLargeurElement();
   const max = Math.max(1, Number(suivi.max || 1));
-  return <div className="points-wrap"><div className="dots">{Array.from({ length: max }).map((_, i) => <button key={i} className={`dot ${i < suivi.current ? 'on' : ''}`} onClick={() => onModifier({ current: i + 1 === suivi.current ? i : i + 1 })} />)}</div></div>;
+  const { min } = trackerBounds(suivi);
+  const courant = Number(suivi.current ?? min);
+  const cycles = Number(suivi.cycles ?? 0);
+  const modeBoucle = trackerLimitMode(suivi) === 'loop';
+  const seuilsDeCycle = Array.isArray(suivi.totalThresholds) && suivi.totalThresholds.length > 0;
+  const aLaBorneMin = courant <= min;
+  const aLaBorneMax = courant >= max;
+  const peutReculerCycle = modeBoucle && seuilsDeCycle && aLaBorneMin && (suivi.cyclesMin == null || suivi.cyclesMin === '' || cycles > Number(suivi.cyclesMin));
+  const peutAvancerCycle = modeBoucle && seuilsDeCycle && aLaBorneMax && (suivi.cyclesMax == null || suivi.cyclesMax === '' || cycles < Number(suivi.cyclesMax));
+  const appliquerCycle = (direction) => {
+    const prochainCycle = cycles + direction;
+    onModifier({ cycles: prochainCycle, current: direction > 0 ? min : max });
+  };
+  const afficheCommandesCycle = modeBoucle && seuilsDeCycle;
+  const reserveCommandes = afficheCommandesCycle ? 72 : 0;
+  const maxParLigne = capaciteParLigne(largeurZone, { taille: 22, espace: 4, reserve: reserveCommandes, min: 3, max: 14, fallback: 8 });
+
+  const puces = Array.from({ length: max }, (_, i) => i);
+
+  return <div ref={zoneRef} className={`points-wrap ${afficheCommandesCycle ? 'with-cycle-controls' : ''}`}>{afficheCommandesCycle && <div className="points-cycle-slot">{peutReculerCycle && <button className="points-cycle-btn" onClick={() => appliquerCycle(-1)} aria-label="Reculer au cycle precedent">-</button>}</div>}<div className="dots balanced-token-rows">{lignesEquilibrees(puces, maxParLigne).map((ligne, rowIndex) => <div className="token-row" key={rowIndex}>{ligne.map((i) => <button key={i} className={`dot ${i < suivi.current ? 'on' : ''}`} onClick={() => onModifier({ current: i + 1 === suivi.current ? i : i + 1 })} />)}</div>)}</div>{afficheCommandesCycle && <div className="points-cycle-slot">{peutAvancerCycle && <button className="points-cycle-btn" onClick={() => appliquerCycle(1)} aria-label="Avancer au cycle suivant">+</button>}</div>}</div>;
 }
 
 function CompteursSuivi({ suivi, onModifier }) {
@@ -193,6 +252,12 @@ function HorlogeSuivi({ suivi }) {
 }
 
 function CasesSuivi({ suivi, cocher }) {
+  const [zoneRef, largeurZone] = useLargeurElement();
   const max = suivi.fillLevels || 5;
-  return <div className="boxes grouped-boxes">{boxBlocks(suivi).map((bloc) => <div className="box-group" key={bloc.id}>{bloc.lines.map((ligne, lineIndex) => <div className="box-row" key={ligne.id}><div className="box-label">{lineIndex === 0 ? bloc.label : ''}</div><div className="boxes">{ligne.boxes.map((caseSuivi) => <button key={caseSuivi.id} className={`box mark-${boxVisualRank(caseSuivi.mark, max)} ${boxVisualRank(caseSuivi.mark, max) >= 5 ? 'full' : ''}`} onClick={() => cocher(bloc.id, ligne.id, caseSuivi.id)} aria-label={`${bloc.label} ${ligne.label} case ${caseSuivi.position + 1}`} />)}</div><div className="box-label right">{ligne.label}</div></div>)}</div>)}</div>;
+  const maxParLigne = capaciteParLigne(largeurZone, { taille: 30, espace: 1, reserve: 120, min: 2, max: 12, fallback: 5 });
+  return <div ref={zoneRef} className="boxes grouped-boxes">{boxBlocks(suivi).map((bloc) => <div className="box-group" key={bloc.id}>{bloc.lines.map((ligne, lineIndex) => {
+    const rangees = lignesEquilibrees(ligne.boxes, maxParLigne);
+    const largeurRangee = Math.max(1, ...rangees.map((rangee) => rangee.length));
+    return <div className="box-row" key={ligne.id} style={{ '--box-row-count': largeurRangee }}><div className="box-label block-title">{lineIndex === 0 ? bloc.label : ''}</div><div className="boxes balanced-token-rows">{rangees.map((rangee, rowIndex) => <div className="token-row" key={rowIndex}>{rangee.map((caseSuivi) => <button key={caseSuivi.id} className={`box mark-${boxVisualRank(caseSuivi.mark, max)} ${boxVisualRank(caseSuivi.mark, max) >= 5 ? 'full' : ''}`} onClick={() => cocher(bloc.id, ligne.id, caseSuivi.id)} aria-label={`${bloc.label} ${ligne.label} case ${caseSuivi.position + 1}`} />)}</div>)}</div><div className="box-label right">{ligne.label}</div></div>;
+  })}</div>)}</div>;
 }

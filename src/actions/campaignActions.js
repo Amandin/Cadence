@@ -30,7 +30,7 @@ function resetParticipantPourDepartScene(participant) {
 }
 
 function resetCompteurGlobalPourDepartScene(compteur) {
-  return compteur ? { ...compteur, current: 0 } : compteur;
+  return compteur ? { ...compteur, current: 0, total: 0, loops: 0, running: false, startedAt: null, elapsedMs: 0 } : compteur;
 }
 
 function premierParticipantId(scene, rules) {

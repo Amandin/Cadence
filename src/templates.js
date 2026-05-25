@@ -140,6 +140,9 @@ export const defaultTrackerTemplates = [
   { id: 'tracker-template-pv', name: 'PV simple', createdAt: 'demo', tracker: { ...newTracker('bar'), id: 'template-tracker', name: 'PV' } },
   { id: 'tracker-template-horloge', name: 'Horloge 6 segments', createdAt: 'demo', tracker: { ...newTracker('clock'), id: 'template-tracker', name: 'Horloge', max: 6 } },
   { id: 'tracker-template-puces', name: 'Reserve a puces', createdAt: 'demo', tracker: { ...newTracker('points'), id: 'template-tracker', name: 'Reserve', max: 5 } },
+  { id: 'tracker-template-puces-loop', name: 'Puces bouclantes', createdAt: 'demo', tracker: { ...newTracker('points'), id: 'template-tracker', name: 'Charges', max: 5, limitMode: 'loop', cycles: 0, cyclesInitial: 0, currentThresholds: [{ value: 5, label: 'plein', color: 'green', operator: 'gte' }], totalThresholds: [{ value: 1, label: 'cycle 1', color: 'blue', operator: 'gte' }] } },
+  { id: 'tracker-template-cases', name: 'Cases structurees', createdAt: 'demo', tracker: { ...newTracker('boxes'), id: 'template-tracker', name: 'Blessures', fillLevels: 3, levelLabels: ['Leger', 'Serieux', 'Critique'] } },
+  { id: 'tracker-template-compteur', name: 'Compteur simple', createdAt: 'demo', tracker: { ...newTracker('number'), id: 'template-tracker', name: 'Ressources', current: 0, initial: 0, max: 9, thresholds: [{ value: 5, label: 'pret', color: 'green', operator: 'gte' }] } },
 ];
 
 export const defaultStatusTemplates = [
@@ -154,17 +157,20 @@ export const defaultSceneStatusTemplates = [
 ];
 
 export const defaultSceneCounterTemplates = [
-  { id: 'scene-counter-template-menace', name: 'Menace 6 segments', createdAt: 'demo', counter: { enabled: true, name: 'Menace', mode: 'clock', current: 0, max: 6, auto: true, thresholds: [{ value: 4, label: 'pression', color: 'amber', operator: 'gte', basis: 'fixed' }, { value: 6, label: 'crise', color: 'red', operator: 'gte', basis: 'fixed' }] } },
-  { id: 'scene-counter-template-minuteur', name: 'Minuteur 10 min', createdAt: 'demo', counter: { enabled: true, name: 'Compte a rebours', mode: 'timer', current: 0, max: 600, auto: false, thresholds: [{ value: 60, label: 'derniere minute', color: 'red', operator: 'lte', basis: 'fixed' }] } },
+  { id: 'scene-counter-template-alerte', name: 'Alerte - compteur', createdAt: 'demo', counter: { enabled: true, name: 'Alerte', mode: 'counter', current: 0, max: 6, trigger: 'manual', limitMode: 'clamp', total: 0, loops: 0, thresholds: [{ value: 2, label: 'Mefiance', color: 'amber', operator: 'gte', basis: 'fixed', scope: 'current' }, { value: 4, label: 'Alarme', color: 'red', operator: 'gte', basis: 'fixed', scope: 'current' }, { value: 6, label: 'Renforts', color: 'violet', operator: 'gte', basis: 'fixed', scope: 'current' }] } },
+  { id: 'scene-counter-template-rituel-loop', name: 'Rituel - horloge bouclante', createdAt: 'demo', counter: { enabled: true, name: 'Rituel', mode: 'clock', current: 0, max: 6, direction: 'progression', trigger: 'round', limitMode: 'loop', total: 0, loops: 0, auto: true, thresholds: [{ value: 6, label: 'Cycle complet', color: 'amber', operator: 'gte', basis: 'fixed', scope: 'current' }, { value: 2, label: 'Renforts', color: 'red', operator: 'gte', basis: 'fixed', scope: 'loops' }] } },
+  { id: 'scene-counter-template-etapes', name: 'Piste d etapes', createdAt: 'demo', counter: { enabled: true, name: 'Rituel', mode: 'clock', current: 0, max: 1, direction: 'progression', trigger: 'manual', limitMode: 'overflow', total: 0, loops: 0, thresholds: [{ value: 1, label: 'Invocation ouverte', color: 'blue', operator: 'gte', basis: 'fixed', scope: 'current' }, { value: 3, label: 'Verrouillage', color: 'red', operator: 'gte', basis: 'fixed', scope: 'current' }] } },
+  { id: 'scene-counter-template-minuteur', name: 'Minuteur 3 min 05', createdAt: 'demo', counter: { enabled: true, name: 'Minuteur', mode: 'timer', current: 0, max: 185, direction: 'countdown', trigger: 'realtime', limitMode: 'overflow', total: 0, loops: 0, running: false, startedAt: null, elapsedMs: 0, soundOnComplete: true, completeSoundId: 'chime', completeSoundUrl: '', thresholds: [{ value: 60, label: 'Pression forte', color: 'amber', operator: 'lte', basis: 'fixed', scope: 'current', sound: true, soundId: 'beep' }, { value: 25, label: 'Urgence', color: 'red', operator: 'lte', basis: 'percent', scope: 'current', sound: true, soundId: 'alarm' }] } },
+  { id: 'scene-counter-template-chrono', name: 'Chronometre simple', createdAt: 'demo', counter: { enabled: true, name: 'Chrono', mode: 'stopwatch', current: 0, max: 600, direction: 'progression', trigger: 'realtime', limitMode: 'overflow', running: false, startedAt: null, elapsedMs: 0, thresholds: [{ value: 120, label: 'Deux minutes', color: 'blue', operator: 'gte', basis: 'fixed', scope: 'current', sound: true, soundId: 'chime' }, { value: 300, label: 'Long', color: 'violet', operator: 'gte', basis: 'fixed', scope: 'current', sound: true, soundId: 'alarm' }] } },
 ];
 
 export const defaultRuleTemplates = [
-  { id: 'rules-template-dnd5', name: 'D&D 5e - initiative classique', createdAt: 'demo', rules: { temporalite: temporalityModes.CLASSIC, declarationMode: false, multipleActionSlots: false, phaseActionMode: phaseActionModes.AUTOMATIC } },
-  { id: 'rules-template-shadowrun', name: 'Shadowrun - passes multiples', createdAt: 'demo', rules: { temporalite: temporalityModes.PHASES, phaseActionMode: phaseActionModes.AUTOMATIC, phaseDecrement: 10, declarationMode: false, multipleActionSlots: false } },
-  { id: 'rules-template-savage-worlds', name: 'Savage Worlds - cartes', createdAt: 'demo', rules: { temporalite: temporalityModes.CLASSIC, declarationMode: false, multipleActionSlots: false, initiativeTextOrder: { enabled: true, preset: 'cards' } } },
-  { id: 'rules-template-vampire', name: 'Vampire - declaration puis resolution', createdAt: 'demo', rules: { temporalite: temporalityModes.CLASSIC, declarationMode: true, multipleActionSlots: true, phaseActionMode: phaseActionModes.AUTOMATIC } },
-  { id: 'rules-template-fate', name: 'Fate - ordre souple', createdAt: 'demo', rules: { temporalite: temporalityModes.FLEXIBLE, declarationMode: false, multipleActionSlots: false, phaseActionMode: phaseActionModes.AUTOMATIC } },
-  { id: 'rules-template-lancer', name: 'Lancer - phases cochees', createdAt: 'demo', rules: { temporalite: temporalityModes.PHASES, phaseActionMode: phaseActionModes.CHECKED, phaseCount: 3, declarationMode: false, multipleActionSlots: false } },
+  { id: 'rules-template-classique', name: 'Classique numerique', createdAt: 'demo', rules: { temporalite: temporalityModes.CLASSIC, startRound: 1, declarationMode: false, multipleActionSlots: false, phaseActionMode: phaseActionModes.AUTOMATIC } },
+  { id: 'rules-template-phases-auto', name: 'Phases automatiques', createdAt: 'demo', rules: { temporalite: temporalityModes.PHASES, phaseActionMode: phaseActionModes.AUTOMATIC, phaseDecrement: 10, declarationMode: false, multipleActionSlots: false } },
+  { id: 'rules-template-phases-cochees', name: 'Phases cochees', createdAt: 'demo', rules: { temporalite: temporalityModes.PHASES, phaseActionMode: phaseActionModes.CHECKED, phaseCount: 3, declarationMode: false, multipleActionSlots: false } },
+  { id: 'rules-template-cartes', name: 'Initiative par cartes', createdAt: 'demo', rules: { temporalite: temporalityModes.CLASSIC, declarationMode: false, multipleActionSlots: false, initiativeTextOrder: { enabled: true, separator: ' de ', parts: [{ label: 'Valeur', values: ['As', 'Roi', 'Dame', 'Valet', '10', '9'] }, { label: 'Couleur', values: ['Pique', 'Coeur', 'Carreau', 'Trefle'] }] } } },
+  { id: 'rules-template-declaration', name: 'Declaration puis resolution', createdAt: 'demo', rules: { temporalite: temporalityModes.CLASSIC, declarationMode: true, multipleActionSlots: true, phaseActionMode: phaseActionModes.AUTOMATIC } },
+  { id: 'rules-template-souple', name: 'Ordre souple', createdAt: 'demo', rules: { temporalite: temporalityModes.FLEXIBLE, declarationMode: false, multipleActionSlots: false, phaseActionMode: phaseActionModes.AUTOMATIC } },
 ];
 
 export function createBlankParticipant() {
@@ -261,7 +267,7 @@ function normalizeSceneCounterTemplate(template) {
   const counter = normalizeGlobalTracker(source);
   return {
     id: template.id || uid('sctpl'),
-    name: normalizeTemplateName(template.name, counter.name || 'Compteur de scene'),
+    name: normalizeTemplateName(template.name, counter.name || 'Suivi global'),
     createdAt: template.createdAt || new Date().toISOString(),
     updatedAt: template.updatedAt,
     counter: { ...counter, running: false, startedAt: null, elapsedMs: 0 },
@@ -497,7 +503,7 @@ export function makeSceneStatusTemplateFromStatus(status, { name }) {
 export function makeSceneCounterTemplateFromCounter(counter, { name }) {
   return normalizeSceneCounterTemplate({
     id: uid('sctpl'),
-    name: normalizeTemplateName(name, counter?.name || 'Compteur de scene'),
+    name: normalizeTemplateName(name, counter?.name || 'Suivi global'),
     createdAt: new Date().toISOString(),
     counter,
   });

@@ -277,15 +277,15 @@ function FenetreEditionTemplateEtatScene({ template, onFermer, onValider }) {
 }
 
 function FenetreEditionTemplateCompteurScene({ template, onFermer, onValider }) {
-  const [nomTemplate, setNomTemplate] = useState(template?.name || template?.counter?.name || 'Compteur de scene');
-  const [brouillon, setBrouillon] = useState(() => normalizeGlobalTracker(template?.counter || { enabled: true, name: 'Compteur de scene', mode: 'clock', current: 0, max: 6, auto: false, thresholds: [] }));
+  const [nomTemplate, setNomTemplate] = useState(template?.name || template?.counter?.name || 'Suivi global');
+  const [brouillon, setBrouillon] = useState(() => normalizeGlobalTracker(template?.counter || { enabled: true, name: 'Suivi global', mode: 'clock', current: 0, max: 6, auto: false, thresholds: [] }));
   const tempsReel = ['stopwatch', 'timer'].includes(brouillon.mode);
   const minutesMinuteur = Math.max(1, Math.round(Number(brouillon.max || 60) / 60));
   const modifier = (patch) => setBrouillon((courant) => normalizeGlobalTracker({ ...courant, ...patch }));
-  const valider = () => onValider(template.id, { ...brouillon, name: brouillon.name || nomTemplate || 'Compteur de scene', running: false, startedAt: null, elapsedMs: 0 }, nomTemplate || brouillon.name || 'Compteur de scene');
+  const valider = () => onValider(template.id, { ...brouillon, name: brouillon.name || nomTemplate || 'Suivi global', running: false, startedAt: null, elapsedMs: 0 }, nomTemplate || brouillon.name || 'Suivi global');
 
   return (
-    <Fenetre title="Template de compteur de scene" onClose={onFermer}>
+    <Fenetre title="Template de suivi global" onClose={onFermer}>
       <div className="stack">
         <label className="field">Nom du template<input value={nomTemplate} onChange={(event) => setNomTemplate(event.target.value)} /></label>
         <label className="field">Nom du compteur<input value={brouillon.name || ''} onChange={(event) => modifier({ name: event.target.value })} /></label>
@@ -322,10 +322,10 @@ function OngletTemplatesScene({ counterTemplates, statusTemplates, onAjouterComp
     <div className="stack">
       <section className="scene-template-group">
         <div className="hub-section-head">
-          <div><h4>Compteurs de scene</h4><p className="muted compact-help">Ces templates remplacent ou preparent le compteur global de la scene.</p></div>
+          <div><h4>Suivis globaux</h4><p className="muted compact-help">Ces templates remplacent ou preparent le suivi global de la scene.</p></div>
           <button className="small-btn" onClick={ajouterCompteur}>+ compteur</button>
         </div>
-        {counterTemplates.length === 0 ? <div className="empty-section panel">Aucun template de compteur de scene.</div> : counterTemplates.map((template) => (
+        {counterTemplates.length === 0 ? <div className="empty-section panel">Aucun template de suivi global.</div> : counterTemplates.map((template) => (
           <LigneTemplateSimple key={template.id} template={template} detail={libelleCompteurScene(template.counter)} onEditer={onEditerCompteur} onDupliquer={onDupliquerCompteur} onSupprimer={onSupprimerCompteur} />
         ))}
       </section>

@@ -4,6 +4,19 @@ import { normalizeTemplateStore } from './templates.js';
 
 const scene = { id: 'scene-1', title: 'Test', participants: [] };
 
+function campaignPayload(patch = {}) {
+  const name = patch.name || 'Campagne test';
+  return {
+    format: CADENCE_CAMPAIGN_FORMAT,
+    schemaVersion: CADENCE_CAMPAIGN_SCHEMA_VERSION,
+    campaign: { id: 'campagne-test', name, folderName: 'campagne-test', fileName: 'campagne-test.cad' },
+    name,
+    scenes: [scene],
+    settings: { dark: false },
+    ...patch,
+  };
+}
+
 describe('campaign storage', () => {
   it('serializes campaigns with a Cadence signature and name', () => {
     const data = JSON.parse(serializeCampaign([scene], true, 'Chroniques de test'));
@@ -11,6 +24,7 @@ describe('campaign storage', () => {
     expect(data).toMatchObject({
       format: CADENCE_CAMPAIGN_FORMAT,
       schemaVersion: CADENCE_CAMPAIGN_SCHEMA_VERSION,
+      campaign: { name: 'Chroniques de test', folderName: 'chroniques-de-test', fileName: 'chroniques-de-test.cad' },
       name: 'Chroniques de test',
       settings: { dark: true },
     });
@@ -26,18 +40,11 @@ describe('campaign storage', () => {
   });
 
   it('accepts current Cadence campaign files', () => {
-    expect(isValidCampaign({
-      format: CADENCE_CAMPAIGN_FORMAT,
-      schemaVersion: CADENCE_CAMPAIGN_SCHEMA_VERSION,
-      name: 'Campagne test',
-      version: '0.1.75',
-      scenes: [scene],
-      settings: { dark: false },
-    })).toBe(true);
+    expect(isValidCampaign(campaignPayload())).toBe(true);
   });
 
-  it('keeps old Cadence JSON exports importable when they have a version', () => {
-    expect(isValidCampaign({ version: '0.1.74', scenes: [scene], settings: { dark: true } })).toBe(true);
+  it('rejects old Cadence JSON exports without the v2 campaign block', () => {
+    expect(isValidCampaign({ version: '0.1.74', scenes: [scene], settings: { dark: true } })).toBe(false);
   });
 
   it('repairs hand-edited campaign scenes before they enter app state', () => {

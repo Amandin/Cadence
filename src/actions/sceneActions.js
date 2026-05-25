@@ -120,6 +120,7 @@ function remettreEnPreparation(scene) {
     jouesSouples: [],
     historiqueSouple: [],
     reserve: (scene.reserve || []).map(placerEnReserve),
+    _turnHistory: [],
   };
 }
 
@@ -154,6 +155,28 @@ function triggerActivationScene(scene, participant, activeId) {
 function preparerParticipantPhases(scene, participant) {
   if (!isCheckedPhaseMode(scene) || Array.isArray(participant.phaseActions)) return participant;
   return { ...participant, phaseActions: ['1'] };
+}
+
+const TURN_HISTORY_LIMIT = 40;
+
+function sceneSansHistorique(scene = {}) {
+  const { _turnHistory, ...rest } = scene;
+  return rest;
+}
+
+function empilerRetourTour(sceneAvant, sceneApres) {
+  const historique = Array.isArray(sceneAvant._turnHistory) ? sceneAvant._turnHistory : [];
+  return {
+    ...sceneApres,
+    _turnHistory: [...historique.slice(-(TURN_HISTORY_LIMIT - 1)), clone(sceneSansHistorique(sceneAvant))],
+  };
+}
+
+function depilerRetourTour(scene) {
+  const historique = Array.isArray(scene._turnHistory) ? scene._turnHistory : [];
+  const precedente = historique.at(-1);
+  if (!precedente) return null;
+  return { ...clone(precedente), _turnHistory: historique.slice(0, -1) };
 }
 
 export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, setScenes, setRestorePoints, setRoundEffect }) {
@@ -265,10 +288,10 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
         const activeId = estModeSouple(sceneAvecMode) ? '' : estModePhases(sceneAvecMode) ? premierParticipantPhase(sceneAvecMode) : premierCreneau?.id || '';
         const activeSlotId = estModeSouple(sceneAvecMode) || estModePhases(sceneAvecMode) ? '' : premierCreneau?.actionSlotId || '';
         const nextScene = { ...sceneAvecMode, activeId, activeSlotId };
-        return {
+        return empilerRetourTour(s, {
           ...nextScene,
           participants: (nextScene.participants || []).map((participant) => triggerActivationScene(nextScene, participant, nextScene.activeId)),
-        };
+        });
       });
     },
     moveParticipantsToReserve(ids = []) {
@@ -292,13 +315,14 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
     markFlexiblePlayed(participantId) {
       updateScene((s) => {
         const { scene: sceneAvecJoue, slotId } = ajouterJoueSouple(s, participantId);
-        return {
+        if (!slotId) return s;
+        return empilerRetourTour(s, {
           ...marquerDeclarationJoue(sceneAvecJoue, participantId),
           activeId: participantId,
           activeSlotId: slotId || '',
           participants: (sceneAvecJoue.participants || []).map((participant) => triggerActivationScene(sceneAvecJoue, participant, participantId)),
           historiqueSouple: slotId ? [...(s.historiqueSouple || []), slotId] : (s.historiqueSouple || []),
-        };
+        });
       });
     },
     unmarkFlexiblePlayed(participantId) {
@@ -312,6 +336,8 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
     },
     undoFlexibleTurn() {
       updateScene((s) => {
+        const precedente = depilerRetourTour(s);
+        if (precedente) return precedente;
         const nextScene = annulerDernierJoueSouple(s);
         return retirerDeclarationJoue(nextScene, nextScene.activeId);
       });
@@ -332,7 +358,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
         if (s.round < 0) {
           const nextScene = demarrerScene(s);
           if (nextScene.round >= 0) setRestorePoints((points) => addStartRestorePoints(points, s, nextScene));
-          return nextScene;
+          return empilerRetourTour(s, nextScene);
         }
         const sceneDeBase = s;
         const premierCreneau = premierCreneauClassique(sceneDeBase.participants || [], optionsTri(sceneDeBase));
@@ -343,13 +369,13 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
             : appliquerDebutNouveauRound(sceneDeBase, premierCreneau?.id || sceneDeBase.activeId || '');
         const nextSceneAvecDeclaration = reinitialiserDeclarationRound(nextScene);
         setRestorePoints((points) => addRestorePoint(points, s.id, nextSceneAvecDeclaration));
-        return nextSceneAvecDeclaration;
+        return empilerRetourTour(s, nextSceneAvecDeclaration);
       });
     },
     resetSceneTrackers() {
       updateScene((s) => ({
         ...s,
-        globalTracker: s.globalTracker ? { ...s.globalTracker, current: 0 } : s.globalTracker,
+        globalTracker: s.globalTracker ? { ...s.globalTracker, current: 0, total: 0, loops: 0, running: false, startedAt: null, elapsedMs: 0 } : s.globalTracker,
         participants: (s.participants || []).map(resetSuivisParticipant),
         reserve: (s.reserve || []).map(resetSuivisParticipant).map(placerEnReserve),
       }));
@@ -394,12 +420,18 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
       updateScene((s) => ({ ...s, statuses: (s.statuses || []).filter((status) => status.id !== sid) }));
     },
     nextTurn(direction = 1) {
+      if (direction < 0 && Array.isArray(scene._turnHistory) && scene._turnHistory.length > 0) {
+        setRoundEffect(null);
+        updateScene((s) => depilerRetourTour(s) || s);
+        return;
+      }
+
       if (direction > 0 && scene.round < 0) {
         setRoundEffect('next');
         updateScene((s) => {
           const nextScene = demarrerScene(s);
           if (nextScene.round >= 0) setRestorePoints((points) => addStartRestorePoints(points, s, nextScene));
-          return nextScene;
+          return empilerRetourTour(s, nextScene);
         });
         return;
       }
@@ -422,7 +454,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
           updateScene((s) => {
             const nextScene = reinitialiserDeclarationRound(appliquerNouveauRoundSouple(s));
             setRestorePoints((points) => addRestorePoint(points, s.id, nextScene));
-            return nextScene;
+            return empilerRetourTour(s, nextScene);
           });
         }
         return;
@@ -441,7 +473,8 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
             const phase = phaseSuivante(s);
             const nextParticipants = participantsPhase({ ...s, phase });
             const activeId = nextParticipants[0]?.id || '';
-            return marquerDeclarationJoue({ ...s, phase, activeId, activeSlotId: '', participants: (s.participants || []).map((participant) => triggerActivationScene(s, participant, activeId)) }, s.activeId);
+            const nextScene = marquerDeclarationJoue({ ...s, phase, activeId, activeSlotId: '', globalTracker: stepAutoGlobalTracker(s.globalTracker, 1, 'phase'), participants: (s.participants || []).map((participant) => triggerActivationScene(s, participant, activeId)) }, s.activeId);
+            return empilerRetourTour(s, nextScene);
           });
         };
         if (!phaseParticipants.length) {
@@ -468,7 +501,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
         const nextIndex = currentIndex + 1;
         if (nextIndex < phaseParticipants.length) {
           setRoundEffect(null);
-          updateScene((s) => marquerDeclarationJoue({ ...s, activeId: phaseParticipants[nextIndex].id, activeSlotId: '', participants: (s.participants || []).map((participant) => triggerActivationScene(s, participant, phaseParticipants[nextIndex].id)) }, s.activeId));
+          updateScene((s) => empilerRetourTour(s, marquerDeclarationJoue({ ...s, activeId: phaseParticipants[nextIndex].id, activeSlotId: '', participants: (s.participants || []).map((participant) => triggerActivationScene(s, participant, phaseParticipants[nextIndex].id)) }, s.activeId)));
           return;
         }
         if (blocked.length) return;
@@ -480,7 +513,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
         updateScene((s) => {
           const nextScene = reinitialiserDeclarationRound(appliquerNouveauRoundPhases(s));
           setRestorePoints((points) => addRestorePoint(points, s.id, nextScene));
-          return nextScene;
+          return empilerRetourTour(s, nextScene);
         });
         return;
       }
@@ -544,7 +577,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
         const nextScene = roundDelta > 0 ? reinitialiserDeclarationRound(nextSceneBase) : marquerDeclarationJoue(nextSceneBase, slots[currentIndex].id);
 
         if (roundDelta > 0) setRestorePoints((points) => addRestorePoint(points, s.id, nextScene));
-        return nextScene;
+        return empilerRetourTour(s, nextScene);
       });
     },
     leaveInit(id) {
