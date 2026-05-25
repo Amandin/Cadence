@@ -21,7 +21,8 @@ function slotId(participantId, slot) {
 export function normaliserCreneauxAction(participant = {}, options = {}) {
   const fallback = participant?.initiative ?? 0;
   const rawSlots = Array.isArray(participant.actionSlots) ? participant.actionSlots : [];
-  const slots = rawSlots
+  const slotsAutorises = options.multipleActionSlots === false ? rawSlots.slice(0, 1) : rawSlots;
+  const slots = slotsAutorises
     .map((slot, index) => {
       const source = slot && typeof slot === 'object' ? slot : { initiative: slot };
       const initiative = source.initiative ?? fallback;
@@ -53,8 +54,8 @@ export function creneauxActionIdsParticipant(participant = {}) {
   return creneauxActionParticipant(participant).map((slot) => slot.actionSlotId);
 }
 
-export function initiativesActionParticipant(participant = {}) {
-  return creneauxActionParticipant(participant).map((slot) => slot.initiative);
+export function initiativesActionParticipant(participant = {}, options = {}) {
+  return creneauxActionParticipant(participant, options).map((slot) => slot.initiative);
 }
 
 export function nombreCreneauxAction(participant = {}) {

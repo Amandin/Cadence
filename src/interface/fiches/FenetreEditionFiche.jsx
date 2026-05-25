@@ -1,9 +1,14 @@
 import { useState } from 'react';
-import { colorNames, participantKinds, trackerTypeLabels } from '../../constants.js';
-import { boxBlocks, boxVisualRank, clone, colors, cycleBoxMark, isBoxesTracker, isNumericTracker, isPointsTracker, isVisible, newTracker, normalizeBoxTracker, normalizeThresholds, normalizeTrackerThresholds, resetTracker, sortBoxBlocks, symbols, uid } from '../../logic.js';
+import { colorNames, defaultPhaseCount, participantKinds, phaseActionModes, trackerTypeLabels } from '../../constants.js';
+import { normaliserCreneauxAction } from '../../domain/initiative.js';
+import { initiativeValueForMode, normalizeInitiativeTextOrder } from '../../domain/initiativeTextOrder.js';
+import { boxBlocks, boxVisualRank, clone, colors, cycleBoxMark, isBoxesTracker, isNumericTracker, isPointsTracker, isVisible, newTracker, normalizeBoxTracker, normalizeThresholds, normalizeTrackerThresholds, resetTracker, sortBoxBlocks, symbols, thresholdValue, uid } from '../../logic.js';
+import { instantiateTrackerTemplate } from '../../templates.js';
 import { Fenetre } from '../commun/ComposantsCommuns.jsx';
 import { FenetreConfirmationSuppression } from '../dialogues/FenetreConfirmationSuppression.jsx';
 import { IconeOeilMystiqueFerme, IconeOeilMystiqueOuvert } from '../icones/IconesOeilMystique.jsx';
+import { ChampInitiative } from '../initiative/ChampInitiative.jsx';
+import { EditeurPhasesParticipant, normaliserPhaseActions } from '../initiative/EditeurPhasesParticipant.jsx';
 import { normaliserInfoRapide, normaliserInfosRapides, serialiserInfosRapides } from './InfosRapides.jsx';
 
 const thresholdColors = [
@@ -21,6 +26,12 @@ const thresholdOperators = [
   ['gt', '>'],
   ['lt', '<'],
   ['eq', '='],
+];
+
+const thresholdBases = [
+  ['fixed', 'Fixe'],
+  ['percent', '%'],
+  ['fromMax', 'Max -'],
 ];
 
 const thresholdOptionStyles = {
@@ -65,25 +76,33 @@ function lireCreneauxAction(texte, fallback = 0) {
     .map((initiative, index) => ({ id: `slot-${index + 1}`, initiative, order: index }));
 }
 
-function normaliserCreneauxDepuisBrouillon(brouillon) {
-  const slots = Array.isArray(brouillon._actionSlotsDraft) && brouillon._actionSlotsDraft.length
+function normaliserCreneauxDepuisBrouillon(brouillon, initiativeTextOrder, multipleActionSlots = true) {
+  const textConfig = normalizeInitiativeTextOrder(initiativeTextOrder);
+  const slotsSource = Array.isArray(brouillon._actionSlotsDraft) && brouillon._actionSlotsDraft.length
     ? brouillon._actionSlotsDraft
     : lireCreneauxAction(brouillon._actionSlotsInput, brouillon.initiative);
-  return slots
-    .map((slot, index) => ({
+  const slots = multipleActionSlots ? slotsSource : slotsSource.slice(0, 1);
+  const fallback = brouillon.initiative ?? slots[0]?.initiative ?? 0;
+  return normaliserCreneauxAction({
+    ...brouillon,
+    initiative: initiativeValueForMode(fallback, textConfig),
+    actionSlots: slots.map((slot, index) => ({
       id: slot.id || `slot-${index + 1}`,
-      initiative: nombreOuDefaut(slot.initiative, brouillon.initiative),
+      initiative: initiativeValueForMode(slot.initiative, textConfig, fallback),
       order: index,
-    }))
-    .sort((a, b) => b.initiative - a.initiative || a.order - b.order)
-    .map((slot, index) => ({ id: `slot-${index + 1}`, initiative: slot.initiative, order: index }));
+    })),
+  }, { initiativeTextOrder: textConfig, multipleActionSlots }).map((slot, index) => ({ id: `slot-${index + 1}`, initiative: slot.initiative, order: index }));
 }
 
-function normaliserFiche(brouillon) {
+function normaliserFiche(brouillon, initiativeTextOrder, phaseOptions = {}) {
   const { _actionSlotsInput, _actionSlotsDraft, ...fiche } = brouillon;
-  const actionSlots = normaliserCreneauxDepuisBrouillon(brouillon);
+  const actionSlots = normaliserCreneauxDepuisBrouillon(brouillon, initiativeTextOrder, phaseOptions.multipleActionSlots !== false);
+  const phasePatch = phaseOptions.phaseActionMode === phaseActionModes.CHECKED
+    ? { phaseActions: normaliserPhaseActions(fiche.phaseActions, phaseOptions.phaseCount) }
+    : {};
   return {
     ...fiche,
+    ...phasePatch,
     stats: serialiserInfosRapides(fiche.stats),
     initiative: actionSlots[0]?.initiative ?? nombreOuDefaut(fiche.initiative, 0),
     actionSlots,
@@ -265,20 +284,22 @@ function EditeurInfosRapides({ stats = [], onChange }) {
   return <div className="stack quick-stats-editor">{lignes.map((info, index) => <div className={`quick-stat-row ${info.editable ? 'editable' : ''}`} key={index}>{info.editable ? <><input className="quick-stat-label-input" value={info.label} placeholder="Libelle" onChange={(e) => modifier(index, { label: e.target.value })} /><input className="quick-stat-value-input" value={info.value} placeholder="Valeur" onChange={(e) => modifier(index, { value: e.target.value })} /></> : <input value={[info.label, info.value].filter(Boolean).join(' ')} placeholder="CA 21, Attaque +6, Armure lourde..." onChange={(e) => changerTexte(index, e.target.value)} />}<label className="quick-stat-edit-toggle"><input type="checkbox" checked={!!info.editable} onChange={(e) => changerModifiable(index, e.target.checked)} /> valeur modifiable</label><button className="small-btn subtle-danger" onClick={() => supprimer(index)} disabled={lignes.length <= 1 && !info.label && !info.value}>x</button></div>)}<button className="small-btn" onClick={ajouter}>+ info rapide</button></div>;
 }
 
-function thresholdOutOfBounds(seuil, bounds = {}) {
-  if (bounds.min !== null && bounds.min !== '' && bounds.min !== undefined && seuil.value < Number(bounds.min)) return true;
-  if (bounds.max !== null && bounds.max !== '' && bounds.max !== undefined && seuil.value > Number(bounds.max)) return true;
+function thresholdOutOfBounds(seuil, suivi, bounds = {}) {
+  const valeur = thresholdValue(suivi, seuil);
+  if (bounds.min !== null && bounds.min !== '' && bounds.min !== undefined && valeur < Number(bounds.min)) return true;
+  if (bounds.max !== null && bounds.max !== '' && bounds.max !== undefined && valeur > Number(bounds.max)) return true;
   return false;
 }
 
 function EditeurSeuils({ suivi, onChange, field = 'thresholds', title = 'Seuils texte', bounds = {} }) {
   const seuils = suivi[field]?.length ? suivi[field] : [];
   const choixCompteurs = suivi.type === 'number' ? [{ id: '__main', label: suivi.name || 'Compteur principal' }, ...(suivi.counters || []).map((compteur) => ({ id: compteur.id, label: compteur.label || 'Compteur' }))] : [];
+  const seuilsBarre = suivi.type === 'bar' && field === 'thresholds';
   const modifier = (index, patch) => onChange({ [field]: seuils.map((seuil, position) => position === index ? { ...seuil, ...patch } : seuil) });
-  const ajouter = () => onChange({ [field]: [...seuils, { value: 0, label: '', color: 'neutral', operator: 'gte', counterId: choixCompteurs[0]?.id || '' }] });
+  const ajouter = () => onChange({ [field]: [...seuils, { value: 0, label: '', color: 'neutral', operator: 'gte', counterId: choixCompteurs[0]?.id || '', basis: seuilsBarre ? 'fixed' : undefined }] });
   const supprimer = (index) => onChange({ [field]: seuils.filter((_, position) => position !== index) });
 
-  return <div className="threshold-editor"><div className="line-count-row"><label>{title}</label><button className="small-btn" onClick={ajouter}>+ seuil</button></div>{seuils.map((seuil, index) => <div className={`threshold-edit-row ${choixCompteurs.length ? 'has-target' : ''} ${thresholdOutOfBounds(seuil, bounds) ? 'out-of-bounds' : ''}`} key={index}>{choixCompteurs.length > 0 && <select className="threshold-target-select" value={seuil.counterId || '__main'} onChange={(e) => modifier(index, { counterId: e.target.value })}>{choixCompteurs.map((compteur) => <option key={compteur.id} value={compteur.id}>{compteur.label}</option>)}</select>}<select className="threshold-operator-select" value={seuil.operator || 'gte'} onChange={(e) => modifier(index, { operator: e.target.value })}>{thresholdOperators.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select><input className="threshold-value-input" type="number" inputMode="numeric" value={seuil.value ?? 0} onChange={(e) => modifier(index, { value: Number(e.target.value) })} /><select className={`threshold-color-select threshold-${seuil.color || 'neutral'}`} value={seuil.color || 'neutral'} onChange={(e) => modifier(index, { color: e.target.value })}>{thresholdColors.map(([value, label]) => <option key={value} value={value} style={thresholdOptionStyles[value]}>{label}</option>)}</select><button className="small-btn subtle-danger threshold-delete" onClick={() => supprimer(index)}>x</button><input className="threshold-label-input" value={seuil.label || ''} placeholder="Texte affiche" onChange={(e) => modifier(index, { label: e.target.value })} />{thresholdOutOfBounds(seuil, bounds) && <span className="threshold-warning">hors limites</span>}</div>)}</div>;
+  return <div className="threshold-editor"><div className="line-count-row"><label>{title}</label><button className="small-btn" onClick={ajouter}>+ seuil</button></div>{seuils.map((seuil, index) => <div className={`threshold-edit-row ${choixCompteurs.length ? 'has-target' : ''} ${seuilsBarre ? 'has-basis' : ''} ${thresholdOutOfBounds(seuil, suivi, bounds) ? 'out-of-bounds' : ''}`} key={index}>{choixCompteurs.length > 0 && <select className="threshold-target-select" value={seuil.counterId || '__main'} onChange={(e) => modifier(index, { counterId: e.target.value })}>{choixCompteurs.map((compteur) => <option key={compteur.id} value={compteur.id}>{compteur.label}</option>)}</select>}<select className="threshold-operator-select" value={seuil.operator || 'gte'} onChange={(e) => modifier(index, { operator: e.target.value })}>{thresholdOperators.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>{seuilsBarre && <select className="threshold-basis-select" value={seuil.basis || 'fixed'} onChange={(e) => modifier(index, { basis: e.target.value })}>{thresholdBases.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>}<input className="threshold-value-input" type="number" inputMode="numeric" value={seuil.value ?? 0} onChange={(e) => modifier(index, { value: Number(e.target.value) })} /><select className={`threshold-color-select threshold-${seuil.color || 'neutral'}`} value={seuil.color || 'neutral'} onChange={(e) => modifier(index, { color: e.target.value })}>{thresholdColors.map(([value, label]) => <option key={value} value={value} style={thresholdOptionStyles[value]}>{label}</option>)}</select><button className="small-btn subtle-danger threshold-delete" onClick={() => supprimer(index)}>x</button><input className="threshold-label-input" value={seuil.label || ''} placeholder="Texte affiche" onChange={(e) => modifier(index, { label: e.target.value })} />{seuilsBarre && <span className="threshold-warning">valeur cible : {thresholdValue(suivi, seuil)}</span>}{thresholdOutOfBounds(seuil, suivi, bounds) && <span className="threshold-warning">hors limites</span>}</div>)}</div>;
 }
 
 function EditeurCompteursMultiples({ suivi, onChange }) {
@@ -444,7 +465,7 @@ function OptionsParType({ suivi, onChange }) {
   return null;
 }
 
-function EditeurSuivi({ suivi, onChange, onDelete }) {
+export function EditeurSuivi({ suivi, onChange, onDelete }) {
   const modifierSuivi = (valeur) => onChange({ ...suivi, ...valeur });
   const estCases = isBoxesTracker(suivi);
   const estNumerique = isNumericTracker(suivi);
@@ -452,10 +473,14 @@ function EditeurSuivi({ suivi, onChange, onDelete }) {
   return <div className="tracker"><div className="tracker-edit-head"><input value={suivi.name} onChange={(e) => modifierSuivi({ name: e.target.value })} aria-label="Nom du suivi" /><select value={suivi.type} aria-label="Type de suivi" onChange={(e) => onChange({ ...newTracker(e.target.value), id: suivi.id, name: suivi.name })}>{Object.entries(trackerTypeLabels).map(([valeur, label]) => <option value={valeur} key={valeur}>{label}</option>)}</select><button className="danger-btn compact-danger" onClick={onDelete}>x</button></div><div className="sub-options-row"><button className="quick-reset-btn text" onClick={() => onChange(resetTracker(suivi, 'initial'))} title="Remettre au depart">Reset</button>{suivi.type === 'number' && <ChampNombre className="compact-step-field" label="Pas" valeur={suivi.step ?? 1} onChange={(valeur) => modifierSuivi({ step: valeur })} />}<ToggleIconeSuivi suivi={suivi} onChange={modifierSuivi} /></div><div className="grid2">{estNumerique && suivi.type !== 'number' && <ChampNombre label="Valeur actuelle" valeur={suivi.current ?? 0} onChange={(valeur) => modifierSuivi({ current: valeur })} />}{estNumerique && suivi.type !== 'number' && <ChampNombre label="Maximum" valeur={suivi.max ?? 1} onChange={(valeur) => modifierSuivi({ max: valeur })} />}{suivi.type === 'bar' && <ChampNombre label="Minimum" valeur={suivi.min ?? 0} onChange={(valeur) => modifierSuivi({ min: valeur })} />}</div><OptionsParType suivi={suivi} onChange={modifierSuivi} />{estCases && <EditeurCases suivi={suivi} onChange={onChange} resetOptions={<OptionsReset suivi={suivi} onChange={modifierSuivi} />} />}</div>;
 }
 
-export function FenetreEditionFiche({ participant, title = 'Modifier', saveTemplateVisible = true, deleteLabel = 'Supprimer la fiche', onClose, onSave, onDelete, onSaveTemplate }) {
-  const [brouillon, setBrouillon] = useState({ ...clone(participant), _actionSlotsInput: texteCreneauxAction(participant), _actionSlotsDraft: brouillonCreneauxAction(participant), stats: normaliserInfosRapides(participant.stats || []) });
+export function FenetreEditionFiche({ participant, initiativeTextOrder, phaseActionMode, phaseCount = defaultPhaseCount, multipleActionSlots = true, trackerTemplates = [], title = 'Modifier', saveTemplateVisible = true, deleteLabel = 'Supprimer la fiche', onClose, onSave, onDelete, onSaveTemplate }) {
+  const textConfig = normalizeInitiativeTextOrder(initiativeTextOrder);
+  const modePhasesCochees = phaseActionMode === phaseActionModes.CHECKED;
+  const [brouillon, setBrouillon] = useState({ ...clone(participant), phaseActions: modePhasesCochees ? (Array.isArray(participant.phaseActions) ? participant.phaseActions : ['1']) : participant.phaseActions, _actionSlotsInput: texteCreneauxAction(participant), _actionSlotsDraft: multipleActionSlots ? brouillonCreneauxAction(participant) : brouillonCreneauxAction(participant).slice(0, 1), stats: normaliserInfosRapides(participant.stats || []) });
+  const [trackerTemplateId, setTrackerTemplateId] = useState(trackerTemplates[0]?.id || '');
   const [confirmationSuppression, setConfirmationSuppression] = useState(false);
-  const creneauxAction = Array.isArray(brouillon._actionSlotsDraft) && brouillon._actionSlotsDraft.length ? brouillon._actionSlotsDraft : brouillonCreneauxAction(brouillon);
+  const creneauxActionSource = Array.isArray(brouillon._actionSlotsDraft) && brouillon._actionSlotsDraft.length ? brouillon._actionSlotsDraft : brouillonCreneauxAction(brouillon);
+  const creneauxAction = multipleActionSlots ? creneauxActionSource : creneauxActionSource.slice(0, 1);
   const modifierCreneauAction = (index, valeur) => setBrouillon((courant) => ({
     ...courant,
     _actionSlotsDraft: (courant._actionSlotsDraft || brouillonCreneauxAction(courant)).map((slot, position) => position === index ? { ...slot, initiative: valeur } : slot),
@@ -475,6 +500,12 @@ export function FenetreEditionFiche({ participant, title = 'Modifier', saveTempl
     if (!actif) return { ...courant, _actionSlotsDraft: slots.slice(0, 1) };
     return { ...courant, _actionSlotsDraft: slots.length > 1 ? slots : [...slots, { id: uid('slot'), initiative: slots[0]?.initiative ?? courant.initiative ?? 0 }] };
   });
+  const ajouterSuiviDepuisTemplate = () => {
+    const template = trackerTemplates.find((item) => item.id === trackerTemplateId) || trackerTemplates[0];
+    const suivi = instantiateTrackerTemplate(template);
+    if (!suivi) return;
+    setBrouillon((courant) => ({ ...courant, trackers: [...(courant.trackers || []), suivi] }));
+  };
   const renduEditionMultiple = (entete, valider, enregistrerCommeTemplate) => (
     <>
       <Fenetre title={title} onClose={onClose} header={entete}>
@@ -482,26 +513,27 @@ export function FenetreEditionFiche({ participant, title = 'Modifier', saveTempl
         <label className="field">Description<textarea value={brouillon.description || ''} onChange={(e) => modifierChamp('description', e.target.value)} /></label>
         <div className="grid2">
           <label className="field">Type<select value={brouillon.kind} onChange={(e) => modifierChamp('kind', e.target.value)}>{participantKinds.map((type) => <option key={type}>{type}</option>)}</select></label>
-          <ChampNombre label="Initiative 1" valeur={creneauxAction[0]?.initiative ?? brouillon.initiative ?? 0} onChange={(valeur) => modifierCreneauAction(0, valeur)} />
+          <ChampInitiative label="Initiative 1" valeur={creneauxAction[0]?.initiative ?? brouillon.initiative ?? 0} textConfig={textConfig} onChange={(valeur) => modifierCreneauAction(0, valeur)} />
         </div>
-        <div className="action-slots-editor">
+        {multipleActionSlots && <div className="action-slots-editor">
           <label className="row"><input type="checkbox" checked={creneauxAction.length > 1} onChange={(e) => basculerActionsMultiples(e.target.checked)} /> plusieurs actions</label>
           {creneauxAction.length > 1 && <div className="stack action-slot-list">
             {creneauxAction.slice(1).map((slot, index) => (
               <div className="initiative-action-row" key={slot.id || index}>
-                <ChampNombre label={`Initiative ${index + 2}`} valeur={slot.initiative} onChange={(valeur) => modifierCreneauAction(index + 1, valeur)} />
+                <ChampInitiative label={`Initiative ${index + 2}`} valeur={slot.initiative} textConfig={textConfig} onChange={(valeur) => modifierCreneauAction(index + 1, valeur)} />
                 <button className="small-btn subtle-danger" onClick={() => retirerCreneauAction(index + 1)}>x</button>
               </div>
             ))}
             <button className="small-btn" onClick={ajouterCreneauAction}>+ action</button>
           </div>}
-        </div>
+        </div>}
+        {modePhasesCochees && <EditeurPhasesParticipant phaseActions={brouillon.phaseActions} phaseCount={phaseCount} onChange={(phaseActions) => modifierChamp('phaseActions', phaseActions)} />}
         <div className="grid2"><ChampNombre label="Departage" valeur={brouillon.departage} onChange={(valeur) => modifierChamp('departage', valeur)} /><div /></div>
         <div className="grid2"><label className="field">Symbole<select value={brouillon.symbol || symbols[0]} onChange={(e) => modifierChamp('symbol', e.target.value)}>{symbols.map((symbole) => <option key={symbole} value={symbole}>{symbole}</option>)}</select></label><label className="field">Couleur<select value={brouillon.color || colors[0]} onChange={(e) => modifierChamp('color', e.target.value)}>{colors.map((couleur) => <option key={couleur} value={couleur}>{colorNames[couleur] || couleur}</option>)}</select></label></div>
         <h3>Infos rapides</h3>
         <EditeurInfosRapides stats={brouillon.stats || []} onChange={(stats) => modifierChamp('stats', stats)} />
         <h3>Suivis</h3>
-        <div className="stack tracker-list">{brouillon.trackers.map((suivi) => <EditeurSuivi key={suivi.id} suivi={suivi} onChange={(suivant) => modifierSuivi(suivi.id, suivant)} onDelete={() => setBrouillon((courant) => ({ ...courant, trackers: courant.trackers.filter((item) => item.id !== suivi.id) }))} />)}<button className="primary add-tracker-btn" onClick={() => setBrouillon((courant) => ({ ...courant, trackers: [...courant.trackers, newTracker('bar')] }))}>Ajouter un suivi</button></div>
+        <div className="stack tracker-list">{brouillon.trackers.map((suivi) => <EditeurSuivi key={suivi.id} suivi={suivi} onChange={(suivant) => modifierSuivi(suivi.id, suivant)} onDelete={() => setBrouillon((courant) => ({ ...courant, trackers: courant.trackers.filter((item) => item.id !== suivi.id) }))} />)}<button className="primary add-tracker-btn" onClick={() => setBrouillon((courant) => ({ ...courant, trackers: [...courant.trackers, newTracker('bar')] }))}>Ajouter un suivi</button>{trackerTemplates.length > 0 && <div className="template-picker-row"><select value={trackerTemplateId} onChange={(event) => setTrackerTemplateId(event.target.value)}>{trackerTemplates.map((template) => <option key={template.id} value={template.id}>{template.name}</option>)}</select><button className="small-btn" type="button" onClick={ajouterSuiviDepuisTemplate}>Depuis template</button></div>}</div>
         {saveTemplateVisible && <button className="small-btn" style={{ width: '100%', marginTop: 12 }} onClick={enregistrerCommeTemplate}>Enregistrer comme template</button>}
         <div className="edit-actions-row" style={{ marginTop: 12 }}><button className="small-btn" onClick={onClose}>Annuler</button><button className="primary" onClick={valider}>Valider</button><button className="danger-btn" onClick={() => setConfirmationSuppression(true)}>{deleteLabel}</button></div>
       </Fenetre>
@@ -510,8 +542,8 @@ export function FenetreEditionFiche({ participant, title = 'Modifier', saveTempl
   );
   const modifierChamp = (clef, valeur) => setBrouillon((courant) => ({ ...courant, [clef]: valeur }));
   const modifierSuivi = (id, suivant) => setBrouillon((courant) => ({ ...courant, trackers: courant.trackers.map((suivi) => suivi.id === id ? suivant : suivi) }));
-  const valider = () => onSave(normaliserFiche(brouillon));
-  const enregistrerCommeTemplate = () => onSaveTemplate?.(normaliserFiche(brouillon));
+  const valider = () => onSave(normaliserFiche(brouillon, textConfig, { phaseActionMode, phaseCount, multipleActionSlots }));
+  const enregistrerCommeTemplate = () => onSaveTemplate?.(normaliserFiche(brouillon, textConfig, { phaseActionMode, phaseCount, multipleActionSlots }));
   const enteteMultiple = <div className="edit-sheet-header"><h2>{title}</h2><button className="icon-btn validate-edit-btn" onClick={valider} aria-label="Valider les modifications">{'✓'}</button></div>;
   return renduEditionMultiple(enteteMultiple, valider, enregistrerCommeTemplate);
   const entete = <div className="edit-sheet-header"><h2>{title}</h2><button className="icon-btn validate-edit-btn" onClick={valider} aria-label="Valider les modifications">{'✓'}</button></div>;

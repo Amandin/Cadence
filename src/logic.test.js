@@ -154,6 +154,24 @@ describe('trackers updated behavior', () => {
     }, 'activation').trackers[0].current).toBe(-6);
   });
 
+  it('supports bar thresholds as fixed values, percentages and values from maximum', () => {
+    const tracker = {
+      type: 'bar',
+      current: 10,
+      min: 0,
+      max: 20,
+      direction: 'countdown',
+      thresholds: [
+        { value: 12, basis: 'fixed', label: 'fixed', operator: 'lte', color: 'amber' },
+        { value: 50, basis: 'percent', label: 'half', operator: 'lte', color: 'red' },
+        { value: 5, basis: 'fromMax', label: 'max minus five', operator: 'lte', color: 'blue' },
+      ],
+    };
+
+    expect(activeThresholds(tracker).map((threshold) => `${threshold.label}:${threshold.effectiveValue}`)).toEqual(['half:10']);
+    expect(activeThresholds({ ...tracker, current: 15 }).map((threshold) => `${threshold.label}:${threshold.effectiveValue}`)).toEqual(['max minus five:15']);
+  });
+
   it('keeps only the most restrictive active counter thresholds per operator', () => {
     const tracker = {
       type: 'number',

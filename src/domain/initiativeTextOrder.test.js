@@ -6,13 +6,14 @@ const cards = presetInitiativeTextOrder(initiativeTextOrderPresetIds.CARDS);
 
 describe('initiativeTextOrder', () => {
   it('compose une initiative depuis deux choix de menus', () => {
-    expect(composeInitiativeLabel(['As', 'Cœur'], cards)).toBe('As de Cœur');
-    expect(splitInitiativeLabel('Valet de Trèfle', cards)).toEqual(['Valet', 'Trèfle']);
+    expect(composeInitiativeLabel(['A', '♥'], cards)).toBe('A♥');
+    expect(splitInitiativeLabel('V♣', cards)).toEqual(['V', '♣']);
   });
 
   it('convertit les cartes en valeur numérique invisible', () => {
+    expect(initiativeTextValue('A♥', cards)).toBeGreaterThan(initiativeTextValue('R♥', cards));
+    expect(initiativeTextValue('A♠', cards)).toBeGreaterThan(initiativeTextValue('A♣', cards));
     expect(initiativeTextValue('As de Cœur', cards)).toBeGreaterThan(initiativeTextValue('Roi de Cœur', cards));
-    expect(initiativeTextValue('As de Pique', cards)).toBeGreaterThan(initiativeTextValue('As de Trèfle', cards));
   });
 
   it('préserve les nombres quand le mode texte est actif', () => {
@@ -25,21 +26,37 @@ describe('initiativeTextOrder', () => {
     expect(config.parts[0].values).toEqual(['As', 'Roi']);
   });
 
+  it('accepte plus ou moins de menus de labels', () => {
+    const config = normalizeInitiativeTextOrder({
+      enabled: true,
+      separator: ' / ',
+      separators: [' / ', ' - '],
+      parts: [
+        { label: 'Vitesse', values: ['Rapide', 'Lent'] },
+        { label: 'Posture', values: ['Haut', 'Bas'] },
+        { label: 'Priorite', values: ['A', 'B'] },
+      ],
+    });
+    expect(config.parts).toHaveLength(3);
+    expect(composeInitiativeLabel(['Rapide', 'Bas', 'A'], config)).toBe('Rapide / Bas - A');
+    expect(splitInitiativeLabel('Rapide / Bas - A', config)).toEqual(['Rapide', 'Bas', 'A']);
+  });
+
   it('branche la conversion sur le tri central', () => {
     const participants = trierParInitiative([
-      { id: 'a', name: 'A', initiative: 'Roi de Cœur' },
-      { id: 'b', name: 'B', initiative: 'As de Trèfle' },
-      { id: 'c', name: 'C', initiative: 'As de Pique' },
+      { id: 'a', name: 'A', initiative: 'R♥' },
+      { id: 'b', name: 'B', initiative: 'A♣' },
+      { id: 'c', name: 'C', initiative: 'A♠' },
     ], { initiativeTextOrder: cards });
     expect(participants.map((participant) => participant.id)).toEqual(['c', 'b', 'a']);
   });
 
   it('branche la conversion sur les créneaux multiples', () => {
     const [slot] = ordreCreneauxClassique([
-      { id: 'a', name: 'A', initiative: 'Roi de Cœur', actionSlots: [{ id: 'slot-1', initiative: 'Roi de Cœur' }] },
-      { id: 'b', name: 'B', initiative: 'As de Pique', actionSlots: [{ id: 'slot-1', initiative: 'As de Pique' }] },
+      { id: 'a', name: 'A', initiative: 'R♥', actionSlots: [{ id: 'slot-1', initiative: 'R♥' }] },
+      { id: 'b', name: 'B', initiative: 'A♠', actionSlots: [{ id: 'slot-1', initiative: 'A♠' }] },
     ], { initiativeTextOrder: cards });
     expect(slot.id).toBe('b');
-    expect(slot.initiative).toBe('As de Pique');
+    expect(slot.initiative).toBe('A♠');
   });
 });

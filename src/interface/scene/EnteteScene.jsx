@@ -14,6 +14,7 @@ export function EnteteScene(props) {
     libelleSuivant,
     temporaliteSouple,
     temporalitePhases,
+    temporaliteDeclaration,
     suivantDesactive,
     retourDesactive,
     dark,
@@ -23,7 +24,6 @@ export function EnteteScene(props) {
     onRetourPreparation,
     onModifierCompteurGlobal,
     onToggleCompteurTemps,
-    onAjouterEtatScene,
     onRetirerEtatScene,
   } = props;
   const horlogeABloquee = horlogesBloquantes.length > 0;
@@ -35,15 +35,16 @@ export function EnteteScene(props) {
       ? horlogesBloquantes.map((participant) => participant.name).join(', ')
       : tourSimultane
         ? groupeActif.map((participant) => participant.name).join(' + ')
-        : actif?.name || 'Aucun participant';
-  const suffixeTemporalite = temporaliteSouple ? ' · souple' : temporalitePhases ? ' · phases' : '';
+        : temporaliteDeclaration && !actif ? 'Déclarer les actions' : actif?.name || 'Aucun participant';
+  const suffixeTemporalite = `${temporaliteSouple ? ' · souple' : temporalitePhases ? ' · phases' : ''}${temporaliteDeclaration ? ' · déclaration' : ''}`;
+  const actionDeclaree = temporaliteDeclaration && actif && scene.declarationStage === 'resolution' && !(scene.declarationPlayedIds || []).includes(actif.id) ? scene.declarations?.[actif.id] : '';
   const libelleTour = enPreparation
     ? 'Préparation'
     : horlogeABloquee
       ? 'Horloge à gérer'
       : tourSimultane
         ? 'Tour simultané'
-        : 'Tour actif';
+        : temporaliteDeclaration && !actif ? 'Déclaration' : 'Tour actif';
   const logo = dark ? '/branding/logo-cadence-dark.svg' : '/branding/logo-cadence-light.svg';
 
   return (
@@ -58,10 +59,10 @@ export function EnteteScene(props) {
       </div>
       <div className="turn-row">
         {onRetourPreparation ? <button className="turn-btn prep-return-btn" onClick={onRetourPreparation} aria-label="Retour en préparation" title="Retour en préparation">↤</button> : <BoutonTourPrecedent disabled={retourDesactive} onClick={onTourPrecedent} />}
-        <div className={`active-box panel ${tourSimultane ? 'simultaneous-turn' : ''} ${temporaliteSouple ? 'flexible-turn' : ''} ${temporalitePhases ? 'phase-turn' : ''}`}>
+        <div className={`active-box panel ${tourSimultane ? 'simultaneous-turn' : ''} ${temporaliteSouple ? 'flexible-turn' : ''} ${temporalitePhases ? 'phase-turn' : ''} ${temporaliteDeclaration ? 'declaration-turn' : ''}`}>
           <div className="turn-active-line">
             <div className="active-name">
-              {temporaliteSouple && !horlogeABloquee && !enPreparation ? <><div className="muted">Mode souple</div><strong>Marquer les tours dans la liste</strong></> : <><div className="muted">{libelleTour}</div><strong>{nomTourActif}</strong></>}
+              {temporaliteSouple && !horlogeABloquee && !enPreparation ? <><div className="muted">Mode souple</div><strong>Marquer les tours dans la liste</strong></> : <><div className="muted">{libelleTour}</div><strong>{nomTourActif}</strong>{actionDeclaree && <strong className="declaration-header-action">({actionDeclaree})</strong>}</>}
             </div>
             {tourSimultane && <span className="chip simultaneous-chip">Même temps</span>}
             {temporaliteSouple && !horlogeABloquee && !enPreparation && <span className="chip flexible-chip">Souple</span>}
@@ -72,7 +73,6 @@ export function EnteteScene(props) {
       </div>
       <div className="statuses status-control-row scene-status-row">
         {(scene.statuses || []).map((etat) => <EtiquetteEtat key={etat.id} etat={etat} onRetirer={() => onRetirerEtatScene?.(etat.id)} />)}
-        <button className="small-btn" onClick={onAjouterEtatScene}>+ état scène</button>
       </div>
     </header>
   );

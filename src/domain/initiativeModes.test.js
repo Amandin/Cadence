@@ -18,11 +18,13 @@ describe('advanced initiative modes', () => {
   it('normalizes the new initiative options', () => {
     expect(normalizeInitiativeModeOptions({
       phaseActionMode: phaseActionModes.CHECKED,
+      phaseCount: '5',
       initiativeValueType: initiativeValueTypes.LABEL,
       initiativeLabels: ['Rapide', 'Rapide', 'Lent'],
       activationAdvancePolicy: activationAdvancePolicies.EVERY_ACTION,
     })).toMatchObject({
       phaseActionMode: phaseActionModes.CHECKED,
+      phaseCount: 5,
       initiativeValueType: initiativeValueTypes.LABEL,
       initiativeLabels: ['Rapide', 'Lent'],
       activationAdvancePolicy: activationAdvancePolicies.EVERY_ACTION,

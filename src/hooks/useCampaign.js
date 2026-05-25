@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createCampaignActions } from '../actions/campaignActions.js';
 import { createSceneActions } from '../actions/sceneActions.js';
+import { createRestorePoint, pruneRestorePoints } from '../actions/sceneSupport.js';
 import { defaultCategoryOrder, defaultEqualityRule, defaultInitiativeOrder } from '../constants.js';
 import { applyInitiativeRules, campaignRulesFromPayload, normalizeCampaignRules, unifyCampaignScenes } from '../domain/campaignRules.js';
 import { normalizeGlobalTracker, stepGlobalTracker } from '../domain/globalTracker.js';
 import { normaliserCreneauxAction, trierParInitiative } from '../domain/initiative.js';
-import { clone, hasTriggeredClock, nextTurnInfo, uid } from '../logic.js';
+import { hasTriggeredClock, nextTurnInfo } from '../logic.js';
 import { campaignNameFromPayload, campaignTemplatesFromPayload, loadCampaign, normalizeCampaignScene, normalizeCampaignScenes, saveCampaign } from '../storage.js';
 
 function normalizeScenesWithCampaignRules(rawScenes, rules) {
@@ -16,8 +17,7 @@ function normalizeScenesWithCampaignRules(rawScenes, rules) {
 function initialRestorePoints(scenes) {
   return Object.fromEntries((scenes || []).map((rawScene) => {
     const scene = normalizeCampaignScene(rawScene);
-    const round = Math.max(1, scene.round || 1);
-    return [scene.id, [{ id: uid('restore'), round, activeId: scene.activeId, title: `Début R${round}`, scene: clone({ ...scene, round }) }]];
+    return [scene.id, pruneRestorePoints([createRestorePoint(scene)])];
   }));
 }
 
@@ -31,6 +31,7 @@ function initiativeOptions(scene = {}) {
     equalityRule: scene.equalityRule || defaultEqualityRule,
     initiativeOrder: scene.initiativeOrder || defaultInitiativeOrder,
     initiativeTextOrder: scene.initiativeTextOrder,
+    multipleActionSlots: scene.multipleActionSlots !== false,
   };
 }
 

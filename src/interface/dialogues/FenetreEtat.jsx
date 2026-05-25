@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Fenetre } from '../commun/ComposantsCommuns.jsx';
 
 const optionsDuree = [
@@ -12,36 +12,54 @@ const optionsDuree = [
   { label: 'Perso', value: 'custom' },
 ];
 
-export function FenetreEtat({ participant, onFermer, onValider, defaultAdvanceOn = 'activation', afficherChoixEvolution = true }) {
+export function FenetreEtat({ participant, onFermer, onValider, defaultAdvanceOn = 'activation', afficherChoixEvolution = true, afficherInactif = true, statusTemplates = [] }) {
   const [nom, setNom] = useState('Nouveau');
   const [duree, setDuree] = useState('infinite');
   const [dureePersonnalisee, setDureePersonnalisee] = useState('8');
   const [boucle, setBoucle] = useState(false);
   const [inactif, setInactif] = useState(false);
   const [advanceOn, setAdvanceOn] = useState(defaultAdvanceOn === 'round' ? 'round' : 'activation');
+  const [templateId, setTemplateId] = useState(statusTemplates[0]?.id || '');
+
+  useEffect(() => {
+    if (!templateId && statusTemplates[0]?.id) setTemplateId(statusTemplates[0].id);
+    if (templateId && !statusTemplates.some((template) => template.id === templateId)) setTemplateId(statusTemplates[0]?.id || '');
+  }, [statusTemplates, templateId]);
 
   const dureeFinie = duree !== 'infinite';
   const valeurDuree = duree === 'custom' ? Number(dureePersonnalisee) : Number(duree);
   const dureeValide = !dureeFinie || (Number.isFinite(valeurDuree) && valeurDuree >= 1);
   const peutEnregistrer = nom.trim() && dureeValide;
+  const appliquerTemplate = () => {
+    const template = statusTemplates.find((item) => item.id === templateId);
+    const status = template?.status;
+    if (!status) return;
+    setNom(status.name || template.name || 'Etat');
+    setDuree(status.duration == null ? 'infinite' : 'custom');
+    setDureePersonnalisee(String(status.duration || 1));
+    setBoucle(!!status.loop);
+    setInactif(afficherInactif && !!status.inactive);
+    setAdvanceOn(afficherChoixEvolution ? (status.advanceOn === 'round' ? 'round' : 'activation') : defaultAdvanceOn);
+  };
 
   const enregistrer = () => {
     const nomNettoye = nom.trim();
     if (!nomNettoye || !dureeValide) return;
-    onValider({ name: nomNettoye, duration: dureeFinie ? valeurDuree : null, loop: dureeFinie && boucle, inactive: inactif, advanceOn });
+    onValider({ name: nomNettoye, duration: dureeFinie ? valeurDuree : null, loop: dureeFinie && boucle, inactive: afficherInactif && inactif, advanceOn: afficherChoixEvolution ? advanceOn : defaultAdvanceOn });
   };
 
   return (
     <Fenetre title={`Ajouter un état · ${participant.name}`} onClose={onFermer}>
+      {statusTemplates.length > 0 && <div className="template-picker-row status-template-picker"><select value={templateId} onChange={(event) => setTemplateId(event.target.value)}>{statusTemplates.map((template) => <option key={template.id} value={template.id}>{template.name}</option>)}</select><button className="small-btn" type="button" onClick={appliquerTemplate}>Utiliser</button></div>}
       <div className="status-name-row">
         <label className="field">
           Nom
           <input value={nom} onChange={(event) => setNom(event.target.value)} autoFocus />
         </label>
-        <label className={`reset-switch status-inactive-switch ${inactif ? 'active' : ''}`}>
+        {afficherInactif && <label className={`reset-switch status-inactive-switch ${inactif ? 'active' : ''}`}>
           <span>Rend inactif</span>
           <input type="checkbox" checked={inactif} onChange={(event) => setInactif(event.target.checked)} />
-        </label>
+        </label>}
       </div>
       <div className="field">
         Durée

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { phaseActionModes } from '../constants.js';
 import { createStatus } from '../domain/statuses.js';
 
 /**
@@ -51,8 +52,10 @@ export function useCharacterInteractions(scene, actions) {
 
   const addCharacter = (participant, { placement = 'init', initiative = 1 } = {}) => {
     if (!participant) return;
-    const initiativeValue = Number.isFinite(Number(initiative)) ? Number(initiative) : participant.initiative;
-    const nextParticipant = placement === 'init' ? { ...participant, initiative: initiativeValue, actionSlots: [{ id: 'slot-1', initiative: initiativeValue, order: 0 }] } : participant;
+    const cleanInitiative = String(initiative ?? '').trim();
+    const initiativeValue = cleanInitiative ? (Number.isFinite(Number(cleanInitiative)) ? Number(cleanInitiative) : cleanInitiative) : participant.initiative;
+    const phasePatch = scene.phaseActionMode === phaseActionModes.CHECKED && !Array.isArray(participant.phaseActions) ? { phaseActions: ['1'] } : {};
+    const nextParticipant = placement === 'init' ? { ...participant, ...phasePatch, initiative: initiativeValue, actionSlots: [{ id: 'slot-1', initiative: initiativeValue, order: 0 }] } : { ...participant, ...phasePatch };
     actions.addParticipant(nextParticipant, placement === 'reserve' ? 'reserve' : 'init');
     setEditingId(nextParticipant.id);
     setSelectedId(null);

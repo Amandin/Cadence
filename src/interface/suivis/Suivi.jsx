@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { activeThresholds, applyBoxMarkAction, applyDelta, boxBlocks, boxVisualRank, isTriggeredClock, normalizeThresholds, sortBoxBlocks } from '../../logic.js';
+import { activeThresholds, applyBoxMarkAction, applyDelta, boxBlocks, boxVisualRank, isTriggeredClock, normalizeThresholds, sortBoxBlocks, thresholdValue } from '../../logic.js';
 
 function TitreSuivi({ titre, avantTitre, suffixe = null }) {
   return <span className="tracker-title">{avantTitre}{titre}{suffixe}</span>;
@@ -62,6 +62,7 @@ export function Suivi({ suivi, onModifier, onSupprimer, avantTitre = null, coule
   const [deltaOuvert, setDeltaOuvert] = useState(false);
   const [delta, setDelta] = useState('');
   const [actionCases, setActionCases] = useState('fill');
+  const [pasCases, setPasCases] = useState('1');
   const champDeltaRef = useRef(null);
   const declenche = isTriggeredClock(suivi);
   const seuils = activeThresholds(suivi) || [];
@@ -75,6 +76,15 @@ export function Suivi({ suivi, onModifier, onSupprimer, avantTitre = null, coule
   const modifier = (valeur) => onModifier({ ...suivi, ...valeur });
   const appliquerPas = (direction) => suivi.type !== 'boxes' && onModifier(applyDelta(suivi, direction * normaliserPas(suivi.step)));
   const changerPas = (valeur) => modifier({ step: normaliserPas(valeur) });
+  const changerPasCases = (valeur) => setPasCases(String(valeur ?? '').replace(/[^\d]/g, ''));
+  const pasCasesEffectif = normaliserPas(pasCases);
+  const appliquerActionCase = (mark) => {
+    let suivant = mark;
+    for (let index = 0; index < pasCasesEffectif; index += 1) {
+      suivant = applyBoxMarkAction(suivant, suivi.fillLevels || 5, actionCases);
+    }
+    return suivant;
+  };
   const ouvrirDelta = () => setDeltaOuvert((ouvert) => !ouvert);
   const appliquerDeltaManuel = () => { onModifier(applyDelta(suivi, Number(delta))); setDelta(''); setDeltaOuvert(false); };
   const cocherCase = (blocId, ligneId, caseId) => {
@@ -82,7 +92,7 @@ export function Suivi({ suivi, onModifier, onSupprimer, avantTitre = null, coule
       ...bloc,
       lines: bloc.lines.map((ligne) => ligne.id !== ligneId ? ligne : {
         ...ligne,
-        boxes: ligne.boxes.map((caseSuivi) => caseSuivi.id === caseId ? { ...caseSuivi, mark: applyBoxMarkAction(caseSuivi.mark, suivi.fillLevels || 5, actionCases) } : caseSuivi),
+        boxes: ligne.boxes.map((caseSuivi) => caseSuivi.id === caseId ? { ...caseSuivi, mark: appliquerActionCase(caseSuivi.mark) } : caseSuivi),
       }),
     });
     onModifier(sortBoxBlocks({ ...suivi, blocks }));
@@ -98,7 +108,7 @@ export function Suivi({ suivi, onModifier, onSupprimer, avantTitre = null, coule
   }
 
   if (suivi.type === 'boxes') {
-    return <div className="tracker"><div className="tracker-top"><TitreSuivi titre={suivi.name} avantTitre={avantTitre} /><div className="box-action-toggle" role="group" aria-label="Action sur les cases"><button className={actionCases === 'fill' ? 'active' : ''} onClick={() => setActionCases('fill')} title="Ajouter ou remplir les cases">+</button><button className={actionCases === 'empty' ? 'active' : ''} onClick={() => setActionCases('empty')} title="Retirer ou vider les cases">-</button></div></div><CasesSuivi suivi={suivi} cocher={cocherCase} /></div>;
+    return <div className="tracker"><div className="tracker-top"><TitreSuivi titre={suivi.name} avantTitre={avantTitre} /><div className="box-action-toggle" role="group" aria-label="Action sur les cases"><button className={actionCases === 'fill' ? 'active' : ''} onClick={() => setActionCases('fill')} title="Ajouter ou remplir les cases">+</button><button className={actionCases === 'empty' ? 'active' : ''} onClick={() => setActionCases('empty')} title="Retirer ou vider les cases">-</button><input className="box-action-step" type="number" inputMode="numeric" min="1" value={pasCases} onChange={(event) => changerPasCases(event.target.value)} onBlur={() => setPasCases(String(pasCasesEffectif))} aria-label="Nombre de clics par case" title="Nombre de clics par case" /></div></div><CasesSuivi suivi={suivi} cocher={cocherCase} /></div>;
   }
 
   if (suivi.type === 'number') {
@@ -109,7 +119,7 @@ export function Suivi({ suivi, onModifier, onSupprimer, avantTitre = null, coule
     return <div className={`tracker ${classeSeuils} ${declenche ? 'triggered' : ''}`} style={styleSeuil}><div className="tracker-top"><TitreSuivi titre={suivi.name} avantTitre={avantTitre} /><SeuilsActifs seuils={seuils} />{declenche && <span className="chip hot">A resoudre</span>}</div>{deltaOuvert && <div className="delta-pop tracker-action-pop"><input ref={champDeltaRef} type="number" inputMode="numeric" value={delta} onChange={(event) => setDelta(event.target.value)} onKeyDown={(event) => event.key === 'Enter' && appliquerDeltaManuel()} placeholder="+50" /><button onClick={appliquerDeltaManuel}>OK</button></div>}<div className="controls bar-controls"><button onClick={() => appliquerPas(-1)}>-</button><button className="bar-action-zone" onClick={ouvrirDelta} aria-label={`Modifier ${suivi.name}`}><BarreSuivi suivi={suivi} /></button><div className="step-side"><button onClick={() => appliquerPas(1)}>+</button><ControlePas valeur={suivi.step} onChange={changerPas} /></div></div>{declenche && <div className="stack" style={{ marginTop: 8 }}><button className="primary" onClick={() => modifier({ current: 0 })}>Relancer a 0</button><button className="danger-btn" onClick={onSupprimer}>Supprimer</button></div>}</div>;
   }
 
-  return <div className={`tracker ${classeSeuils} ${declenche ? 'triggered' : ''}`} style={styleSeuil}><div className="tracker-top"><TitreSuivi titre={suivi.name} avantTitre={avantTitre} suffixe={suffixePuces} /><SeuilsActifs seuils={seuils} />{declenche && <span className="chip hot">A resoudre</span>}</div><div className={`controls ${estPuces ? 'points-controls' : ''}`}><button onClick={() => appliquerPas(-1)}>-</button><div>{suivi.type === 'points' && <PointsSuivi suivi={suivi} onModifier={modifier} />}{suivi.type === 'dots' && <PointsSuivi suivi={suivi} onModifier={modifier} />}</div><button onClick={() => appliquerPas(1)}>+</button></div>{declenche && <div className="stack" style={{ marginTop: 8 }}><button className="primary" onClick={() => modifier({ current: 0 })}>Relancer a 0</button><button className="danger-btn" onClick={onSupprimer}>Supprimer</button></div>}</div>;
+  return <div className={`tracker ${classeSeuils} ${declenche ? 'triggered' : ''}`} style={styleSeuil}><div className="tracker-top"><TitreSuivi titre={suivi.name} avantTitre={avantTitre} suffixe={suffixePuces} /><SeuilsActifs seuils={seuils} />{declenche && <span className="chip hot">A resoudre</span>}</div><div className="points-controls"><PointsSuivi suivi={suivi} onModifier={modifier} /></div>{declenche && <div className="stack" style={{ marginTop: 8 }}><button className="primary" onClick={() => modifier({ current: 0 })}>Relancer a 0</button><button className="danger-btn" onClick={onSupprimer}>Supprimer</button></div>}</div>;
 }
 
 function BarreSuivi({ suivi }) {
@@ -129,10 +139,10 @@ function BarreSuivi({ suivi }) {
   const seuilActif = activeThresholds(suivi)?.[0];
   const couleurSeuilActif = thresholdGlowColors[seuilActif?.color] || null;
   const styleRemplissage = { width: `${ratio * 100}%`, ...(couleurSeuilActif ? { background: couleurSeuilActif } : {}) };
-  const seuils = normalizeThresholds(suivi.thresholds).filter((seuil) => seuil.value >= min && seuil.value <= max);
+  const seuils = normalizeThresholds(suivi.thresholds).map((seuil) => ({ ...seuil, effectiveValue: thresholdValue(suivi, seuil) })).filter((seuil) => seuil.effectiveValue >= min && seuil.effectiveValue <= max);
   const classesBarre = `bar-bg ${sousMinimum ? 'under-min' : ''} ${entreZeroEtMinimum ? 'between-zero-and-min' : ''} ${sousZero ? 'under-zero' : ''} ${exces > 0 || sousMinimum ? 'overflowing' : ''}`.trim();
 
-  return <><div className={classesBarre}><div className={`bar-fill ${classeRemplissage}`} style={styleRemplissage} />{depassement > 0 && <div className="bar-over" style={{ width: `${largeurDepassement}%` }} />}{manque > 0 && <div className={`bar-under ${entreZeroEtMinimum ? 'between-zero-and-min' : ''} ${sousZero ? 'under-zero' : ''}`.trim()} style={{ width: `${largeurManque}%` }} />}{seuils.map((seuil) => <span className={`bar-threshold-marker threshold-${seuil.color || 'neutral'}`} key={`${seuil.value}-${seuil.label}`} title={seuil.label || `Seuil ${seuil.value}`} style={{ left: `${largeurManque + ((seuil.value - min) / amplitude) * largeurNormale}%`, '--marker-color': thresholdGlowColors[seuil.color] || thresholdGlowColors.neutral }} />)}</div><div className="muted" style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginTop: 3 }}><span>{min}</span><span>{courant}/{max}</span></div></>;
+  return <><div className={classesBarre}><div className={`bar-fill ${classeRemplissage}`} style={styleRemplissage} />{depassement > 0 && <div className="bar-over" style={{ width: `${largeurDepassement}%` }} />}{manque > 0 && <div className={`bar-under ${entreZeroEtMinimum ? 'between-zero-and-min' : ''} ${sousZero ? 'under-zero' : ''}`.trim()} style={{ width: `${largeurManque}%` }} />}{seuils.map((seuil) => <span className={`bar-threshold-marker threshold-${seuil.color || 'neutral'}`} key={`${seuil.basis}-${seuil.value}-${seuil.label}`} title={seuil.label || `Seuil ${seuil.effectiveValue}`} style={{ left: `${largeurManque + ((seuil.effectiveValue - min) / amplitude) * largeurNormale}%`, '--marker-color': thresholdGlowColors[seuil.color] || thresholdGlowColors.neutral }} />)}</div><div className="muted" style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginTop: 3 }}><span>{min}</span><span>{courant}/{max}</span></div></>;
 }
 
 function PointsSuivi({ suivi, onModifier }) {

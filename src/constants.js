@@ -20,12 +20,14 @@ export const temporalityModes = {
 };
 
 export const defaultTemporalityMode = temporalityModes.CLASSIC;
+export const defaultDeclarationMode = false;
 export const defaultStartRound = 0;
 export const defaultPhaseDecrement = 10;
 export const defaultPhaseRerollEachRound = false;
 export const defaultPhaseActivateOncePerRound = true;
 export const phaseActionModes = { AUTOMATIC: 'automatic', CHECKED: 'checked' };
 export const defaultPhaseActionMode = phaseActionModes.AUTOMATIC;
+export const defaultPhaseCount = 3;
 export const initiativeValueTypes = { NUMERIC: 'numeric', LABEL: 'label' };
 export const defaultInitiativeValueType = initiativeValueTypes.NUMERIC;
 export const activationAdvancePolicies = { ONCE_PER_ROUND: 'once-per-round', EVERY_ACTION: 'every-action' };

@@ -23,14 +23,49 @@ export function placerEnReserve(participant) {
 }
 
 export function createRestorePoint(scene) {
-  if (scene.round < 0) return { id: uid('restore'), round: -1, activeId: scene.activeId, title: 'Préparation', scene: clone(scene) };
+  if (scene.round < 0) return createPreInitiativeRestorePoint(scene);
   return { id: uid('restore'), round: scene.round, activeId: scene.activeId, title: `Début R${scene.round}`, scene: clone(scene) };
+}
+
+export function createPreInitiativeRestorePoint(scene) {
+  return { id: uid('restore'), kind: 'pre-initiative', round: -1, activeId: scene.activeId, title: 'Avant initiative', scene: clone(scene) };
+}
+
+function isPreInitiativePoint(point) {
+  return point?.kind === 'pre-initiative' || point?.round < 0;
+}
+
+export function pruneRestorePoints(points = []) {
+  const preInitiative = points.filter(isPreInitiativePoint).slice(-1);
+  const byRound = new Map();
+  for (const point of points) {
+    if (isPreInitiativePoint(point)) continue;
+    const round = Number(point.round);
+    if (!Number.isFinite(round) || round < 0) continue;
+    byRound.set(round, point);
+  }
+  const rounds = [...byRound.keys()].sort((a, b) => a - b);
+  const latestRound = rounds.at(-1);
+  if (!latestRound) return [...preInitiative, ...rounds.map((round) => byRound.get(round))];
+
+  const keptRounds = rounds.filter((round) => {
+    const age = latestRound - round + 1;
+    const step = 2 ** Math.max(0, Math.floor((age - 1) / 4));
+    return age <= 4 || (latestRound - round) % step === 0;
+  });
+  return [...preInitiative, ...keptRounds.map((round) => byRound.get(round))];
+}
+
+export function addPreInitiativeRestorePoint(points, sceneId, sceneBeforeInitiative) {
+  const current = points[sceneId] || [];
+  if (current.some(isPreInitiativePoint)) return points;
+  return { ...points, [sceneId]: pruneRestorePoints([...current, createPreInitiativeRestorePoint(sceneBeforeInitiative)]) };
 }
 
 export function addRestorePoint(points, sceneId, nextScene) {
   const current = points[sceneId] || [];
   if (current.some((point) => point.round === nextScene.round)) return points;
-  return { ...points, [sceneId]: [...current, createRestorePoint(nextScene)].slice(-50) };
+  return { ...points, [sceneId]: pruneRestorePoints([...current, createRestorePoint(nextScene)]) };
 }
 
 export function optionsTri(scene) {
@@ -39,6 +74,7 @@ export function optionsTri(scene) {
     equalityRule: scene.equalityRule || defaultEqualityRule,
     initiativeOrder: scene.initiativeOrder || defaultInitiativeOrder,
     initiativeTextOrder: scene.initiativeTextOrder,
+    multipleActionSlots: scene.multipleActionSlots !== false,
   };
 }
 
@@ -55,8 +91,8 @@ export function initiativesRenseignees(valuesById, participantId) {
   return initiatives.length ? initiatives : null;
 }
 
-export function actionSlotsDepuisInitiatives(initiatives = []) {
-  return initiatives
+export function actionSlotsDepuisInitiatives(initiatives = [], multipleActionSlots = true) {
+  return (multipleActionSlots ? initiatives : initiatives.slice(0, 1))
     .map((initiative, index) => ({ id: `slot-${index + 1}`, initiative, order: index }))
     .filter((slot) => String(slot.initiative ?? '').trim() !== '')
     .map((slot, index) => ({ id: `slot-${index + 1}`, initiative: slot.initiative, order: index }));

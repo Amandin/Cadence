@@ -49,9 +49,27 @@
   color: white;
 }
 
+.box-action-step {
+  width: 38px;
+  height: 26px;
+  padding: 0 4px;
+  border: 0;
+  border-left: 1px solid rgba(148, 163, 184, .28);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .72);
+  color: inherit;
+  font-size: 12px;
+  font-weight: 900;
+  text-align: center;
+}
+
 .dark .box-action-toggle button.active {
   background: #e2e8f0;
   color: #0f172a;
+}
+
+.dark .box-action-step {
+  background: rgba(15, 23, 42, .54);
 }
 
 .sub-options-row {
@@ -210,6 +228,14 @@
   align-items: center;
 }
 
+.global-threshold-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  justify-content: center;
+  max-width: 86px;
+}
+
 .threshold-chip {
   border-radius: 999px;
   padding: 2px 7px;
@@ -217,6 +243,15 @@
   font-weight: 950;
   line-height: 1.3;
   border: 1px solid transparent;
+}
+
+.global-threshold-chip-row .threshold-chip {
+  max-width: 82px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 2px 6px;
+  font-size: 9px;
 }
 
 .threshold-chip.threshold-neutral { background: #e2e8f0; color: #334155; border-color: #cbd5e1; }
@@ -307,6 +342,10 @@
   grid-template-columns: 1fr 48px minmax(54px, .75fr) 42px 28px;
 }
 
+.threshold-edit-row.has-basis {
+  grid-template-columns: 48px 78px minmax(54px, .75fr) 42px 28px;
+}
+
 .threshold-edit-row input,
 .threshold-edit-row select,
 .level-visual-row input,
@@ -334,6 +373,11 @@
 
 .threshold-operator-select {
   font-size: 12px;
+  font-weight: 900;
+}
+
+.threshold-basis-select {
+  font-size: 11px;
   font-weight: 900;
 }
 
@@ -616,7 +660,7 @@
 }
 
 .points-controls {
-  grid-template-columns: auto auto auto;
+  display: flex;
   justify-content: center;
 }
 

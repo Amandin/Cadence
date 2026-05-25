@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { APP_VERSION } from '../../constants.js';
-import { Fenetre } from '../commun/ComposantsCommuns.jsx';
+import { EtiquetteEtat, Fenetre } from '../commun/ComposantsCommuns.jsx';
 
 function MenuEntete({ sombre, onChangerTheme, onClose }) {
   const logo = sombre ? '/branding/logo-cadence-dark.svg' : '/branding/logo-cadence-light.svg';
@@ -33,7 +33,7 @@ function formaterTemps(ms) {
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
 }
 
-function OptionsCompteurScene({ scene, compteur, onModifier, onChanger }) {
+function OptionsCompteurScene({ scene, compteur, onModifier, onChanger, onOuvrirAvance }) {
   const courant = compteur || { enabled: false, name: 'Menace', mode: 'clock', current: 0, max: 10, auto: false, running: false, startedAt: null, elapsedMs: 0 };
   const tempsReel = ['stopwatch', 'timer'].includes(courant.mode);
   const enPreparation = scene?.round < 0;
@@ -52,9 +52,12 @@ function OptionsCompteurScene({ scene, compteur, onModifier, onChanger }) {
     <div className="scene-options compact-options">
       <div className="compact-option-title">
         <h3>Compteur de scène</h3>
-        <button className={`scene-clock-toggle ${courant.enabled ? 'active' : ''}`} onClick={() => modifier({ enabled: !courant.enabled })} aria-label="Activer ou désactiver le compteur de scène" title="Compteur de scène">
-          <span>{courant.enabled ? '◷' : '○'}</span>
-        </button>
+        <div className="row">
+          <button className="small-btn" onClick={onOuvrirAvance}>Seuils</button>
+          <button className={`scene-clock-toggle ${courant.enabled ? 'active' : ''}`} onClick={() => modifier({ enabled: !courant.enabled })} aria-label="Activer ou désactiver le compteur de scène" title="Compteur de scène">
+            <span>{courant.enabled ? '◷' : '○'}</span>
+          </button>
+        </div>
       </div>
       <div className="menu-counter-config">
         <label className="field">Nom<input value={courant.name || ''} onChange={(event) => modifier({ name: event.target.value })} placeholder="Menace" /></label>
@@ -82,11 +85,41 @@ function OptionsCompteurScene({ scene, compteur, onModifier, onChanger }) {
 function ActionsScene({ onAjouterParticipant, onSaisirInitiatives }) {
   return (
     <div className="scene-options compact-options menu-action-section">
-      <h3>Scène</h3>
+      <h3>Personnages et initiative</h3>
       <div className="menu-action-grid">
-        <button className="primary" onClick={onAjouterParticipant}>Ajouter</button>
-        <button className="small-btn" onClick={onSaisirInitiatives}>Initiatives</button>
+        <button className="primary" onClick={onAjouterParticipant}>Ajouter un personnage</button>
+        <button className="small-btn" onClick={onSaisirInitiatives}>Saisir les initiatives</button>
       </div>
+    </div>
+  );
+}
+
+function EtatsSceneMenu({ scene, onAjouterEtatScene, onRetirerEtatScene, onEffacerEtats }) {
+  const etats = scene?.statuses || [];
+  return (
+    <div className="scene-options compact-options menu-scene-statuses">
+      <div className="compact-option-title">
+        <h3>États de scène</h3>
+        <button className="small-btn" onClick={onAjouterEtatScene}>Ajouter un état</button>
+      </div>
+      {etats.length > 0 ? (
+        <>
+          <div className="statuses status-control-row menu-status-list">
+            {etats.map((etat) => <EtiquetteEtat key={etat.id} etat={etat} onRetirer={() => onRetirerEtatScene?.(etat.id)} />)}
+          </div>
+          <button className="small-btn subtle-danger menu-clear-statuses" onClick={onEffacerEtats}>Effacer tous les états de scène</button>
+        </>
+      ) : (
+        <p className="muted compact-help menu-empty-note">Aucun état de scène actif.</p>
+      )}
+    </div>
+  );
+}
+
+function NotesSceneMenu({ scene, onModifierNotes }) {
+  return (
+    <div className="scene-options compact-options menu-scene-notes">
+      <label className="field">Notes de scène<textarea rows={4} value={scene?.notes || ''} onChange={(event) => onModifierNotes?.(event.target.value)} placeholder="Ambiance, objectifs, éléments importants..." /></label>
     </div>
   );
 }
@@ -104,7 +137,6 @@ function OptionsDerouleScene({ scene, points, pointActif, onChoisirPoint, onRest
       <div className="menu-action-grid scene-management-grid">
         <button className="small-btn" onClick={onAvancerRound}>Round +1</button>
         <button className="small-btn" onClick={onResetSuivis}>Reset suivis</button>
-        <button className="small-btn" onClick={onEffacerEtats}>Effacer états</button>
       </div>
       {points.length > 0 && <RestaurationScene points={points} pointActif={pointActif} onChoisirPoint={onChoisirPoint} onRestaurer={onRestaurer} />}
     </div>
@@ -125,7 +157,7 @@ function RestaurationScene({ points, pointActif, onChoisirPoint, onRestaurer }) 
   );
 }
 
-export function MenuPrincipal({ scene, restorePoints = [], onRestore, onReturnToPreparation, onAdvanceRound, onResetTrackers, onClearStatuses, onClose, dark, setDark, onAddParticipant, onOpenInitiativeRoller, onOpenCampaignHub, onGlobalTracker, onStepGlobalTracker }) {
+export function MenuPrincipal({ scene, restorePoints = [], onRestore, onReturnToPreparation, onAdvanceRound, onResetTrackers, onClearStatuses, onClose, dark, setDark, onAddParticipant, onOpenInitiativeRoller, onOpenCampaignHub, onGlobalTracker, onStepGlobalTracker, onOpenGlobalTracker, onAddSceneStatus, onRemoveSceneStatus, onUpdateSceneNotes }) {
   const pointsRestauration = [...restorePoints].sort((a, b) => a.round - b.round);
   const [pointRestaurationId, setPointRestaurationId] = useState(pointsRestauration.at(-1)?.id || '');
 
@@ -133,8 +165,10 @@ export function MenuPrincipal({ scene, restorePoints = [], onRestore, onReturnTo
     <Fenetre title="Menu" onClose={onClose} header={<MenuEntete sombre={dark} onChangerTheme={setDark} onClose={onClose} />}>
       <button className="primary hub-menu-main-action" onClick={onOpenCampaignHub}>Hub de campagne</button>
       <ActionsScene onAjouterParticipant={onAddParticipant} onSaisirInitiatives={onOpenInitiativeRoller} />
+      <EtatsSceneMenu scene={scene} onAjouterEtatScene={onAddSceneStatus} onRetirerEtatScene={onRemoveSceneStatus} onEffacerEtats={onClearStatuses} />
+      <NotesSceneMenu scene={scene} onModifierNotes={onUpdateSceneNotes} />
       <OptionsDerouleScene scene={scene} points={pointsRestauration} pointActif={pointRestaurationId} onChoisirPoint={setPointRestaurationId} onRestaurer={onRestore} onRetourPreparation={onReturnToPreparation} onAvancerRound={onAdvanceRound} onResetSuivis={onResetTrackers} onEffacerEtats={onClearStatuses} />
-      <OptionsCompteurScene scene={scene} compteur={scene?.globalTracker} onModifier={onGlobalTracker} onChanger={onStepGlobalTracker} />
+      <OptionsCompteurScene scene={scene} compteur={scene?.globalTracker} onModifier={onGlobalTracker} onChanger={onStepGlobalTracker} onOuvrirAvance={onOpenGlobalTracker} />
     </Fenetre>
   );
 }
