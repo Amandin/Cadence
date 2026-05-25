@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { temporalityModes } from '../constants.js';
+import { phaseActionModes, temporalityModes } from '../constants.js';
 import {
   appliquerNouveauRoundPhases,
   participantsPhase,
@@ -93,5 +93,27 @@ describe('phase tempo state', () => {
 
   it('does not wait for reroll outside phase mode', () => {
     expect(phasesAttendRelanceInitiative(scene({ temporalite: temporalityModes.CLASSIC, phaseRerollEachRound: true, activeId: '' }))).toBe(false);
+  });
+
+  it('uses checked phase participation without decrementing initiative', () => {
+    const checkedScene = scene({
+      phaseActionMode: phaseActionModes.CHECKED,
+      phaseCount: 4,
+      phase: 2,
+      phaseRerollEachRound: true,
+      participants: [
+        participant('a', 23, { phaseActions: ['1', '3'] }),
+        participant('b', 14, { phaseActions: ['3'] }),
+        participant('c', 8, { phaseActions: ['4'] }),
+      ],
+    });
+
+    expect(phasesAttendRelanceInitiative({ ...checkedScene, activeId: '' })).toBe(false);
+    expect(participantsPhase(checkedScene)).toEqual([]);
+    expect(phaseSuivanteDisponible(checkedScene)).toBe(true);
+    expect(participantsPhase({ ...checkedScene, phase: 3 }).map((item) => [item.id, item.initiative])).toEqual([
+      ['a', 23],
+      ['b', 14],
+    ]);
   });
 });

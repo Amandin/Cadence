@@ -1,6 +1,7 @@
-import { temporalityModes } from '../constants.js';
-import { indexCreneauActif, ordreCreneauxClassique, phaseSuivanteExiste, participantsPourPhase, premierCreneauClassique, valeurInitiative } from '../domain/initiative.js';
+import { activationAdvancePolicies, temporalityModes } from '../constants.js';
+import { indexCreneauActif, ordreCreneauxClassique, premierCreneauClassique, valeurInitiative } from '../domain/initiative.js';
 import { stepAutoGlobalTracker } from '../domain/globalTracker.js';
+import { isCheckedPhaseMode, isDeclarationMode, participantsPourPhaseAvancee, phaseSuivanteAvancee, phaseSuivanteAvanceeExiste, premierePhaseAvancee } from '../domain/initiativeModes.js';
 import { resetAutoTrackers, tickParticipant, tickStatuses, triggerActivation } from '../logic.js';
 import { optionsTri, placerEnReserve } from './sceneSupport.js';
 
@@ -12,8 +13,12 @@ export function estModePhases(scene) {
   return scene.temporalite === temporalityModes.PHASES;
 }
 
+export function estModeDeclaration(scene) {
+  return isDeclarationMode(scene);
+}
+
 export function phasesAttendRelanceInitiative(scene) {
-  return estModePhases(scene) && !!scene.phaseRerollEachRound && !scene.activeId;
+  return estModePhases(scene) && !isCheckedPhaseMode(scene) && !!scene.phaseRerollEachRound && !scene.activeId;
 }
 
 export function trouverTourActifParInitiative(scene, participantsTries) {
@@ -29,7 +34,7 @@ export function trouverTourActifParInitiative(scene, participantsTries) {
 
 export function participantsPhase(scene, phase = scene.phase || 1) {
   if (phasesAttendRelanceInitiative(scene)) return [];
-  return participantsPourPhase(scene.participants || [], phase, scene.phaseDecrement || 10, optionsTri(scene));
+  return participantsPourPhaseAvancee(scene, phase);
 }
 
 export function premierParticipantPhase(scene) {
@@ -37,15 +42,27 @@ export function premierParticipantPhase(scene) {
 }
 
 export function phaseSuivanteDisponible(scene) {
-  return phaseSuivanteExiste(scene.participants, scene.phase || 1, scene.phaseDecrement || 10);
+  return phaseSuivanteAvanceeExiste(scene, scene.phase || 1);
+}
+
+export function phaseSuivante(scene) {
+  return phaseSuivanteAvancee(scene, scene.phase || 1);
+}
+
+export function premierePhaseDisponible(scene) {
+  return premierePhaseAvancee(scene);
 }
 
 function preparerActivationRound(participant) {
   return { ...participant, _activationAutomationsDone: false };
 }
 
-function declencherActivation(participant, activeId) {
-  return participant.id === activeId ? triggerActivation(participant) : participant;
+function declencherActivation(scene, participant, activeId) {
+  if (participant.id !== activeId) return participant;
+  const cible = scene.activationAdvancePolicy === activationAdvancePolicies.EVERY_ACTION
+    ? { ...participant, _activationAutomationsDone: false }
+    : participant;
+  return triggerActivation(cible);
 }
 
 function tickSceneRoundStatuses(scene) {
@@ -65,7 +82,7 @@ export function appliquerDebutNouveauRound(scene, activeId) {
     globalTracker: stepAutoGlobalTracker(sceneAvecEtats.globalTracker, 1),
     participants: sceneAvecEtats.participants.map((participant) => {
       const afterRound = tickParticipant(resetAutoTrackers(participant, 'round'), 'round');
-      return participant.id === nextActiveId ? triggerActivation(afterRound) : afterRound;
+      return declencherActivation(sceneAvecEtats, afterRound, nextActiveId);
     }),
     reserve: (sceneAvecEtats.reserve || []).map((participant) => tickParticipant(resetAutoTrackers(participant, 'round'), 'round')).map(placerEnReserve),
   };
@@ -89,11 +106,12 @@ export function appliquerNouveauRoundSouple(scene) {
 export function appliquerNouveauRoundPhases(scene) {
   const phaseOnce = scene.phaseActivateOncePerRound !== false;
   const sceneAvecEtats = tickSceneRoundStatuses(scene);
+  const phase = premierePhaseDisponible(sceneAvecEtats);
   const sceneSuivante = {
     ...sceneAvecEtats,
     activeId: '',
     activeSlotId: '',
-    phase: 1,
+    phase,
     round: Math.max(1, sceneAvecEtats.round + 1),
     globalTracker: stepAutoGlobalTracker(sceneAvecEtats.globalTracker, 1),
     participants: (sceneAvecEtats.participants || []).map((participant) => {
@@ -103,13 +121,13 @@ export function appliquerNouveauRoundPhases(scene) {
     reserve: (sceneAvecEtats.reserve || []).map((participant) => tickParticipant(resetAutoTrackers(participant, 'round'), 'round')).map(placerEnReserve),
   };
 
-  if (scene.phaseRerollEachRound) return sceneSuivante;
+  if (!isCheckedPhaseMode(scene) && scene.phaseRerollEachRound) return sceneSuivante;
   const activeId = premierParticipantPhase(sceneSuivante);
   return {
     ...sceneSuivante,
     activeId,
     activeSlotId: '',
-    participants: sceneSuivante.participants.map((participant) => declencherActivation(participant, activeId)),
+    participants: sceneSuivante.participants.map((participant) => declencherActivation(sceneSuivante, participant, activeId)),
   };
 }
 

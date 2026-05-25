@@ -1,4 +1,6 @@
-import { TEMPLATE_STORAGE_KEY } from './constants.js';
+import { phaseActionModes, TEMPLATE_STORAGE_KEY, temporalityModes } from './constants.js';
+import { normalizeCampaignRules } from './domain/campaignRules.js';
+import { normalizeGlobalTracker } from './domain/globalTracker.js';
 import { clone, newTracker, uid } from './logic.js';
 
 export const defaultTemplateCategories = ['PJ', 'PNJ', 'Créature', 'Horloge', 'Autre'];
@@ -134,6 +136,37 @@ export const defaultTemplates = [
   },
 ];
 
+export const defaultTrackerTemplates = [
+  { id: 'tracker-template-pv', name: 'PV simple', createdAt: 'demo', tracker: { ...newTracker('bar'), id: 'template-tracker', name: 'PV' } },
+  { id: 'tracker-template-horloge', name: 'Horloge 6 segments', createdAt: 'demo', tracker: { ...newTracker('clock'), id: 'template-tracker', name: 'Horloge', max: 6 } },
+  { id: 'tracker-template-puces', name: 'Reserve a puces', createdAt: 'demo', tracker: { ...newTracker('points'), id: 'template-tracker', name: 'Reserve', max: 5 } },
+];
+
+export const defaultStatusTemplates = [
+  { id: 'status-template-blesse', name: 'Blesse', createdAt: 'demo', status: { id: 'template-status', name: 'Blesse', duration: null, remaining: null, loop: false, inactive: false, advanceOn: 'activation', expired: false } },
+  { id: 'status-template-sonne', name: 'Sonne 1 tour', createdAt: 'demo', status: { id: 'template-status', name: 'Sonne', duration: 1, remaining: 1, loop: false, inactive: true, advanceOn: 'activation', expired: false } },
+  { id: 'status-template-enflamme', name: 'Enflamme', createdAt: 'demo', status: { id: 'template-status', name: 'Enflamme', duration: 3, remaining: 3, loop: false, inactive: false, advanceOn: 'round', expired: false } },
+];
+
+export const defaultSceneStatusTemplates = [
+  { id: 'scene-status-template-brouillard', name: 'Brouillard', createdAt: 'demo', status: { id: 'template-status', name: 'Brouillard', duration: 3, remaining: 3, loop: false, inactive: false, advanceOn: 'round', expired: false } },
+  { id: 'scene-status-template-zone-dangereuse', name: 'Zone dangereuse', createdAt: 'demo', status: { id: 'template-status', name: 'Zone dangereuse', duration: null, remaining: null, loop: false, inactive: false, advanceOn: 'round', expired: false } },
+];
+
+export const defaultSceneCounterTemplates = [
+  { id: 'scene-counter-template-menace', name: 'Menace 6 segments', createdAt: 'demo', counter: { enabled: true, name: 'Menace', mode: 'clock', current: 0, max: 6, auto: true, thresholds: [{ value: 4, label: 'pression', color: 'amber', operator: 'gte', basis: 'fixed' }, { value: 6, label: 'crise', color: 'red', operator: 'gte', basis: 'fixed' }] } },
+  { id: 'scene-counter-template-minuteur', name: 'Minuteur 10 min', createdAt: 'demo', counter: { enabled: true, name: 'Compte a rebours', mode: 'timer', current: 0, max: 600, auto: false, thresholds: [{ value: 60, label: 'derniere minute', color: 'red', operator: 'lte', basis: 'fixed' }] } },
+];
+
+export const defaultRuleTemplates = [
+  { id: 'rules-template-dnd5', name: 'D&D 5e - initiative classique', createdAt: 'demo', rules: { temporalite: temporalityModes.CLASSIC, declarationMode: false, multipleActionSlots: false, phaseActionMode: phaseActionModes.AUTOMATIC } },
+  { id: 'rules-template-shadowrun', name: 'Shadowrun - passes multiples', createdAt: 'demo', rules: { temporalite: temporalityModes.PHASES, phaseActionMode: phaseActionModes.AUTOMATIC, phaseDecrement: 10, declarationMode: false, multipleActionSlots: false } },
+  { id: 'rules-template-savage-worlds', name: 'Savage Worlds - cartes', createdAt: 'demo', rules: { temporalite: temporalityModes.CLASSIC, declarationMode: false, multipleActionSlots: false, initiativeTextOrder: { enabled: true, preset: 'cards' } } },
+  { id: 'rules-template-vampire', name: 'Vampire - declaration puis resolution', createdAt: 'demo', rules: { temporalite: temporalityModes.CLASSIC, declarationMode: true, multipleActionSlots: true, phaseActionMode: phaseActionModes.AUTOMATIC } },
+  { id: 'rules-template-fate', name: 'Fate - ordre souple', createdAt: 'demo', rules: { temporalite: temporalityModes.FLEXIBLE, declarationMode: false, multipleActionSlots: false, phaseActionMode: phaseActionModes.AUTOMATIC } },
+  { id: 'rules-template-lancer', name: 'Lancer - phases cochees', createdAt: 'demo', rules: { temporalite: temporalityModes.PHASES, phaseActionMode: phaseActionModes.CHECKED, phaseCount: 3, declarationMode: false, multipleActionSlots: false } },
+];
+
 export function createBlankParticipant() {
   return {
     id: uid('p'),
@@ -154,6 +187,10 @@ function normalizeCategoryName(value) {
   return value?.trim();
 }
 
+function normalizeTemplateName(value, fallback = 'Template sans nom') {
+  return normalizeCategoryName(value) || fallback;
+}
+
 function normalizeTemplate(template) {
   if (!template?.participant?.name) return null;
   return {
@@ -169,24 +206,118 @@ function normalizeTemplate(template) {
   };
 }
 
+function normalizeTrackerTemplate(template) {
+  if (!template?.tracker?.type) return null;
+  const tracker = clone(template.tracker);
+  return {
+    id: template.id || uid('ttpl'),
+    name: normalizeTemplateName(template.name, tracker.name || 'Suivi'),
+    createdAt: template.createdAt || new Date().toISOString(),
+    updatedAt: template.updatedAt,
+    tracker: { ...tracker, id: 'template-tracker' },
+  };
+}
+
+function normalizeStatusTemplate(template) {
+  const source = template?.status || template;
+  const name = normalizeTemplateName(template?.name || source?.name, '');
+  if (!name) return null;
+  const duration = source.duration == null ? null : Math.max(1, Number(source.duration) || 1);
+  return {
+    id: template.id || uid('stpl'),
+    name,
+    createdAt: template.createdAt || new Date().toISOString(),
+    updatedAt: template.updatedAt,
+    status: {
+      id: 'template-status',
+      name: source.name || name,
+      duration,
+      remaining: duration,
+      loop: duration !== null && !!source.loop,
+      inactive: !!source.inactive,
+      advanceOn: source.advanceOn === 'round' ? 'round' : 'activation',
+      expired: false,
+    },
+  };
+}
+
+function normalizeSceneStatusTemplate(template) {
+  const normalized = normalizeStatusTemplate(template);
+  if (!normalized) return null;
+  return {
+    ...normalized,
+    id: template.id || uid('sstpl'),
+    status: {
+      ...normalized.status,
+      inactive: false,
+      advanceOn: 'round',
+    },
+  };
+}
+
+function normalizeSceneCounterTemplate(template) {
+  const source = template?.counter || template?.globalTracker || template;
+  if (!source || typeof source !== 'object' || Array.isArray(source)) return null;
+  const counter = normalizeGlobalTracker(source);
+  return {
+    id: template.id || uid('sctpl'),
+    name: normalizeTemplateName(template.name, counter.name || 'Compteur de scene'),
+    createdAt: template.createdAt || new Date().toISOString(),
+    updatedAt: template.updatedAt,
+    counter: { ...counter, running: false, startedAt: null, elapsedMs: 0 },
+  };
+}
+
+function normalizeRuleTemplate(template) {
+  if (!template || typeof template !== 'object' || Array.isArray(template)) return null;
+  const rules = normalizeCampaignRules(template.rules || template);
+  return {
+    id: template.id || uid('rtpl'),
+    name: normalizeTemplateName(template.name, 'Regles'),
+    createdAt: template.createdAt || new Date().toISOString(),
+    updatedAt: template.updatedAt,
+    rules,
+  };
+}
+
 export function normalizeTemplateStore(value) {
   if (Array.isArray(value)) {
     const templates = value.map(normalizeTemplate).filter(Boolean);
     return {
-      version: 1,
+      version: 2,
       categories: defaultTemplateCategories,
       templates,
+      trackerTemplates: defaultTrackerTemplates.map(normalizeTrackerTemplate).filter(Boolean),
+      statusTemplates: defaultStatusTemplates.map(normalizeStatusTemplate).filter(Boolean),
+      sceneStatusTemplates: defaultSceneStatusTemplates.map(normalizeSceneStatusTemplate).filter(Boolean),
+      sceneCounterTemplates: defaultSceneCounterTemplates.map(normalizeSceneCounterTemplate).filter(Boolean),
+      ruleTemplates: defaultRuleTemplates.map(normalizeRuleTemplate).filter(Boolean),
     };
   }
 
   const sourceTemplates = Array.isArray(value?.templates) ? value.templates : defaultTemplates;
   const templates = sourceTemplates.map(normalizeTemplate).filter(Boolean);
   const categories = Array.isArray(value?.categories) && value.categories.length ? value.categories : defaultTemplateCategories;
+  const sourceTrackerTemplates = Array.isArray(value?.trackerTemplates) ? value.trackerTemplates : defaultTrackerTemplates;
+  const trackerTemplates = sourceTrackerTemplates.map(normalizeTrackerTemplate).filter(Boolean);
+  const sourceStatusTemplates = Array.isArray(value?.statusTemplates) ? value.statusTemplates : defaultStatusTemplates;
+  const statusTemplates = sourceStatusTemplates.map(normalizeStatusTemplate).filter(Boolean);
+  const sourceSceneStatusTemplates = Array.isArray(value?.sceneStatusTemplates) ? value.sceneStatusTemplates : defaultSceneStatusTemplates;
+  const sceneStatusTemplates = sourceSceneStatusTemplates.map(normalizeSceneStatusTemplate).filter(Boolean);
+  const sourceSceneCounterTemplates = Array.isArray(value?.sceneCounterTemplates) ? value.sceneCounterTemplates : defaultSceneCounterTemplates;
+  const sceneCounterTemplates = sourceSceneCounterTemplates.map(normalizeSceneCounterTemplate).filter(Boolean);
+  const sourceRuleTemplates = Array.isArray(value?.ruleTemplates) ? value.ruleTemplates : defaultRuleTemplates;
+  const ruleTemplates = sourceRuleTemplates.map(normalizeRuleTemplate).filter(Boolean);
 
   return {
-    version: 1,
+    version: 2,
     categories: Array.from(new Set([...categories.map(normalizeCategoryName).filter(Boolean), ...templates.map((template) => template.category)])),
     templates,
+    trackerTemplates,
+    statusTemplates,
+    sceneStatusTemplates,
+    sceneCounterTemplates,
+    ruleTemplates,
   };
 }
 
@@ -212,6 +343,7 @@ export function mergeTemplateStores(currentStore, incomingStore) {
   const incoming = normalizeTemplateStore(incomingStore);
   const existingKeys = new Set(current.templates.map((template) => `${template.category.toLocaleLowerCase()}::${template.name.toLocaleLowerCase()}`));
   const added = [];
+  const addedParticipants = [];
   const skipped = [];
 
   for (const template of incoming.templates) {
@@ -221,14 +353,38 @@ export function mergeTemplateStores(currentStore, incomingStore) {
       continue;
     }
     existingKeys.add(key);
-    added.push({ ...clone(template), id: uid('tpl'), importedAt: new Date().toISOString() });
+    const imported = { ...clone(template), id: uid('tpl'), importedAt: new Date().toISOString() };
+    added.push({ ...imported, type: 'participant' });
+    addedParticipants.push(imported);
   }
+
+  const mergeSimple = (currentItems, incomingItems, prefix, type) => {
+    const keys = new Set(currentItems.map((template) => template.name.toLocaleLowerCase()));
+    const next = [];
+    for (const template of incomingItems) {
+      const key = template.name.toLocaleLowerCase();
+      if (keys.has(key)) {
+        skipped.push({ ...template, type });
+        continue;
+      }
+      keys.add(key);
+      const imported = { ...clone(template), id: uid(prefix), importedAt: new Date().toISOString() };
+      added.push({ ...imported, type });
+      next.push(imported);
+    }
+    return [...currentItems, ...next];
+  };
 
   return {
     store: normalizeTemplateStore({
       version: 1,
       categories: [...current.categories, ...incoming.categories],
-      templates: [...current.templates, ...added],
+      templates: [...current.templates, ...addedParticipants],
+      trackerTemplates: mergeSimple(current.trackerTemplates, incoming.trackerTemplates, 'ttpl', 'tracker'),
+      statusTemplates: mergeSimple(current.statusTemplates, incoming.statusTemplates, 'stpl', 'status'),
+      sceneStatusTemplates: mergeSimple(current.sceneStatusTemplates, incoming.sceneStatusTemplates, 'sstpl', 'scene-status'),
+      sceneCounterTemplates: mergeSimple(current.sceneCounterTemplates, incoming.sceneCounterTemplates, 'sctpl', 'scene-counter'),
+      ruleTemplates: mergeSimple(current.ruleTemplates, incoming.ruleTemplates, 'rtpl', 'rules'),
     }),
     added,
     skipped,
@@ -256,6 +412,34 @@ function resetTrackerIds(trackers = []) {
   });
 }
 
+export function instantiateTrackerTemplate(template) {
+  if (!template?.tracker) return null;
+  return resetTrackerIds([template.tracker])[0] || null;
+}
+
+export function instantiateStatusTemplate(template) {
+  const source = template?.status;
+  if (!source?.name) return null;
+  const duration = source.duration == null ? null : Math.max(1, Number(source.duration) || 1);
+  return {
+    ...clone(source),
+    id: uid('s'),
+    duration,
+    remaining: duration,
+    expired: false,
+  };
+}
+
+export function instantiateSceneStatusTemplate(template) {
+  const status = instantiateStatusTemplate(template);
+  return status ? { ...status, inactive: false, advanceOn: 'round' } : null;
+}
+
+export function instantiateSceneCounterTemplate(template) {
+  if (!template?.counter) return null;
+  return normalizeGlobalTracker({ ...clone(template.counter), running: false, startedAt: null, elapsedMs: 0 });
+}
+
 export function categoryExists(categories, category) {
   const name = normalizeCategoryName(category);
   return !!name && categories.some((item) => item.toLocaleLowerCase() === name.toLocaleLowerCase());
@@ -281,6 +465,51 @@ export function makeTemplateFromParticipant(participant, { name, category }) {
       id: 'template-participant',
     },
   };
+}
+
+export function makeTrackerTemplateFromTracker(tracker, { name }) {
+  return normalizeTrackerTemplate({
+    id: uid('ttpl'),
+    name: normalizeTemplateName(name, tracker?.name || 'Suivi'),
+    createdAt: new Date().toISOString(),
+    tracker: { ...clone(tracker), id: 'template-tracker' },
+  });
+}
+
+export function makeStatusTemplateFromStatus(status, { name }) {
+  return normalizeStatusTemplate({
+    id: uid('stpl'),
+    name: normalizeTemplateName(name, status?.name || 'Etat'),
+    createdAt: new Date().toISOString(),
+    status: { ...clone(status), id: 'template-status' },
+  });
+}
+
+export function makeSceneStatusTemplateFromStatus(status, { name }) {
+  return normalizeSceneStatusTemplate({
+    id: uid('sstpl'),
+    name: normalizeTemplateName(name, status?.name || 'Etat de scene'),
+    createdAt: new Date().toISOString(),
+    status: { ...clone(status), id: 'template-status', inactive: false, advanceOn: 'round' },
+  });
+}
+
+export function makeSceneCounterTemplateFromCounter(counter, { name }) {
+  return normalizeSceneCounterTemplate({
+    id: uid('sctpl'),
+    name: normalizeTemplateName(name, counter?.name || 'Compteur de scene'),
+    createdAt: new Date().toISOString(),
+    counter,
+  });
+}
+
+export function makeRuleTemplateFromRules(rules, { name }) {
+  return normalizeRuleTemplate({
+    id: uid('rtpl'),
+    name: normalizeTemplateName(name, 'Regles'),
+    createdAt: new Date().toISOString(),
+    rules,
+  });
 }
 
 /**

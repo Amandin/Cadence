@@ -1,6 +1,8 @@
 import { defaultCategoryOrder, defaultEqualityRule, defaultInitiativeOrder } from '../../constants.js';
 import { actionsRestantesSouples } from '../../actions/flexibleTurnState.js';
-import { grouperAffichageParticipants, grouperParInitiative, ordreCreneauxClassique, participantsEnAttentePhase, participantsPourPhase } from '../../domain/initiative.js';
+import { grouperAffichageParticipants, grouperParInitiative, ordreCreneauxClassique, trierParInitiative } from '../../domain/initiative.js';
+import { declarationStage, declarationStages, isCheckedPhaseMode, normalizeDeclarations, participantsHorsPhaseAvancee, participantsPourPhaseAvancee } from '../../domain/initiativeModes.js';
+import { initiativeTextOrderEnabled } from '../../domain/initiativeTextOrder.js';
 import { FichetteInitiative } from '../fiches/FichetteInitiative.jsx';
 
 function optionsEgalite(scene) {
@@ -8,6 +10,8 @@ function optionsEgalite(scene) {
     categoryOrder: scene?.categoryOrder || defaultCategoryOrder,
     equalityRule: scene?.equalityRule || defaultEqualityRule,
     initiativeOrder: scene?.initiativeOrder || defaultInitiativeOrder,
+    initiativeTextOrder: scene?.initiativeTextOrder,
+    multipleActionSlots: scene?.multipleActionSlots !== false,
   };
 }
 
@@ -64,14 +68,37 @@ function FichetteLibre({ scene, participant, actifId, activeSlotId, interactions
   );
 }
 
+function actionDeclareeVisible(scene, participantId) {
+  if (declarationStage(scene) !== declarationStages.RESOLUTION) return '';
+  if ((scene.declarationPlayedIds || []).includes(participantId)) return '';
+  return normalizeDeclarations(scene.declarations, scene.participants || [])[participantId] || '';
+}
+
+function participantAvecDeclaration(scene, participant) {
+  const action = actionDeclareeVisible(scene, participant.id);
+  if (!action) return participant;
+  return { ...participant, name: `${participant.name} (${action})` };
+}
+
 function ListeParPaliers({ scene, participants, actifId, activeSlotId, interactions, temporaliteSouple, onMarquerAJoue, onAnnulerAJoue, dejaJoue = false }) {
   const options = optionsEgalite(scene);
+  const textMode = initiativeTextOrderEnabled(scene?.initiativeTextOrder);
+  const participantsAffiches = participants.map((participant) => participantAvecDeclaration(scene, participant));
+  const groupes = textMode
+    ? participantsAffiches.reduce((items, participant) => {
+        const initiative = String(participant.initiative ?? '');
+        const groupe = items.find((item) => item.initiative === initiative);
+        if (groupe) groupe.participants.push(participant);
+        else items.push({ initiative, participants: [participant] });
+        return items;
+      }, [])
+    : grouperParInitiative(participantsAffiches, options);
 
   if (temporaliteSouple) {
-    return <div className="initiative-tier-cards flexible-cards">{participants.map((participant) => <FichetteLibre key={participant.actionSlotId || participant.id} scene={scene} participant={participant} actifId={actifId} activeSlotId={activeSlotId} interactions={interactions} temporaliteSouple onMarquerAJoue={onMarquerAJoue} onAnnulerAJoue={onAnnulerAJoue} dejaJoue={dejaJoue} />)}</div>;
+    return <div className="initiative-tier-cards flexible-cards">{participantsAffiches.map((participant) => <FichetteLibre key={participant.actionSlotId || participant.id} scene={scene} participant={participant} actifId={actifId} activeSlotId={activeSlotId} interactions={interactions} temporaliteSouple onMarquerAJoue={onMarquerAJoue} onAnnulerAJoue={onAnnulerAJoue} dejaJoue={dejaJoue} />)}</div>;
   }
 
-  return grouperParInitiative(participants).map((groupe) => (
+  return groupes.map((groupe) => (
     <section className="initiative-tier" key={groupe.initiative}>
       <div className="initiative-tier-label" aria-label={`Initiative ${groupe.initiative}`}>
         <span>Init</span>
@@ -104,10 +131,34 @@ function EnteteSectionSouple({ titre, compteur, variant }) {
   );
 }
 
-export function ListeInitiative({ scene, participants, actifId, interactions, temporaliteSouple, temporalitePhases, phaseAttendRelanceInitiative, onMarquerAJoue, onAnnulerAJoue }) {
+function ListeDeclaration({ scene, participants, interactions }) {
+  const declarations = normalizeDeclarations(scene.declarations, participants);
+  const ordreDeclaration = trierParInitiative(participants, optionsEgalite(scene)).reverse();
+  return (
+    <div className="initiative-list flexible-list declaration-list">
+      <section className="flexible-section declaration-section">
+        <EnteteSectionSouple titre="Déclarations" compteur={participants.length} />
+        <div className="initiative-tier-cards flexible-cards">
+          {ordreDeclaration.map((participant) => (
+            <div className="declaration-entry" key={participant.id}>
+              <FichetteLibre scene={scene} participant={participant} actifId="" activeSlotId="" interactions={interactions} />
+              <span className={`chip declaration-action-chip ${declarations[participant.id] ? 'ready' : ''}`}>{declarations[participant.id] || 'A choisir'}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+export function ListeInitiative({ scene, participants, actifId, interactions, temporaliteSouple, temporalitePhases, temporaliteDeclaration, phaseAttendRelanceInitiative, onMarquerAJoue, onAnnulerAJoue }) {
+  if (temporaliteDeclaration && declarationStage(scene) === declarationStages.DECLARATION) return <ListeDeclaration scene={scene} participants={participants} interactions={interactions} />;
+
   if (temporalitePhases) {
-    const actifs = phaseAttendRelanceInitiative ? [] : participantsPourPhase(participants, scene.phase, scene.phaseDecrement, optionsEgalite(scene));
-    const attente = phaseAttendRelanceInitiative ? participants : participantsEnAttentePhase(participants, scene.phase, scene.phaseDecrement);
+    const sceneAvecParticipants = { ...scene, participants };
+    const phasesCochees = isCheckedPhaseMode(sceneAvecParticipants);
+    const actifs = phaseAttendRelanceInitiative ? [] : participantsPourPhaseAvancee(sceneAvecParticipants, scene.phase);
+    const attente = phaseAttendRelanceInitiative ? participants : participantsHorsPhaseAvancee(sceneAvecParticipants, scene.phase);
 
     return (
       <div className="initiative-list flexible-list phase-list">
@@ -120,7 +171,7 @@ export function ListeInitiative({ scene, participants, actifId, interactions, te
               : <div className="empty-section panel">Aucun participant ne peut agir dans cette phase.</div>}
         </section>
         {attente.length > 0 && <section className="flexible-section already-played-section phase-waiting-section">
-          <EnteteSectionSouple titre={phaseAttendRelanceInitiative ? 'En attente d’initiative' : 'En attente du prochain round'} compteur={attente.length} variant="played" />
+          <EnteteSectionSouple titre={phaseAttendRelanceInitiative ? 'En attente d’initiative' : phasesCochees ? 'Hors phase' : 'En attente du prochain round'} compteur={attente.length} variant="played" />
           <ListeParPaliers scene={scene} participants={attente} actifId="" activeSlotId="" interactions={interactions} />
         </section>}
       </div>

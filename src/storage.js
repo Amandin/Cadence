@@ -2,14 +2,19 @@ import {
   APP_VERSION,
   STORAGE_KEY,
   defaultCategoryOrder,
+  defaultDeclarationMode,
   defaultEqualityRule,
   defaultInitiativeOrder,
+  defaultPhaseActionMode,
+  defaultPhaseCount,
   defaultPhaseDecrement,
   defaultPhaseRerollEachRound,
   defaultStartRound,
   defaultTemporalityMode,
   initiativeOrders,
   legacyParticipantKinds,
+  phaseActionModes,
+  temporalityModes,
 } from './constants.js';
 import { campaignRulesFromPayload, normalizeCampaignRules, unifyCampaignScenes } from './domain/campaignRules.js';
 import { normalizeGlobalTracker } from './domain/globalTracker.js';
@@ -36,6 +41,13 @@ function numberOr(value, fallback) {
 
 function booleanOr(value, fallback = false) {
   return typeof value === 'boolean' ? value : fallback;
+}
+
+function initiativeOr(value, fallback = 0) {
+  const text = typeof value === 'string' ? value.trim() : value;
+  if (text === '' || text == null) return fallback;
+  const numeric = Number(text);
+  return Number.isFinite(numeric) ? numeric : String(text);
 }
 
 function normalizeArray(value) {
@@ -190,8 +202,9 @@ export function normalizeCampaignName(name) {
 
 export function normalizeCampaignParticipant(participant, { reserve = false } = {}) {
   if (!isPlainObject(participant)) return null;
-  const initiative = reserve ? 0 : numberOr(participant.initiative, 0);
+  const initiative = reserve ? 0 : initiativeOr(participant.initiative, 0);
   const actionSlots = reserve ? [] : normaliserCreneauxAction({ ...participant, initiative });
+  const rawPhaseActions = Array.isArray(participant.phaseActions) ? participant.phaseActions : Array.isArray(participant.phases) ? participant.phases : Array.isArray(participant.checkedPhases) ? participant.checkedPhases : null;
   return {
     ...participant,
     id: stringOr(participant.id, uid('p')),
@@ -201,6 +214,7 @@ export function normalizeCampaignParticipant(participant, { reserve = false } = 
     color: stringOr(participant.color, 'slate'),
     initiative,
     actionSlots,
+    phaseActions: rawPhaseActions ? [...new Set(rawPhaseActions.map((phase) => String(phase ?? '').trim()).filter(Boolean))] : participant.phaseActions,
     departage: participant.departage === '' || participant.departage == null ? '' : numberOr(participant.departage, 0),
     description: stringOr(participant.description),
     stats: normalizeArray(participant.stats).map(normalizeQuickStat).filter(Boolean),
@@ -211,6 +225,7 @@ export function normalizeCampaignParticipant(participant, { reserve = false } = 
 
 export function normalizeCampaignScene(scene) {
   if (!isPlainObject(scene)) return null;
+  const legacyDeclaration = scene.temporalite === temporalityModes.DECLARATION;
   return {
     ...scene,
     id: stringOr(scene.id, uid('scene')),
@@ -220,12 +235,20 @@ export function normalizeCampaignScene(scene) {
     phase: Math.max(1, numberOr(scene.phase, 1)),
     phaseDecrement: Math.max(1, numberOr(scene.phaseDecrement, defaultPhaseDecrement)),
     phaseRerollEachRound: booleanOr(scene.phaseRerollEachRound, defaultPhaseRerollEachRound),
+    phaseActionMode: Object.values(phaseActionModes).includes(scene.phaseActionMode) ? scene.phaseActionMode : defaultPhaseActionMode,
+    phaseCount: Math.max(1, Math.min(20, numberOr(scene.phaseCount, defaultPhaseCount))),
     activeId: stringOr(scene.activeId),
     activeSlotId: stringOr(scene.activeSlotId),
     notes: stringOr(scene.notes),
     reserveNotes: stringOr(scene.reserveNotes),
     statuses: normalizeArray(scene.statuses).map(normalizeStatus).filter(Boolean),
-    temporalite: stringOr(scene.temporalite, defaultTemporalityMode),
+    temporalite: legacyDeclaration ? defaultTemporalityMode : stringOr(scene.temporalite, defaultTemporalityMode),
+    declarationMode: booleanOr(scene.declarationMode, legacyDeclaration ? true : defaultDeclarationMode),
+    declarationStage: stringOr(scene.declarationStage),
+    declarations: isPlainObject(scene.declarations) ? scene.declarations : {},
+    resolutionOrder: normalizeArray(scene.resolutionOrder).map((id) => String(id)),
+    declarationPlayedIds: normalizeArray(scene.declarationPlayedIds).map((id) => String(id)),
+    multipleActionSlots: scene.multipleActionSlots !== false,
     jouesSouples: normalizeArray(scene.jouesSouples).map((id) => String(id)),
     historiqueSouple: normalizeArray(scene.historiqueSouple).map((id) => String(id)),
     equalityRule: stringOr(scene.equalityRule, defaultEqualityRule),

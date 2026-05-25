@@ -81,6 +81,18 @@ describe('initiative sorting and simultaneous groups', () => {
     ]);
   });
 
+  it('can disable extra action slots through initiative rules', () => {
+    const boss = participant({ id: 'boss', name: 'Boss', initiative: 18, actionSlots: [{ initiative: 18 }, { initiative: 12 }, { initiative: 6 }] });
+    const rogue = participant({ id: 'rogue', name: 'Rogue', initiative: 15 });
+    const order = ordreCreneauxClassique([boss, rogue], { categoryOrder: baseOrder, equalityRule: equalityRules.NEVER, multipleActionSlots: false });
+
+    expect(nombreCreneauxAction(boss)).toBe(3);
+    expect(order.map((slot) => [slot.id, slot.initiative])).toEqual([
+      ['boss', 18],
+      ['rogue', 15],
+    ]);
+  });
+
   it('can walk classic action slots in ascending initiative order', () => {
     const boss = participant({ id: 'boss', name: 'Boss', initiative: 18, actionSlots: [{ initiative: 18 }, { initiative: 12 }, { initiative: 6 }] });
     const rogue = participant({ id: 'rogue', name: 'Rogue', initiative: 15 });

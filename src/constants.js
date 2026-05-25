@@ -1,4 +1,4 @@
-export const APP_VERSION = '0.2.10.2';
+export const APP_VERSION = '0.2.11.1';
 export const STORAGE_KEY = 'cadence:campaign:v1';
 export const TEMPLATE_STORAGE_KEY = 'cadence:templates:v1';
 
@@ -16,24 +16,35 @@ export const temporalityModes = {
   CLASSIC: 'classique',
   FLEXIBLE: 'souple',
   PHASES: 'phases',
+  DECLARATION: 'declaration',
 };
 
 export const defaultTemporalityMode = temporalityModes.CLASSIC;
+export const defaultDeclarationMode = false;
 export const defaultStartRound = 0;
 export const defaultPhaseDecrement = 10;
 export const defaultPhaseRerollEachRound = false;
 export const defaultPhaseActivateOncePerRound = true;
+export const phaseActionModes = { AUTOMATIC: 'automatic', CHECKED: 'checked' };
+export const defaultPhaseActionMode = phaseActionModes.AUTOMATIC;
+export const defaultPhaseCount = 3;
+export const initiativeValueTypes = { NUMERIC: 'numeric', LABEL: 'label' };
+export const defaultInitiativeValueType = initiativeValueTypes.NUMERIC;
+export const activationAdvancePolicies = { ONCE_PER_ROUND: 'once-per-round', EVERY_ACTION: 'every-action' };
+export const defaultActivationAdvancePolicy = activationAdvancePolicies.ONCE_PER_ROUND;
 
 export const temporalityLabels = {
   [temporalityModes.CLASSIC]: 'Classique',
   [temporalityModes.FLEXIBLE]: 'Souple',
   [temporalityModes.PHASES]: 'Phases',
+  [temporalityModes.DECLARATION]: 'Déclaration puis résolution',
 };
 
 export const temporalityDescriptions = {
   [temporalityModes.CLASSIC]: 'Cadence suit l’ordre d’initiative et avance au participant suivant.',
   [temporalityModes.FLEXIBLE]: 'Le MJ marque librement qui a joué dans la liste.',
   [temporalityModes.PHASES]: 'Cadence enchaîne des phases et applique un décrément aux initiatives.',
+  [temporalityModes.DECLARATION]: 'Un temps de déclaration précède une résolution ordonnée des actions déclarées.',
 };
 
 export const equalityRules = {

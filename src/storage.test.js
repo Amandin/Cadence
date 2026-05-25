@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CADENCE_CAMPAIGN_FORMAT, CADENCE_CAMPAIGN_SCHEMA_VERSION, campaignNameFromPayload, isValidCampaign, normalizeCampaignName, normalizeCampaignPayload, serializeCampaign } from './storage.js';
+import { normalizeTemplateStore } from './templates.js';
 
 const scene = { id: 'scene-1', title: 'Test', participants: [] };
 
@@ -99,6 +100,33 @@ describe('campaign storage', () => {
     expect(serialized.scenes[0].statuses[0]).toMatchObject({ name: 'Brouillard', duration: 3, remaining: 2, advanceOn: 'round' });
   });
 
+  it('serializes tracker, status and rule templates in campaign files', () => {
+    const templates = normalizeTemplateStore({
+      categories: ['PJ'],
+      templates: [],
+      trackerTemplates: [{ name: 'Stress', tracker: { type: 'points', name: 'Stress', current: 0, max: 5 } }],
+      statusTemplates: [{ name: 'Sonne', status: { name: 'Sonne', duration: 1, inactive: true } }],
+      sceneStatusTemplates: [{ name: 'Brouillard', status: { name: 'Brouillard', duration: 3, inactive: true, advanceOn: 'activation' } }],
+      sceneCounterTemplates: [{ name: 'Menace maison', counter: { enabled: true, name: 'Menace', mode: 'clock', current: 2, max: 6, thresholds: [{ value: 50, label: 'moitie', basis: 'percent', operator: 'gte' }] } }],
+      ruleTemplates: [{ name: 'D&D maison', rules: { temporalite: 'classique', multipleActionSlots: false } }],
+    });
+    const serialized = JSON.parse(serializeCampaign([scene], false, 'Templates', templates, { temporalite: 'classique' }));
+
+    expect(serialized.templates.trackerTemplates[0]).toMatchObject({ name: 'Stress', tracker: { type: 'points', name: 'Stress' } });
+    expect(serialized.templates.statusTemplates[0]).toMatchObject({ name: 'Sonne', status: { duration: 1, inactive: true } });
+    expect(serialized.templates.sceneStatusTemplates[0]).toMatchObject({ name: 'Brouillard', status: { duration: 3, inactive: false, advanceOn: 'round' } });
+    expect(serialized.templates.sceneCounterTemplates[0]).toMatchObject({ name: 'Menace maison', counter: { mode: 'clock', max: 6 } });
+    expect(serialized.templates.ruleTemplates[0]).toMatchObject({ name: 'D&D maison', rules: { temporalite: 'classique', multipleActionSlots: false } });
+
+    const imported = normalizeCampaignPayload(serialized);
+    expect(imported.templates.trackerTemplates[0].tracker.type).toBe('points');
+    expect(imported.templates.statusTemplates[0].status.inactive).toBe(true);
+    expect(imported.templates.sceneStatusTemplates[0].status.inactive).toBe(false);
+    expect(imported.templates.sceneStatusTemplates[0].status.advanceOn).toBe('round');
+    expect(imported.templates.sceneCounterTemplates[0].counter.thresholds[0]).toMatchObject({ basis: 'percent', label: 'moitie' });
+    expect(imported.templates.ruleTemplates[0].rules.multipleActionSlots).toBe(false);
+  });
+
   it('keeps reserve participants safe and out of initiative after hand edits', () => {
     const campaign = normalizeCampaignPayload({
       version: '0.2.3',
@@ -141,6 +169,40 @@ describe('campaign storage', () => {
         { initiative: 18, order: 0 },
         { initiative: 12, order: 1 },
         { initiative: 6, order: 2 },
+      ],
+    });
+  });
+
+  it('keeps textual initiative labels and slots through normalization', () => {
+    const campaign = normalizeCampaignPayload({
+      version: '0.2.11.1',
+      initiativeRules: {
+        initiativeTextOrder: {
+          enabled: true,
+          separator: ' de ',
+          parts: [
+            { label: 'Valeur', values: ['As', 'Roi'] },
+            { label: 'Couleur', values: ['Pique', 'Cœur'] },
+          ],
+        },
+      },
+      scenes: [{
+        id: 'scene-text-init',
+        title: 'Cartes',
+        participants: [{
+          id: 'duelliste',
+          name: 'Duelliste',
+          initiative: 'As de Cœur',
+          actionSlots: [{ initiative: 'Roi de Pique' }, { initiative: 'As de Cœur' }],
+        }],
+      }],
+    });
+
+    expect(campaign.scenes[0].participants[0]).toMatchObject({
+      initiative: 'As de Cœur',
+      actionSlots: [
+        { initiative: 'Roi de Pique', order: 0 },
+        { initiative: 'As de Cœur', order: 1 },
       ],
     });
   });

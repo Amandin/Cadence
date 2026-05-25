@@ -1,45 +1,48 @@
 import { defaultCategoryOrder, defaultEqualityRule, defaultInitiativeOrder, equalityRules, initiativeOrders, legacyParticipantKinds } from '../constants.js';
+import { initiativeToNumber } from './initiativeTextOrder.js';
 
-function numberOr(value, fallback = 0) {
-  const next = Number(value);
-  return Number.isFinite(next) ? next : fallback;
+function numberOr(value, fallback = 0, options = {}) {
+  return initiativeToNumber(value, options.initiativeTextOrder, fallback);
 }
 
-export function valeurInitiative(participant) {
-  return numberOr(participant?.initiative, 0);
+export function valeurInitiative(participant, options = {}) {
+  return numberOr(participant?.initiative, 0, options);
 }
 
 export function valeurDepartage(participant) {
-  return numberOr(participant?.departage ?? 0, 0);
+  const next = Number(participant?.departage ?? 0);
+  return Number.isFinite(next) ? next : 0;
 }
 
 function slotId(participantId, slot) {
   return `${participantId}:${slot.id}`;
 }
 
-export function normaliserCreneauxAction(participant = {}) {
-  const fallback = valeurInitiative(participant);
+export function normaliserCreneauxAction(participant = {}, options = {}) {
+  const fallback = participant?.initiative ?? 0;
   const rawSlots = Array.isArray(participant.actionSlots) ? participant.actionSlots : [];
-  const slots = rawSlots
+  const slotsAutorises = options.multipleActionSlots === false ? rawSlots.slice(0, 1) : rawSlots;
+  const slots = slotsAutorises
     .map((slot, index) => {
       const source = slot && typeof slot === 'object' ? slot : { initiative: slot };
-      const initiative = numberOr(source.initiative, fallback);
+      const initiative = source.initiative ?? fallback;
       return {
         id: source.id ? String(source.id) : `slot-${index + 1}`,
         initiative,
+        sortValue: numberOr(initiative, numberOr(fallback, 0, options), options),
         order: Number.isFinite(Number(source.order)) ? Number(source.order) : index,
       };
     })
-    .filter((slot) => Number.isFinite(slot.initiative));
+    .filter((slot) => Number.isFinite(slot.sortValue));
 
-  const normalized = slots.length ? slots : [{ id: 'slot-1', initiative: fallback, order: 0 }];
+  const normalized = slots.length ? slots : [{ id: 'slot-1', initiative: fallback, sortValue: numberOr(fallback, 0, options), order: 0 }];
   return normalized
-    .sort((a, b) => b.initiative - a.initiative || a.order - b.order)
-    .map((slot, index) => ({ id: slot.id || `slot-${index + 1}`, initiative: slot.initiative, order: index }));
+    .sort((a, b) => b.sortValue - a.sortValue || a.order - b.order)
+    .map((slot, index) => ({ id: slot.id || `slot-${index + 1}`, initiative: slot.initiative, order: index, sortValue: slot.sortValue }));
 }
 
-export function creneauxActionParticipant(participant = {}) {
-  return normaliserCreneauxAction(participant).map((slot, index) => ({
+export function creneauxActionParticipant(participant = {}, options = {}) {
+  return normaliserCreneauxAction(participant, options).map((slot, index) => ({
     ...slot,
     index,
     participantId: participant.id,
@@ -51,19 +54,20 @@ export function creneauxActionIdsParticipant(participant = {}) {
   return creneauxActionParticipant(participant).map((slot) => slot.actionSlotId);
 }
 
-export function initiativesActionParticipant(participant = {}) {
-  return creneauxActionParticipant(participant).map((slot) => slot.initiative);
+export function initiativesActionParticipant(participant = {}, options = {}) {
+  return creneauxActionParticipant(participant, options).map((slot) => slot.initiative);
 }
 
 export function nombreCreneauxAction(participant = {}) {
   return creneauxActionParticipant(participant).length;
 }
 
-export function participantAvecCreneau(participant, slot) {
-  const slots = creneauxActionParticipant(participant);
+export function participantAvecCreneau(participant, slot, options = {}) {
+  const slots = creneauxActionParticipant(participant, options);
   return {
     ...participant,
     initiative: slot.initiative,
+    initiativeSortValue: slot.sortValue,
     actionSlotId: slot.actionSlotId,
     actionSlotIndex: slot.index,
     actionSlotCount: slots.length,
@@ -77,9 +81,9 @@ export function ordreCreneauxClassique(participants = [], options = {}) {
   const initiativeDirection = options.initiativeOrder === initiativeOrders.ASC ? 1 : -1;
 
   return participants
-    .flatMap((participant) => creneauxActionParticipant(participant).map((slot) => ({ participant, slot })))
+    .flatMap((participant) => creneauxActionParticipant(participant, options).map((slot) => ({ participant, slot })))
     .sort((a, b) => {
-      const base = (a.slot.initiative - b.slot.initiative) * initiativeDirection
+      const base = (a.slot.sortValue - b.slot.sortValue) * initiativeDirection
         || (valeurDepartage(a.participant) - valeurDepartage(b.participant)) * initiativeDirection;
       if (base) return base;
 
@@ -91,7 +95,7 @@ export function ordreCreneauxClassique(participants = [], options = {}) {
       if (equalityRule === equalityRules.NEVER) return comparerNoms(a.participant, b.participant);
       return 0;
     })
-    .map(({ participant, slot }) => participantAvecCreneau(participant, slot));
+    .map(({ participant, slot }) => participantAvecCreneau(participant, slot, options));
 }
 
 export function premierCreneauClassique(participants = [], options = {}) {
@@ -111,35 +115,30 @@ function optionsTriSafe(scene = {}) {
     categoryOrder: scene.categoryOrder || defaultCategoryOrder,
     equalityRule: scene.equalityRule || defaultEqualityRule,
     initiativeOrder: scene.initiativeOrder || defaultInitiativeOrder,
+    initiativeTextOrder: scene.initiativeTextOrder,
   };
 }
 
-// Mode Phases, type SR5 : chaque nouvelle phase utilise l’initiative de base
-// diminuée d’un décrément fixe. On renvoie une valeur calculée, sans modifier
-// le participant réel stocké dans la scène.
-export function initiativeDePhase(participant, phase = 1, decrement = 10) {
-  return valeurInitiative(participant) - Math.max(0, Number(phase || 1) - 1) * Math.max(1, Number(decrement) || 10);
+export function initiativeDePhase(participant, phase = 1, decrement = 10, options = {}) {
+  return valeurInitiative(participant, options) - Math.max(0, Number(phase || 1) - 1) * Math.max(1, Number(decrement) || 10);
 }
 
-export function participantActifEnPhase(participant, phase = 1, decrement = 10) {
-  return initiativeDePhase(participant, phase, decrement) > 0;
+export function participantActifEnPhase(participant, phase = 1, decrement = 10, options = {}) {
+  return initiativeDePhase(participant, phase, decrement, options) > 0;
 }
 
-// Les participants de phase sont des copies destinées à l’affichage et au calcul
-// du tour actif : leur initiative est remplacée par l’initiative courante de
-// phase, mais baseInitiative garde la valeur originale.
 export function participantsPourPhase(participants = [], phase = 1, decrement = 10, options = {}) {
   return trierParInitiative(participants
-    .filter((participant) => participantActifEnPhase(participant, phase, decrement))
-    .map((participant) => ({ ...participant, initiative: initiativeDePhase(participant, phase, decrement), baseInitiative: valeurInitiative(participant) })), options);
+    .filter((participant) => participantActifEnPhase(participant, phase, decrement, options))
+    .map((participant) => ({ ...participant, initiative: initiativeDePhase(participant, phase, decrement, options), baseInitiative: valeurInitiative(participant, options) })), options);
 }
 
-export function participantsEnAttentePhase(participants = [], phase = 1, decrement = 10) {
-  return participants.filter((participant) => !participantActifEnPhase(participant, phase, decrement));
+export function participantsEnAttentePhase(participants = [], phase = 1, decrement = 10, options = {}) {
+  return participants.filter((participant) => !participantActifEnPhase(participant, phase, decrement, options));
 }
 
-export function phaseSuivanteExiste(participants = [], phase = 1, decrement = 10) {
-  return participants.some((participant) => participantActifEnPhase(participant, phase + 1, decrement));
+export function phaseSuivanteExiste(participants = [], phase = 1, decrement = 10, options = {}) {
+  return participants.some((participant) => participantActifEnPhase(participant, phase + 1, decrement, options));
 }
 
 export function normaliserCategorie(kind) {
@@ -159,16 +158,13 @@ function comparerNoms(a, b) {
   return nomParticipant(a).localeCompare(nomParticipant(b), 'fr', { sensitivity: 'base' });
 }
 
-// Tri principal des participants en initiative.
-// L’ordre alphabétique n’intervient qu’en règle NEVER : dans les autres modes,
-// deux participants vraiment simultanés doivent conserver un groupe commun.
 export function trierParInitiative(participants = [], options = {}) {
   const categoryOrder = options.categoryOrder || defaultCategoryOrder;
   const equalityRule = options.equalityRule || defaultEqualityRule;
   const initiativeDirection = options.initiativeOrder === initiativeOrders.ASC ? 1 : -1;
 
   return [...participants].sort((a, b) => {
-    const base = (valeurInitiative(a) - valeurInitiative(b)) * initiativeDirection
+    const base = (valeurInitiative(a, options) - valeurInitiative(b, options)) * initiativeDirection
       || (valeurDepartage(a) - valeurDepartage(b)) * initiativeDirection;
     if (base) return base;
 
@@ -182,8 +178,6 @@ export function trierParInitiative(participants = [], options = {}) {
   });
 }
 
-// La réserve est hors initiative : les initiatives y sont normalisées à 0.
-// Son tri repose donc sur le rôle choisi par le MJ, puis le départage, puis le nom.
 export function trierReserve(participants = [], options = {}) {
   const categoryOrder = options.categoryOrder || defaultCategoryOrder;
 
@@ -192,13 +186,11 @@ export function trierReserve(participants = [], options = {}) {
     || comparerNoms(a, b));
 }
 
-// Clef utilisée pour savoir si plusieurs participants doivent être affichés
-// comme un seul bloc simultané. Elle dépend volontairement de la règle d’égalité.
 export function clefEgaliteParfaite(participant, options = {}) {
   const equalityRule = options.equalityRule || defaultEqualityRule;
   if (equalityRule === equalityRules.NEVER) return null;
 
-  const initiative = valeurInitiative(participant);
+  const initiative = valeurInitiative(participant, options);
   const departage = valeurDepartage(participant);
   if (equalityRule === equalityRules.LOOSE) return `${initiative}|${departage}`;
 
@@ -228,9 +220,9 @@ export function groupeEgalitePourParticipant(participants = [], participantId, o
   return groupesEgaliteParfaite(participants, options).find((groupe) => groupe.some((participant) => participant.id === participantId)) || [];
 }
 
-export function grouperParInitiative(participants = []) {
+export function grouperParInitiative(participants = [], options = {}) {
   return participants.reduce((groupes, participant) => {
-    const initiative = valeurInitiative(participant);
+    const initiative = valeurInitiative(participant, options);
     const groupe = groupes.find((item) => item.initiative === initiative);
     if (groupe) groupe.participants.push(participant);
     else groupes.push({ initiative, participants: [participant] });
@@ -238,8 +230,6 @@ export function grouperParInitiative(participants = []) {
   }, []);
 }
 
-// Convertit une liste triée en blocs d’affichage : soit un participant seul,
-// soit un groupe simultané. L’ordre original est conservé autant que possible.
 export function grouperAffichageParticipants(participants = [], options = {}) {
   const groupesSimultanes = groupesEgaliteParfaite(participants, options);
   const groupeParId = new Map();
