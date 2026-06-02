@@ -204,7 +204,7 @@ export function normalizeGlobalTracker(tracker) {
     elapsedMs: Math.max(0, finiteNumberOr(safe.elapsedMs, 0)),
     startedAt: safe.startedAt == null ? null : finiteNumberOr(safe.startedAt, null),
     running: !!safe.running,
-    auto: realtime ? false : trigger === 'round' || trigger === 'phase' || !!safe.auto,
+    auto: realtime ? false : trigger === 'round' || (trigger !== 'phase' && !!safe.auto),
     soundOnComplete: !!safe.soundOnComplete,
     completeSoundId: SOUND_IDS.has(safe.completeSoundId) ? safe.completeSoundId : 'beep',
     completeSoundUrl: typeof safe.completeSoundUrl === 'string' ? safe.completeSoundUrl : '',
@@ -257,6 +257,7 @@ export function stepGlobalTracker(tracker, delta) {
  * Automatic global trackers tick when their configured scene trigger fires.
  */
 export function stepAutoGlobalTracker(tracker, delta, trigger = 'round') {
+  if (trigger === 'phase') return tracker;
   const safe = normalizeGlobalTracker(tracker);
   if (!safe.enabled || safe.trigger !== trigger) return tracker;
   const direction = safe.direction === 'countdown' ? -1 : 1;

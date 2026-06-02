@@ -5,8 +5,11 @@ import { Fenetre } from '../commun/ComposantsCommuns.jsx';
 
 const actionTypes = ['Attaque', 'Defense', 'Mouvement', 'Soutien', 'Autre'];
 
-export function FenetreDeclarationActions({ scene, optionsInitiative, onFermer, onValider }) {
-  const ordre = useMemo(() => trierParInitiative(scene.participants || [], optionsInitiative).reverse(), [optionsInitiative, scene.participants]);
+export function FenetreDeclarationActions({ scene, optionsInitiative, participantIds = null, lancerResolution = true, onFermer, onValider }) {
+  const ordre = useMemo(() => {
+    const ids = Array.isArray(participantIds) ? new Set(participantIds) : null;
+    return trierParInitiative(scene.participants || [], optionsInitiative).filter((participant) => !ids || ids.has(participant.id)).reverse();
+  }, [optionsInitiative, participantIds, scene.participants]);
   const [indexActif, setIndexActif] = useState(0);
   const [choix, setChoix] = useState(() => normalizeDeclarations(scene.declarations, scene.participants || []));
   const participant = ordre[indexActif] || null;
@@ -44,7 +47,7 @@ export function FenetreDeclarationActions({ scene, optionsInitiative, onFermer, 
         </div>
         <div className="grid2">
           <button className="small-btn" type="button" onClick={revenir} disabled={indexActif <= 0}>Retour</button>
-          <button className="primary" type="button" onClick={validerTout} disabled={!choixComplets}>Lancer la resolution</button>
+          <button className="primary" type="button" onClick={validerTout} disabled={!choixComplets}>{lancerResolution ? 'Lancer la resolution' : "Enregistrer l'action"}</button>
         </div>
       </div>
     </Fenetre>

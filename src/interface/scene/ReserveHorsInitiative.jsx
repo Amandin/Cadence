@@ -7,6 +7,7 @@ export function ReserveHorsInitiative({ scene, interactions, onModifierNotes }) 
 
   const reserveTriee = trierReserve(scene.reserve, {
     categoryOrder: scene.categoryOrder || defaultCategoryOrder,
+    tiebreakerVisible: scene.tiebreakerVisible !== false,
   });
 
   return (

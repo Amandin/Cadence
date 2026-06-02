@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { activeThresholds, applyBoxMarkAction, applyDelta, boxBlocks, newTracker, resetAutoTrackers, sortBoxBlocks, tickStatuses, triggerActivation } from './logic.js';
+import { activeThresholds, applyBoxMarkAction, applyDelta, boxBlocks, newTracker, nextTurnInfo, resetAutoTrackers, sortBoxBlocks, tickStatuses, triggerActivation, untickStatuses } from './logic.js';
 
 describe('trackers updated behavior', () => {
   it('uses block based boxes by default', () => {
@@ -23,6 +23,29 @@ describe('trackers updated behavior', () => {
 
     expect(tickStatuses(statuses, 'activation').map((status) => status.remaining)).toEqual([1, 2]);
     expect(tickStatuses(statuses, 'round').map((status) => status.remaining)).toEqual([2, 1]);
+  });
+
+  it('can skip and undo the first activation of an initial surprise status', () => {
+    const statuses = [{ id: 'surpris', name: 'Surpris', duration: 1, remaining: 1, advanceOn: 'activation', expired: false, skipNextActivation: true }];
+    const apresActivation = tickStatuses(statuses, 'activation');
+    expect(apresActivation[0]).toMatchObject({ remaining: 1, expired: false, skipNextActivation: false, activationSkipConsumed: true });
+    expect(untickStatuses(apresActivation, 'activation')[0]).toMatchObject({ remaining: 1, expired: false, skipNextActivation: true, activationSkipConsumed: false });
+  });
+
+  it('can skip the initial round tick of a round-based surprise status', () => {
+    const statuses = [{ id: 'surpris', name: 'Surpris', duration: 1, remaining: 1, advanceOn: 'round', expired: false, skipNextAdvance: true }];
+    const apresPremierRound = tickStatuses(statuses, 'round');
+    expect(apresPremierRound[0]).toMatchObject({ remaining: 1, expired: false, skipNextAdvance: false, advanceSkipConsumed: true });
+    expect(tickStatuses(apresPremierRound, 'round')[0]).toMatchObject({ remaining: 0, expired: true });
+  });
+
+  it('announces a new round after the only classic slot', () => {
+    const scene = {
+      activeId: 'solo',
+      participants: [{ id: 'solo', initiative: 12, actionSlots: [{ id: 'slot-1', initiative: 12 }] }],
+    };
+
+    expect(nextTurnInfo(scene).nextStartsRound).toBe(true);
   });
 
   it('normalizes boxes by block, line and logical position', () => {

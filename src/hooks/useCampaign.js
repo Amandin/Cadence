@@ -9,6 +9,17 @@ import { normaliserCreneauxAction, trierParInitiative } from '../domain/initiati
 import { hasTriggeredClock, makeDemoCampaigns, nextTurnInfo } from '../logic.js';
 import { campaignMetaFromPayload, campaignNameFromPayload, campaignTemplatesFromPayload, isValidCampaign, loadCampaign, normalizeCampaignPayload, normalizeCampaignScene, normalizeCampaignScenes, saveCampaign, serializeCampaign } from '../storage.js';
 
+const SCENE_INDEX_STORAGE_KEY = 'cadence:interface:scene-index:v1';
+
+function initialSceneIndex() {
+  try {
+    const value = Number(window.sessionStorage.getItem(SCENE_INDEX_STORAGE_KEY));
+    return Number.isInteger(value) && value >= 0 ? value : 0;
+  } catch {
+    return 0;
+  }
+}
+
 function normalizeScenesWithCampaignRules(rawScenes, rules) {
   const normalizedScenes = normalizeCampaignScenes(rawScenes);
   return unifyCampaignScenes(normalizedScenes, rules);
@@ -101,6 +112,8 @@ function initiativeOptions(scene = {}) {
     equalityRule: scene.equalityRule || defaultEqualityRule,
     initiativeOrder: scene.initiativeOrder || defaultInitiativeOrder,
     initiativeTextOrder: scene.initiativeTextOrder,
+    initiativeEnabled: scene.temporalite !== 'souple' || scene.flexibleUseInitiative !== false,
+    tiebreakerVisible: scene.tiebreakerVisible !== false,
     multipleActionSlots: scene.multipleActionSlots !== false,
   };
 }
@@ -121,7 +134,7 @@ export function useCampaign() {
   const [scenes, setScenes] = useState(() => normalizeScenesWithCampaignRules(initialCampaign.scenes, campaignRulesFromPayload(initialCampaign)));
   const [templateStore, setTemplateStore] = useState(() => campaignTemplatesFromPayload(initialCampaign));
   const [campaignName, setCampaignName] = useState(() => campaignNameFromPayload(initialCampaign));
-  const [sceneIndex, setSceneIndex] = useState(0);
+  const [sceneIndex, setSceneIndex] = useState(initialSceneIndex);
   const [restorePoints, setRestorePoints] = useState(() => initialRestorePoints(initialCampaign.scenes));
   const [dark, setDark] = useState(() => initialCampaign.settings?.dark ?? devicePrefersDark());
   const [roundEffect, setRoundEffect] = useState(null);
@@ -150,6 +163,13 @@ export function useCampaign() {
 
   useEffect(() => { campaignEntriesRef.current = campaignEntries; }, [campaignEntries]);
   useEffect(() => { activeCampaignEntryIdRef.current = activeCampaignEntryId; }, [activeCampaignEntryId]);
+  useEffect(() => {
+    try {
+      window.sessionStorage.setItem(SCENE_INDEX_STORAGE_KEY, String(sceneIndex));
+    } catch {
+      // La scene courante reste utilisable si le stockage de session est indisponible.
+    }
+  }, [sceneIndex]);
 
   useEffect(() => {
     const signature = JSON.stringify({ scenes: syncedScenes, dark, campaignName, templateStore, campaignRules, activeCampaignEntryId });

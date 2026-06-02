@@ -133,9 +133,9 @@ function ActionsScene({ onAjouterParticipant, onSaisirInitiatives }) {
   return (
     <div className="scene-options compact-options menu-action-section">
       <h3>Personnages et initiative</h3>
-      <div className="menu-action-grid">
+      <div className={`menu-action-grid ${onSaisirInitiatives ? '' : 'single-action'}`}>
         <button className="primary" onClick={onAjouterParticipant}>Ajouter un personnage</button>
-        <button className="small-btn" onClick={onSaisirInitiatives}>Saisir les initiatives</button>
+        {onSaisirInitiatives && <button className="small-btn" onClick={onSaisirInitiatives}>Saisir les initiatives</button>}
       </div>
     </div>
   );

@@ -87,11 +87,11 @@ describe('global tracker', () => {
     expect(stepAutoGlobalTracker(enabledManual, 1)).toBe(enabledManual);
   });
 
-  it('supports countdown and configured scene triggers', () => {
+  it('keeps historical phase triggers dormant', () => {
     const tracker = { enabled: true, trigger: 'phase', direction: 'countdown', current: 3, total: 3, max: 6 };
 
     expect(stepAutoGlobalTracker(tracker, 1, 'round')).toBe(tracker);
-    expect(stepAutoGlobalTracker(tracker, 1, 'phase')).toMatchObject({ current: 2, total: 2 });
+    expect(stepAutoGlobalTracker(tracker, 1, 'phase')).toBe(tracker);
   });
 
   it('keeps looped clocks current in cycle while thresholds can read total progress', () => {

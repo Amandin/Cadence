@@ -2,11 +2,16 @@ import {
   defaultCategoryOrder,
   defaultDeclarationMode,
   defaultEqualityRule,
+  defaultFlexibleUseInitiative,
   defaultInitiativeOrder,
   defaultPhaseActivateOncePerRound,
   defaultPhaseDecrement,
   defaultPhaseRerollEachRound,
   defaultStartRound,
+  defaultSurpriseAdvanceOn,
+  defaultSurpriseImpact,
+  defaultTiebreakerLabel,
+  defaultTiebreakerVisible,
   defaultTemporalityMode,
   initiativeOrders,
   phaseActionModes,
@@ -27,17 +32,23 @@ export function normalizeCampaignRules(rules = {}) {
   return {
     temporalite,
     declarationMode: initiativeModeOptions.declarationMode ?? (legacyDeclaration ? true : defaultDeclarationMode),
-    startRound: [0, 1].includes(Number(rules.startRound)) ? Number(rules.startRound) : defaultStartRound,
+    startRound: defaultStartRound,
     phaseDecrement: Math.max(1, Number(rules.phaseDecrement) || defaultPhaseDecrement),
     phaseRerollEachRound: rules.phaseRerollEachRound ?? defaultPhaseRerollEachRound,
     phaseActivateOncePerRound: rules.phaseActivateOncePerRound ?? defaultPhaseActivateOncePerRound,
     equalityRule: rules.equalityRule || defaultEqualityRule,
+    flexibleUseInitiative: rules.flexibleUseInitiative ?? defaultFlexibleUseInitiative,
     initiativeOrder: Object.values(initiativeOrders).includes(rules.initiativeOrder) ? rules.initiativeOrder : defaultInitiativeOrder,
     categoryOrder: Array.isArray(rules.categoryOrder) && rules.categoryOrder.length ? rules.categoryOrder : defaultCategoryOrder,
+    tiebreakerVisible: rules.tiebreakerVisible ?? defaultTiebreakerVisible,
+    tiebreakerLabel: typeof rules.tiebreakerLabel === 'string' && rules.tiebreakerLabel.trim() ? rules.tiebreakerLabel.trim() : defaultTiebreakerLabel,
+    surpriseImpact: ['limited', 'inactive'].includes(rules.surpriseImpact) ? rules.surpriseImpact : defaultSurpriseImpact,
+    surpriseAdvanceOn: rules.surpriseAdvanceOn === 'round' ? 'round' : defaultSurpriseAdvanceOn,
     rounding: ['nearest', 'floor', 'ceil'].includes(rules.rounding) ? rules.rounding : 'nearest',
     initiativeTextOrder: normalizeInitiativeTextOrder(rules.initiativeTextOrder),
     promptInitiativeOnNext: !!rules.promptInitiativeOnNext,
     ...initiativeModeOptions,
+    phaseActionMode: temporalite === temporalityModes.FLEXIBLE ? '' : initiativeModeOptions.phaseActionMode,
     temporalite,
   };
 }
@@ -77,7 +88,7 @@ function phaseActionsParDefaut(participant) {
 }
 
 function appliquerModePhasesParticipants(scene, rules) {
-  if (rules.phaseActionMode !== phaseActionModes.CHECKED) return scene;
+  if (rules.temporalite !== temporalityModes.PHASES || rules.phaseActionMode !== phaseActionModes.CHECKED) return scene;
   return {
     ...scene,
     participants: (scene.participants || []).map((participant) => ({ ...participant, phaseActions: phaseActionsParDefaut(participant) })),
@@ -85,12 +96,35 @@ function appliquerModePhasesParticipants(scene, rules) {
   };
 }
 
+function appliquerRegleSurpriseParticipant(participant, rules) {
+  return {
+    ...participant,
+    statuses: (participant.statuses || []).map((status) => status.name !== 'Surpris' ? status : {
+      ...status,
+      inactive: rules.surpriseImpact === 'inactive',
+      limited: rules.surpriseImpact !== 'inactive',
+      advanceOn: rules.surpriseAdvanceOn,
+    }),
+  };
+}
+
+function appliquerRegleSurpriseParticipants(scene, rules) {
+  return {
+    ...scene,
+    participants: (scene.participants || []).map((participant) => appliquerRegleSurpriseParticipant(participant, rules)),
+    reserve: (scene.reserve || []).map((participant) => appliquerRegleSurpriseParticipant(participant, rules)),
+  };
+}
+
 export function applyInitiativeRules(scene, patch = {}) {
   const next = normalizeCampaignRules({ ...initiativeRulesFromScene(scene), ...patch });
-  const sceneWithTemporality = appliquerModePhasesParticipants(applyTemporality(scene, next), next);
+  const sceneWithTemporality = appliquerRegleSurpriseParticipants(appliquerModePhasesParticipants(applyTemporality(scene, next), next), next);
+  const sceneWithStartRound = Number(sceneWithTemporality.round) === 0 && next.startRound === 1
+    ? { ...sceneWithTemporality, round: 1 }
+    : sceneWithTemporality;
 
   return {
-    ...sceneWithTemporality,
+    ...sceneWithStartRound,
     temporalite: next.temporalite,
     declarationMode: !!next.declarationMode,
     startRound: next.startRound,
@@ -98,8 +132,13 @@ export function applyInitiativeRules(scene, patch = {}) {
     phaseRerollEachRound: !!next.phaseRerollEachRound,
     phaseActivateOncePerRound: !!next.phaseActivateOncePerRound,
     equalityRule: next.equalityRule,
+    flexibleUseInitiative: !!next.flexibleUseInitiative,
     initiativeOrder: next.initiativeOrder,
     categoryOrder: next.categoryOrder,
+    tiebreakerVisible: !!next.tiebreakerVisible,
+    tiebreakerLabel: next.tiebreakerLabel,
+    surpriseImpact: next.surpriseImpact,
+    surpriseAdvanceOn: next.surpriseAdvanceOn,
     rounding: next.rounding,
     phaseActionMode: next.phaseActionMode,
     phaseCount: next.phaseCount,

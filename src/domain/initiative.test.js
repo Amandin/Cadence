@@ -118,6 +118,25 @@ describe('initiative sorting and simultaneous groups', () => {
     expect(sorted.map((item) => item.id)).toEqual(['fast', 'tie', 'player', 'opponent', 'ally']);
   });
 
+  it('ignores preserved tie breaker values when the field is hidden', () => {
+    const sorted = trierParInitiative([
+      participant({ id: 'zulu', name: 'Zulu', kind: 'PJ', initiative: 10, departage: 8 }),
+      participant({ id: 'alpha', name: 'Alpha', kind: 'PJ', initiative: 10, departage: 1 }),
+    ], { categoryOrder: baseOrder, equalityRule: equalityRules.NEVER, tiebreakerVisible: false });
+
+    expect(sorted.map((item) => item.id)).toEqual(['alpha', 'zulu']);
+  });
+
+  it('can organize a flexible list by category then name without initiative', () => {
+    const sorted = trierParInitiative([
+      participant({ id: 'zulu', name: 'Zulu', kind: 'PJ', initiative: 99, departage: 8 }),
+      participant({ id: 'bravo', name: 'Bravo', kind: 'Opposant', initiative: 1, departage: 9 }),
+      participant({ id: 'alpha', name: 'Alpha', kind: 'PJ', initiative: 2, departage: 1 }),
+    ], { categoryOrder: baseOrder, equalityRule: equalityRules.LOOSE, initiativeEnabled: false });
+
+    expect(sorted.map((item) => item.id)).toEqual(['alpha', 'zulu', 'bravo']);
+  });
+
   it('sorts participants by low initiative first when configured', () => {
     const sorted = trierParInitiative([
       participant({ id: 'slow', kind: 'PJ', initiative: 5, departage: 0 }),

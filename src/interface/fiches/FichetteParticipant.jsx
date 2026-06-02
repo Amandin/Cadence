@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { initiativesActionParticipant } from '../../domain/initiative.js';
-import { participantEstInactif } from '../../domain/statuses.js';
+import { participantEstInactif, participantEstLimite } from '../../domain/statuses.js';
 import { isVisible } from '../../logic.js';
 import { AvatarParticipant, BoutonRepliFichette, EtiquetteEtat, couleurVersAccent } from '../commun/ComposantsCommuns.jsx';
 import { Suivi } from '../suivis/Suivi.jsx';
@@ -30,8 +30,9 @@ export function FichetteParticipant({
   const [repliee, setRepliee] = useState(false);
   const suivisVisibles = (participant.trackers || []).filter(isVisible);
   const inactif = participantEstInactif(participant);
-  const classes = `card fiche-card ${className} ${active ? 'active active-turn' : ''} ${inactif ? 'inactive-character' : ''} ${repliee ? 'collapsed' : ''}`;
-  const visibleBadges = [...badges, inactif && { className: 'inactive-chip', label: 'Inactif' }].filter(Boolean);
+  const limite = participantEstLimite(participant);
+  const classes = `card fiche-card ${className} ${active ? 'active active-turn' : ''} ${inactif ? 'inactive-character' : limite ? 'limited-character' : ''} ${repliee ? 'collapsed' : ''}`;
+  const visibleBadges = [...badges, inactif && { className: 'inactive-chip', label: 'Inactif' }, limite && { className: 'limited-chip', label: 'Limité' }].filter(Boolean);
   const hasQuickStats = showInitiative || (participant.stats || []).length > 0;
 
   if (repliee) {

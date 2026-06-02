@@ -241,6 +241,46 @@ describe('campaign storage', () => {
     expect(campaign.scenes[0]).toMatchObject({ round: -1, startRound: 1 });
   });
 
+  it('adds the surprised template once when migrating old template stores', () => {
+    const migrated = normalizeTemplateStore({ version: 2, statusTemplates: [{ name: 'Sonne', status: { name: 'Sonne', duration: 1 } }] });
+    const afterDeletion = normalizeTemplateStore({ version: 3, statusTemplates: [] });
+
+    expect(migrated.statusTemplates.map((template) => template.status.name)).toEqual(['Sonne', 'Surpris']);
+    expect(afterDeletion.statusTemplates).toEqual([]);
+  });
+
+  it('keeps preparation surprise and limited statuses through normalization', () => {
+    const campaign = normalizeCampaignPayload({
+      version: '0.5.10',
+      scenes: [{
+        id: 'scene-surprise',
+        title: 'Embuscade',
+        preparationSurprise: true,
+        surpriseImpact: 'inactive',
+        surpriseAdvanceOn: 'round',
+        participants: [{ id: 'pj', name: 'Ariane', statuses: [{ id: 'surpris', name: 'Surpris', duration: 1, remaining: 1, limited: true, skipNextActivation: true }] }],
+      }],
+    });
+
+    expect(campaign.scenes[0]).toMatchObject({
+      preparationSurprise: true,
+      surpriseImpact: 'inactive',
+      surpriseAdvanceOn: 'round',
+      participants: [{ statuses: [{ name: 'Surpris', limited: false, inactive: true, skipNextActivation: true }] }],
+    });
+  });
+
+  it('keeps flexible mode without initiative across normalization', () => {
+    const campaign = normalizeCampaignPayload({
+      version: '0.5.10',
+      initiativeRules: { temporalite: 'souple', flexibleUseInitiative: false },
+      scenes: [{ id: 'scene-flexible', title: 'Libre', participants: [] }],
+    });
+
+    expect(campaign.initiativeRules).toMatchObject({ temporalite: 'souple', flexibleUseInitiative: false });
+    expect(campaign.scenes[0]).toMatchObject({ temporalite: 'souple', flexibleUseInitiative: false });
+  });
+
   it('keeps editable quick stats as objects when normalizing and serializing', () => {
     const sourceScene = {
       id: 'scene-stats',

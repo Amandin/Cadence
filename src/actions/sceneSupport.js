@@ -74,6 +74,8 @@ export function optionsTri(scene) {
     equalityRule: scene.equalityRule || defaultEqualityRule,
     initiativeOrder: scene.initiativeOrder || defaultInitiativeOrder,
     initiativeTextOrder: scene.initiativeTextOrder,
+    initiativeEnabled: scene.temporalite !== 'souple' || scene.flexibleUseInitiative !== false,
+    tiebreakerVisible: scene.tiebreakerVisible !== false,
     multipleActionSlots: scene.multipleActionSlots !== false,
   };
 }

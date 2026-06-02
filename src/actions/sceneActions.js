@@ -2,7 +2,7 @@ import { activationAdvancePolicies, temporalityModes } from '../constants.js';
 import { indexCreneauActif, ordreCreneauxClassique, premierCreneauClassique, trierParInitiative } from '../domain/initiative.js';
 import { declarationStage, declarationStages, isCheckedPhaseMode, normalizeDeclarations, setDeclaration } from '../domain/initiativeModes.js';
 import { stepAutoGlobalTracker } from '../domain/globalTracker.js';
-import { createStatus } from '../domain/statuses.js';
+import { createStatus, createSurprisedStatus } from '../domain/statuses.js';
 import { clone, isBoxesTracker, isNumericTracker, resetAutoTrackers, resetTracker, tickParticipant, tickStatuses, triggerActivation, untickParticipant, untickStatuses } from '../logic.js';
 import { ajouterJoueSouple, annulerDernierJoueSouple, retirerHistoriqueSouple, retirerJoueSouple, toutLeMondeAJoueSouple } from './flexibleTurnState.js';
 import { actionSlotsDepuisInitiatives, addPreInitiativeRestorePoint, addRestorePoint, createBlankParticipant, initiativesRenseignees, optionsTri, placerEnReserve, valeurInitiativeRenseignee } from './sceneSupport.js';
@@ -46,7 +46,7 @@ function recalerActifPhaseSiBesoin(scene) {
 }
 
 function roundDepart(scene) {
-  return [0, 1].includes(Number(scene.startRound)) ? Number(scene.startRound) : 0;
+  return 1;
 }
 
 function demarrerTempsReelScene(compteur) {
@@ -82,27 +82,41 @@ function retirerDeclarationJoue(scene, participantId) {
   return { ...scene, declarationPlayedIds: (scene.declarationPlayedIds || []).filter((id) => id !== String(participantId)) };
 }
 
+function appliquerDebutRoundInitial(scene) {
+  const sceneAvecEtats = tickSceneRoundStatuses(scene);
+  return {
+    ...sceneAvecEtats,
+    round: roundDepart(sceneAvecEtats),
+    globalTracker: demarrerTempsReelScene(stepAutoGlobalTracker(sceneAvecEtats.globalTracker, 1)),
+    participants: (sceneAvecEtats.participants || []).map((participant) => tickParticipant(resetAutoTrackers(participant, 'round'), 'round')),
+    reserve: (sceneAvecEtats.reserve || []).map((participant) => tickParticipant(resetAutoTrackers(participant, 'round'), 'round')).map(placerEnReserve),
+  };
+}
+
 function demarrerScene(scene) {
-  const round = roundDepart(scene);
+  const sceneInitiale = appliquerDebutRoundInitial(scene);
   if (estModeDeclaration(scene)) {
-    if (estModeSouple(scene)) return reinitialiserDeclarationRound({ ...scene, round, jouesSouples: [], historiqueSouple: [], globalTracker: demarrerTempsReelScene(scene.globalTracker), participants: (scene.participants || []).map((participant) => resetAutoTrackers(participant, 'round')) });
+    if (estModeSouple(scene)) return reinitialiserDeclarationRound({ ...sceneInitiale, jouesSouples: [], historiqueSouple: [] });
     if (estModePhases(scene)) {
-      const scenePreteBase = { ...scene, round, phase: 1, activeId: '', activeSlotId: '', globalTracker: demarrerTempsReelScene(scene.globalTracker), participants: (scene.participants || []).map((participant) => resetAutoTrackers(participant, 'round')) };
+      const scenePreteBase = { ...sceneInitiale, phase: 1, activeId: '', activeSlotId: '' };
       const scenePrete = { ...scenePreteBase, phase: premierePhaseDisponible(scenePreteBase) };
       return reinitialiserDeclarationRound(scenePrete);
     }
-    const participants = trierParInitiative(scene.participants || [], optionsTri(scene));
-    return reinitialiserDeclarationRound({ ...scene, round, participants: participants.map((participant) => resetAutoTrackers(participant, 'round')), globalTracker: demarrerTempsReelScene(scene.globalTracker) });
+    const participants = trierParInitiative(sceneInitiale.participants || [], optionsTri(sceneInitiale));
+    return reinitialiserDeclarationRound({ ...sceneInitiale, participants });
   }
-  if (estModeSouple(scene)) return { ...scene, round, activeId: '', activeSlotId: '', jouesSouples: [], historiqueSouple: [], globalTracker: demarrerTempsReelScene(scene.globalTracker), participants: (scene.participants || []).map((participant) => resetAutoTrackers(participant, 'round')) };
+  if (estModeSouple(scene)) return { ...sceneInitiale, activeId: '', activeSlotId: '', jouesSouples: [], historiqueSouple: [] };
   if (estModePhases(scene)) {
-    const scenePreteBase = { ...scene, round, phase: 1, globalTracker: demarrerTempsReelScene(scene.globalTracker) };
+    const scenePreteBase = { ...sceneInitiale, phase: 1 };
     const scenePrete = { ...scenePreteBase, phase: premierePhaseDisponible(scenePreteBase) };
-    return { ...scenePrete, activeId: !isCheckedPhaseMode(scenePrete) && scenePrete.phaseRerollEachRound ? '' : premierParticipantPhase(scenePrete), activeSlotId: '' };
+    const activeId = !isCheckedPhaseMode(scenePrete) && scenePrete.phaseRerollEachRound ? '' : premierParticipantPhase(scenePrete);
+    const sceneActive = { ...scenePrete, activeId, activeSlotId: '', participants: (scenePrete.participants || []).map((participant) => ({ ...participant, _activationAutomationsDone: false })) };
+    return { ...sceneActive, participants: sceneActive.participants.map((participant) => triggerActivationScene(sceneActive, participant, activeId)) };
   }
-  const participants = trierParInitiative(scene.participants || [], optionsTri(scene));
-  const premierCreneau = premierCreneauClassique(participants, optionsTri(scene));
-  return { ...scene, round, participants: participants.map((participant) => resetAutoTrackers(participant, 'round')), activeId: premierCreneau?.id || participants[0]?.id || scene.activeId, activeSlotId: premierCreneau?.actionSlotId || '', globalTracker: demarrerTempsReelScene(scene.globalTracker) };
+  const participants = trierParInitiative(sceneInitiale.participants || [], optionsTri(sceneInitiale));
+  const premierCreneau = premierCreneauClassique(participants, optionsTri(sceneInitiale));
+  const sceneActive = { ...sceneInitiale, participants, activeId: premierCreneau?.id || participants[0]?.id || scene.activeId, activeSlotId: premierCreneau?.actionSlotId || '' };
+  return { ...sceneActive, participants: sceneActive.participants.map((participant) => triggerActivationScene(sceneActive, participant, sceneActive.activeId)) };
 }
 
 function remettreEnPreparation(scene) {
@@ -153,8 +167,57 @@ function triggerActivationScene(scene, participant, activeId) {
 }
 
 function preparerParticipantPhases(scene, participant) {
-  if (!isCheckedPhaseMode(scene) || Array.isArray(participant.phaseActions)) return participant;
+  if (!estModePhases(scene) || !isCheckedPhaseMode(scene) || Array.isArray(participant.phaseActions)) return participant;
   return { ...participant, phaseActions: ['1'] };
+}
+
+function departageRenseigne(departagesById, participantId) {
+  const valeur = departagesById?.[participantId];
+  if (String(valeur ?? '').trim() === '') return {};
+  const nombre = Number(valeur);
+  return Number.isFinite(nombre) ? { departage: nombre } : {};
+}
+
+function appliquerInitiativesRenseignees(scene, valuesById, departagesById = {}) {
+  const participantsMisAJour = (scene.participants || []).map((participant) => {
+    const initiatives = initiativesRenseignees(valuesById, participant.id);
+    const departage = departageRenseigne(departagesById, participant.id);
+    if (!initiatives) return { ...participant, ...departage };
+    const actionSlots = actionSlotsDepuisInitiatives(initiatives, scene.multipleActionSlots !== false);
+    return { ...participant, ...departage, initiative: actionSlots[0]?.initiative ?? participant.initiative, actionSlots };
+  });
+  const reserveJointe = [];
+  const reserve = (scene.reserve || []).flatMap((participant) => {
+    const initiatives = initiativesRenseignees(valuesById, participant.id);
+    const participantAvecDepartage = { ...participant, ...departageRenseigne(departagesById, participant.id) };
+    if (!initiatives) return [placerEnReserve(participantAvecDepartage)];
+    const actionSlots = actionSlotsDepuisInitiatives(initiatives, scene.multipleActionSlots !== false);
+    reserveJointe.push(preparerParticipantPhases(scene, { ...participantAvecDepartage, initiative: actionSlots[0]?.initiative ?? 0, actionSlots }));
+    return [];
+  });
+  const participants = trierParInitiative([...participantsMisAJour, ...reserveJointe], optionsTri(scene));
+  const sceneAvecParticipantsBase = { ...scene, participants, reserve, phase: estModePhases(scene) ? 1 : scene.phase || 1 };
+  const sceneAvecParticipants = estModePhases(scene) ? { ...sceneAvecParticipantsBase, phase: premierePhaseDisponible(sceneAvecParticipantsBase) } : sceneAvecParticipantsBase;
+  const premierCreneau = premierCreneauClassique(participants, optionsTri(sceneAvecParticipants));
+  const attendDeclarations = estModeDeclaration(scene) && declarationStage(scene) === declarationStages.DECLARATION;
+  return {
+    ...sceneAvecParticipants,
+    activeId: attendDeclarations ? '' : estModeSouple(scene) ? '' : estModePhases(scene) ? participantsPhase(sceneAvecParticipants)[0]?.id || '' : premierCreneau?.id || participants[0]?.id || '',
+    activeSlotId: attendDeclarations || estModeSouple(scene) || estModePhases(scene) ? '' : premierCreneau?.actionSlotId || '',
+    jouesSouples: [],
+    historiqueSouple: [],
+  };
+}
+
+function appliquerSurpriseInitiale(scene, surprisedIds = []) {
+  const ids = new Set(surprisedIds);
+  if (!scene.preparationSurprise || ids.size === 0) return scene;
+  return {
+    ...scene,
+    participants: (scene.participants || []).map((participant) => ids.has(participant.id)
+      ? { ...participant, statuses: [...(participant.statuses || []), createSurprisedStatus(scene.surpriseImpact, { advanceOn: scene.surpriseAdvanceOn, skipNextAdvance: true })] }
+      : participant),
+  };
 }
 
 const TURN_HISTORY_LIMIT = 40;
@@ -177,6 +240,14 @@ function depilerRetourTour(scene) {
   const precedente = historique.at(-1);
   if (!precedente) return null;
   return { ...clone(precedente), _turnHistory: historique.slice(0, -1) };
+}
+
+function restaurerPreparationDepuisHistorique(scene) {
+  const historique = Array.isArray(scene._turnHistory) ? scene._turnHistory : [];
+  for (let index = historique.length - 1; index >= 0; index -= 1) {
+    if (historique[index].round < 0) return { ...clone(historique[index]), _turnHistory: historique.slice(0, index) };
+  }
+  return remettreEnPreparation(scene);
 }
 
 export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, setScenes, setRestorePoints, setRoundEffect }) {
@@ -235,35 +306,23 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
     setActiveParticipant(activeId) {
       updateScene((s) => ({ ...s, activeId, activeSlotId: '' }));
     },
-    applyInitiativeRolls(valuesById) {
+    applyInitiativeRolls(valuesById, departagesById = {}) {
       setRoundEffect(null);
+      updateScene((s) => appliquerInitiativesRenseignees(s, valuesById, departagesById));
+    },
+    startSceneWithInitiatives(valuesById, surprisedIds = [], departagesById = {}) {
+      setRoundEffect('next');
       updateScene((s) => {
-        const participantsMisAJour = (s.participants || []).map((participant) => {
-          const initiatives = initiativesRenseignees(valuesById, participant.id);
-          if (!initiatives) return participant;
-          const actionSlots = actionSlotsDepuisInitiatives(initiatives, s.multipleActionSlots !== false);
-          return { ...participant, initiative: actionSlots[0]?.initiative ?? participant.initiative, actionSlots };
-        });
-        const reserveJointe = [];
-        const reserve = (s.reserve || []).flatMap((participant) => {
-          const initiatives = initiativesRenseignees(valuesById, participant.id);
-          if (!initiatives) return [placerEnReserve(participant)];
-          const actionSlots = actionSlotsDepuisInitiatives(initiatives, s.multipleActionSlots !== false);
-          reserveJointe.push(preparerParticipantPhases(s, { ...participant, initiative: actionSlots[0]?.initiative ?? 0, actionSlots }));
-          return [];
-        });
-        const participants = trierParInitiative([...participantsMisAJour, ...reserveJointe], optionsTri(s));
-        const sceneAvecParticipantsBase = { ...s, participants, reserve, phase: estModePhases(s) ? 1 : s.phase || 1 };
-        const sceneAvecParticipants = estModePhases(s) ? { ...sceneAvecParticipantsBase, phase: premierePhaseDisponible(sceneAvecParticipantsBase) } : sceneAvecParticipantsBase;
-        const premierCreneau = premierCreneauClassique(participants, optionsTri(sceneAvecParticipants));
-        const attendDeclarations = estModeDeclaration(s) && declarationStage(s) === declarationStages.DECLARATION;
-        return {
-          ...sceneAvecParticipants,
-          activeId: attendDeclarations ? '' : estModeSouple(s) ? '' : estModePhases(s) ? participantsPhase(sceneAvecParticipants)[0]?.id || '' : premierCreneau?.id || participants[0]?.id || '',
-          activeSlotId: attendDeclarations || estModeSouple(s) || estModePhases(s) ? '' : premierCreneau?.actionSlotId || '',
-          jouesSouples: [],
-          historiqueSouple: [],
+        const sceneReglesCourantes = {
+          ...s,
+          preparationSurprise: scene.preparationSurprise,
+          surpriseImpact: scene.surpriseImpact,
+          surpriseAdvanceOn: scene.surpriseAdvanceOn,
         };
+        const sceneAvecInitiatives = appliquerInitiativesRenseignees(sceneReglesCourantes, valuesById, departagesById);
+        const nextScene = demarrerScene(appliquerSurpriseInitiale(sceneAvecInitiatives, surprisedIds));
+        if (nextScene.round >= 0) setRestorePoints((points) => addStartRestorePoints(points, s, nextScene));
+        return empilerRetourTour(s, nextScene);
       });
     },
     updateDeclaration(participantId, value) {
@@ -350,7 +409,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
     },
     returnToPreparation() {
       setRoundEffect(null);
-      updateScene(remettreEnPreparation);
+      updateScene(restaurerPreparationDepuisHistorique);
     },
     advanceRound() {
       setRoundEffect('next');
@@ -473,7 +532,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
             const phase = phaseSuivante(s);
             const nextParticipants = participantsPhase({ ...s, phase });
             const activeId = nextParticipants[0]?.id || '';
-            const nextScene = marquerDeclarationJoue({ ...s, phase, activeId, activeSlotId: '', globalTracker: stepAutoGlobalTracker(s.globalTracker, 1, 'phase'), participants: (s.participants || []).map((participant) => triggerActivationScene(s, participant, activeId)) }, s.activeId);
+            const nextScene = marquerDeclarationJoue({ ...s, phase, activeId, activeSlotId: '', participants: (s.participants || []).map((participant) => triggerActivationScene(s, participant, activeId)) }, s.activeId);
             return empilerRetourTour(s, nextScene);
           });
         };
@@ -557,7 +616,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
 
       if (blocked.length) return;
 
-      const roundDelta = nextIndex === 0 && currentIndex !== 0 ? 1 : 0;
+      const roundDelta = currentIndex >= slots.length - 1 ? 1 : 0;
 
       setRoundEffect(roundDelta > 0 ? 'next' : null);
       updateScene((s) => {
@@ -593,6 +652,18 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
         jouesSouples: retirerJoueSouple(s, id),
         historiqueSouple: retirerHistoriqueSouple(s, id),
       }));
+    },
+    activateParticipantNow(id) {
+      updateScene((s) => {
+        const participant = s.participants.find((item) => item.id === id);
+        if (!participant) return s;
+        const slot = ordreCreneauxClassique(s.participants || [], optionsTri(s)).find((item) => item.id === id);
+        const sceneActive = { ...s, activeId: id, activeSlotId: estModePhases(s) ? '' : slot?.actionSlotId || '' };
+        return empilerRetourTour(s, {
+          ...sceneActive,
+          participants: sceneActive.participants.map((item) => triggerActivationScene(sceneActive, item, id)),
+        });
+      });
     },
     joinInit(id, initiativeValue) {
       const participant = scene.reserve.find((x) => x.id === id);

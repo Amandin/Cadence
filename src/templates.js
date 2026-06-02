@@ -4,6 +4,7 @@ import { normalizeGlobalTracker } from './domain/globalTracker.js';
 import { clone, newTracker, uid } from './logic.js';
 
 export const defaultTemplateCategories = ['PJ', 'PNJ', 'Créature', 'Horloge', 'Autre'];
+const TEMPLATE_STORE_VERSION = 3;
 
 export const defaultTemplates = [
   {
@@ -146,8 +147,9 @@ export const defaultTrackerTemplates = [
 ];
 
 export const defaultStatusTemplates = [
+  { id: 'status-template-surpris', name: 'Surpris', createdAt: 'demo', status: { id: 'template-status', name: 'Surpris', duration: 1, remaining: 1, loop: false, inactive: false, limited: true, advanceOn: 'activation', expired: false } },
   { id: 'status-template-blesse', name: 'Blesse', createdAt: 'demo', status: { id: 'template-status', name: 'Blesse', duration: null, remaining: null, loop: false, inactive: false, advanceOn: 'activation', expired: false } },
-  { id: 'status-template-sonne', name: 'Sonne 1 tour', createdAt: 'demo', status: { id: 'template-status', name: 'Sonne', duration: 1, remaining: 1, loop: false, inactive: true, advanceOn: 'activation', expired: false } },
+  { id: 'status-template-sonne', name: 'Sonne 1 activation', createdAt: 'demo', status: { id: 'template-status', name: 'Sonne', duration: 1, remaining: 1, loop: false, inactive: true, advanceOn: 'activation', expired: false } },
   { id: 'status-template-enflamme', name: 'Enflamme', createdAt: 'demo', status: { id: 'template-status', name: 'Enflamme', duration: 3, remaining: 3, loop: false, inactive: false, advanceOn: 'round', expired: false } },
 ];
 
@@ -170,8 +172,15 @@ export const defaultRuleTemplates = [
   { id: 'rules-template-phases-cochees', name: 'Phases cochees', createdAt: 'demo', rules: { temporalite: temporalityModes.PHASES, phaseActionMode: phaseActionModes.CHECKED, phaseCount: 3, declarationMode: false, multipleActionSlots: false } },
   { id: 'rules-template-cartes', name: 'Initiative par cartes', createdAt: 'demo', rules: { temporalite: temporalityModes.CLASSIC, declarationMode: false, multipleActionSlots: false, initiativeTextOrder: { enabled: true, separator: ' de ', parts: [{ label: 'Valeur', values: ['As', 'Roi', 'Dame', 'Valet', '10', '9'] }, { label: 'Couleur', values: ['Pique', 'Coeur', 'Carreau', 'Trefle'] }] } } },
   { id: 'rules-template-declaration', name: 'Declaration puis resolution', createdAt: 'demo', rules: { temporalite: temporalityModes.CLASSIC, declarationMode: true, multipleActionSlots: true, phaseActionMode: phaseActionModes.AUTOMATIC } },
-  { id: 'rules-template-souple', name: 'Ordre souple', createdAt: 'demo', rules: { temporalite: temporalityModes.FLEXIBLE, declarationMode: false, multipleActionSlots: false, phaseActionMode: phaseActionModes.AUTOMATIC } },
+  { id: 'rules-template-souple', name: 'Ordre souple', createdAt: 'demo', rules: { temporalite: temporalityModes.FLEXIBLE, declarationMode: false, multipleActionSlots: false } },
 ];
+
+function ajouterTemplateSurprisSiAncien(statusTemplates, version) {
+  if (Number(version || 0) >= TEMPLATE_STORE_VERSION) return statusTemplates;
+  const contientSurpris = statusTemplates.some((template) => template.id === 'status-template-surpris' || template.status?.name?.toLocaleLowerCase() === 'surpris');
+  const surpris = defaultStatusTemplates.find((template) => template.id === 'status-template-surpris');
+  return contientSurpris || !surpris ? statusTemplates : [...statusTemplates, normalizeStatusTemplate(surpris)];
+}
 
 export function createBlankParticipant() {
   return {
@@ -241,6 +250,7 @@ function normalizeStatusTemplate(template) {
       remaining: duration,
       loop: duration !== null && !!source.loop,
       inactive: !!source.inactive,
+      limited: !source.inactive && !!source.limited,
       advanceOn: source.advanceOn === 'round' ? 'round' : 'activation',
       expired: false,
     },
@@ -256,6 +266,7 @@ function normalizeSceneStatusTemplate(template) {
     status: {
       ...normalized.status,
       inactive: false,
+      limited: false,
       advanceOn: 'round',
     },
   };
@@ -290,7 +301,7 @@ export function normalizeTemplateStore(value) {
   if (Array.isArray(value)) {
     const templates = value.map(normalizeTemplate).filter(Boolean);
     return {
-      version: 2,
+      version: TEMPLATE_STORE_VERSION,
       categories: defaultTemplateCategories,
       templates,
       trackerTemplates: defaultTrackerTemplates.map(normalizeTrackerTemplate).filter(Boolean),
@@ -307,7 +318,7 @@ export function normalizeTemplateStore(value) {
   const sourceTrackerTemplates = Array.isArray(value?.trackerTemplates) ? value.trackerTemplates : defaultTrackerTemplates;
   const trackerTemplates = sourceTrackerTemplates.map(normalizeTrackerTemplate).filter(Boolean);
   const sourceStatusTemplates = Array.isArray(value?.statusTemplates) ? value.statusTemplates : defaultStatusTemplates;
-  const statusTemplates = sourceStatusTemplates.map(normalizeStatusTemplate).filter(Boolean);
+  const statusTemplates = ajouterTemplateSurprisSiAncien(sourceStatusTemplates.map(normalizeStatusTemplate).filter(Boolean), value?.version);
   const sourceSceneStatusTemplates = Array.isArray(value?.sceneStatusTemplates) ? value.sceneStatusTemplates : defaultSceneStatusTemplates;
   const sceneStatusTemplates = sourceSceneStatusTemplates.map(normalizeSceneStatusTemplate).filter(Boolean);
   const sourceSceneCounterTemplates = Array.isArray(value?.sceneCounterTemplates) ? value.sceneCounterTemplates : defaultSceneCounterTemplates;
@@ -316,7 +327,7 @@ export function normalizeTemplateStore(value) {
   const ruleTemplates = sourceRuleTemplates.map(normalizeRuleTemplate).filter(Boolean);
 
   return {
-    version: 2,
+    version: TEMPLATE_STORE_VERSION,
     categories: Array.from(new Set([...categories.map(normalizeCategoryName).filter(Boolean), ...templates.map((template) => template.category)])),
     templates,
     trackerTemplates,
@@ -383,7 +394,7 @@ export function mergeTemplateStores(currentStore, incomingStore) {
 
   return {
     store: normalizeTemplateStore({
-      version: 1,
+      version: TEMPLATE_STORE_VERSION,
       categories: [...current.categories, ...incoming.categories],
       templates: [...current.templates, ...addedParticipants],
       trackerTemplates: mergeSimple(current.trackerTemplates, incoming.trackerTemplates, 'ttpl', 'tracker'),
@@ -438,7 +449,7 @@ export function instantiateStatusTemplate(template) {
 
 export function instantiateSceneStatusTemplate(template) {
   const status = instantiateStatusTemplate(template);
-  return status ? { ...status, inactive: false, advanceOn: 'round' } : null;
+  return status ? { ...status, inactive: false, limited: false, advanceOn: 'round' } : null;
 }
 
 export function instantiateSceneCounterTemplate(template) {

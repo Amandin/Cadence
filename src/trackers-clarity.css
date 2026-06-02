@@ -1098,6 +1098,7 @@
 }
 
 .tracker-action-pop > input,
+.tracker-action-pop label input,
 .counter-pop input {
   min-width: 0;
   width: 100%;

@@ -11,6 +11,8 @@ function optionsEgalite(scene) {
     equalityRule: scene?.equalityRule || defaultEqualityRule,
     initiativeOrder: scene?.initiativeOrder || defaultInitiativeOrder,
     initiativeTextOrder: scene?.initiativeTextOrder,
+    initiativeEnabled: scene?.temporalite !== 'souple' || scene?.flexibleUseInitiative !== false,
+    tiebreakerVisible: scene?.tiebreakerVisible !== false,
     multipleActionSlots: scene?.multipleActionSlots !== false,
   };
 }
@@ -51,8 +53,9 @@ function FichetteLibre({ scene, participant, actifId, activeSlotId, interactions
   return (
     <FichetteInitiative
       participant={participant}
-      actif={participant.actionSlotId ? participant.actionSlotId === activeSlotId : participant.id === actifId}
+      actif={participant.actionSlotId ? participant.actionSlotId === activeSlotId || (!activeSlotId && participant.id === actifId) : participant.id === actifId}
       temporaliteSouple={temporaliteSouple}
+      montrerInitiative={!temporaliteSouple || scene.flexibleUseInitiative !== false}
       dejaJoue={dejaJoue}
       actionsRestantes={actionsRestantes}
       onMarquerAJoue={() => onMarquerAJoue?.(participant.id)}
@@ -186,8 +189,9 @@ export function ListeInitiative({ scene, participants, actifId, interactions, te
     );
   }
 
-  const doitJouer = participants.filter((participant) => actionsRestantesSouples(scene, participant.id) > 0);
-  const dejaJoues = participants.filter((participant) => actionsRestantesSouples(scene, participant.id) === 0);
+  const participantsTries = trierParInitiative(participants, optionsEgalite(scene));
+  const doitJouer = participantsTries.filter((participant) => actionsRestantesSouples(scene, participant.id) > 0);
+  const dejaJoues = participantsTries.filter((participant) => actionsRestantesSouples(scene, participant.id) === 0);
 
   return (
     <div className="initiative-list flexible-list">

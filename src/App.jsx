@@ -23,6 +23,16 @@ import { useCharacterInteractions } from './hooks/useCharacterInteractions.js';
 import { useTemplates } from './hooks/useTemplates.js';
 import { createBlankParticipant } from './templates.js';
 
+const VIEW_STORAGE_KEY = 'cadence:interface:view:v1';
+
+function initialView() {
+  try {
+    return window.sessionStorage.getItem(VIEW_STORAGE_KEY) === 'scene' ? 'scene' : 'hub';
+  } catch {
+    return 'hub';
+  }
+}
+
 function initiativesDeclarees(participant = {}, multipleActionSlots = true) {
   const slots = Array.isArray(participant.actionSlots) && participant.actionSlots.length
     ? participant.actionSlots
@@ -31,6 +41,7 @@ function initiativesDeclarees(participant = {}, multipleActionSlots = true) {
 }
 
 function participantsInitiativeIncompatible(scene = {}) {
+  if (scene.temporalite === temporalityModes.FLEXIBLE && scene.flexibleUseInitiative === false) return [];
   return (scene.participants || []).filter((participant) => initiativesDeclarees(participant, scene.multipleActionSlots !== false).some((initiative) => !initiativeMatchesMode(initiative, scene.initiativeTextOrder)));
 }
 
@@ -58,7 +69,7 @@ export default function App() {
   const { scenes, templateStore, setTemplateStore, campaignName, campaignEntries, activeCampaignEntryId, pendingFileChoice, fileSaveStatus, scene, restorePoints, dark, active, blocked, nextStartsRound, nextClass, roundEffect, actions } = campaign;
   const characters = useCharacterInteractions(scene, actions);
   const templates = useTemplates(templateStore, setTemplateStore);
-  const [currentView, setCurrentView] = useState('hub');
+  const [currentView, setCurrentView] = useState(initialView);
   const [openMenu, setOpenMenu] = useState(false);
   const [addSheetOpen, setAddSheetOpen] = useState(false);
   const [notice, setNotice] = useState(null);
@@ -66,9 +77,11 @@ export default function App() {
   const [globalSheetOpen, setGlobalSheetOpen] = useState(false);
   const [initiativeEntryOpen, setInitiativeEntryOpen] = useState(false);
   const [initiativeEntryScopeIds, setInitiativeEntryScopeIds] = useState(null);
+  const [initiativeEntryInitialLaunch, setInitiativeEntryInitialLaunch] = useState(false);
   const [initiativeAdjustOpen, setInitiativeAdjustOpen] = useState(false);
   const [initiativeMismatch, setInitiativeMismatch] = useState(null);
   const [declarationActionsOpen, setDeclarationActionsOpen] = useState(false);
+  const [declarationAdditionTargetId, setDeclarationAdditionTargetId] = useState('');
   const [pendingNextAfterInitiativeAdjust, setPendingNextAfterInitiativeAdjust] = useState(false);
   const [templateTarget, setTemplateTarget] = useState(null);
   const [editingTemplateId, setEditingTemplateId] = useState('');
@@ -81,9 +94,18 @@ export default function App() {
   const timerDoneRef = useRef(false);
   const skipInitiativeAdjustPromptRef = useRef(false);
 
+  useEffect(() => {
+    try {
+      window.sessionStorage.setItem(VIEW_STORAGE_KEY, currentView);
+    } catch {
+      // La navigation reste fonctionnelle si le stockage de session est indisponible.
+    }
+  }, [currentView]);
+
   const temporaliteSouple = scene.temporalite === temporalityModes.FLEXIBLE;
   const temporalitePhases = scene.temporalite === temporalityModes.PHASES;
   const temporaliteDeclaration = isDeclarationMode(scene);
+  const horlogesBloquantesActives = scene.round >= 0 ? blocked : [];
   const stageDeclaration = temporaliteDeclaration ? declarationStage(scene) : '';
   const declarationEnDeclaration = temporaliteDeclaration && stageDeclaration === declarationStages.DECLARATION;
   const phaseAttendRelanceInitiative = temporalitePhases && phasesAttendRelanceInitiative(scene);
@@ -92,8 +114,11 @@ export default function App() {
     equalityRule: scene.equalityRule || defaultEqualityRule,
     initiativeOrder: scene.initiativeOrder || defaultInitiativeOrder,
     initiativeTextOrder: scene.initiativeTextOrder,
+    initiativeEnabled: !temporaliteSouple || scene.flexibleUseInitiative !== false,
+    tiebreakerVisible: scene.tiebreakerVisible !== false,
     multipleActionSlots: scene.multipleActionSlots !== false,
   };
+  const utiliserInitiative = optionsInitiative.initiativeEnabled;
 
   const phaseParticipants = temporalitePhases && !phaseAttendRelanceInitiative
     ? participantsPhaseScene(scene)
@@ -110,8 +135,8 @@ export default function App() {
   const creneauClassiqueActif = creneauxClassiques[currentIndex] || null;
   const participantAjustementInitiative = temporalitePhases ? phaseActive : creneauClassiqueActif || active;
   const phaseCurrentIndex = phaseParticipants.findIndex((participant) => participant.id === phaseActiveId);
-  const libelleRoundCourant = scene.round === 0 ? 'Surprise' : `R${scene.round}`;
-  const roundDepartScene = [0, 1].includes(Number(scene.startRound)) ? Number(scene.startRound) : 0;
+  const libelleRoundCourant = `R${scene.round}`;
+  const roundDepartScene = 1;
   const retourHistoriqueDisponible = Array.isArray(scene._turnHistory) && scene._turnHistory.length > 0;
   const retourPreparationVisible = scene.round >= 0 && (declarationEnDeclaration ? scene.round === roundDepartScene : temporaliteSouple ? (scene.historiqueSouple || []).length === 0 && scene.round === roundDepartScene : temporalitePhases ? scene.round === roundDepartScene && Number(scene.phase || 1) <= 1 && (phaseCurrentIndex <= 0 || !phaseParticipants.length) : scene.round === roundDepartScene && currentIndex <= 0);
   const retourPossible = scene.round < 0 ? false : retourHistoriqueDisponible || (declarationEnDeclaration ? scene.round === roundDepartScene : temporaliteSouple ? (scene.historiqueSouple || []).length > 0 || scene.round === scene.startRound : temporalitePhases ? phaseCurrentIndex > 0 || (scene.round === scene.startRound && Number(scene.phase || 1) <= 1 && (phaseCurrentIndex <= 0 || !phaseParticipants.length)) : scene.participants.length > 0 && (scene.round > 0 || currentIndex > 0));
@@ -134,8 +159,8 @@ export default function App() {
   }, [currentView, initiativeEntryOpen, initiativeMismatch, scene]);
 
   useEffect(() => {
-    if (clockModalOpen && blocked.length === 0) setClockModalOpen(false);
-  }, [blocked.length, clockModalOpen]);
+    if (clockModalOpen && horlogesBloquantesActives.length === 0) setClockModalOpen(false);
+  }, [clockModalOpen, horlogesBloquantesActives.length]);
 
   useEffect(() => {
     const roundAvant = previousRoundRef.current;
@@ -187,13 +212,19 @@ export default function App() {
 
   const nextTurn = (direction) => {
     if (direction < 0 && !retourPossible) return;
-    if (temporaliteSouple && direction > 0 && !toutLeMondeAJoueSouple) return;
-    if (temporalitePhases && direction > 0 && !phaseParticipants.length && !phaseSuivanteDisponible) return;
-    if (direction > 0 && blocked.length) { setClockModalOpen(true); return; }
+    if (direction > 0 && horlogesBloquantesActives.length) { setClockModalOpen(true); return; }
+    if (direction > 0 && scene.round < 0 && (utiliserInitiative || scene.preparationSurprise)) {
+      setInitiativeEntryScopeIds(null);
+      setInitiativeEntryInitialLaunch(true);
+      setInitiativeEntryOpen(true);
+      return;
+    }
     if (direction > 0 && declarationEnDeclaration && scene.round >= 0 && scene.participants.length > 0) {
       setDeclarationActionsOpen(true);
       return;
     }
+    if (temporaliteSouple && direction > 0 && scene.round >= 0 && !toutLeMondeAJoueSouple) return;
+    if (temporalitePhases && direction > 0 && !phaseParticipants.length && !phaseSuivanteDisponible) return;
     if (direction > 0 && scene.promptInitiativeOnNext && !declarationEnDeclaration && !temporaliteSouple && !(temporalitePhases && isCheckedPhaseMode(scene)) && scene.round >= 0 && participantAjustementInitiative && !skipInitiativeAdjustPromptRef.current) {
       setInitiativeAdjustOpen(true);
       return;
@@ -223,9 +254,16 @@ export default function App() {
   const marquerAJoue = (participantId) => actions.markFlexiblePlayed(participantId);
   const annulerAJoue = (participantId) => actions.unmarkFlexiblePlayed(participantId);
   const openAddCharacter = () => { setOpenMenu(false); setAddSheetOpen(true); };
-  const openInitiativeEntry = () => { setOpenMenu(false); setInitiativeEntryScopeIds(null); setInitiativeEntryOpen(true); };
-  const createBlankCharacter = (options) => { characters.addCharacter(createBlankParticipant(), options); setAddSheetOpen(false); };
-  const createFromTemplate = (templateId, options = { placement: 'reserve' }) => { const participant = templates.createParticipantFromTemplate(templateId); if (!participant) return; characters.addCharacter(participant, options); setAddSheetOpen(false); };
+  const openInitiativeEntry = () => { setOpenMenu(false); setInitiativeEntryScopeIds(null); setInitiativeEntryInitialLaunch(false); setInitiativeEntryOpen(true); };
+  const ouvrirDeclarationAjoutSiBesoin = (participant, options) => {
+    if (participant && options?.placement !== 'reserve' && temporaliteSouple && temporaliteDeclaration && scene.round >= 0) {
+      setDeclarationActionsOpen(false);
+      setDeclarationAdditionTargetId(participant.id);
+    }
+  };
+  const optionsAjoutPersonnage = (options) => ({ ...options, editAfterAdd: !(options?.placement !== 'reserve' && temporaliteSouple && temporaliteDeclaration && scene.round >= 0) });
+  const createBlankCharacter = (options) => { const participant = characters.addCharacter(createBlankParticipant(), optionsAjoutPersonnage(options)); ouvrirDeclarationAjoutSiBesoin(participant, options); setAddSheetOpen(false); };
+  const createFromTemplate = (templateId, options = { placement: 'reserve' }) => { const participant = templates.createParticipantFromTemplate(templateId); if (!participant) return; const added = characters.addCharacter(participant, optionsAjoutPersonnage(options)); ouvrirDeclarationAjoutSiBesoin(added, options); setAddSheetOpen(false); };
   const newScene = () => { actions.newScene(); setOpenMenu(false); };
   const chooseScene = (index) => {
     const cible = scenes[index];
@@ -278,10 +316,20 @@ export default function App() {
   const fermerSaisieInitiatives = () => {
     setInitiativeEntryOpen(false);
     setInitiativeEntryScopeIds(null);
+    setInitiativeEntryInitialLaunch(false);
+  };
+  const validerSaisieInitiatives = (valuesById, surprisedIds, departagesById) => {
+    if (initiativeEntryInitialLaunch) actions.startSceneWithInitiatives(valuesById, surprisedIds, departagesById);
+    else actions.applyInitiativeRolls(valuesById, departagesById);
   };
   const validerActionsDeclarees = (declarations) => {
     actions.applyDeclarationChoices(declarations);
     setDeclarationActionsOpen(false);
+  };
+  const validerDeclarationAjout = (declarations) => {
+    const action = declarations[declarationAdditionTargetId];
+    if (action) actions.updateDeclaration(declarationAdditionTargetId, action);
+    setDeclarationAdditionTargetId('');
   };
 
   const phaseVideAvecSuivante = temporalitePhases && !phaseParticipants.length && phaseSuivanteDisponible;
@@ -291,18 +339,19 @@ export default function App() {
   const libelleBas = scene.round < 0 ? 'Commencer' : phaseAttendRelanceInitiative ? 'Init requise' : declarationEnDeclaration ? 'Déclarer' : temporaliteSouple ? toutLeMondeAJoueSouple ? `Nouveau round · R${scene.round + 1}` : 'Choisir' : temporalitePhases ? phaseDemarreNouveauRound ? `Nouveau round · R${scene.round + 1}` : phaseVideAvecSuivante || (phaseEnFin && phaseSuivanteDisponible) ? 'Phase suivante' : `Suivant · P${scene.phase}` : nextStartsRound ? `Nouveau round · R${scene.round + 1}` : `Suivant · ${libelleRoundCourant}`;
 
   const fenetresCommunes = <>
-    <FenetresSuperposees campaignName={campaignName} scene={scene} restorePoints={restorePoints} dark={dark} characters={characters} templates={templates} actions={actions} etatInterface={{ addSheetOpen, openMenu: currentView === 'scene' && openMenu, notice, globalSheetOpen, clockModalOpen, initiativeEntryOpen: currentView === 'scene' && initiativeEntryOpen, initiativeEntryScopeIds }} commandesInterface={{ ouvrirAjoutPersonnage: openAddCharacter, ouvrirSaisieInitiatives: openInitiativeEntry, ouvrirHubCampagne: () => setCurrentView('hub'), ouvrirCompteurGlobal: () => setGlobalSheetOpen(true), ouvrirEtatScene: () => setSceneStatusOpen(true), fermerAjoutPersonnage: () => setAddSheetOpen(false), fermerMenu: () => setOpenMenu(false), fermerNotice: () => setNotice(null), fermerCompteurGlobal: () => setGlobalSheetOpen(false), fermerResolutionHorloge: () => setClockModalOpen(false), fermerSaisieInitiatives, ouvrirSauvegardeTemplate: openTemplateSave, creerPersonnageVierge: createBlankCharacter, creerDepuisTemplate: createFromTemplate, restaurerScene: restoreScene, retourPreparation: returnToPreparation, avancerRound: advanceRound, resetSuivisScene: resetSceneTrackers, effacerEtatsScene: clearSceneStatuses }} compteurGlobal={{ horlogesBloquantes: blocked }} resolutionHorloge={{ resetClock, deleteClock }} templatesUi={{ templateTarget, templateError, fermerSauvegardeTemplate: () => setTemplateTarget(null), enregistrerTemplate: saveTemplate }} />
+    <FenetresSuperposees campaignName={campaignName} scene={scene} restorePoints={restorePoints} dark={dark} characters={characters} templates={templates} actions={actions} etatInterface={{ addSheetOpen, openMenu: currentView === 'scene' && openMenu, notice, globalSheetOpen, clockModalOpen, initiativeEntryOpen: currentView === 'scene' && initiativeEntryOpen, initiativeEntryScopeIds, initiativeEntryInitialLaunch }} commandesInterface={{ ouvrirAjoutPersonnage: openAddCharacter, ouvrirSaisieInitiatives: openInitiativeEntry, ouvrirHubCampagne: () => setCurrentView('hub'), ouvrirCompteurGlobal: () => setGlobalSheetOpen(true), ouvrirEtatScene: () => setSceneStatusOpen(true), fermerAjoutPersonnage: () => setAddSheetOpen(false), fermerMenu: () => setOpenMenu(false), fermerNotice: () => setNotice(null), fermerCompteurGlobal: () => setGlobalSheetOpen(false), fermerResolutionHorloge: () => setClockModalOpen(false), fermerSaisieInitiatives, validerSaisieInitiatives, ouvrirSauvegardeTemplate: openTemplateSave, creerPersonnageVierge: createBlankCharacter, creerDepuisTemplate: createFromTemplate, restaurerScene: restoreScene, retourPreparation: returnToPreparation, avancerRound: advanceRound, resetSuivisScene: resetSceneTrackers, effacerEtatsScene: clearSceneStatuses }} compteurGlobal={{ horlogesBloquantes: horlogesBloquantesActives }} resolutionHorloge={{ resetClock, deleteClock }} templatesUi={{ templateTarget, templateError, fermerSauvegardeTemplate: () => setTemplateTarget(null), enregistrerTemplate: saveTemplate }} />
     {initiativeAdjustOpen && participantAjustementInitiative && <FenetreAjustementInitiative participant={participantAjustementInitiative} valeurInitiale={participantAjustementInitiative.initiative} initiativeTextOrder={scene.initiativeTextOrder} onFermer={() => setInitiativeAdjustOpen(false)} onValider={validerAjustementInitiative} onPasser={passerAjustementInitiative} />}
-    {declarationActionsOpen && <FenetreDeclarationActions scene={scene} optionsInitiative={optionsInitiative} onFermer={() => setDeclarationActionsOpen(false)} onValider={validerActionsDeclarees} />}
+    {declarationActionsOpen && !declarationAdditionTargetId && <FenetreDeclarationActions scene={scene} optionsInitiative={optionsInitiative} onFermer={() => setDeclarationActionsOpen(false)} onValider={validerActionsDeclarees} />}
+    {declarationAdditionTargetId && <FenetreDeclarationActions scene={scene} optionsInitiative={optionsInitiative} participantIds={[declarationAdditionTargetId]} lancerResolution={false} onFermer={() => setDeclarationAdditionTargetId('')} onValider={validerDeclarationAjout} />}
     {participantsIncompatibles.length > 0 && <FenetreInitiativesIncompatibles scene={scene} participants={participantsIncompatibles} onChanger={changerInitiativesIncompatibles} onSortir={sortirInitiativesIncompatibles} />}
     {exportOpen && <FenetreExportCampagne nomInitial={campaignName} onFermer={() => setExportOpen(false)} onExporter={exportCampaign} />}
     {timerDoneOpen && <Fenetre title="Minuteur terminé" onClose={() => setTimerDoneOpen(false)}><div className="stack"><p className="muted compact-help">Le minuteur est arrivé à zéro.</p><div className="grid2"><button className="primary" onClick={restartTimer}>Relancer</button><button className="small-btn" onClick={resetTimer}>Reset</button></div><button className="small-btn" onClick={openTimerMenu}>Ouvrir le menu</button></div></Fenetre>}
     {pendingFileChoice && <Fenetre title="Fichier de campagne" onClose={actions.dismissLoadedCampaignChoice}><div className="stack"><p className="muted compact-help">Cette campagne vient de {pendingFileChoice.fileName}. Tu peux travailler directement sur ce fichier, ou créer une copie séparée.</p><div className="grid2"><button className="primary" onClick={workOnLoadedFile} disabled={!pendingFileChoice.canUseOriginal}>Travailler sur ce fichier</button><button className="small-btn" onClick={workOnCampaignCopy}>Créer une copie</button></div>{!pendingFileChoice.canUseOriginal && <p className="rule-warning">Le fichier original n'est pas accessible en écriture depuis ce mode d'import. La copie est le choix sûr.</p>}</div></Fenetre>}
-    {editingTemplate && <FenetreEditionFiche participant={editingTemplate.participant} initiativeTextOrder={scene.initiativeTextOrder} phaseActionMode={scene.phaseActionMode} phaseCount={scene.phaseCount} multipleActionSlots={scene.multipleActionSlots !== false} trackerTemplates={templates.trackerTemplates} title={`Modifier le template · ${editingTemplate.name}`} saveTemplateVisible={false} deleteLabel="Supprimer le template" onClose={() => setEditingTemplateId('')} onSave={saveEditedTemplate} onDelete={deleteEditedTemplate} />}
+    {editingTemplate && <FenetreEditionFiche participant={editingTemplate.participant} initiativeTextOrder={scene.initiativeTextOrder} phaseActionMode={scene.phaseActionMode} phaseCount={scene.phaseCount} multipleActionSlots={scene.multipleActionSlots !== false} categoryOrder={scene.categoryOrder} tiebreakerVisible={scene.tiebreakerVisible !== false} tiebreakerLabel={scene.tiebreakerLabel} trackerTemplates={templates.trackerTemplates} title={`Modifier le template · ${editingTemplate.name}`} saveTemplateVisible={false} deleteLabel="Supprimer le template" onClose={() => setEditingTemplateId('')} onSave={saveEditedTemplate} onDelete={deleteEditedTemplate} />}
     {sceneStatusOpen && <FenetreEtat participant={{ name: scene.title }} defaultAdvanceOn="round" afficherChoixEvolution={false} afficherInactif={false} statusTemplates={templates.sceneStatusTemplates} onFermer={() => setSceneStatusOpen(false)} onValider={(data) => { actions.addSceneStatus(data); setSceneStatusOpen(false); }} />}
   </>;
 
   if (currentView === 'hub') return <div className={`app ${dark ? 'dark' : ''}`}><HubCampagne campaignName={campaignName} scene={scene} scenes={scenes} templates={templates.templates} trackerTemplates={templates.trackerTemplates} statusTemplates={templates.statusTemplates} sceneCounterTemplates={templates.sceneCounterTemplates} sceneStatusTemplates={templates.sceneStatusTemplates} ruleTemplates={templates.ruleTemplates} templateCategories={templates.categories} campaignEntries={campaignEntries} activeCampaignEntryId={activeCampaignEntryId} fileSaveStatus={fileSaveStatus} dark={dark} onChangerTheme={actions.setDark} onChoisirScene={chooseScene} onNouvelleScene={newScene} onModifierScene={actions.updateSceneMeta} onDupliquerScene={actions.duplicateScene} onSupprimerScene={actions.deleteScene} onModifierReglesInitiative={actions.updateCampaignInitiativeRules} onChoisirCampagne={chooseCampaignEntry} onImporterDossierCampagnes={importCampaignDirectory} onExporter={() => setExportOpen(true)} onImporter={importCampaign} onReinitialiser={resetDemo} onAjouterTemplateCategorie={createTemplateInCategory} onAjouterCategorieTemplate={addTemplateCategory} onRenommerCategorieTemplate={renameTemplateCategory} onSupprimerCategorieTemplate={deleteTemplateCategory} onDeplacerCategorieTemplate={templates.moveCategory} onChangerCategorieTemplate={templates.setTemplateCategory} onEditerTemplate={setEditingTemplateId} onDupliquerTemplate={duplicateTemplate} onSupprimerTemplate={templates.deleteTemplate} onAjouterTemplateSuivi={templates.createTrackerTemplate} onModifierTemplateSuivi={templates.updateTrackerTemplate} onDupliquerTemplateSuivi={templates.duplicateTrackerTemplate} onSupprimerTemplateSuivi={templates.deleteTrackerTemplate} onAjouterTemplateEtat={templates.createStatusTemplate} onModifierTemplateEtat={templates.updateStatusTemplate} onDupliquerTemplateEtat={templates.duplicateStatusTemplate} onSupprimerTemplateEtat={templates.deleteStatusTemplate} onAjouterTemplateCompteurScene={templates.createSceneCounterTemplate} onModifierTemplateCompteurScene={templates.updateSceneCounterTemplate} onDupliquerTemplateCompteurScene={templates.duplicateSceneCounterTemplate} onSupprimerTemplateCompteurScene={templates.deleteSceneCounterTemplate} onAjouterTemplateEtatScene={templates.createSceneStatusTemplate} onModifierTemplateEtatScene={templates.updateSceneStatusTemplate} onDupliquerTemplateEtatScene={templates.duplicateSceneStatusTemplate} onSupprimerTemplateEtatScene={templates.deleteSceneStatusTemplate} onAppliquerTemplateRegles={actions.updateCampaignInitiativeRules} onEnregistrerTemplateRegles={templates.saveRuleTemplate} onDupliquerTemplateRegles={templates.duplicateRuleTemplate} onSupprimerTemplateRegles={templates.deleteRuleTemplate} onImporterTemplates={importTemplatesFromCampaign} />{fenetresCommunes}</div>;
 
-  return <div className={`app ${dark ? 'dark' : ''}`}><div className="shell"><EnteteScene scene={scene} actif={declarationEnDeclaration ? null : temporalitePhases ? phaseActive : active} groupeActif={activeGroup} horlogesBloquantes={blocked} effetRound={roundEffect} compteurGlobalAuto={globalAutoTick} classeSuivant={classeSuivantEffective} libelleSuivant={nextLabel} temporaliteSouple={temporaliteSouple} temporalitePhases={temporalitePhases} temporaliteDeclaration={temporaliteDeclaration} suivantDesactive={suivantDesactive} retourDesactive={!retourPossible} dark={dark} onRetourHub={() => setCurrentView('hub')} onTourPrecedent={() => nextTurn(-1)} onTourSuivant={() => nextTurn(1)} onRetourPreparation={retourPreparationVisible ? returnToPreparation : null} onModifierCompteurGlobal={actions.stepGlobal} onToggleCompteurTemps={toggleGlobalRealtime} onRetirerEtatScene={actions.removeSceneStatus} /><main><ListeInitiative scene={scene} participants={scene.participants} actifId={temporalitePhases ? phaseActiveId : scene.activeId} interactions={characters} temporaliteSouple={temporaliteSouple} temporalitePhases={temporalitePhases} temporaliteDeclaration={temporaliteDeclaration} phaseAttendRelanceInitiative={phaseAttendRelanceInitiative} onMarquerAJoue={marquerAJoue} onAnnulerAJoue={annulerAJoue} /><ReserveHorsInitiative scene={scene} interactions={characters} onModifierNotes={(notes) => actions.updateSceneField('reserveNotes', notes)} /></main></div><BarreActionBas dark={dark} classeSuivant={classeSuivantEffective} prochainRound={declarationEnDeclaration ? false : temporaliteSouple ? toutLeMondeAJoueSouple : temporalitePhases ? phaseDemarreNouveauRound : nextStartsRound} round={scene.round} horlogeBloquee={blocked.length > 0} suivantDesactive={suivantDesactive} retourDesactive={!retourPossible} libelleSuivant={libelleBas} onRetourHub={() => setCurrentView('hub')} onTourPrecedent={() => nextTurn(-1)} onTourSuivant={() => nextTurn(1)} onRetourPreparation={retourPreparationVisible ? returnToPreparation : null} onSaisirInitiatives={openInitiativeEntry} onOuvrirMenu={() => setOpenMenu(true)} />{fenetresCommunes}</div>;
+  return <div className={`app ${dark ? 'dark' : ''}`}><div className="shell"><EnteteScene scene={scene} actif={declarationEnDeclaration ? null : temporalitePhases ? phaseActive : active} groupeActif={activeGroup} horlogesBloquantes={horlogesBloquantesActives} effetRound={roundEffect} compteurGlobalAuto={globalAutoTick} classeSuivant={classeSuivantEffective} libelleSuivant={nextLabel} temporaliteSouple={temporaliteSouple} temporalitePhases={temporalitePhases} temporaliteDeclaration={temporaliteDeclaration} suivantDesactive={suivantDesactive} retourDesactive={!retourPossible} dark={dark} onRetourHub={() => setCurrentView('hub')} onTourPrecedent={() => nextTurn(-1)} onTourSuivant={() => nextTurn(1)} onRetourPreparation={retourPreparationVisible ? returnToPreparation : null} onModifierCompteurGlobal={actions.stepGlobal} onToggleCompteurTemps={toggleGlobalRealtime} onToggleSurprisePreparation={(active) => actions.updateSceneField('preparationSurprise', active)} onRetirerEtatScene={actions.removeSceneStatus} /><main><ListeInitiative scene={scene} participants={scene.participants} actifId={temporalitePhases ? phaseActiveId : scene.activeId} interactions={characters} temporaliteSouple={temporaliteSouple} temporalitePhases={temporalitePhases} temporaliteDeclaration={temporaliteDeclaration} phaseAttendRelanceInitiative={phaseAttendRelanceInitiative} onMarquerAJoue={marquerAJoue} onAnnulerAJoue={annulerAJoue} /><ReserveHorsInitiative scene={scene} interactions={characters} onModifierNotes={(notes) => actions.updateSceneField('reserveNotes', notes)} /></main></div><BarreActionBas dark={dark} classeSuivant={classeSuivantEffective} prochainRound={declarationEnDeclaration ? false : temporaliteSouple ? toutLeMondeAJoueSouple : temporalitePhases ? phaseDemarreNouveauRound : nextStartsRound} round={scene.round} horlogeBloquee={horlogesBloquantesActives.length > 0} suivantDesactive={suivantDesactive} retourDesactive={!retourPossible} libelleSuivant={libelleBas} onRetourHub={() => setCurrentView('hub')} onTourPrecedent={() => nextTurn(-1)} onTourSuivant={() => nextTurn(1)} onRetourPreparation={retourPreparationVisible ? returnToPreparation : null} onAjouterParticipant={openAddCharacter} onSaisirInitiatives={openInitiativeEntry} onOuvrirMenu={() => setOpenMenu(true)} />{fenetresCommunes}</div>;
 }

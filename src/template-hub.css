@@ -224,8 +224,12 @@
   padding: 6px 7px;
 }
 
-.rule-group .advanced-radio small {
+.rule-group .advanced-radio small:not(.rule-option-warning) {
   display: none;
+}
+
+.rule-group .advanced-radio .rule-option-warning {
+  display: block;
 }
 
 .initiative-format-block {

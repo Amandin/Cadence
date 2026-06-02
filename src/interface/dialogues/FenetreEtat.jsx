@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Fenetre } from '../commun/ComposantsCommuns.jsx';
+import { SelecteurImpactEtat } from '../commun/SelecteurImpactEtat.jsx';
 
 const optionsDuree = [
   { label: '∞', value: 'infinite' },
@@ -17,7 +18,7 @@ export function FenetreEtat({ participant, onFermer, onValider, defaultAdvanceOn
   const [duree, setDuree] = useState('infinite');
   const [dureePersonnalisee, setDureePersonnalisee] = useState('8');
   const [boucle, setBoucle] = useState(false);
-  const [inactif, setInactif] = useState(false);
+  const [impact, setImpact] = useState('normal');
   const [advanceOn, setAdvanceOn] = useState(defaultAdvanceOn === 'round' ? 'round' : 'activation');
   const [templateId, setTemplateId] = useState(statusTemplates[0]?.id || '');
 
@@ -38,29 +39,24 @@ export function FenetreEtat({ participant, onFermer, onValider, defaultAdvanceOn
     setDuree(status.duration == null ? 'infinite' : 'custom');
     setDureePersonnalisee(String(status.duration || 1));
     setBoucle(!!status.loop);
-    setInactif(afficherInactif && !!status.inactive);
+    setImpact(afficherInactif && status.inactive ? 'inactive' : afficherInactif && status.limited ? 'limited' : 'normal');
     setAdvanceOn(afficherChoixEvolution ? (status.advanceOn === 'round' ? 'round' : 'activation') : defaultAdvanceOn);
   };
 
   const enregistrer = () => {
     const nomNettoye = nom.trim();
     if (!nomNettoye || !dureeValide) return;
-    onValider({ name: nomNettoye, duration: dureeFinie ? valeurDuree : null, loop: dureeFinie && boucle, inactive: afficherInactif && inactif, advanceOn: afficherChoixEvolution ? advanceOn : defaultAdvanceOn });
+    onValider({ name: nomNettoye, duration: dureeFinie ? valeurDuree : null, loop: dureeFinie && boucle, inactive: afficherInactif && impact === 'inactive', limited: afficherInactif && impact === 'limited', advanceOn: afficherChoixEvolution ? advanceOn : defaultAdvanceOn });
   };
 
   return (
     <Fenetre title={`Ajouter un état · ${participant.name}`} onClose={onFermer}>
       {statusTemplates.length > 0 && <div className="template-picker-row status-template-picker"><select value={templateId} onChange={(event) => setTemplateId(event.target.value)}>{statusTemplates.map((template) => <option key={template.id} value={template.id}>{template.name}</option>)}</select><button className="small-btn" type="button" onClick={appliquerTemplate}>Utiliser</button></div>}
-      <div className="status-name-row">
-        <label className="field">
-          Nom
-          <input value={nom} onChange={(event) => setNom(event.target.value)} autoFocus />
-        </label>
-        {afficherInactif && <label className={`reset-switch status-inactive-switch ${inactif ? 'active' : ''}`}>
-          <span>Rend inactif</span>
-          <input type="checkbox" checked={inactif} onChange={(event) => setInactif(event.target.checked)} />
-        </label>}
-      </div>
+      <label className="field">
+        Nom
+        <input value={nom} onChange={(event) => setNom(event.target.value)} autoFocus />
+      </label>
+      {afficherInactif && <SelecteurImpactEtat value={impact} onChange={setImpact} />}
       <div className="field">
         Durée
         <div className="choice-row status-duration-row">
@@ -68,7 +64,7 @@ export function FenetreEtat({ participant, onFermer, onValider, defaultAdvanceOn
         </div>
       </div>
       {duree === 'custom' && <label className="field">Durée personnalisée<input type="number" inputMode="numeric" min="1" value={dureePersonnalisee} onChange={(event) => setDureePersonnalisee(event.target.value)} /></label>}
-      {afficherChoixEvolution && <div className="field">Evolution<div className="choice-row status-advance-row"><button className={`choice ${advanceOn === 'activation' ? 'selected' : ''}`} onClick={() => setAdvanceOn('activation')}>Activation</button><button className={`choice ${advanceOn === 'round' ? 'selected' : ''}`} onClick={() => setAdvanceOn('round')}>Nouveau tour</button></div></div>}
+      {afficherChoixEvolution && <div className="field">Evolution<div className="choice-row status-advance-row"><button className={`choice ${advanceOn === 'activation' ? 'selected' : ''}`} onClick={() => setAdvanceOn('activation')}>Activation</button><button className={`choice ${advanceOn === 'round' ? 'selected' : ''}`} onClick={() => setAdvanceOn('round')}>Début du round</button></div></div>}
       {dureeFinie && <label className="row"><input type="checkbox" checked={boucle} onChange={(event) => setBoucle(event.target.checked)} /> renouveler en boucle</label>}
       <div className="grid2" style={{ marginTop: 12 }}>
         <button className="primary" onClick={enregistrer} disabled={!peutEnregistrer}>Ajouter</button>

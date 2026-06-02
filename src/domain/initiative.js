@@ -14,6 +14,10 @@ export function valeurDepartage(participant) {
   return Number.isFinite(next) ? next : 0;
 }
 
+function valeurDepartagePourTri(participant, options = {}) {
+  return options.tiebreakerVisible === false ? 0 : valeurDepartage(participant);
+}
+
 function slotId(participantId, slot) {
   return `${participantId}:${slot.id}`;
 }
@@ -83,8 +87,12 @@ export function ordreCreneauxClassique(participants = [], options = {}) {
   return participants
     .flatMap((participant) => creneauxActionParticipant(participant, options).map((slot) => ({ participant, slot })))
     .sort((a, b) => {
+      if (options.initiativeEnabled === false) {
+        return ordreCategorie(a.participant.kind, categoryOrder) - ordreCategorie(b.participant.kind, categoryOrder)
+          || comparerNoms(a.participant, b.participant);
+      }
       const base = (a.slot.sortValue - b.slot.sortValue) * initiativeDirection
-        || (valeurDepartage(a.participant) - valeurDepartage(b.participant)) * initiativeDirection;
+        || (valeurDepartagePourTri(a.participant, options) - valeurDepartagePourTri(b.participant, options)) * initiativeDirection;
       if (base) return base;
 
       if (equalityRule === equalityRules.LOOSE) return 0;
@@ -116,6 +124,8 @@ function optionsTriSafe(scene = {}) {
     equalityRule: scene.equalityRule || defaultEqualityRule,
     initiativeOrder: scene.initiativeOrder || defaultInitiativeOrder,
     initiativeTextOrder: scene.initiativeTextOrder,
+    initiativeEnabled: scene.temporalite !== 'souple' || scene.flexibleUseInitiative !== false,
+    tiebreakerVisible: scene.tiebreakerVisible !== false,
   };
 }
 
@@ -164,8 +174,12 @@ export function trierParInitiative(participants = [], options = {}) {
   const initiativeDirection = options.initiativeOrder === initiativeOrders.ASC ? 1 : -1;
 
   return [...participants].sort((a, b) => {
+    if (options.initiativeEnabled === false) {
+      return ordreCategorie(a.kind, categoryOrder) - ordreCategorie(b.kind, categoryOrder)
+        || comparerNoms(a, b);
+    }
     const base = (valeurInitiative(a, options) - valeurInitiative(b, options)) * initiativeDirection
-      || (valeurDepartage(a) - valeurDepartage(b)) * initiativeDirection;
+      || (valeurDepartagePourTri(a, options) - valeurDepartagePourTri(b, options)) * initiativeDirection;
     if (base) return base;
 
     if (equalityRule === equalityRules.LOOSE) return 0;
@@ -182,7 +196,7 @@ export function trierReserve(participants = [], options = {}) {
   const categoryOrder = options.categoryOrder || defaultCategoryOrder;
 
   return [...participants].sort((a, b) => ordreCategorie(a.kind, categoryOrder) - ordreCategorie(b.kind, categoryOrder)
-    || valeurDepartage(b) - valeurDepartage(a)
+    || valeurDepartagePourTri(b, options) - valeurDepartagePourTri(a, options)
     || comparerNoms(a, b));
 }
 
@@ -191,7 +205,7 @@ export function clefEgaliteParfaite(participant, options = {}) {
   if (equalityRule === equalityRules.NEVER) return null;
 
   const initiative = valeurInitiative(participant, options);
-  const departage = valeurDepartage(participant);
+  const departage = valeurDepartagePourTri(participant, options);
   if (equalityRule === equalityRules.LOOSE) return `${initiative}|${departage}`;
 
   const categoryOrder = options.categoryOrder || defaultCategoryOrder;

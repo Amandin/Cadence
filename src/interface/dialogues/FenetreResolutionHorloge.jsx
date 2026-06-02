@@ -11,7 +11,7 @@ export function FenetreResolutionHorloge({ participants, onFermer, onRelancerHor
   return (
     <Fenetre title="Horloge à résoudre" onClose={onFermer}>
       <p className="muted" style={{ marginTop: 0 }}>
-        Une horloge est arrivée à son terme. Résous-la avant de continuer le tour.
+        Une horloge est arrivée à son terme. Résous-la avant de continuer la séquence.
       </p>
       <div className="stack">
         {horloges.map(({ participant, suivi }) => (

@@ -1,4 +1,5 @@
 import { BadgeRound, EtiquetteEtat } from '../commun/ComposantsCommuns.jsx';
+import { participantEstInactif, participantEstLimite } from '../../domain/statuses.js';
 import { CompteurGlobal } from '../suivis/CompteurGlobal.jsx';
 
 export function EnteteScene(props) {
@@ -20,6 +21,7 @@ export function EnteteScene(props) {
     onTourSuivant,
     onModifierCompteurGlobal,
     onToggleCompteurTemps,
+    onToggleSurprisePreparation,
     onRetirerEtatScene,
   } = props;
   const horlogeABloquee = horlogesBloquantes.length > 0;
@@ -34,13 +36,14 @@ export function EnteteScene(props) {
         : temporaliteDeclaration && !actif ? 'Déclarer les actions' : actif?.name || 'Aucun participant';
   const suffixeTemporalite = `${temporaliteSouple ? ' · souple' : temporalitePhases ? ' · phases' : ''}${temporaliteDeclaration ? ' · déclaration' : ''}`;
   const actionDeclaree = temporaliteDeclaration && actif && scene.declarationStage === 'resolution' && !(scene.declarationPlayedIds || []).includes(actif.id) ? scene.declarations?.[actif.id] : '';
+  const statutActif = participantEstInactif(actif) ? 'Inactif' : participantEstLimite(actif) ? 'Limité' : 'Actif';
   const libelleTour = enPreparation
     ? 'Préparation'
     : horlogeABloquee
       ? 'Horloge à gérer'
       : tourSimultane
-        ? 'Tours simultanés'
-        : temporaliteDeclaration && !actif ? 'Déclaration' : 'Tour actif';
+        ? 'Participants simultanés'
+        : temporaliteDeclaration && !actif ? 'Déclaration' : statutActif;
   const logo = dark ? '/branding/logo-cadence-dark.svg' : '/branding/logo-cadence-light.svg';
 
   return (
@@ -53,11 +56,12 @@ export function EnteteScene(props) {
         </div>
         <BadgeRound round={scene.round} effect={effetRound} phase={temporalitePhases ? scene.phase || 1 : null} />
       </div>
+      {enPreparation && <label className={`reset-switch preparation-surprise-toggle ${scene.preparationSurprise ? 'active' : ''}`}><span>Surprise</span><input type="checkbox" checked={!!scene.preparationSurprise} onChange={(event) => onToggleSurprisePreparation?.(event.target.checked)} /></label>}
       <div className="turn-row header-turn-row">
         <div className={`active-box panel ${tourSimultane ? 'simultaneous-turn' : ''} ${temporaliteSouple ? 'flexible-turn' : ''} ${temporalitePhases ? 'phase-turn' : ''} ${temporaliteDeclaration ? 'declaration-turn' : ''}`}>
           <div className="turn-active-line">
             <div className="active-name">
-              {temporaliteSouple && !horlogeABloquee && !enPreparation ? <><div className="muted">Mode souple</div><strong>Marquer les tours dans la liste</strong></> : <><div className="muted">{libelleTour}</div><strong>{nomTourActif}</strong>{actionDeclaree && <strong className="declaration-header-action">({actionDeclaree})</strong>}</>}
+              {temporaliteSouple && !horlogeABloquee && !enPreparation ? <><div className="muted">Mode souple</div><strong>Marquer les personnages ayant joué</strong></> : <><div className="muted">{libelleTour}</div><strong>{nomTourActif}</strong>{actionDeclaree && <strong className="declaration-header-action">({actionDeclaree})</strong>}</>}
             </div>
             {temporaliteSouple && !horlogeABloquee && !enPreparation && <span className="chip flexible-chip">Souple</span>}
             <CompteurGlobal compteur={scene.globalTracker} onChanger={onModifierCompteurGlobal} onToggleTemps={onToggleCompteurTemps} animationTick={compteurGlobalAuto} />

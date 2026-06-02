@@ -1,4 +1,4 @@
-export const APP_VERSION = '0.3.3';
+export const APP_VERSION = '0.5.16';
 export const STORAGE_KEY = 'cadence:campaign:v1';
 export const TEMPLATE_STORAGE_KEY = 'cadence:templates:v1';
 
@@ -11,6 +11,12 @@ export const legacyParticipantKinds = {
 };
 
 export const defaultCategoryOrder = ['PJ', 'Opposant', 'Allié', 'Environnement'];
+export const defaultTiebreakerVisible = true;
+export const defaultTiebreakerLabel = 'Departage';
+export const defaultFlexibleUseInitiative = true;
+export const surpriseImpacts = { LIMITED: 'limited', INACTIVE: 'inactive' };
+export const defaultSurpriseImpact = surpriseImpacts.LIMITED;
+export const defaultSurpriseAdvanceOn = 'activation';
 
 export const temporalityModes = {
   CLASSIC: 'classique',
@@ -21,7 +27,7 @@ export const temporalityModes = {
 
 export const defaultTemporalityMode = temporalityModes.CLASSIC;
 export const defaultDeclarationMode = false;
-export const defaultStartRound = 0;
+export const defaultStartRound = 1;
 export const defaultPhaseDecrement = 10;
 export const defaultPhaseRerollEachRound = false;
 export const defaultPhaseActivateOncePerRound = true;
@@ -74,8 +80,8 @@ export const initiativeOrderDescriptions = {
 
 export const equalityRuleLabels = {
   [equalityRules.NEVER]: 'Jamais',
-  [equalityRules.STRICT]: 'Strict',
-  [equalityRules.LOOSE]: 'Souple',
+  [equalityRules.STRICT]: 'Par type',
+  [equalityRules.LOOSE]: 'Par initiative',
 };
 
 export const equalityRuleDescriptions = {

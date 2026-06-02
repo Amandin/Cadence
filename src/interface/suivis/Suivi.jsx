@@ -100,6 +100,8 @@ function useLargeurElement() {
 export function Suivi({ suivi, onModifier, onSupprimer, avantTitre = null, couleur = 'slate' }) {
   const [deltaOuvert, setDeltaOuvert] = useState(false);
   const [delta, setDelta] = useState('');
+  const [modeSaisieBarre, setModeSaisieBarre] = useState('delta');
+  const [directionSaisieBarre, setDirectionSaisieBarre] = useState(1);
   const [actionCases, setActionCases] = useState('fill');
   const [pasCases, setPasCases] = useState('1');
   const champDeltaRef = useRef(null);
@@ -114,7 +116,6 @@ export function Suivi({ suivi, onModifier, onSupprimer, avantTitre = null, coule
   const estPuces = suivi.type === 'points' || suivi.type === 'dots';
   const modifier = (valeur) => onModifier({ ...suivi, ...valeur });
   const appliquerPas = (direction) => suivi.type !== 'boxes' && onModifier(applyDelta(suivi, direction * normaliserPas(suivi.step)));
-  const changerPas = (valeur) => modifier({ step: normaliserPas(valeur) });
   const changerPasCases = (valeur) => setPasCases(String(valeur ?? '').replace(/[^\d]/g, ''));
   const pasCasesEffectif = normaliserPas(pasCases);
   const appliquerActionCase = (mark) => {
@@ -124,8 +125,9 @@ export function Suivi({ suivi, onModifier, onSupprimer, avantTitre = null, coule
     }
     return suivant;
   };
-  const ouvrirDelta = () => setDeltaOuvert((ouvert) => !ouvert);
-  const appliquerDeltaManuel = () => { onModifier(applyDelta(suivi, Number(delta))); setDelta(''); setDeltaOuvert(false); };
+  const ouvrirDelta = (direction) => { setModeSaisieBarre('delta'); setDirectionSaisieBarre(direction > 0 ? 1 : -1); setDelta(''); setDeltaOuvert(true); };
+  const ouvrirValeurBarre = () => { setModeSaisieBarre('value'); setDelta(''); setDeltaOuvert(true); };
+  const appliquerSaisieBarre = () => { if (String(delta).trim() === '') { setDeltaOuvert(false); return; } const valeur = Number(delta); if (!Number.isFinite(valeur)) return; onModifier(modeSaisieBarre === 'value' ? { ...suivi, current: valeur } : applyDelta(suivi, Math.abs(valeur) * directionSaisieBarre)); setDelta(''); setDeltaOuvert(false); };
   const cocherCase = (blocId, ligneId, caseId) => {
     const blocks = boxBlocks(suivi).map((bloc) => bloc.id !== blocId ? bloc : {
       ...bloc,
@@ -155,7 +157,7 @@ export function Suivi({ suivi, onModifier, onSupprimer, avantTitre = null, coule
   }
 
   if (suivi.type === 'bar') {
-    return <div className={`tracker ${classeSeuils} ${declenche ? 'triggered' : ''}`} style={styleSeuil}><div className="tracker-top"><TitreSuivi titre={suivi.name} avantTitre={avantTitre} /><SeuilsActifs seuils={seuils} />{declenche && <span className="chip hot">A resoudre</span>}</div>{deltaOuvert && <div className="delta-pop tracker-action-pop"><input ref={champDeltaRef} type="number" inputMode="numeric" value={delta} onChange={(event) => setDelta(event.target.value)} onKeyDown={(event) => event.key === 'Enter' && appliquerDeltaManuel()} placeholder="+50" /><button onClick={appliquerDeltaManuel}>OK</button></div>}<div className="controls bar-controls"><button onClick={() => appliquerPas(-1)}>-</button><button className="bar-action-zone" onClick={ouvrirDelta} aria-label={`Modifier ${suivi.name}`}><BarreSuivi suivi={suivi} /></button><div className="step-side"><button onClick={() => appliquerPas(1)}>+</button><ControlePas valeur={suivi.step} onChange={changerPas} /></div></div>{declenche && <div className="stack" style={{ marginTop: 8 }}><button className="primary" onClick={() => modifier({ current: 0 })}>Relancer a 0</button><button className="danger-btn" onClick={onSupprimer}>Supprimer</button></div>}</div>;
+    return <div className={`tracker ${classeSeuils} ${declenche ? 'triggered' : ''}`} style={styleSeuil}><div className="tracker-top"><TitreSuivi titre={suivi.name} avantTitre={avantTitre} /><SeuilsActifs seuils={seuils} />{declenche && <span className="chip hot">A resoudre</span>}</div>{deltaOuvert && <div className="delta-pop tracker-action-pop"><label><small>{modeSaisieBarre === 'value' ? 'Nouvelle valeur' : directionSaisieBarre < 0 ? 'Valeur a soustraire' : 'Valeur a ajouter'}</small><input ref={champDeltaRef} type="number" inputMode="numeric" min={modeSaisieBarre === 'delta' ? '0' : undefined} value={delta} onChange={(event) => setDelta(event.target.value)} onKeyDown={(event) => event.key === 'Enter' && appliquerSaisieBarre()} placeholder={modeSaisieBarre === 'value' ? '' : '3'} /></label><button onClick={appliquerSaisieBarre}>OK</button></div>}<div className="controls bar-controls"><button onClick={() => ouvrirDelta(-1)}>-</button><button className="bar-action-zone" onClick={ouvrirValeurBarre} aria-label={`Saisir une nouvelle valeur pour ${suivi.name}`}><BarreSuivi suivi={suivi} /></button><button onClick={() => ouvrirDelta(1)}>+</button></div>{declenche && <div className="stack" style={{ marginTop: 8 }}><button className="primary" onClick={() => modifier({ current: 0 })}>Relancer a 0</button><button className="danger-btn" onClick={onSupprimer}>Supprimer</button></div>}</div>;
   }
 
   return <div className={`tracker ${classeSeuils} ${declenche ? 'triggered' : ''}`} style={styleSeuil}><div className="tracker-top"><TitreSuivi titre={suivi.name} avantTitre={avantTitre} suffixe={suffixePuces} /><SeuilsActifs seuils={seuils} />{declenche && <span className="chip hot">A resoudre</span>}</div><div className="points-controls"><PointsSuivi suivi={suivi} onModifier={modifier} /></div>{declenche && <div className="stack" style={{ marginTop: 8 }}><button className="primary" onClick={() => modifier({ current: 0 })}>Relancer a 0</button><button className="danger-btn" onClick={onSupprimer}>Supprimer</button></div>}</div>;

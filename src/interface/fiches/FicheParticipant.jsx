@@ -52,13 +52,13 @@ function FenetreInitiativesRapides({ participant, initiatives, initiativeTextOrd
   );
 }
 
-function MiniCompteurInitiative({ participant, departage, initiativeTextOrder, phaseActionMode, phaseCount, multipleActionSlots, onChangerInitiatives }) {
+function MiniCompteurInitiative({ participant, departage, initiativeTextOrder, phaseActionMode, phaseCount, multipleActionSlots, tiebreakerVisible, onChangerInitiatives }) {
   const textConfig = normalizeInitiativeTextOrder(initiativeTextOrder);
   const initiatives = initiativesActionParticipant(participant, { initiativeTextOrder: textConfig, multipleActionSlots });
   const [edition, setEdition] = useState(false);
   const libelle = initiatives.join(' / ');
   const valeurDepartage = valeurNumerique(departage, 0);
-  const afficherDepartage = valeurDepartage !== 0;
+  const afficherDepartage = tiebreakerVisible && valeurDepartage !== 0;
 
   return (
     <>
@@ -71,7 +71,7 @@ function MiniCompteurInitiative({ participant, departage, initiativeTextOrder, p
   );
 }
 
-export function FicheParticipant({ participant, enInitiative, initiativeTextOrder, phaseActionMode, phaseCount = defaultPhaseCount, multipleActionSlots = true, onFermer, onModifier, onChangerInitiatives, onRejoindreInitiative, onQuitterInitiative, onInfoRapide, onSuivi, onSupprimerSuivi, onAjouterEtat, onRetirerEtat, onNote }) {
+export function FicheParticipant({ participant, enInitiative, initiativeTextOrder, phaseActionMode, phaseCount = defaultPhaseCount, multipleActionSlots = true, utiliserInitiative = true, tiebreakerVisible = true, onFermer, onModifier, onChangerInitiatives, onRejoindreInitiative, onQuitterInitiative, onInfoRapide, onSuivi, onSupprimerSuivi, onAjouterEtat, onRetirerEtat, onNote }) {
   const basculerVisibilite = (suivi) => onSuivi(suivi.id, { ...suivi, visible: suivi.visible === false });
   const boutonOeil = (suivi) => {
     const visible = suivi.visible !== false;
@@ -81,9 +81,9 @@ export function FicheParticipant({ participant, enInitiative, initiativeTextOrde
   return (
     <Fenetre title={participant.name} onClose={onFermer}>
       <p>{participant.description}</p>
-      <div className={`sheet-action-row ${enInitiative ? '' : 'without-init-counter'}`}>
+      <div className={`sheet-action-row ${enInitiative && utiliserInitiative ? '' : 'without-init-counter'}`}>
         <button className="primary" onClick={onModifier}>Modifier</button>
-        {enInitiative && <MiniCompteurInitiative participant={participant} departage={participant.departage} initiativeTextOrder={initiativeTextOrder} phaseActionMode={phaseActionMode} phaseCount={phaseCount} multipleActionSlots={multipleActionSlots} onChangerInitiatives={onChangerInitiatives} />}
+        {enInitiative && utiliserInitiative && <MiniCompteurInitiative participant={participant} departage={participant.departage} initiativeTextOrder={initiativeTextOrder} phaseActionMode={phaseActionMode} phaseCount={phaseCount} multipleActionSlots={multipleActionSlots} tiebreakerVisible={tiebreakerVisible} onChangerInitiatives={onChangerInitiatives} />}
         {enInitiative ? <button className="small-btn" onClick={onQuitterInitiative}>Quitter l'init</button> : <button className="small-btn join-init-wide" onClick={onRejoindreInitiative}>Rejoindre init</button>}
       </div>
       <InfosRapides stats={participant.stats || []} editable onChanger={onInfoRapide} />

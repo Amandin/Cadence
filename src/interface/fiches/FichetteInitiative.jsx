@@ -5,7 +5,7 @@ function aDuContenuOperationnel(participant, suivisVisibles) {
   return suivisVisibles.length > 0 || (participant.statuses || []).length > 0;
 }
 
-export function FichetteInitiative({ participant, actif, groupeSimultane, temporaliteSouple, dejaJoue, actionsRestantes = 0, onMarquerAJoue, onAnnulerAJoue, onOuvrir, onSuivi, onSupprimerSuivi, onAjouterEtat, onRetirerEtat, onQuitterInitiative }) {
+export function FichetteInitiative({ participant, actif, groupeSimultane, temporaliteSouple, montrerInitiative = true, dejaJoue, actionsRestantes = 0, onMarquerAJoue, onAnnulerAJoue, onOuvrir, onSuivi, onSupprimerSuivi, onAjouterEtat, onRetirerEtat, onQuitterInitiative }) {
   const declenchee = hasTriggeredClock(participant);
   const estPJ = participant.kind === 'PJ';
   const suivisVisibles = participant.trackers.filter(isVisible);
@@ -19,9 +19,10 @@ export function FichetteInitiative({ participant, actif, groupeSimultane, tempor
     declenchee && { className: 'hot', label: 'À résoudre' },
     sortieConseillee && { className: 'hot', label: 'Aucun suivi' },
   ].filter(Boolean);
+  const flechesRestantes = Array.from({ length: Math.max(1, actionsRestantes) }, (_, index) => <span key={index}>➜</span>);
 
-  return <FichetteParticipant participant={participant} className={`initiative-card ${temporaliteSouple && estPJ ? 'soft-pj-highlight' : ''} ${declenchee ? 'triggered' : ''} ${groupeSimultane ? 'in-simultaneous-group' : ''} ${dejaJoue ? 'already-played' : ''}`} active={afficherTourActif} badges={badges} showInitiative onOuvrir={onOuvrir} onSuivi={onSuivi} onSupprimerSuivi={onSupprimerSuivi} onAjouterEtat={onAjouterEtat} onRetirerEtat={onRetirerEtat} primaryAction={<div className="card-actions">
+  return <FichetteParticipant participant={participant} className={`initiative-card ${temporaliteSouple && !montrerInitiative ? 'flexible-without-initiative' : ''} ${temporaliteSouple && estPJ ? 'soft-pj-highlight' : ''} ${declenchee ? 'triggered' : ''} ${groupeSimultane ? 'in-simultaneous-group' : ''} ${dejaJoue ? 'already-played' : ''}`} active={afficherTourActif} badges={badges} showInitiative={montrerInitiative} onOuvrir={onOuvrir} onSuivi={onSuivi} onSupprimerSuivi={onSupprimerSuivi} onAjouterEtat={onAjouterEtat} onRetirerEtat={onRetirerEtat} primaryAction={<div className="card-actions">
           <button className={`small-btn ${sortieConseillee ? 'suggested' : ''}`} onClick={onQuitterInitiative}>Sortir</button>
-          {boutonSouple && (dejaJoue ? <button className="small-btn flexible-play undo-played" onClick={onAnnulerAJoue}>Annuler</button> : <button className="small-btn flexible-play" onClick={onMarquerAJoue}>A joué</button>)}
+          {boutonSouple && (dejaJoue ? <button className="turn-btn compact previous-turn available flexible-play undo-played" onClick={onAnnulerAJoue} aria-label="Annuler A joue">↶</button> : <button className="small-btn flexible-play" onClick={onMarquerAJoue} aria-label={actionsRestantes > 1 ? `${actionsRestantes} actions restantes` : 'Marquer A joue'}>{flechesRestantes}</button>)}
         </div>} />;
 }

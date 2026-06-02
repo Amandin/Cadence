@@ -13,7 +13,7 @@ function listerCategories(categories, templates) {
   return [...new Set([...connues, ...utilisees])].sort((a, b) => a.localeCompare(b, 'fr'));
 }
 
-export function FenetreAjoutPersonnage({ templates = [], categories = [], initiativeTextOrder, onFermer, onCreerVierge, onCreerDepuisTemplate }) {
+export function FenetreAjoutPersonnage({ templates = [], categories = [], initiativeTextOrder, utiliserInitiative = true, onFermer, onCreerVierge, onCreerDepuisTemplate }) {
   const templatesTries = useMemo(() => trierTemplates(templates), [templates]);
   const categoriesDisponibles = useMemo(() => listerCategories(categories, templatesTries), [categories, templatesTries]);
   const textConfig = useMemo(() => normalizeInitiativeTextOrder(initiativeTextOrder), [initiativeTextOrder]);
@@ -45,12 +45,12 @@ export function FenetreAjoutPersonnage({ templates = [], categories = [], initia
     setTemplateId(prochainsTemplates[0]?.id || '');
   };
 
-  const initiativeValide = placement !== 'init' || initiativeInputIsValid(initiative, textConfig);
+  const initiativeValide = placement !== 'init' || !utiliserInitiative || initiativeInputIsValid(initiative, textConfig);
   const creerPersonnage = () => {
     if (!initiativeValide) return;
     const options = {
       placement,
-      initiative: placement === 'init' ? initiativeValueForMode(initiative, textConfig) : null,
+      initiative: placement === 'init' && utiliserInitiative ? initiativeValueForMode(initiative, textConfig) : null,
     };
     if (mode === 'template') onCreerDepuisTemplate(templateId, options);
     else onCreerVierge(options);
@@ -74,7 +74,7 @@ export function FenetreAjoutPersonnage({ templates = [], categories = [], initia
           <button className={`choice ${placement === 'init' ? 'selected' : ''}`} onClick={() => setPlacement('init')}>En initiative</button>
           <button className={`choice ${placement === 'reserve' ? 'selected' : ''}`} onClick={() => setPlacement('reserve')}>En reserve</button>
         </div>
-        {placement === 'init' && <ChampInitiative label="Initiative" valeur={initiative} textConfig={textConfig} onChange={setInitiative} />}
+        {placement === 'init' && utiliserInitiative && <ChampInitiative label="Initiative" valeur={initiative} textConfig={textConfig} onChange={setInitiative} />}
         <p className="muted" style={{ margin: 0, fontSize: 12 }}>La fiche s'ouvrira ensuite pour ajuster les details avant de continuer la scene.</p>
         <div className="grid2">
           <button className="primary" onClick={creerPersonnage} disabled={(mode === 'template' && !templateId) || !initiativeValide}>Creer</button>
