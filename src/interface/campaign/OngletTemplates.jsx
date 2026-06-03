@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { trackerTypeLabels } from '../../constants.js';
 import { normalizeGlobalTracker } from '../../domain/globalTracker.js';
 import { clone, newTracker } from '../../logic.js';
-import { Fenetre } from '../commun/ComposantsCommuns.jsx';
+import { Fenetre, MessageChangementTemplate } from '../commun/ComposantsCommuns.jsx';
 import { SelecteurImpactEtat } from '../commun/SelecteurImpactEtat.jsx';
 import { EditeurSuivi } from '../fiches/FenetreEditionFiche.jsx';
 import { EditeurSeuilsCompteurScene } from '../suivis/CompteurGlobal.jsx';
@@ -66,8 +66,8 @@ function EnteteCategorieTemplate({ groupe, index, total, onAjouterTemplateCatego
       <strong>{groupe.templates.length}</strong>
       <span className="template-category-label">{groupe.categorie}</span>
       <div className="compact-arrows template-category-actions">
-        <button className="small-btn" onClick={() => onAjouterTemplateCategorie(groupe.categorie)}>+ template</button>
-        <button className="small-btn" onClick={() => setRenommage(true)}>Renommer</button>
+        <button className="small-btn" onClick={() => onAjouterTemplateCategorie(groupe.categorie)}><span className="wide-label">+ template</span><span className="compact-label">+</span></button>
+        <button className="small-btn" onClick={() => setRenommage(true)}><span className="wide-label">Renommer</span><span className="compact-label">Ren.</span></button>
         <button className="small-btn" onClick={() => onDeplacerCategorie(groupe.categorie, -1)} disabled={index <= 0}>↑</button>
         <button className="small-btn" onClick={() => onDeplacerCategorie(groupe.categorie, 1)} disabled={index >= total - 1}>↓</button>
         {groupe.templates.length === 0 && <button className="danger-btn mini-danger" onClick={() => onSupprimerCategorie(groupe.categorie)}>Suppr.</button>}
@@ -95,8 +95,8 @@ function LigneTemplate({ template, categories, onChangerCategorieTemplate, onEdi
         ) : (
           <button className="small-btn discreet-template-category" onClick={() => setCategorieOuverte(true)} title={`Categorie : ${template.category}`}>Cat.</button>
         )}
-        <button className="small-btn" onClick={() => onEditerTemplate(template.id)}>Modifier</button>
-        <button className="small-btn" onClick={() => onDupliquerTemplate(template.id)}>Dupliquer</button>
+        <button className="small-btn" onClick={() => onEditerTemplate(template.id)}><span className="wide-label">Modifier</span><span className="compact-label">Mod.</span></button>
+        <button className="small-btn" onClick={() => onDupliquerTemplate(template.id)}><span className="wide-label">Dupliquer</span><span className="compact-label">Dup.</span></button>
         {suppressionVisible ? (
           <button className="danger-btn mini-danger template-delete-confirm" onClick={() => onSupprimerTemplate(template.id)}>Suppr.</button>
         ) : (
@@ -113,8 +113,8 @@ function LigneTemplateSimple({ template, detail, onEditer, onDupliquer, onSuppri
     <div className="restore-row hub-row template-row">
       <span className="template-row-main"><strong>{template.name}</strong><small>{detail}</small></span>
       <div className="compact-arrows template-row-actions">
-        <button className="small-btn" onClick={() => onEditer(template.id)}>Modifier</button>
-        <button className="small-btn" onClick={() => onDupliquer(template.id)}>Dupliquer</button>
+        <button className="small-btn" onClick={() => onEditer(template.id)}><span className="wide-label">Modifier</span><span className="compact-label">Mod.</span></button>
+        <button className="small-btn" onClick={() => onDupliquer(template.id)}><span className="wide-label">Dupliquer</span><span className="compact-label">Dup.</span></button>
         {suppressionVisible ? (
           <button className="danger-btn mini-danger template-delete-confirm" onClick={() => onSupprimer(template.id)}>Suppr.</button>
         ) : (
@@ -149,14 +149,15 @@ function OngletTemplatesPersonnages({ categories, templates, onAjouterTemplateCa
   );
 }
 
-function FenetreEditionTemplateSuivi({ template, onFermer, onValider }) {
+function FenetreEditionTemplateSuivi({ template, switchRequest, onAnnulerChangement, onValiderChangement, onAbandonnerChangement, onFermer, onValider }) {
   const [nom, setNom] = useState(template?.name || 'Suivi');
   const [brouillon, setBrouillon] = useState(() => clone(template?.tracker || newTracker('bar')));
   const valider = () => onValider(template.id, { ...brouillon, name: brouillon.name || nom || 'Suivi' }, nom || brouillon.name || 'Suivi');
 
   return (
-    <Fenetre title="Template de suivi" onClose={onFermer}>
+    <Fenetre title="Template de suivi" className="template-edit-sheet" onClose={onFermer}>
       <div className="stack">
+        {switchRequest && <MessageChangementTemplate onAnnuler={onAnnulerChangement} onValider={() => { valider(); onValiderChangement?.(); }} onAbandonner={onAbandonnerChangement} />}
         <label className="field">Nom du template<input value={nom} onChange={(event) => setNom(event.target.value)} /></label>
         <EditeurSuivi suivi={brouillon} onChange={setBrouillon} onDelete={onFermer} />
         <div className="grid2">
@@ -169,15 +170,11 @@ function FenetreEditionTemplateSuivi({ template, onFermer, onValider }) {
 }
 
 function OngletTemplatesSuivis({ templates, onAjouter, onEditer, onDupliquer, onSupprimer }) {
-  const ajouter = () => {
-    const template = onAjouter();
-    if (template?.id) onEditer(template.id);
-  };
   return (
     <div className="stack">
       <div className="hub-section-head">
         <p className="muted compact-help">Ces suivis pourront etre ajoutes depuis l'edition d'une fiche.</p>
-        <button className="small-btn" onClick={ajouter}>+ suivi</button>
+        <button className="small-btn" onClick={onAjouter}>+ suivi</button>
       </div>
       {templates.length === 0 ? <div className="empty-section panel">Aucun template de suivi.</div> : templates.map((template) => (
         <LigneTemplateSimple key={template.id} template={template} detail={trackerTypeLabels[template.tracker?.type] || 'Suivi'} onEditer={onEditer} onDupliquer={onDupliquer} onSupprimer={onSupprimer} />
@@ -186,7 +183,7 @@ function OngletTemplatesSuivis({ templates, onAjouter, onEditer, onDupliquer, on
   );
 }
 
-function FenetreEditionTemplateEtat({ template, onFermer, onValider }) {
+function FenetreEditionTemplateEtat({ template, switchRequest, onAnnulerChangement, onValiderChangement, onAbandonnerChangement, onFermer, onValider }) {
   const status = template?.status || {};
   const [nomTemplate, setNomTemplate] = useState(template?.name || status.name || 'Etat');
   const [nom, setNom] = useState(status.name || 'Etat');
@@ -198,8 +195,9 @@ function FenetreEditionTemplateEtat({ template, onFermer, onValider }) {
   const valider = () => onValider(template.id, { id: 'template-status', name: nom || nomTemplate || 'Etat', duration: dureeNettoyee, remaining: dureeNettoyee, loop: dureeNettoyee !== null && boucle, inactive: impact === 'inactive', limited: impact === 'limited', advanceOn, expired: false }, nomTemplate || nom || 'Etat');
 
   return (
-    <Fenetre title="Template d'etat" onClose={onFermer}>
+    <Fenetre title="Template d'etat" className="template-edit-sheet" onClose={onFermer}>
       <div className="stack">
+        {switchRequest && <MessageChangementTemplate onAnnuler={onAnnulerChangement} onValider={() => { valider(); onValiderChangement?.(); }} onAbandonner={onAbandonnerChangement} />}
         <label className="field">Nom du template<input value={nomTemplate} onChange={(event) => setNomTemplate(event.target.value)} /></label>
         <label className="field">Nom de l'etat<input value={nom} onChange={(event) => setNom(event.target.value)} /></label>
         <div className="grid2">
@@ -229,15 +227,11 @@ function libelleDureeEtat(status = {}) {
 }
 
 function OngletTemplatesEtats({ templates, onAjouter, onEditer, onDupliquer, onSupprimer }) {
-  const ajouter = () => {
-    const template = onAjouter();
-    if (template?.id) onEditer(template.id);
-  };
   return (
     <div className="stack">
       <div className="hub-section-head">
         <p className="muted compact-help">Ces etats seront proposes quand tu ajoutes un etat a une fiche.</p>
-        <button className="small-btn" onClick={ajouter}>+ etat</button>
+        <button className="small-btn" onClick={onAjouter}>+ etat</button>
       </div>
       {templates.length === 0 ? <div className="empty-section panel">Aucun template d'etat.</div> : templates.map((template) => template.id === 'status-template-surpris'
         ? <LigneTemplateSysteme key={template.id} template={template} detail={libelleDureeEtat(template.status)} />
@@ -254,7 +248,7 @@ function libelleCompteurScene(compteur = {}) {
   return `horloge ${compteur.max || 6} segments`;
 }
 
-function FenetreEditionTemplateEtatScene({ template, onFermer, onValider }) {
+function FenetreEditionTemplateEtatScene({ template, switchRequest, onAnnulerChangement, onValiderChangement, onAbandonnerChangement, onFermer, onValider }) {
   const status = template?.status || {};
   const [nomTemplate, setNomTemplate] = useState(template?.name || status.name || 'Etat de scene');
   const [nom, setNom] = useState(status.name || 'Etat de scene');
@@ -274,8 +268,9 @@ function FenetreEditionTemplateEtatScene({ template, onFermer, onValider }) {
   }, nomTemplate || nom || 'Etat de scene');
 
   return (
-    <Fenetre title="Template d'etat de scene" onClose={onFermer}>
+    <Fenetre title="Template d'etat de scene" className="template-edit-sheet" onClose={onFermer}>
       <div className="stack">
+        {switchRequest && <MessageChangementTemplate onAnnuler={onAnnulerChangement} onValider={() => { valider(); onValiderChangement?.(); }} onAbandonner={onAbandonnerChangement} />}
         <label className="field">Nom du template<input value={nomTemplate} onChange={(event) => setNomTemplate(event.target.value)} /></label>
         <label className="field">Nom de l'etat<input value={nom} onChange={(event) => setNom(event.target.value)} /></label>
         <label className="field">Duree<input type="number" inputMode="numeric" min="1" placeholder="illimitee" value={duree} onChange={(event) => setDuree(event.target.value)} /></label>
@@ -289,7 +284,7 @@ function FenetreEditionTemplateEtatScene({ template, onFermer, onValider }) {
   );
 }
 
-function FenetreEditionTemplateCompteurScene({ template, onFermer, onValider }) {
+function FenetreEditionTemplateCompteurScene({ template, switchRequest, onAnnulerChangement, onValiderChangement, onAbandonnerChangement, onFermer, onValider }) {
   const [nomTemplate, setNomTemplate] = useState(template?.name || template?.counter?.name || 'Suivi global');
   const [brouillon, setBrouillon] = useState(() => normalizeGlobalTracker(template?.counter || { enabled: true, name: 'Suivi global', mode: 'clock', current: 0, max: 6, auto: false, thresholds: [] }));
   const tempsReel = ['stopwatch', 'timer'].includes(brouillon.mode);
@@ -298,8 +293,9 @@ function FenetreEditionTemplateCompteurScene({ template, onFermer, onValider }) 
   const valider = () => onValider(template.id, { ...brouillon, name: brouillon.name || nomTemplate || 'Suivi global', running: false, startedAt: null, elapsedMs: 0 }, nomTemplate || brouillon.name || 'Suivi global');
 
   return (
-    <Fenetre title="Template de suivi global" onClose={onFermer}>
+    <Fenetre title="Template de suivi global" className="template-edit-sheet" onClose={onFermer}>
       <div className="stack">
+        {switchRequest && <MessageChangementTemplate onAnnuler={onAnnulerChangement} onValider={() => { valider(); onValiderChangement?.(); }} onAbandonner={onAbandonnerChangement} />}
         <label className="field">Nom du template<input value={nomTemplate} onChange={(event) => setNomTemplate(event.target.value)} /></label>
         <label className="field">Nom du compteur<input value={brouillon.name || ''} onChange={(event) => modifier({ name: event.target.value })} /></label>
         <div className="grid2">
@@ -323,20 +319,12 @@ function FenetreEditionTemplateCompteurScene({ template, onFermer, onValider }) 
 }
 
 function OngletTemplatesScene({ counterTemplates, statusTemplates, onAjouterCompteur, onEditerCompteur, onDupliquerCompteur, onSupprimerCompteur, onAjouterEtat, onEditerEtat, onDupliquerEtat, onSupprimerEtat }) {
-  const ajouterCompteur = () => {
-    const template = onAjouterCompteur();
-    if (template?.id) onEditerCompteur(template.id);
-  };
-  const ajouterEtat = () => {
-    const template = onAjouterEtat();
-    if (template?.id) onEditerEtat(template.id);
-  };
   return (
     <div className="stack">
       <section className="scene-template-group">
         <div className="hub-section-head">
           <div><h4>Suivis globaux</h4><p className="muted compact-help">Ces templates remplacent ou preparent le suivi global de la scene.</p></div>
-          <button className="small-btn" onClick={ajouterCompteur}>+ compteur</button>
+          <button className="small-btn" onClick={onAjouterCompteur}>+ compteur</button>
         </div>
         {counterTemplates.length === 0 ? <div className="empty-section panel">Aucun template de suivi global.</div> : counterTemplates.map((template) => (
           <LigneTemplateSimple key={template.id} template={template} detail={libelleCompteurScene(template.counter)} onEditer={onEditerCompteur} onDupliquer={onDupliquerCompteur} onSupprimer={onSupprimerCompteur} />
@@ -345,7 +333,7 @@ function OngletTemplatesScene({ counterTemplates, statusTemplates, onAjouterComp
       <section className="scene-template-group">
         <div className="hub-section-head">
           <div><h4>Etats de scene</h4><p className="muted compact-help">Ces etats sont proposes dans le menu d'ajout d'etat de scene.</p></div>
-          <button className="small-btn" onClick={ajouterEtat}>+ etat</button>
+          <button className="small-btn" onClick={onAjouterEtat}>+ etat</button>
         </div>
         {statusTemplates.length === 0 ? <div className="empty-section panel">Aucun template d'etat de scene.</div> : statusTemplates.map((template) => (
           <LigneTemplateSimple key={template.id} template={template} detail={libelleDureeEtat(template.status)} onEditer={onEditerEtat} onDupliquer={onDupliquerEtat} onSupprimer={onSupprimerEtat} />
@@ -390,53 +378,148 @@ export function OngletTemplates({
   onModifierTemplateEtatScene,
   onDupliquerTemplateEtatScene,
   onSupprimerTemplateEtatScene,
+  templatePersonnageId = '',
+  templatePersonnageOuvert = false,
+  onFermerEditionTemplatePersonnage,
+  onDemanderChangementDepuisTemplatePersonnage,
+  onTemplatePanelOpenChange,
 }) {
   const [sousPage, setSousPage] = useState('personnages');
   const [suiviEditeId, setSuiviEditeId] = useState('');
   const [etatEditeId, setEtatEditeId] = useState('');
   const [compteurSceneEditeId, setCompteurSceneEditeId] = useState('');
   const [etatSceneEditeId, setEtatSceneEditeId] = useState('');
+  const [changementDemande, setChangementDemande] = useState(null);
   const importInputRef = useRef(null);
   const suiviEdite = trackerTemplates.find((template) => template.id === suiviEditeId) || null;
   const etatEdite = statusTemplates.find((template) => template.id === etatEditeId) || null;
   const compteurSceneEdite = sceneCounterTemplates.find((template) => template.id === compteurSceneEditeId) || null;
   const etatSceneEdite = sceneStatusTemplates.find((template) => template.id === etatSceneEditeId) || null;
+  const editeurLocalOuvert = !!(suiviEdite || etatEdite || compteurSceneEdite || etatSceneEdite);
   const statusTemplatesAffiches = statusTemplates.map((template) => template.id !== 'status-template-surpris' ? template : {
     ...template,
     status: { ...template.status, inactive: surpriseImpact === 'inactive', limited: surpriseImpact !== 'inactive', advanceOn: surpriseAdvanceOn === 'round' ? 'round' : 'activation' },
   });
+  useEffect(() => {
+    if (editeurLocalOuvert) onTemplatePanelOpenChange?.(true);
+  }, [editeurLocalOuvert, onTemplatePanelOpenChange]);
+  useEffect(() => {
+    return () => onTemplatePanelOpenChange?.(false);
+  }, [onTemplatePanelOpenChange]);
   const choisirFichier = () => importInputRef.current?.click();
   const importerFichier = (event) => {
     const file = event.target.files?.[0];
     event.target.value = '';
     if (file) onImporterTemplates(file);
   };
-  const validerSuivi = (id, tracker, nom) => { onModifierTemplateSuivi(id, tracker, nom); setSuiviEditeId(''); };
-  const validerEtat = (id, status, nom) => { onModifierTemplateEtat(id, status, nom); setEtatEditeId(''); };
-  const validerCompteurScene = (id, compteur, nom) => { onModifierTemplateCompteurScene(id, compteur, nom); setCompteurSceneEditeId(''); };
-  const validerEtatScene = (id, status, nom) => { onModifierTemplateEtatScene(id, status, nom); setEtatSceneEditeId(''); };
+  const fermerEditeursLocaux = () => {
+    setSuiviEditeId('');
+    setEtatEditeId('');
+    setCompteurSceneEditeId('');
+    setEtatSceneEditeId('');
+  };
+  const changerSousPage = (prochaine) => {
+    if (prochaine === sousPage) return;
+    setSousPage(prochaine);
+  };
+  const demandeDejaOuverte = (demande) => {
+    if (!demande) return false;
+    if (demande.type === 'personnage') return templatePersonnageId === demande.id;
+    if (demande.type === 'suivi') return suiviEditeId === demande.id;
+    if (demande.type === 'etat') return etatEditeId === demande.id;
+    if (demande.type === 'compteurScene') return compteurSceneEditeId === demande.id;
+    if (demande.type === 'etatScene') return etatSceneEditeId === demande.id;
+    return false;
+  };
+  const ouvrirDemande = (demande) => {
+    if (!demande) return;
+    setChangementDemande(null);
+    onTemplatePanelOpenChange?.(true);
+    fermerEditeursLocaux();
+    onFermerEditionTemplatePersonnage?.();
+    if (demande.type === 'personnage') onEditerTemplate(demande.id);
+    if (demande.type === 'nouveauPersonnage') onAjouterTemplateCategorie(demande.categorie);
+    if (demande.type === 'dupliquerPersonnage') onDupliquerTemplate(demande.id);
+    if (demande.type === 'suivi') setSuiviEditeId(demande.id);
+    if (demande.type === 'nouveauSuivi') {
+      const template = onAjouterTemplateSuivi();
+      if (template?.id) setSuiviEditeId(template.id);
+    }
+    if (demande.type === 'etat') setEtatEditeId(demande.id);
+    if (demande.type === 'nouveauEtat') {
+      const template = onAjouterTemplateEtat();
+      if (template?.id) setEtatEditeId(template.id);
+    }
+    if (demande.type === 'compteurScene') setCompteurSceneEditeId(demande.id);
+    if (demande.type === 'nouveauCompteurScene') {
+      const template = onAjouterTemplateCompteurScene();
+      if (template?.id) setCompteurSceneEditeId(template.id);
+    }
+    if (demande.type === 'etatScene') setEtatSceneEditeId(demande.id);
+    if (demande.type === 'nouveauEtatScene') {
+      const template = onAjouterTemplateEtatScene();
+      if (template?.id) setEtatSceneEditeId(template.id);
+    }
+  };
+  const demanderOuOuvrir = (demande) => {
+    if (demandeDejaOuverte(demande)) return;
+    if (templatePersonnageOuvert) {
+      onDemanderChangementDepuisTemplatePersonnage?.({ execute: () => ouvrirDemande(demande) });
+      return;
+    }
+    if (editeurLocalOuvert) {
+      setChangementDemande(demande);
+      return;
+    }
+    ouvrirDemande(demande);
+  };
+  const validerEtOuvrir = () => {
+    const demande = changementDemande;
+    ouvrirDemande(demande);
+  };
+  const abandonnerEtOuvrir = () => ouvrirDemande(changementDemande);
+  const annulerChangement = () => setChangementDemande(null);
+  const fermerSuivi = () => { setSuiviEditeId(''); setChangementDemande(null); };
+  const fermerEtat = () => { setEtatEditeId(''); setChangementDemande(null); };
+  const fermerCompteurScene = () => { setCompteurSceneEditeId(''); setChangementDemande(null); };
+  const fermerEtatScene = () => { setEtatSceneEditeId(''); setChangementDemande(null); };
+  const ouvrirTemplatePersonnage = (id) => demanderOuOuvrir({ type: 'personnage', id });
+  const ajouterTemplateCategorie = (categorie) => demanderOuOuvrir({ type: 'nouveauPersonnage', categorie });
+  const dupliquerTemplatePersonnage = (id) => demanderOuOuvrir({ type: 'dupliquerPersonnage', id });
+  const ajouterSuivi = () => demanderOuOuvrir({ type: 'nouveauSuivi' });
+  const ouvrirSuivi = (id) => demanderOuOuvrir({ type: 'suivi', id });
+  const ajouterEtat = () => demanderOuOuvrir({ type: 'nouveauEtat' });
+  const ouvrirEtat = (id) => demanderOuOuvrir({ type: 'etat', id });
+  const ajouterCompteurScene = () => demanderOuOuvrir({ type: 'nouveauCompteurScene' });
+  const ouvrirCompteurScene = (id) => demanderOuOuvrir({ type: 'compteurScene', id });
+  const ajouterEtatScene = () => demanderOuOuvrir({ type: 'nouveauEtatScene' });
+  const ouvrirEtatScene = (id) => demanderOuOuvrir({ type: 'etatScene', id });
+  const validerSuivi = (id, tracker, nom) => { onModifierTemplateSuivi(id, tracker, nom); setSuiviEditeId(''); setChangementDemande(null); };
+  const validerEtat = (id, status, nom) => { onModifierTemplateEtat(id, status, nom); setEtatEditeId(''); setChangementDemande(null); };
+  const validerCompteurScene = (id, compteur, nom) => { onModifierTemplateCompteurScene(id, compteur, nom); setCompteurSceneEditeId(''); setChangementDemande(null); };
+  const validerEtatScene = (id, status, nom) => { onModifierTemplateEtatScene(id, status, nom); setEtatSceneEditeId(''); setChangementDemande(null); };
 
   return (
     <div className="stack hub-section panel">
       <div className="hub-section-head">
         <h3>Templates</h3>
         <button className="small-btn" onClick={choisirFichier}>Importer depuis une autre campagne</button>
-        <input ref={importInputRef} type="file" accept=".cad,.json,application/json" style={{ display: 'none' }} onChange={importerFichier} />
+        <input ref={importInputRef} type="file" accept=".cad,application/json" style={{ display: 'none' }} onChange={importerFichier} />
       </div>
       <div className="template-subtabs">
-        <button className={`choice ${sousPage === 'personnages' ? 'selected' : ''}`} onClick={() => setSousPage('personnages')}>Personnages</button>
-        <button className={`choice ${sousPage === 'suivis' ? 'selected' : ''}`} onClick={() => setSousPage('suivis')}>Suivis</button>
-        <button className={`choice ${sousPage === 'etats' ? 'selected' : ''}`} onClick={() => setSousPage('etats')}>Etats</button>
-        <button className={`choice ${sousPage === 'scene' ? 'selected' : ''}`} onClick={() => setSousPage('scene')}>Scene</button>
+        <button className={`choice ${sousPage === 'personnages' ? 'selected' : ''}`} onClick={() => changerSousPage('personnages')}>Personnages</button>
+        <button className={`choice ${sousPage === 'suivis' ? 'selected' : ''}`} onClick={() => changerSousPage('suivis')}>Suivis</button>
+        <button className={`choice ${sousPage === 'etats' ? 'selected' : ''}`} onClick={() => changerSousPage('etats')}>Etats</button>
+        <button className={`choice ${sousPage === 'scene' ? 'selected' : ''}`} onClick={() => changerSousPage('scene')}>Scene</button>
       </div>
-      {sousPage === 'personnages' && <OngletTemplatesPersonnages categories={categories} templates={templates} onAjouterTemplateCategorie={onAjouterTemplateCategorie} onAjouterCategorie={onAjouterCategorie} onRenommerCategorie={onRenommerCategorie} onSupprimerCategorie={onSupprimerCategorie} onDeplacerCategorie={onDeplacerCategorie} onChangerCategorieTemplate={onChangerCategorieTemplate} onEditerTemplate={onEditerTemplate} onDupliquerTemplate={onDupliquerTemplate} onSupprimerTemplate={onSupprimerTemplate} />}
-      {sousPage === 'suivis' && <OngletTemplatesSuivis templates={trackerTemplates} onAjouter={onAjouterTemplateSuivi} onEditer={setSuiviEditeId} onDupliquer={onDupliquerTemplateSuivi} onSupprimer={onSupprimerTemplateSuivi} />}
-      {sousPage === 'etats' && <OngletTemplatesEtats templates={statusTemplatesAffiches} onAjouter={onAjouterTemplateEtat} onEditer={setEtatEditeId} onDupliquer={onDupliquerTemplateEtat} onSupprimer={onSupprimerTemplateEtat} />}
-      {sousPage === 'scene' && <OngletTemplatesScene counterTemplates={sceneCounterTemplates} statusTemplates={sceneStatusTemplates} onAjouterCompteur={onAjouterTemplateCompteurScene} onEditerCompteur={setCompteurSceneEditeId} onDupliquerCompteur={onDupliquerTemplateCompteurScene} onSupprimerCompteur={onSupprimerTemplateCompteurScene} onAjouterEtat={onAjouterTemplateEtatScene} onEditerEtat={setEtatSceneEditeId} onDupliquerEtat={onDupliquerTemplateEtatScene} onSupprimerEtat={onSupprimerTemplateEtatScene} />}
-      {suiviEdite && <FenetreEditionTemplateSuivi template={suiviEdite} onFermer={() => setSuiviEditeId('')} onValider={validerSuivi} />}
-      {etatEdite && <FenetreEditionTemplateEtat template={etatEdite} onFermer={() => setEtatEditeId('')} onValider={validerEtat} />}
-      {compteurSceneEdite && <FenetreEditionTemplateCompteurScene template={compteurSceneEdite} onFermer={() => setCompteurSceneEditeId('')} onValider={validerCompteurScene} />}
-      {etatSceneEdite && <FenetreEditionTemplateEtatScene template={etatSceneEdite} onFermer={() => setEtatSceneEditeId('')} onValider={validerEtatScene} />}
+      {sousPage === 'personnages' && <OngletTemplatesPersonnages categories={categories} templates={templates} onAjouterTemplateCategorie={ajouterTemplateCategorie} onAjouterCategorie={onAjouterCategorie} onRenommerCategorie={onRenommerCategorie} onSupprimerCategorie={onSupprimerCategorie} onDeplacerCategorie={onDeplacerCategorie} onChangerCategorieTemplate={onChangerCategorieTemplate} onEditerTemplate={ouvrirTemplatePersonnage} onDupliquerTemplate={dupliquerTemplatePersonnage} onSupprimerTemplate={onSupprimerTemplate} />}
+      {sousPage === 'suivis' && <OngletTemplatesSuivis templates={trackerTemplates} onAjouter={ajouterSuivi} onEditer={ouvrirSuivi} onDupliquer={onDupliquerTemplateSuivi} onSupprimer={onSupprimerTemplateSuivi} />}
+      {sousPage === 'etats' && <OngletTemplatesEtats templates={statusTemplatesAffiches} onAjouter={ajouterEtat} onEditer={ouvrirEtat} onDupliquer={onDupliquerTemplateEtat} onSupprimer={onSupprimerTemplateEtat} />}
+      {sousPage === 'scene' && <OngletTemplatesScene counterTemplates={sceneCounterTemplates} statusTemplates={sceneStatusTemplates} onAjouterCompteur={ajouterCompteurScene} onEditerCompteur={ouvrirCompteurScene} onDupliquerCompteur={onDupliquerTemplateCompteurScene} onSupprimerCompteur={onSupprimerTemplateCompteurScene} onAjouterEtat={ajouterEtatScene} onEditerEtat={ouvrirEtatScene} onDupliquerEtat={onDupliquerTemplateEtatScene} onSupprimerEtat={onSupprimerTemplateEtatScene} />}
+      {suiviEdite && <FenetreEditionTemplateSuivi template={suiviEdite} switchRequest={changementDemande} onAnnulerChangement={annulerChangement} onValiderChangement={validerEtOuvrir} onAbandonnerChangement={abandonnerEtOuvrir} onFermer={fermerSuivi} onValider={validerSuivi} />}
+      {etatEdite && <FenetreEditionTemplateEtat template={etatEdite} switchRequest={changementDemande} onAnnulerChangement={annulerChangement} onValiderChangement={validerEtOuvrir} onAbandonnerChangement={abandonnerEtOuvrir} onFermer={fermerEtat} onValider={validerEtat} />}
+      {compteurSceneEdite && <FenetreEditionTemplateCompteurScene template={compteurSceneEdite} switchRequest={changementDemande} onAnnulerChangement={annulerChangement} onValiderChangement={validerEtOuvrir} onAbandonnerChangement={abandonnerEtOuvrir} onFermer={fermerCompteurScene} onValider={validerCompteurScene} />}
+      {etatSceneEdite && <FenetreEditionTemplateEtatScene template={etatSceneEdite} switchRequest={changementDemande} onAnnulerChangement={annulerChangement} onValiderChangement={validerEtOuvrir} onAbandonnerChangement={abandonnerEtOuvrir} onFermer={fermerEtatScene} onValider={validerEtatScene} />}
     </div>
   );
 }

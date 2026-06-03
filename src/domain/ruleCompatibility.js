@@ -17,7 +17,7 @@ export const usesFlexibleInitiative = (rules = {}) => rules.temporalite !== temp
 
 export function temporalityPatch(rules = {}, temporalite) {
   if (temporalite === temporalityModes.PHASES && (usesTextInitiative(rules) || rules.temporalite === temporalityModes.FLEXIBLE)) return { temporalite, phaseActionMode: phaseActionModes.CHECKED };
-  if (temporalite === temporalityModes.FLEXIBLE) return { temporalite, phaseActionMode: '' };
+  if (temporalite === temporalityModes.FLEXIBLE) return { temporalite, phaseActionMode: '', surpriseAdvanceOn: 'round' };
   return { temporalite };
 }
 
@@ -28,14 +28,16 @@ export function ruleCompatibilityIssues(rules = {}) {
   const textInitiative = usesTextInitiative(rules);
   const declaration = usesDeclaration(rules);
   const phases = rules.temporalite === temporalityModes.PHASES;
+  const flexible = rules.temporalite === temporalityModes.FLEXIBLE;
 
-  if (adjustment && rules.temporalite === temporalityModes.FLEXIBLE) issues.push({ id: 'adjustment-flexible', message: "L'ajustement avant Suivant est incompatible avec le mode souple." });
+  if (adjustment && flexible) issues.push({ id: 'adjustment-flexible', message: "L'ajustement avant Suivant est incompatible avec le mode souple." });
   if (adjustment && phases) issues.push({ id: 'adjustment-phases', message: "L'ajustement avant Suivant est incompatible avec les phases." });
   if (adjustment && textInitiative) issues.push({ id: 'adjustment-text-initiative', message: "L'ajustement avant Suivant exige une initiative numerique." });
   if (adjustment && multipleSlots) issues.push({ id: 'adjustment-multiple-slots', message: "L'ajustement avant Suivant ne peut pas etre combine avec les actions multiples manuelles." });
   if (adjustment && declaration) issues.push({ id: 'adjustment-declaration', message: "L'ajustement avant Suivant est incompatible avec declaration puis resolution." });
   if (phases && multipleSlots) issues.push({ id: 'phases-multiple-slots', message: 'Les phases sont incompatibles avec les actions multiples manuelles.' });
   if (usesAutomaticPhases(rules) && textInitiative) issues.push({ id: 'automatic-phases-text-initiative', message: "Les phases par initiative exigent une initiative numerique. Les labels restent possibles avec les phases cochees." });
+  if (flexible && rules.surpriseAdvanceOn !== 'round') issues.push({ id: 'surprise-activation-flexible', message: "En mode souple, la surprise doit prendre fin au debut du round." });
 
   return issues;
 }
@@ -64,6 +66,10 @@ export function ruleOptionAvailability(rules = {}) {
               ? "Desactive d'abord les actions multiples manuelles."
               : "Desactive d'abord declaration puis resolution.",
     ),
+    surpriseAdvanceOn: {
+      activation: blocked(rules.temporalite === temporalityModes.FLEXIBLE, "En mode souple, la surprise prend fin au debut du round."),
+      round: blocked(false, ''),
+    },
     labelInitiative: blocked(adjustment || automaticPhases || !flexibleInitiative, adjustment ? "Desactive d'abord l'ajustement avant Suivant." : automaticPhases ? "Les phases par initiative necessitent une initiative numerique. Avec l'initiative par labels, utilise les phases cochees." : "Le mode souple sans initiative classe seulement les personnages par type puis par nom. Reactive l'initiative pour utiliser des labels."),
     temporality: {
       [temporalityModes.CLASSIC]: blocked(false, ''),

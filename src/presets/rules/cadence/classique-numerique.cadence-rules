@@ -1,0 +1,15 @@
+{
+  "id": "cadence/classique-numerique",
+  "name": "Classique numerique",
+  "category": "Cadence",
+  "description": "Ordre d'initiative numerique simple, un passage par personnage.",
+  "rules": {
+    "temporalite": "classique",
+    "startRound": 1,
+    "declarationMode": false,
+    "multipleActionSlots": false,
+    "equalityRule": "strict",
+    "initiativeOrder": "desc",
+    "phaseActionMode": "automatic"
+  }
+}

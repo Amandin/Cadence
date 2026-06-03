@@ -9,6 +9,7 @@ import './initiative-rules.css';
 import './refinements.css';
 import './template-hub.css';
 import './trackers-clarity.css';
+import './theme-system.css';
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>

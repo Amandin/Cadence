@@ -61,7 +61,23 @@ export function BadgeRound({ round, effect, phase }) {
   );
 }
 
-export function Fenetre({ title, children, onClose, header }) {
+export function Fenetre({ title, children, onClose, header, className = '' }) {
   const entete = header ?? <div className="row" style={{ justifyContent: 'space-between', marginBottom: 10 }}><h2 style={{ margin: 0 }}>{title}</h2><button className="icon-btn" onClick={onClose}>×</button></div>;
-  return <div className="overlay" onClick={onClose}><div className="sheet" onClick={(event) => event.stopPropagation()}>{entete}{children}</div></div>;
+  return <div className={`overlay ${className ? `${className}-overlay` : ''}`} onClick={onClose}><div className={`sheet ${className}`} onClick={(event) => event.stopPropagation()}>{entete}{children}</div></div>;
+}
+
+export function MessageChangementTemplate({ onAnnuler, onValider, onAbandonner }) {
+  return (
+    <div className="template-switch-notice">
+      <div>
+        <strong>Un template est deja ouvert.</strong>
+        <p>Que faire des modifications en cours avant d'ouvrir l'autre template ?</p>
+      </div>
+      <div className="template-switch-actions">
+        <button className="small-btn" type="button" onClick={onAnnuler}>Rester ici</button>
+        <button className="primary" type="button" onClick={onValider}>Valider et ouvrir</button>
+        <button className="danger-btn" type="button" onClick={onAbandonner}>Ouvrir sans enregistrer</button>
+      </div>
+    </div>
+  );
 }

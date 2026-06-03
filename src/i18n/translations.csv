@@ -1,0 +1,19 @@
+key,fr
+common.add,Ajouter
+common.cancel,Annuler
+common.name,Nom
+common.use,Utiliser
+status.add.title,Ajouter un état · {name}
+status.defaultName,Nouveau
+status.templateFallback,État
+status.impact.field,Impact sur le personnage
+status.impact.normal,Normal
+status.impact.limited,Limité
+status.impact.inactive,Inactif
+status.duration,Durée
+status.duration.custom,Perso
+status.duration.customField,Durée personnalisée
+status.advance.field,Évolution
+status.advance.activation,Activation
+status.advance.roundStart,Début du round
+status.loop,renouveler en boucle

@@ -1,10 +1,34 @@
-import { phaseActionModes, TEMPLATE_STORAGE_KEY, temporalityModes } from './constants.js';
+import { TEMPLATE_STORAGE_KEY } from './constants.js';
 import { normalizeCampaignRules } from './domain/campaignRules.js';
 import { normalizeGlobalTracker } from './domain/globalTracker.js';
 import { clone, newTracker, uid } from './logic.js';
 
 export const defaultTemplateCategories = ['PJ', 'PNJ', 'Créature', 'Horloge', 'Autre'];
 const TEMPLATE_STORE_VERSION = 3;
+
+function pvTemplate(id, current, max = current) {
+  const mid = Math.ceil(max / 2);
+  const low = Math.ceil(max / 4);
+  return {
+    id,
+    type: 'bar',
+    name: 'PV',
+    visible: true,
+    current,
+    initial: max,
+    min: 0,
+    max,
+    step: Math.max(1, Math.ceil(max / 6)),
+    direction: 'countdown',
+    minAbsolute: true,
+    maxAbsolute: false,
+    thresholds: [
+      { value: mid, label: 'blesse', color: 'amber', operator: 'lte' },
+      { value: low, label: 'critique', color: 'red', operator: 'lte' },
+      { value: 0, label: 'hors combat', color: 'red', operator: 'lte' },
+    ],
+  };
+}
 
 export const defaultTemplates = [
   {
@@ -137,6 +161,140 @@ export const defaultTemplates = [
   },
 ];
 
+const genericDefaultTemplates = [
+  {
+    id: 'tpl-generic-pj',
+    name: 'PJ standard',
+    category: 'PJ',
+    createdAt: 'demo',
+    participant: {
+      id: 'template-participant',
+      name: 'PJ standard',
+      kind: 'PJ',
+      symbol: '●',
+      color: 'emerald',
+      initiative: 12,
+      departage: '',
+      description: '',
+      stats: ['Defense 12', 'Perception 10'],
+      statuses: [],
+      trackers: [
+        pvTemplate('tpl-pj-pv', 20),
+        { id: 'tpl-pj-focus', type: 'points', name: 'Focus', visible: true, current: 2, initial: 2, min: 0, max: 5, step: 1, direction: 'progression', limitMode: 'clamp', thresholds: [{ value: 4, label: 'pret', color: 'green', operator: 'gte' }] },
+      ],
+    },
+  },
+  {
+    id: 'tpl-generic-pnj',
+    name: 'PNJ arme',
+    category: 'PNJ',
+    createdAt: 'demo',
+    participant: {
+      id: 'template-participant',
+      name: 'PNJ arme',
+      kind: 'Opposant',
+      symbol: '◆',
+      color: 'red',
+      initiative: 10,
+      departage: '',
+      description: '',
+      stats: ['Defense 11', 'Attaque +3'],
+      statuses: [],
+      trackers: [
+        pvTemplate('tpl-pnj-pv', 16),
+        { id: 'tpl-pnj-moral', type: 'points', name: 'Moral', visible: true, current: 3, initial: 3, min: 0, max: 5, step: 1, direction: 'countdown', limitMode: 'clamp', thresholds: [{ value: 1, label: 'fragile', color: 'amber', operator: 'lte' }] },
+      ],
+    },
+  },
+  {
+    id: 'tpl-generic-elite',
+    name: 'Adversaire robuste',
+    category: 'PNJ',
+    createdAt: 'demo',
+    participant: {
+      id: 'template-participant',
+      name: 'Adversaire robuste',
+      kind: 'Opposant',
+      symbol: '■',
+      color: 'orange',
+      initiative: 6,
+      departage: '',
+      description: '',
+      stats: ['Armure', 'Impact'],
+      statuses: [],
+      trackers: [
+        pvTemplate('tpl-elite-pv', 32),
+        { id: 'tpl-elite-garde', type: 'points', name: 'Garde', visible: true, current: 2, initial: 2, min: 0, max: 4, step: 1, direction: 'countdown', limitMode: 'clamp' },
+      ],
+    },
+  },
+  {
+    id: 'tpl-generic-allie',
+    name: 'Allie utile',
+    category: 'PNJ',
+    createdAt: 'demo',
+    participant: {
+      id: 'template-participant',
+      name: 'Allie utile',
+      kind: 'Allié',
+      symbol: '●',
+      color: 'blue',
+      initiative: 9,
+      departage: '',
+      description: '',
+      stats: ['Soutien', 'Competent'],
+      statuses: [],
+      trackers: [
+        pvTemplate('tpl-allie-pv', 12),
+        { id: 'tpl-allie-aide', type: 'points', name: 'Aide', visible: true, current: 1, initial: 1, min: 0, max: 3, step: 1, direction: 'progression', limitMode: 'clamp' },
+      ],
+    },
+  },
+  {
+    id: 'tpl-generic-creature',
+    name: 'Creature vive',
+    category: 'Créature',
+    createdAt: 'demo',
+    participant: {
+      id: 'template-participant',
+      name: 'Creature vive',
+      kind: 'Opposant',
+      symbol: '▲',
+      color: 'violet',
+      initiative: 14,
+      departage: '',
+      description: '',
+      stats: ['Rapide', 'Instinct'],
+      statuses: [],
+      trackers: [
+        pvTemplate('tpl-creature-pv', 14),
+        { id: 'tpl-creature-instinct', type: 'points', name: 'Instinct', visible: true, current: 2, initial: 2, min: 0, max: 4, step: 1, direction: 'progression', limitMode: 'clamp' },
+      ],
+    },
+  },
+  {
+    id: 'tpl-generic-clock',
+    name: 'Danger simple',
+    category: 'Horloge',
+    createdAt: 'demo',
+    participant: {
+      id: 'template-participant',
+      name: 'Danger simple',
+      kind: 'Environnement',
+      symbol: '◇',
+      color: 'amber',
+      initiative: 0,
+      departage: '',
+      description: '',
+      stats: ['Scene'],
+      statuses: [],
+      trackers: [
+        { id: 'tpl-danger-clock', type: 'clock', name: 'Danger', visible: true, current: 0, initial: 0, min: 0, max: 6, step: 1, direction: 'progression', limitMode: 'manual', auto: true, frozen: false, currentThresholds: [{ value: 3, label: 'pression', color: 'amber', operator: 'gte' }, { value: 6, label: 'declenche', color: 'red', operator: 'gte' }] },
+      ],
+    },
+  },
+];
+
 export const defaultTrackerTemplates = [
   { id: 'tracker-template-pv', name: 'PV simple', createdAt: 'demo', tracker: { ...newTracker('bar'), id: 'template-tracker', name: 'PV' } },
   { id: 'tracker-template-horloge', name: 'Horloge 6 segments', createdAt: 'demo', tracker: { ...newTracker('clock'), id: 'template-tracker', name: 'Horloge', max: 6 } },
@@ -166,14 +324,7 @@ export const defaultSceneCounterTemplates = [
   { id: 'scene-counter-template-chrono', name: 'Chronometre simple', createdAt: 'demo', counter: { enabled: true, name: 'Chrono', mode: 'stopwatch', current: 0, max: 600, direction: 'progression', trigger: 'realtime', limitMode: 'overflow', running: false, startedAt: null, elapsedMs: 0, thresholds: [{ value: 120, label: 'Deux minutes', color: 'blue', operator: 'gte', basis: 'fixed', scope: 'current', sound: true, soundId: 'chime' }, { value: 300, label: 'Long', color: 'violet', operator: 'gte', basis: 'fixed', scope: 'current', sound: true, soundId: 'alarm' }] } },
 ];
 
-export const defaultRuleTemplates = [
-  { id: 'rules-template-classique', name: 'Classique numerique', createdAt: 'demo', rules: { temporalite: temporalityModes.CLASSIC, startRound: 1, declarationMode: false, multipleActionSlots: false, phaseActionMode: phaseActionModes.AUTOMATIC } },
-  { id: 'rules-template-phases-auto', name: 'Phases automatiques', createdAt: 'demo', rules: { temporalite: temporalityModes.PHASES, phaseActionMode: phaseActionModes.AUTOMATIC, phaseDecrement: 10, declarationMode: false, multipleActionSlots: false } },
-  { id: 'rules-template-phases-cochees', name: 'Phases cochees', createdAt: 'demo', rules: { temporalite: temporalityModes.PHASES, phaseActionMode: phaseActionModes.CHECKED, phaseCount: 3, declarationMode: false, multipleActionSlots: false } },
-  { id: 'rules-template-cartes', name: 'Initiative par cartes', createdAt: 'demo', rules: { temporalite: temporalityModes.CLASSIC, declarationMode: false, multipleActionSlots: false, initiativeTextOrder: { enabled: true, separator: ' de ', parts: [{ label: 'Valeur', values: ['As', 'Roi', 'Dame', 'Valet', '10', '9'] }, { label: 'Couleur', values: ['Pique', 'Coeur', 'Carreau', 'Trefle'] }] } } },
-  { id: 'rules-template-declaration', name: 'Declaration puis resolution', createdAt: 'demo', rules: { temporalite: temporalityModes.CLASSIC, declarationMode: true, multipleActionSlots: true, phaseActionMode: phaseActionModes.AUTOMATIC } },
-  { id: 'rules-template-souple', name: 'Ordre souple', createdAt: 'demo', rules: { temporalite: temporalityModes.FLEXIBLE, declarationMode: false, multipleActionSlots: false } },
-];
+export const defaultRuleTemplates = [];
 
 function ajouterTemplateSurprisSiAncien(statusTemplates, version) {
   if (Number(version || 0) >= TEMPLATE_STORE_VERSION) return statusTemplates;
@@ -312,7 +463,7 @@ export function normalizeTemplateStore(value) {
     };
   }
 
-  const sourceTemplates = Array.isArray(value?.templates) ? value.templates : defaultTemplates;
+  const sourceTemplates = Array.isArray(value?.templates) ? value.templates : genericDefaultTemplates;
   const templates = sourceTemplates.map(normalizeTemplate).filter(Boolean);
   const categories = Array.isArray(value?.categories) && value.categories.length ? value.categories : defaultTemplateCategories;
   const sourceTrackerTemplates = Array.isArray(value?.trackerTemplates) ? value.trackerTemplates : defaultTrackerTemplates;

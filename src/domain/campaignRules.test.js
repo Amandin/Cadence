@@ -55,6 +55,16 @@ describe('campaign rules', () => {
     });
   });
 
+  it('forces surprise to end on round start in flexible mode', () => {
+    expect(applyInitiativeRules({ participants: [], reserve: [] }, {
+      temporalite: 'souple',
+      surpriseAdvanceOn: 'activation',
+    })).toMatchObject({
+      temporalite: 'souple',
+      surpriseAdvanceOn: 'round',
+    });
+  });
+
   it('updates existing surprised statuses when the campaign surprise rule changes', () => {
     expect(applyInitiativeRules({
       participants: [{ id: 'a', statuses: [{ id: 'surpris', name: 'Surpris', limited: true, inactive: false, advanceOn: 'activation' }] }],

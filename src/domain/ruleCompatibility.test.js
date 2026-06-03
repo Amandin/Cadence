@@ -55,6 +55,7 @@ describe('rule compatibility', () => {
     }, temporalityModes.FLEXIBLE)).toEqual({
       temporalite: temporalityModes.FLEXIBLE,
       phaseActionMode: '',
+      surpriseAdvanceOn: 'round',
     });
   });
 
@@ -97,5 +98,16 @@ describe('rule compatibility', () => {
 
     expect(activeRuleSummary(rules)).toEqual(['Souple', 'Sans initiative', 'Une action par personnage']);
     expect(ruleOptionAvailability(rules).labelInitiative.reason).toContain('type puis par nom');
+  });
+
+  it('blocks surprise ending on activation in flexible mode', () => {
+    const rules = {
+      temporalite: temporalityModes.FLEXIBLE,
+      surpriseAdvanceOn: 'activation',
+      multipleActionSlots: false,
+    };
+
+    expect(ruleCompatibilityIssues(rules).map((issue) => issue.id)).toContain('surprise-activation-flexible');
+    expect(ruleOptionAvailability(rules).surpriseAdvanceOn.activation.disabled).toBe(true);
   });
 });

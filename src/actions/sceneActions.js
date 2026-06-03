@@ -541,23 +541,19 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
           return;
         }
         const currentIndex = phaseParticipants.findIndex((p) => p.id === scene.activeId);
-        if (currentIndex < 0) {
-          setRoundEffect(null);
-          updateScene((s) => ({ ...s, activeId: phaseParticipants[0]?.id || s.activeId }));
-          return;
-        }
+        const effectiveCurrentIndex = currentIndex < 0 ? 0 : currentIndex;
         if (direction < 0) {
-          if (scene.round === roundDepart(scene) && (scene.phase || 1) <= 1 && currentIndex <= 0) {
+          if (scene.round === roundDepart(scene) && (scene.phase || 1) <= 1 && effectiveCurrentIndex <= 0) {
             setRoundEffect(null);
             updateScene(remettreEnPreparation);
             return;
           }
-          const previousIndex = Math.max(0, currentIndex - 1);
+          const previousIndex = Math.max(0, effectiveCurrentIndex - 1);
           setRoundEffect(null);
           updateScene((s) => retirerDeclarationJoue({ ...s, activeId: phaseParticipants[previousIndex]?.id || s.activeId }, phaseParticipants[previousIndex]?.id));
           return;
         }
-        const nextIndex = currentIndex + 1;
+        const nextIndex = effectiveCurrentIndex + 1;
         if (nextIndex < phaseParticipants.length) {
           setRoundEffect(null);
           updateScene((s) => empilerRetourTour(s, marquerDeclarationJoue({ ...s, activeId: phaseParticipants[nextIndex].id, activeSlotId: '', participants: (s.participants || []).map((participant) => triggerActivationScene(s, participant, phaseParticipants[nextIndex].id)) }, s.activeId)));

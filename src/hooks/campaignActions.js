@@ -27,7 +27,7 @@ export function createCampaignActions({ scenes, dark, setScenes, setSceneIndex, 
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = 'campagne-cadence.json';
+      link.download = 'campagne-cadence.cad';
       link.click();
       URL.revokeObjectURL(url);
     },
@@ -37,10 +37,9 @@ export function createCampaignActions({ scenes, dark, setScenes, setSceneIndex, 
         if (!isValidCampaign(data)) return alert('Fichier invalide');
 
         setScenes(data.scenes);
-        setDark(data.settings?.dark || false);
         setSceneIndex(0);
       } catch {
-        alert('Impossible de lire ce fichier JSON.');
+        alert('Impossible de lire ce fichier Cadence.');
       }
     },
     resetDemo() {

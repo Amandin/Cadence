@@ -209,13 +209,19 @@ export function MenuPrincipal({ scene, restorePoints = [], onRestore, onReturnTo
   const [pointRestaurationId, setPointRestaurationId] = useState(pointsRestauration.at(-1)?.id || '');
 
   return (
-    <Fenetre title="Menu" onClose={onClose} header={<MenuEntete sombre={dark} onChangerTheme={setDark} onClose={onClose} />}>
-      <button className="primary hub-menu-main-action" onClick={onOpenCampaignHub}>Retour au hub de campagne</button>
-      <ActionsScene onAjouterParticipant={onAddParticipant} onSaisirInitiatives={onOpenInitiativeRoller} />
-      <EtatsSceneMenu scene={scene} onAjouterEtatScene={onAddSceneStatus} onRetirerEtatScene={onRemoveSceneStatus} onEffacerEtats={onClearStatuses} />
-      <OptionsSuiviGlobal compteur={scene?.globalTracker} onModifier={onGlobalTracker} onOuvrirAvance={onOpenGlobalTracker} />
-      <NotesSceneMenu scene={scene} onModifierNotes={onUpdateSceneNotes} />
-      <OptionsDerouleScene scene={scene} points={pointsRestauration} pointActif={pointRestaurationId} onChoisirPoint={setPointRestaurationId} onRestaurer={onRestore} onRetourPreparation={onReturnToPreparation} onAvancerRound={onAdvanceRound} onResetSuivis={onResetTrackers} onEffacerEtats={onClearStatuses} />
+    <Fenetre title="Menu" onClose={onClose} header={<MenuEntete sombre={dark} onChangerTheme={setDark} onClose={onClose} />} className="main-menu">
+      <div className="main-menu-layout">
+        <div className="main-menu-primary">
+          <button className="primary hub-menu-main-action" onClick={onOpenCampaignHub}>Retour au hub de campagne</button>
+          <ActionsScene onAjouterParticipant={onAddParticipant} onSaisirInitiatives={onOpenInitiativeRoller} />
+          <EtatsSceneMenu scene={scene} onAjouterEtatScene={onAddSceneStatus} onRetirerEtatScene={onRemoveSceneStatus} onEffacerEtats={onClearStatuses} />
+          <OptionsSuiviGlobal compteur={scene?.globalTracker} onModifier={onGlobalTracker} onOuvrirAvance={onOpenGlobalTracker} />
+        </div>
+        <div className="main-menu-secondary">
+          <NotesSceneMenu scene={scene} onModifierNotes={onUpdateSceneNotes} />
+          <OptionsDerouleScene scene={scene} points={pointsRestauration} pointActif={pointRestaurationId} onChoisirPoint={setPointRestaurationId} onRestaurer={onRestore} onRetourPreparation={onReturnToPreparation} onAvancerRound={onAdvanceRound} onResetSuivis={onResetTrackers} onEffacerEtats={onClearStatuses} />
+        </div>
+      </div>
     </Fenetre>
   );
 }

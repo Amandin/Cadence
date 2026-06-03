@@ -29,6 +29,7 @@ export function normalizeCampaignRules(rules = {}) {
     : Object.values(temporalityModes).includes(rules.temporalite)
       ? rules.temporalite
       : defaultTemporalityMode;
+  const surpriseAdvanceOn = temporalite === temporalityModes.FLEXIBLE ? 'round' : rules.surpriseAdvanceOn === 'round' ? 'round' : defaultSurpriseAdvanceOn;
   return {
     temporalite,
     declarationMode: initiativeModeOptions.declarationMode ?? (legacyDeclaration ? true : defaultDeclarationMode),
@@ -43,7 +44,7 @@ export function normalizeCampaignRules(rules = {}) {
     tiebreakerVisible: rules.tiebreakerVisible ?? defaultTiebreakerVisible,
     tiebreakerLabel: typeof rules.tiebreakerLabel === 'string' && rules.tiebreakerLabel.trim() ? rules.tiebreakerLabel.trim() : defaultTiebreakerLabel,
     surpriseImpact: ['limited', 'inactive'].includes(rules.surpriseImpact) ? rules.surpriseImpact : defaultSurpriseImpact,
-    surpriseAdvanceOn: rules.surpriseAdvanceOn === 'round' ? 'round' : defaultSurpriseAdvanceOn,
+    surpriseAdvanceOn,
     rounding: ['nearest', 'floor', 'ceil'].includes(rules.rounding) ? rules.rounding : 'nearest',
     initiativeTextOrder: normalizeInitiativeTextOrder(rules.initiativeTextOrder),
     promptInitiativeOnNext: !!rules.promptInitiativeOnNext,

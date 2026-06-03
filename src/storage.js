@@ -327,7 +327,6 @@ export function createCampaignPayload(scenes, dark, campaignName = DEFAULT_CAMPA
     initiativeRules: rules,
     scenes: unifyCampaignScenes(safeScenes, rules),
     templates: normalizeTemplateStore(templates),
-    settings: { dark: !!dark },
   };
 }
 
@@ -355,11 +354,12 @@ export function normalizeCampaignPayload(data) {
   const fallback = makeDefaultCampaign();
   const sourceScenes = scenes.length ? scenes : normalizeCampaignScenes(fallback.scenes);
   const initiativeRules = campaignRulesFromPayload({ ...(isPlainObject(data) ? data : {}), scenes: sourceScenes });
-  const settings = isPlainObject(data?.settings) ? data.settings : {};
   const campaign = campaignMetaFromPayload(data);
+  const source = isPlainObject(data) ? { ...data } : {};
+  delete source.settings;
 
   return {
-    ...(isPlainObject(data) ? data : {}),
+    ...source,
     format: CADENCE_CAMPAIGN_FORMAT,
     schemaVersion: CADENCE_CAMPAIGN_SCHEMA_VERSION,
     campaign,
@@ -369,10 +369,6 @@ export function normalizeCampaignPayload(data) {
     initiativeRules,
     scenes: unifyCampaignScenes(sourceScenes, initiativeRules),
     templates: campaignTemplatesFromPayload(data),
-    settings: {
-      ...settings,
-      dark: !!settings.dark,
-    },
   };
 }
 

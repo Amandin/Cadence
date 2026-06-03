@@ -12,7 +12,6 @@ function campaignPayload(patch = {}) {
     campaign: { id: 'campagne-test', name, folderName: 'campagne-test', fileName: 'campagne-test.cad' },
     name,
     scenes: [scene],
-    settings: { dark: false },
     ...patch,
   };
 }
@@ -26,8 +25,8 @@ describe('campaign storage', () => {
       schemaVersion: CADENCE_CAMPAIGN_SCHEMA_VERSION,
       campaign: { name: 'Chroniques de test', folderName: 'chroniques-de-test', fileName: 'chroniques-de-test.cad' },
       name: 'Chroniques de test',
-      settings: { dark: true },
     });
+    expect(data.settings).toBeUndefined();
     expect(data.initiativeRules).toBeTruthy();
     expect(data.scenes).toHaveLength(1);
     expect(data.scenes[0]).toMatchObject({ id: 'scene-1', title: 'Test', participants: [], reserve: [] });
@@ -41,6 +40,12 @@ describe('campaign storage', () => {
 
   it('accepts current Cadence campaign files', () => {
     expect(isValidCampaign(campaignPayload())).toBe(true);
+  });
+
+  it('drops visual settings when normalizing campaign data', () => {
+    const campaign = normalizeCampaignPayload(campaignPayload({ settings: { dark: true } }));
+
+    expect(campaign.settings).toBeUndefined();
   });
 
   it('rejects old Cadence JSON exports without the v2 campaign block', () => {

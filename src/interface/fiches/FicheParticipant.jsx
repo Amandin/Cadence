@@ -79,7 +79,7 @@ export function FicheParticipant({ participant, enInitiative, initiativeTextOrde
   };
 
   return (
-    <Fenetre title={participant.name} onClose={onFermer}>
+    <Fenetre title={participant.name} onClose={onFermer} className="character-sheet">
       <p>{participant.description}</p>
       <div className={`sheet-action-row ${enInitiative && utiliserInitiative ? '' : 'without-init-counter'}`}>
         <button className="primary" onClick={onModifier}>Modifier</button>

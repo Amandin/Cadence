@@ -10,6 +10,7 @@ import { hasTriggeredClock, makeDemoCampaigns, nextTurnInfo } from '../logic.js'
 import { campaignMetaFromPayload, campaignNameFromPayload, campaignTemplatesFromPayload, isValidCampaign, loadCampaign, normalizeCampaignPayload, normalizeCampaignScene, normalizeCampaignScenes, saveCampaign, serializeCampaign } from '../storage.js';
 
 const SCENE_INDEX_STORAGE_KEY = 'cadence:interface:scene-index:v1';
+const THEME_STORAGE_KEY = 'cadence:interface:dark:v1';
 
 function initialSceneIndex() {
   try {
@@ -34,6 +35,17 @@ function initialRestorePoints(scenes) {
 
 function devicePrefersDark() {
   return typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches;
+}
+
+function storedThemePreference() {
+  try {
+    const value = window.localStorage.getItem(THEME_STORAGE_KEY);
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+  } catch {
+    // La preference visuelle reste locale et optionnelle.
+  }
+  return null;
 }
 
 function slugifyCampaignPart(value) {
@@ -136,7 +148,7 @@ export function useCampaign() {
   const [campaignName, setCampaignName] = useState(() => campaignNameFromPayload(initialCampaign));
   const [sceneIndex, setSceneIndex] = useState(initialSceneIndex);
   const [restorePoints, setRestorePoints] = useState(() => initialRestorePoints(initialCampaign.scenes));
-  const [dark, setDark] = useState(() => initialCampaign.settings?.dark ?? devicePrefersDark());
+  const [dark, setDark] = useState(() => storedThemePreference() ?? devicePrefersDark());
   const [roundEffect, setRoundEffect] = useState(null);
   const [campaignEntries, setCampaignEntries] = useState(() => {
     const demos = demoCampaignEntries();
@@ -172,7 +184,7 @@ export function useCampaign() {
   }, [sceneIndex]);
 
   useEffect(() => {
-    const signature = JSON.stringify({ scenes: syncedScenes, dark, campaignName, templateStore, campaignRules, activeCampaignEntryId });
+    const signature = JSON.stringify({ scenes: syncedScenes, campaignName, templateStore, campaignRules, activeCampaignEntryId });
     if (signature === lastPersistenceSignatureRef.current) return undefined;
     lastPersistenceSignatureRef.current = signature;
 
@@ -198,7 +210,15 @@ export function useCampaign() {
       }
     }, 650);
     return () => window.clearTimeout(timer);
-  }, [syncedScenes, dark, campaignName, templateStore, campaignRules, activeCampaignEntryId]);
+  }, [syncedScenes, campaignName, templateStore, campaignRules, activeCampaignEntryId]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(THEME_STORAGE_KEY, String(!!dark));
+    } catch {
+      // Le theme reste utilisable meme sans stockage local.
+    }
+  }, [dark]);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.matchMedia) return undefined;
@@ -217,7 +237,6 @@ export function useCampaign() {
     setScenes(campaign.scenes);
     setCampaignName(campaignNameFromPayload(campaign));
     setTemplateStore(campaignTemplatesFromPayload(campaign));
-    setDark(!!campaign.settings?.dark);
     setSceneIndex(0);
     setRestorePoints(initialRestorePoints(campaign.scenes));
     lastPersistenceSignatureRef.current = '';

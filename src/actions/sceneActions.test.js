@@ -317,6 +317,53 @@ describe('restore points', () => {
     });
   });
 
+  it('advances automatic initiative phases after the last participant of phase one', () => {
+    const harness = createHarness({
+      id: 'scene',
+      temporalite: temporalityModes.PHASES,
+      phaseActionMode: 'automatic',
+      phaseDecrement: 10,
+      startRound: 1,
+      round: 1,
+      phase: 1,
+      activeId: 'fast',
+      activeSlotId: '',
+      participants: [participant('fast', 23), participant('middle', 14), participant('slow', 8)],
+      reserve: [],
+      statuses: [],
+    });
+
+    harness.actions().nextTurn(1);
+    expect(harness.current()).toMatchObject({ round: 1, phase: 1, activeId: 'middle' });
+
+    harness.actions().nextTurn(1);
+    expect(harness.current()).toMatchObject({ round: 1, phase: 1, activeId: 'slow' });
+
+    harness.actions().nextTurn(1);
+    expect(harness.current()).toMatchObject({ round: 1, phase: 2, activeId: 'fast' });
+  });
+
+  it('does not get stuck when an automatic phase has participants but no valid active id', () => {
+    const harness = createHarness({
+      id: 'scene',
+      temporalite: temporalityModes.PHASES,
+      phaseActionMode: 'automatic',
+      phaseDecrement: 10,
+      startRound: 1,
+      round: 1,
+      phase: 1,
+      activeId: '',
+      activeSlotId: '',
+      participants: [participant('fast', 23), participant('middle', 14), participant('slow', 8)],
+      reserve: [],
+      statuses: [],
+    });
+
+    harness.actions().nextTurn(1);
+
+    expect(harness.current()).toMatchObject({ round: 1, phase: 1, activeId: 'middle' });
+  });
+
   it('keeps the scene state from just before initiative starts', () => {
     const harness = createHarness({
       id: 'scene',

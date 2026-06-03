@@ -1,0 +1,20 @@
+{
+  "id": "generiques/initiative-cartes",
+  "name": "Initiative par cartes",
+  "category": "Generiques",
+  "description": "Initiative non numerique avec valeurs de cartes ordonnees.",
+  "rules": {
+    "temporalite": "classique",
+    "startRound": 1,
+    "declarationMode": false,
+    "multipleActionSlots": false,
+    "initiativeTextOrder": {
+      "enabled": true,
+      "separator": " de ",
+      "parts": [
+        { "label": "Valeur", "values": ["As", "Roi", "Dame", "Valet", "10", "9"] },
+        { "label": "Couleur", "values": ["Pique", "Coeur", "Carreau", "Trefle"] }
+      ]
+    }
+  }
+}

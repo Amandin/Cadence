@@ -1,4 +1,5 @@
 import { clone, newTracker, uid } from '../logic.js';
+import { mergeRulePresetCatalog } from '../rulePresets.js';
 import {
   categoryExists,
   createBlankParticipant,
@@ -373,6 +374,7 @@ export function useTemplates(store, setStore) {
     sceneStatusTemplates: templateStore.sceneStatusTemplates,
     sceneCounterTemplates: templateStore.sceneCounterTemplates,
     ruleTemplates: templateStore.ruleTemplates,
+    rulePresets: mergeRulePresetCatalog(templateStore.ruleTemplates),
     saveParticipantAsTemplate,
     createParticipantFromTemplate,
     getTemplate,
