@@ -33,6 +33,7 @@ export function FenetreEtat({ participant, onFermer, onValider, defaultAdvanceOn
   const valeurDuree = duree === 'custom' ? Number(dureePersonnalisee) : Number(duree);
   const dureeValide = !dureeFinie || (Number.isFinite(valeurDuree) && valeurDuree >= 1);
   const peutEnregistrer = nom.trim() && dureeValide;
+  const nomSurpris = nom.trim().toLocaleLowerCase('fr') === 'surpris';
   const appliquerTemplate = () => {
     const template = statusTemplates.find((item) => item.id === templateId);
     const status = template?.status;
@@ -60,6 +61,7 @@ export function FenetreEtat({ participant, onFermer, onValider, defaultAdvanceOn
         {t('common.name')}
         <input value={nom} onChange={(event) => setNom(event.target.value)} autoFocus />
       </label>
+      {nomSurpris && <p className="rule-warning">Cet etat s'appelle Surpris. Cadence utilise ce nom pour la surprise automatique ; verifie que ses options correspondent bien a ce que tu veux.</p>}
       {afficherInactif && <SelecteurImpactEtat value={impact} onChange={setImpact} />}
       <div className="field">
         {t('status.duration')}

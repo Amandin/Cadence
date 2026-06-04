@@ -1,6 +1,7 @@
 import { defaultCategoryOrder, defaultEqualityRule, defaultInitiativeOrder } from '../../constants.js';
 import { actionsRestantesSouples } from '../../actions/flexibleTurnState.js';
 import { grouperAffichageParticipants, grouperParInitiative, ordreCreneauxClassique, trierParInitiative } from '../../domain/initiative.js';
+import { rulesAllowMultipleSlots } from '../../domain/initiativeCost.js';
 import { declarationStage, declarationStages, isCheckedPhaseMode, normalizeDeclarations, participantsHorsPhaseAvancee, participantsPourPhaseAvancee } from '../../domain/initiativeModes.js';
 import { initiativeTextOrderEnabled } from '../../domain/initiativeTextOrder.js';
 import { FichetteInitiative } from '../fiches/FichetteInitiative.jsx';
@@ -13,7 +14,7 @@ function optionsEgalite(scene) {
     initiativeTextOrder: scene?.initiativeTextOrder,
     initiativeEnabled: scene?.temporalite !== 'souple' || scene?.flexibleUseInitiative !== false,
     tiebreakerVisible: scene?.tiebreakerVisible !== false,
-    multipleActionSlots: scene?.multipleActionSlots !== false,
+    multipleActionSlots: rulesAllowMultipleSlots(scene),
   };
 }
 

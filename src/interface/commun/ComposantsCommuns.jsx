@@ -42,12 +42,21 @@ export function EtiquetteEtat({ etat, onRetirer }) {
   return <span className={`status ${typeEtat(etat)} ${etat.advanceOn === 'round' ? 'round-status' : ''} ${etat.inactive ? 'inactive-status' : ''} ${etat.limited ? 'limited-status' : ''} ${etat.expired ? 'expired' : ''}`}>{marqueurImpact}{etat.name} · {libelleEtat(etat)}<button onClick={onRetirer}>×</button></span>;
 }
 
-export function BadgeRound({ round, effect, phase }) {
+export function BadgeRound({ round, effect, phase, surpriseRound = false }) {
   if (round < 0) {
     return (
       <div className="round prep-round">
         <small>Scene</small>
         <strong>Preparation</strong>
+      </div>
+    );
+  }
+
+  if (surpriseRound) {
+    return (
+      <div className={`round surprise-round ${effect === 'next' ? 'new' : ''}`}>
+        <small>Round</small>
+        <strong>Surprise</strong>
       </div>
     );
   }

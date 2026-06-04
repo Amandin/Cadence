@@ -464,7 +464,7 @@ export function FenetreCompteurGlobal({ compteur, sceneCounterTemplates = [], on
           {estChronometre && <p className="muted compact-help">Temps ecoule.</p>}
           <div className="grid2">
             <button className="primary" onClick={courant.running ? pause : demarrer}>{courant.running ? 'Pause' : courant.elapsedMs > 0 ? 'Reprendre' : 'Demarrer'}</button>
-            <button className="small-btn" onClick={resetTemps}>Reset</button>
+            <button className="small-btn" onClick={resetTemps}>Remettre à zéro</button>
           </div>
         </div>}
         <details className="advanced-options" open>

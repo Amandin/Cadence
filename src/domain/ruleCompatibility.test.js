@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { phaseActionModes, temporalityModes } from '../constants.js';
+import { initiativeOrders, multipleActionModes, phaseActionModes, temporalityModes } from '../constants.js';
 import { activeRuleSummary, ruleCompatibilityIssues, ruleOptionAvailability, temporalityPatch } from './ruleCompatibility.js';
 
 const labels = { enabled: true, parts: [{ label: 'Vitesse', values: ['Rapide', 'Lent'] }] };
@@ -86,7 +86,7 @@ describe('rule compatibility', () => {
       declarationMode: true,
       multipleActionSlots: true,
       initiativeTextOrder: labels,
-    })).toEqual(['Classique', 'Initiative par labels', 'Actions multiples', 'Declaration puis resolution']);
+    })).toEqual(['Classique', 'Initiative par labels', 'Creneaux manuels', 'Declaration puis resolution']);
   });
 
   it('explains that label initiative is dormant in flexible mode without initiative', () => {
@@ -109,5 +109,21 @@ describe('rule compatibility', () => {
 
     expect(ruleCompatibilityIssues(rules).map((issue) => issue.id)).toContain('surprise-activation-flexible');
     expect(ruleOptionAvailability(rules).surpriseAdvanceOn.activation.disabled).toBe(true);
+  });
+
+  it('keeps initiative cost exclusive and blocks incompatible combinations', () => {
+    const rules = {
+      temporalite: temporalityModes.CLASSIC,
+      multipleActionMode: multipleActionModes.INITIATIVE_COST,
+      multipleActionSlots: true,
+      initiativeOrder: initiativeOrders.ASC,
+      declarationMode: true,
+    };
+
+    expect(ruleCompatibilityIssues(rules).map((issue) => issue.id)).toEqual([
+      'initiative-cost-declaration',
+      'initiative-cost-ascending',
+    ]);
+    expect(ruleOptionAvailability({ ...rules, declarationMode: false }).initiativeCost.disabled).toBe(true);
   });
 });

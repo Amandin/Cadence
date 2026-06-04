@@ -7,6 +7,14 @@ import { SelecteurImpactEtat } from '../commun/SelecteurImpactEtat.jsx';
 import { EditeurSuivi } from '../fiches/FenetreEditionFiche.jsx';
 import { EditeurSeuilsCompteurScene } from '../suivis/CompteurGlobal.jsx';
 
+function BoutonIconeTemplate({ label, children, className = '', ...props }) {
+  return (
+    <button className={`small-btn template-icon-btn ${className}`.trim()} aria-label={label} title={label} {...props}>
+      {children}
+    </button>
+  );
+}
+
 function grouperTemplates(templates = [], categories = []) {
   const groupes = categories.map((categorie) => ({ categorie, templates: [] }));
   const trouverOuCreerGroupe = (categorie) => {
@@ -66,8 +74,8 @@ function EnteteCategorieTemplate({ groupe, index, total, onAjouterTemplateCatego
       <strong>{groupe.templates.length}</strong>
       <span className="template-category-label">{groupe.categorie}</span>
       <div className="compact-arrows template-category-actions">
-        <button className="small-btn" onClick={() => onAjouterTemplateCategorie(groupe.categorie)}><span className="wide-label">+ template</span><span className="compact-label">+</span></button>
-        <button className="small-btn" onClick={() => setRenommage(true)}><span className="wide-label">Renommer</span><span className="compact-label">Ren.</span></button>
+        <BoutonIconeTemplate label="Ajouter un template" onClick={() => onAjouterTemplateCategorie(groupe.categorie)}>+</BoutonIconeTemplate>
+        <BoutonIconeTemplate label="Renommer la categorie" onClick={() => setRenommage(true)}>✎</BoutonIconeTemplate>
         <button className="small-btn" onClick={() => onDeplacerCategorie(groupe.categorie, -1)} disabled={index <= 0}>↑</button>
         <button className="small-btn" onClick={() => onDeplacerCategorie(groupe.categorie, 1)} disabled={index >= total - 1}>↓</button>
         {groupe.templates.length === 0 && <button className="danger-btn mini-danger" onClick={() => onSupprimerCategorie(groupe.categorie)}>Suppr.</button>}
@@ -95,8 +103,8 @@ function LigneTemplate({ template, categories, onChangerCategorieTemplate, onEdi
         ) : (
           <button className="small-btn discreet-template-category" onClick={() => setCategorieOuverte(true)} title={`Categorie : ${template.category}`}>Cat.</button>
         )}
-        <button className="small-btn" onClick={() => onEditerTemplate(template.id)}><span className="wide-label">Modifier</span><span className="compact-label">Mod.</span></button>
-        <button className="small-btn" onClick={() => onDupliquerTemplate(template.id)}><span className="wide-label">Dupliquer</span><span className="compact-label">Dup.</span></button>
+        <BoutonIconeTemplate label={`Modifier ${template.name}`} onClick={() => onEditerTemplate(template.id)}>✎</BoutonIconeTemplate>
+        <BoutonIconeTemplate label={`Dupliquer ${template.name}`} onClick={() => onDupliquerTemplate(template.id)}>⧉</BoutonIconeTemplate>
         {suppressionVisible ? (
           <button className="danger-btn mini-danger template-delete-confirm" onClick={() => onSupprimerTemplate(template.id)}>Suppr.</button>
         ) : (
@@ -113,8 +121,8 @@ function LigneTemplateSimple({ template, detail, onEditer, onDupliquer, onSuppri
     <div className="restore-row hub-row template-row">
       <span className="template-row-main"><strong>{template.name}</strong><small>{detail}</small></span>
       <div className="compact-arrows template-row-actions">
-        <button className="small-btn" onClick={() => onEditer(template.id)}><span className="wide-label">Modifier</span><span className="compact-label">Mod.</span></button>
-        <button className="small-btn" onClick={() => onDupliquer(template.id)}><span className="wide-label">Dupliquer</span><span className="compact-label">Dup.</span></button>
+        <BoutonIconeTemplate label={`Modifier ${template.name}`} onClick={() => onEditer(template.id)}>✎</BoutonIconeTemplate>
+        <BoutonIconeTemplate label={`Dupliquer ${template.name}`} onClick={() => onDupliquer(template.id)}>⧉</BoutonIconeTemplate>
         {suppressionVisible ? (
           <button className="danger-btn mini-danger template-delete-confirm" onClick={() => onSupprimer(template.id)}>Suppr.</button>
         ) : (

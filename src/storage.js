@@ -12,6 +12,7 @@ import {
   defaultPhaseRerollEachRound,
   defaultStartRound,
   defaultSurpriseAdvanceOn,
+  defaultSurpriseDedicatedRound,
   defaultSurpriseImpact,
   defaultTiebreakerLabel,
   defaultTiebreakerVisible,
@@ -24,6 +25,7 @@ import {
 import { campaignRulesFromPayload, normalizeCampaignRules, unifyCampaignScenes } from './domain/campaignRules.js';
 import { normalizeGlobalTracker } from './domain/globalTracker.js';
 import { normaliserCreneauxAction } from './domain/initiative.js';
+import { baseInitiativeSlots } from './domain/initiativeCost.js';
 import { isPointsTracker, normalizeBoxTracker, normalizeThresholds, normalizeTrackerThresholds, makeDefaultCampaign, uid } from './logic.js';
 import { isTemplateStoreLike, loadTemplateStore, normalizeTemplateStore } from './templates.js';
 
@@ -240,6 +242,12 @@ export function normalizeCampaignParticipant(participant, { reserve = false } = 
   if (!isPlainObject(participant)) return null;
   const initiative = reserve ? 0 : initiativeOr(participant.initiative, 0);
   const actionSlots = reserve ? [] : normaliserCreneauxAction({ ...participant, initiative });
+  const previousInitiative = participant.previousInitiative == null || participant.previousInitiative === ''
+    ? (reserve ? initiativeOr(participant.initiative, '') : '')
+    : initiativeOr(participant.previousInitiative, '');
+  const previousActionSlots = reserve && previousInitiative !== ''
+    ? baseInitiativeSlots({ ...participant, initiative: previousInitiative, actionSlots: participant.previousActionSlots || participant.actionSlots })
+    : [];
   const rawPhaseActions = Array.isArray(participant.phaseActions) ? participant.phaseActions : Array.isArray(participant.phases) ? participant.phases : Array.isArray(participant.checkedPhases) ? participant.checkedPhases : null;
   return {
     ...participant,
@@ -250,6 +258,8 @@ export function normalizeCampaignParticipant(participant, { reserve = false } = 
     color: stringOr(participant.color, 'slate'),
     initiative,
     actionSlots,
+    previousInitiative,
+    previousActionSlots,
     phaseActions: rawPhaseActions ? [...new Set(rawPhaseActions.map((phase) => String(phase ?? '').trim()).filter(Boolean))] : participant.phaseActions,
     departage: participant.departage === '' || participant.departage == null ? '' : numberOr(participant.departage, 0),
     description: stringOr(participant.description),
@@ -280,6 +290,8 @@ export function normalizeCampaignScene(scene) {
     preparationSurprise: booleanOr(scene.preparationSurprise),
     surpriseImpact: ['limited', 'inactive'].includes(scene.surpriseImpact) ? scene.surpriseImpact : defaultSurpriseImpact,
     surpriseAdvanceOn: scene.surpriseAdvanceOn === 'round' ? 'round' : defaultSurpriseAdvanceOn,
+    surpriseDedicatedRound: booleanOr(scene.surpriseDedicatedRound, defaultSurpriseDedicatedRound),
+    surpriseRoundActive: booleanOr(scene.surpriseRoundActive),
     statuses: normalizeArray(scene.statuses).map(normalizeStatus).filter(Boolean),
     temporalite: legacyDeclaration ? defaultTemporalityMode : stringOr(scene.temporalite, defaultTemporalityMode),
     declarationMode: booleanOr(scene.declarationMode, legacyDeclaration ? true : defaultDeclarationMode),

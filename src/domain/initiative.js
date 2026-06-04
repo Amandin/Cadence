@@ -35,6 +35,11 @@ export function normaliserCreneauxAction(participant = {}, options = {}) {
         initiative,
         sortValue: numberOr(initiative, numberOr(fallback, 0, options), options),
         order: Number.isFinite(Number(source.order)) ? Number(source.order) : index,
+        played: !!source.played,
+        costPaid: source.costPaid,
+        costResult: source.costResult,
+        generatedBy: source.generatedBy,
+        sourceSlotId: source.sourceSlotId ? String(source.sourceSlotId) : '',
       };
     })
     .filter((slot) => Number.isFinite(slot.sortValue));
@@ -42,7 +47,7 @@ export function normaliserCreneauxAction(participant = {}, options = {}) {
   const normalized = slots.length ? slots : [{ id: 'slot-1', initiative: fallback, sortValue: numberOr(fallback, 0, options), order: 0 }];
   return normalized
     .sort((a, b) => b.sortValue - a.sortValue || a.order - b.order)
-    .map((slot, index) => ({ id: slot.id || `slot-${index + 1}`, initiative: slot.initiative, order: index, sortValue: slot.sortValue }));
+    .map((slot, index) => ({ id: slot.id || `slot-${index + 1}`, initiative: slot.initiative, order: index, sortValue: slot.sortValue, played: !!slot.played, costPaid: slot.costPaid, costResult: slot.costResult, generatedBy: slot.generatedBy, sourceSlotId: slot.sourceSlotId || '' }));
 }
 
 export function creneauxActionParticipant(participant = {}, options = {}) {
@@ -73,9 +78,15 @@ export function participantAvecCreneau(participant, slot, options = {}) {
     initiative: slot.initiative,
     initiativeSortValue: slot.sortValue,
     actionSlotId: slot.actionSlotId,
+    actionSlotRawId: slot.id,
     actionSlotIndex: slot.index,
     actionSlotCount: slots.length,
     actionSlotInitiatives: slots.map((item) => item.initiative),
+    actionSlotPlayed: !!slot.played,
+    actionSlotCostPaid: slot.costPaid,
+    actionSlotCostResult: slot.costResult,
+    actionSlotGeneratedBy: slot.generatedBy,
+    actionSlotSourceId: slot.sourceSlotId || '',
   };
 }
 
@@ -130,7 +141,8 @@ function optionsTriSafe(scene = {}) {
 }
 
 export function initiativeDePhase(participant, phase = 1, decrement = 10, options = {}) {
-  return valeurInitiative(participant, options) - Math.max(0, Number(phase || 1) - 1) * Math.max(1, Number(decrement) || 10);
+  const basePhase = Math.max(1, Number(participant?.phaseAdjustedAt || 1));
+  return valeurInitiative(participant, options) - Math.max(0, Number(phase || 1) - basePhase) * Math.max(1, Number(decrement) || 10);
 }
 
 export function participantActifEnPhase(participant, phase = 1, decrement = 10, options = {}) {

@@ -75,7 +75,7 @@ function OptionsCompteurScene({ scene, compteur, onModifier, onChanger, onOuvrir
           {enPreparation && <p className="muted compact-help">Le temps démarrera avec Commencer.</p>}
           <div className="grid2">
             <button className="primary" onClick={courant.running ? pause : demarrer} disabled={enPreparation && !courant.running}>{courant.running ? 'Pause' : 'Démarrer'}</button>
-            <button className="small-btn" onClick={resetTemps}>Reset</button>
+            <button className="small-btn" onClick={resetTemps}>Remettre à zéro</button>
           </div>
         </div>}
       </div>
@@ -183,7 +183,7 @@ function OptionsDerouleScene({ scene, points, pointActif, onChoisirPoint, onRest
       <p className="muted" style={{ marginTop: 4, fontSize: 12 }}>Replace la scène avant le lancement de l’initiative.</p>
       <div className="menu-action-grid scene-management-grid">
         <button className="small-btn" onClick={onAvancerRound}>Round +1</button>
-        <button className="small-btn" onClick={onResetSuivis}>Reset suivis</button>
+        <button className="small-btn" onClick={onResetSuivis}>Réinitialiser les suivis</button>
       </div>
       {points.length > 0 && <RestaurationScene points={points} pointActif={pointActif} onChoisirPoint={onChoisirPoint} onRestaurer={onRestaurer} />}
     </div>

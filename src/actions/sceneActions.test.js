@@ -133,6 +133,56 @@ describe('restore points', () => {
     });
   });
 
+  it('triggers flexible activation effects collectively when the round begins', () => {
+    const harness = createHarness({
+      id: 'scene',
+      temporalite: temporalityModes.FLEXIBLE,
+      startRound: 1,
+      round: -1,
+      activeId: '',
+      activeSlotId: '',
+      participants: [{
+        ...participant('runner', 10),
+        statuses: [{ id: 'haste', name: 'Hate', duration: 2, remaining: 2, advanceOn: 'activation', expired: false }],
+        trackers: [{ id: 'tempo', type: 'clock', current: 0, min: 0, max: 6, step: 1, autoReset: 'activation' }],
+      }],
+      reserve: [],
+      statuses: [],
+      jouesSouples: [],
+      historiqueSouple: [],
+    });
+
+    harness.actions().nextTurn(1);
+
+    expect(harness.current()).toMatchObject({
+      round: 1,
+      activeId: '',
+      participants: [{ id: 'runner', statuses: [{ id: 'haste', remaining: 1 }], trackers: [{ id: 'tempo', current: 1 }] }],
+    });
+  });
+
+  it('starts a dedicated surprise round only when preparation surprise is enabled', () => {
+    const harness = createHarness({
+      id: 'scene',
+      temporalite: temporalityModes.CLASSIC,
+      preparationSurprise: true,
+      surpriseDedicatedRound: true,
+      startRound: 1,
+      round: -1,
+      activeId: '',
+      activeSlotId: '',
+      participants: [participant('fast', 12)],
+      reserve: [],
+      statuses: [],
+    });
+
+    harness.actions().startSceneWithInitiatives({ fast: ['12'] }, ['fast']);
+    expect(harness.current()).toMatchObject({ round: 0, surpriseRoundActive: true, activeId: 'fast' });
+
+    harness.actions().nextTurn(1);
+    expect(harness.current()).toMatchObject({ round: 1, surpriseRoundActive: false, activeId: 'fast' });
+  });
+
   it('keeps an initial round-based surprise until the next round begins', () => {
     const harness = createHarness({
       id: 'scene',
@@ -563,7 +613,68 @@ describe('turn rollback', () => {
     expect(harness.current().participants[0]).toMatchObject({ id: 'solo', statuses: [{ id: 'guard', remaining: 1 }], trackers: [{ id: 'round-clock', current: 1 }] });
   });
 
-  it('restores flexible activation automations when undoing a played action', () => {
+  it('keeps reserve characters out of automatic round progression', () => {
+    const harness = createHarness({
+      id: 'scene',
+      temporalite: temporalityModes.CLASSIC,
+      startRound: 1,
+      round: 1,
+      activeId: 'solo',
+      activeSlotId: '',
+      participants: [participant('solo', 12)],
+      reserve: [{
+        ...participant('reserve', 0),
+        actionSlots: [],
+        statuses: [{ id: 'wait', name: 'Attente', duration: 2, remaining: 2, advanceOn: 'round', expired: false }],
+        trackers: [{ id: 'reserve-clock', type: 'clock', current: 0, min: 0, max: 6, step: 1, autoReset: 'round' }],
+      }],
+      statuses: [],
+    });
+
+    harness.actions().nextTurn(1);
+    expect(harness.current().reserve[0]).toMatchObject({ statuses: [{ id: 'wait', remaining: 2 }], trackers: [{ id: 'reserve-clock', current: 0 }] });
+
+    harness.actions().advanceReserveRound();
+    expect(harness.current().reserve[0]).toMatchObject({ statuses: [{ id: 'wait', remaining: 1 }], trackers: [{ id: 'reserve-clock', current: 1 }] });
+  });
+
+  it('creates and clears initiative-cost slots without changing base initiative', () => {
+    const harness = createHarness({
+      id: 'scene',
+      temporalite: temporalityModes.CLASSIC,
+      multipleActionMode: 'initiative-cost',
+      multipleActionSlots: true,
+      initiativeCostThreshold: 0,
+      startRound: 1,
+      round: 1,
+      activeId: 'alix',
+      activeSlotId: 'alix:slot-1',
+      participants: [participant('alix', 18), participant('bran', 15)],
+      reserve: [],
+      statuses: [],
+    });
+
+    harness.actions().applyInitiativeCost(6);
+
+    const alix = harness.current().participants.find((item) => item.id === 'alix');
+    expect(alix.initiative).toBe(18);
+    expect(alix.actionSlots).toEqual([
+      expect.objectContaining({ id: 'slot-1', initiative: 18, played: true, costPaid: 6, costResult: 12 }),
+      expect.objectContaining({ initiative: 12, generatedBy: 'initiative-cost' }),
+    ]);
+    expect(harness.current()).toMatchObject({ activeId: 'bran', activeSlotId: 'bran:slot-1' });
+
+    harness.actions().applyInitiativeCost(null);
+    harness.actions().applyInitiativeCost(null);
+
+    expect(harness.current()).toMatchObject({ round: 2, activeId: 'alix' });
+    expect(harness.current().participants.find((item) => item.id === 'alix')).toMatchObject({
+      initiative: 18,
+      actionSlots: [expect.objectContaining({ id: 'slot-1', initiative: 18 })],
+    });
+  });
+
+  it('keeps flexible played marks from triggering activation automations', () => {
     const harness = createHarness({
       id: 'scene',
       temporalite: temporalityModes.FLEXIBLE,
@@ -586,7 +697,7 @@ describe('turn rollback', () => {
     expect(harness.current()).toMatchObject({
       activeId: 'runner',
       jouesSouples: ['runner:slot-1'],
-      participants: [{ id: 'runner', statuses: [{ id: 'haste', remaining: 1 }], trackers: [{ id: 'tempo', current: 1 }] }],
+      participants: [{ id: 'runner', statuses: [{ id: 'haste', remaining: 2 }], trackers: [{ id: 'tempo', current: 0 }] }],
     });
 
     harness.actions().nextTurn(-1);

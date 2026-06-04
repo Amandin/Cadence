@@ -1975,6 +1975,75 @@
   align-items: center;
 }
 
+.reserve-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.reserve-head h3 {
+  margin: 0;
+}
+
+.initiative-card.played-slot {
+  opacity: .68;
+}
+
+.initiative-card.played-slot {
+  box-shadow: none;
+}
+
+.chip.played-chip {
+  background: rgba(100, 116, 139, .18);
+  color: #475569;
+}
+
+.dark .chip.played-chip {
+  background: rgba(148, 163, 184, .18);
+  color: #cbd5e1;
+}
+
+.initiative-cost-dialog .initiative-cost-quick-row {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.template-icon-btn {
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  line-height: 1;
+  font-size: 16px;
+}
+
+.template-category-actions .template-icon-btn,
+.template-row-actions .template-icon-btn {
+  flex: 0 0 32px;
+}
+
+@media (max-width: 520px) {
+  .template-icon-btn,
+  .template-category-actions .template-icon-btn,
+  .template-row-actions .template-icon-btn {
+    width: 26px;
+    min-width: 26px;
+    height: 26px;
+    min-height: 26px;
+    flex-basis: 26px;
+    font-size: 14px;
+  }
+}
+
+.initiative-cost-rule-fields {
+  display: grid;
+  gap: 8px;
+}
+
 .reserve-card .collapse-inline {
   margin-left: auto;
   width: 34px;

@@ -54,7 +54,7 @@ export function EnteteScene(props) {
           <h1>{scene.title}</h1>
           <div className="muted">{scene.type} · {scene.participants.length} en initiative{suffixeTemporalite}</div>
         </div>
-        <BadgeRound round={scene.round} effect={effetRound} phase={temporalitePhases ? scene.phase || 1 : null} />
+        <BadgeRound round={scene.round} effect={effetRound} phase={temporalitePhases ? scene.phase || 1 : null} surpriseRound={!!scene.surpriseRoundActive} />
       </div>
       {enPreparation && <label className={`reset-switch preparation-surprise-toggle ${scene.preparationSurprise ? 'active' : ''}`}><span>Surprise</span><input type="checkbox" checked={!!scene.preparationSurprise} onChange={(event) => onToggleSurprisePreparation?.(event.target.checked)} /></label>}
       <div className="turn-row header-turn-row">

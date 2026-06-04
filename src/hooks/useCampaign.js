@@ -6,6 +6,7 @@ import { defaultCategoryOrder, defaultEqualityRule, defaultInitiativeOrder } fro
 import { applyInitiativeRules, campaignRulesFromPayload, normalizeCampaignRules, unifyCampaignScenes } from '../domain/campaignRules.js';
 import { normalizeGlobalTracker, stepGlobalTracker } from '../domain/globalTracker.js';
 import { normaliserCreneauxAction, trierParInitiative } from '../domain/initiative.js';
+import { isManualMultipleActionMode, rulesAllowMultipleSlots } from '../domain/initiativeCost.js';
 import { hasTriggeredClock, makeDemoCampaigns, nextTurnInfo } from '../logic.js';
 import { campaignMetaFromPayload, campaignNameFromPayload, campaignTemplatesFromPayload, isValidCampaign, loadCampaign, normalizeCampaignPayload, normalizeCampaignScene, normalizeCampaignScenes, saveCampaign, serializeCampaign } from '../storage.js';
 
@@ -126,7 +127,7 @@ function initiativeOptions(scene = {}) {
     initiativeTextOrder: scene.initiativeTextOrder,
     initiativeEnabled: scene.temporalite !== 'souple' || scene.flexibleUseInitiative !== false,
     tiebreakerVisible: scene.tiebreakerVisible !== false,
-    multipleActionSlots: scene.multipleActionSlots !== false,
+    multipleActionSlots: rulesAllowMultipleSlots(scene),
   };
 }
 
@@ -169,7 +170,7 @@ export function useCampaign() {
   const syncedScenes = normalizeScenesWithCampaignRules(scenes, campaignRules);
   const participants = scene.participants;
   const active = participants.find((p) => p.id === scene.activeId);
-  const blocked = [...participants, ...(scene.reserve || [])].filter(hasTriggeredClock);
+  const blocked = participants.filter(hasTriggeredClock);
   const { nextStartsRound } = nextTurnInfo(scene, blocked.length > 0);
   const nextClass = blocked.length ? 'blocked' : nextStartsRound ? 'next-round' : '';
 
@@ -406,7 +407,7 @@ export function useCampaign() {
       if (!clean) return;
       setScenes((list) => list.map((s, i) => {
         if (i !== sceneIndex) return s;
-        const options = initiativeOptions(s);
+        const options = { ...initiativeOptions(s), multipleActionSlots: isManualMultipleActionMode(s) || rulesAllowMultipleSlots(s) };
         const participantsAjustes = (s.participants || []).map((participant) => participant.id === participantId ? participantAvecInitiativeAjustee(participant, clean, slotId, options) : participant);
         return { ...s, participants: trierParInitiative(participantsAjustes, options) };
       }));

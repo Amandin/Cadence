@@ -1,4 +1,4 @@
-export const APP_VERSION = '0.6.1';
+export const APP_VERSION = '0.6.2-work';
 export const STORAGE_KEY = 'cadence:campaign:v1';
 export const TEMPLATE_STORAGE_KEY = 'cadence:templates:v1';
 
@@ -17,6 +17,7 @@ export const defaultFlexibleUseInitiative = true;
 export const surpriseImpacts = { LIMITED: 'limited', INACTIVE: 'inactive' };
 export const defaultSurpriseImpact = surpriseImpacts.LIMITED;
 export const defaultSurpriseAdvanceOn = 'activation';
+export const defaultSurpriseDedicatedRound = false;
 
 export const temporalityModes = {
   CLASSIC: 'classique',
@@ -38,6 +39,10 @@ export const initiativeValueTypes = { NUMERIC: 'numeric', LABEL: 'label' };
 export const defaultInitiativeValueType = initiativeValueTypes.NUMERIC;
 export const activationAdvancePolicies = { ONCE_PER_ROUND: 'once-per-round', EVERY_ACTION: 'every-action' };
 export const defaultActivationAdvancePolicy = activationAdvancePolicies.ONCE_PER_ROUND;
+export const multipleActionModes = { NONE: 'none', MANUAL: 'manual', INITIATIVE_COST: 'initiative-cost' };
+export const defaultMultipleActionMode = multipleActionModes.NONE;
+export const defaultInitiativeCostThreshold = 0;
+export const defaultInitiativeCostQuickCosts = [1, 2, 3, 5];
 
 export const temporalityLabels = {
   [temporalityModes.CLASSIC]: 'Classique',
@@ -48,7 +53,7 @@ export const temporalityLabels = {
 
 export const temporalityDescriptions = {
   [temporalityModes.CLASSIC]: 'Cadence suit l’ordre d’initiative et avance au participant suivant.',
-  [temporalityModes.FLEXIBLE]: 'Le MJ marque librement qui a joué dans la liste.',
+  [temporalityModes.FLEXIBLE]: "Les effets lies a l'activation sont resolus au debut du round pour tous les personnages. Le bouton A joue ne declenche pas d'evolution.",
   [temporalityModes.PHASES]: 'Cadence enchaîne des phases et applique un décrément aux initiatives.',
   [temporalityModes.DECLARATION]: 'Un temps de déclaration précède une résolution ordonnée des actions déclarées.',
 };
