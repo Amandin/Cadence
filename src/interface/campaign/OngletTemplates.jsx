@@ -72,10 +72,12 @@ function EnteteCategorieTemplate({ groupe, index, total, onAjouterTemplateCatego
   return (
     <div className="flexible-section-title template-category-title">
       <strong>{groupe.templates.length}</strong>
-      <span className="template-category-label">{groupe.categorie}</span>
+      <span className="template-category-label template-title-with-action">
+        <span>{groupe.categorie}</span>
+        <BoutonIconeTemplate className="template-edit-icon" label="Renommer la categorie" onClick={() => setRenommage(true)}>✎</BoutonIconeTemplate>
+      </span>
       <div className="compact-arrows template-category-actions">
         <BoutonIconeTemplate label="Ajouter un template" onClick={() => onAjouterTemplateCategorie(groupe.categorie)}>+</BoutonIconeTemplate>
-        <BoutonIconeTemplate label="Renommer la categorie" onClick={() => setRenommage(true)}>✎</BoutonIconeTemplate>
         <button className="small-btn" onClick={() => onDeplacerCategorie(groupe.categorie, -1)} disabled={index <= 0}>↑</button>
         <button className="small-btn" onClick={() => onDeplacerCategorie(groupe.categorie, 1)} disabled={index >= total - 1}>↓</button>
         {groupe.templates.length === 0 && <button className="danger-btn mini-danger" onClick={() => onSupprimerCategorie(groupe.categorie)}>Suppr.</button>}
@@ -84,26 +86,19 @@ function EnteteCategorieTemplate({ groupe, index, total, onAjouterTemplateCatego
   );
 }
 
-function LigneTemplate({ template, categories, onChangerCategorieTemplate, onEditerTemplate, onDupliquerTemplate, onSupprimerTemplate }) {
-  const [categorieOuverte, setCategorieOuverte] = useState(false);
+function LigneTemplate({ template, onEditerTemplate, onDupliquerTemplate, onSupprimerTemplate }) {
   const [suppressionVisible, setSuppressionVisible] = useState(false);
-  const changerCategorie = (event) => {
-    onChangerCategorieTemplate(template.id, event.target.value);
-    setCategorieOuverte(false);
-  };
 
   return (
     <div className="restore-row hub-row template-row">
-      <span className="template-row-main"><strong>{template.name}</strong><small>{template.participant?.kind || 'Personnage'}</small></span>
+      <span className="template-row-main">
+        <span className="template-title-with-action">
+          <strong>{template.name}</strong>
+          <BoutonIconeTemplate className="template-edit-icon" label={`Modifier ${template.name}`} onClick={() => onEditerTemplate(template.id)}>✎</BoutonIconeTemplate>
+        </span>
+        <small>{template.participant?.kind || 'Personnage'}</small>
+      </span>
       <div className="compact-arrows template-row-actions">
-        {categorieOuverte ? (
-          <select className="template-category-select" value={template.category} onChange={changerCategorie} onBlur={() => setCategorieOuverte(false)} aria-label="Categorie du template">
-            {categories.map((categorie) => <option key={categorie} value={categorie}>{categorie}</option>)}
-          </select>
-        ) : (
-          <button className="small-btn discreet-template-category" onClick={() => setCategorieOuverte(true)} title={`Categorie : ${template.category}`}>Cat.</button>
-        )}
-        <BoutonIconeTemplate label={`Modifier ${template.name}`} onClick={() => onEditerTemplate(template.id)}>✎</BoutonIconeTemplate>
         <BoutonIconeTemplate label={`Dupliquer ${template.name}`} onClick={() => onDupliquerTemplate(template.id)}>⧉</BoutonIconeTemplate>
         {suppressionVisible ? (
           <button className="danger-btn mini-danger template-delete-confirm" onClick={() => onSupprimerTemplate(template.id)}>Suppr.</button>
@@ -119,9 +114,14 @@ function LigneTemplateSimple({ template, detail, onEditer, onDupliquer, onSuppri
   const [suppressionVisible, setSuppressionVisible] = useState(false);
   return (
     <div className="restore-row hub-row template-row">
-      <span className="template-row-main"><strong>{template.name}</strong><small>{detail}</small></span>
+      <span className="template-row-main">
+        <span className="template-title-with-action">
+          <strong>{template.name}</strong>
+          <BoutonIconeTemplate className="template-edit-icon" label={`Modifier ${template.name}`} onClick={() => onEditer(template.id)}>✎</BoutonIconeTemplate>
+        </span>
+        <small>{detail}</small>
+      </span>
       <div className="compact-arrows template-row-actions">
-        <BoutonIconeTemplate label={`Modifier ${template.name}`} onClick={() => onEditer(template.id)}>✎</BoutonIconeTemplate>
         <BoutonIconeTemplate label={`Dupliquer ${template.name}`} onClick={() => onDupliquer(template.id)}>⧉</BoutonIconeTemplate>
         {suppressionVisible ? (
           <button className="danger-btn mini-danger template-delete-confirm" onClick={() => onSupprimer(template.id)}>Suppr.</button>
@@ -147,7 +147,7 @@ function OngletTemplatesPersonnages({ categories, templates, onAjouterTemplateCa
           ) : (
             <div className="stack">
               {groupe.templates.map((template) => (
-                <LigneTemplate key={template.id} template={template} categories={categories} onChangerCategorieTemplate={onChangerCategorieTemplate} onEditerTemplate={onEditerTemplate} onDupliquerTemplate={onDupliquerTemplate} onSupprimerTemplate={onSupprimerTemplate} />
+                <LigneTemplate key={template.id} template={template} onEditerTemplate={onEditerTemplate} onDupliquerTemplate={onDupliquerTemplate} onSupprimerTemplate={onSupprimerTemplate} />
               ))}
             </div>
           )}

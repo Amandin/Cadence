@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { defaultTiebreakerLabel } from '../constants.js';
+import { defaultTiebreakerLabel, multipleActionModes } from '../constants.js';
 import { applyInitiativeRules, normalizeCampaignRules } from './campaignRules.js';
 
 describe('campaign rules', () => {
@@ -111,5 +111,29 @@ describe('campaign rules', () => {
 
   it('retires the legacy surprise start rule', () => {
     expect(normalizeCampaignRules({ startRound: 0 }).startRound).toBe(1);
+  });
+
+  it('normalizes the retired adjustment before Next rule into initiative cost when compatible', () => {
+    expect(normalizeCampaignRules({
+      promptInitiativeOnNext: true,
+      temporalite: 'classic',
+      multipleActionSlots: false,
+    })).toMatchObject({
+      promptInitiativeOnNext: false,
+      multipleActionMode: multipleActionModes.INITIATIVE_COST,
+      multipleActionSlots: true,
+    });
+  });
+
+  it('disables the retired adjustment before Next rule when legacy manual slots were active', () => {
+    expect(normalizeCampaignRules({
+      promptInitiativeOnNext: true,
+      temporalite: 'classic',
+      multipleActionSlots: true,
+    })).toMatchObject({
+      promptInitiativeOnNext: false,
+      multipleActionMode: multipleActionModes.MANUAL,
+      multipleActionSlots: true,
+    });
   });
 });

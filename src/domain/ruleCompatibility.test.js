@@ -9,22 +9,20 @@ describe('rule compatibility', () => {
     expect(ruleCompatibilityIssues({ temporalite: temporalityModes.CLASSIC, multipleActionSlots: false })).toEqual([]);
   });
 
-  it('reports every incompatible option combined with adjustment before Next', () => {
+  it('reports every incompatible option combined with initiative cost', () => {
     const issues = ruleCompatibilityIssues({
       temporalite: temporalityModes.PHASES,
       phaseActionMode: phaseActionModes.AUTOMATIC,
+      multipleActionMode: multipleActionModes.INITIATIVE_COST,
       multipleActionSlots: true,
-      promptInitiativeOnNext: true,
       declarationMode: true,
       initiativeTextOrder: labels,
     });
 
     expect(issues.map((issue) => issue.id)).toEqual([
-      'adjustment-phases',
-      'adjustment-text-initiative',
-      'adjustment-multiple-slots',
-      'adjustment-declaration',
-      'phases-multiple-slots',
+      'initiative-cost-phases',
+      'initiative-cost-labels',
+      'initiative-cost-declaration',
       'automatic-phases-text-initiative',
     ]);
   });
@@ -69,15 +67,14 @@ describe('rule compatibility', () => {
     });
   });
 
-  it('disables options that would introduce an incompatible combination', () => {
+  it('does not expose the retired adjustment before Next option', () => {
     const availability = ruleOptionAvailability({
       temporalite: temporalityModes.FLEXIBLE,
       declarationMode: true,
       multipleActionSlots: false,
     });
 
-    expect(availability.promptInitiativeOnNext.disabled).toBe(true);
-    expect(availability.promptInitiativeOnNext.reason).toContain('mode souple');
+    expect(availability.promptInitiativeOnNext).toBeUndefined();
   });
 
   it('builds a readable active rules summary', () => {

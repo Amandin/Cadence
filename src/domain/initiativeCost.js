@@ -1,5 +1,6 @@
 import {
   defaultInitiativeCostQuickCosts,
+  defaultInitiativeCostLimitToCurrent,
   defaultInitiativeCostThreshold,
   multipleActionModes,
 } from '../constants.js';
@@ -39,6 +40,24 @@ export function normalizeInitiativeCostQuickCosts(value) {
     .map((item) => Math.max(1, Math.floor(num(item, 0))))
     .filter(Boolean);
   return [...new Set(costs)].slice(0, 8).length ? [...new Set(costs)].slice(0, 8) : defaultInitiativeCostQuickCosts;
+}
+
+export function normalizeInitiativeCostLimitToCurrent(value) {
+  return value == null ? defaultInitiativeCostLimitToCurrent : !!value;
+}
+
+export function initiativeCostSlotIsAboveThreshold(scene = {}, slot = {}) {
+  const threshold = normalizeInitiativeCostThreshold(scene.initiativeCostThreshold);
+  const initiative = Number(slot?.initiative);
+  return Number.isFinite(initiative) && initiative > threshold;
+}
+
+export function initiativeCostMaxForSlot(scene = {}, slot = {}) {
+  if (!normalizeInitiativeCostLimitToCurrent(scene.initiativeCostLimitToCurrent)) return null;
+  const threshold = normalizeInitiativeCostThreshold(scene.initiativeCostThreshold);
+  const initiative = Number(slot?.initiative);
+  if (!Number.isFinite(initiative)) return null;
+  return Math.max(0, Math.floor(initiative - threshold));
 }
 
 export function isGeneratedInitiativeCostSlot(slot = {}) {

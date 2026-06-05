@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { colorNames, defaultPhaseCount, participantKinds, phaseActionModes, trackerTypeLabels } from '../../constants.js';
 import { normaliserCreneauxAction } from '../../domain/initiative.js';
 import { initiativeValueForMode, normalizeInitiativeTextOrder } from '../../domain/initiativeTextOrder.js';
@@ -486,13 +486,18 @@ export function EditeurSuivi({ suivi, onChange, onDelete, allowActivationAutomat
   return <div className="tracker"><div className="tracker-edit-head"><input value={suivi.name} onChange={(e) => modifierSuivi({ name: e.target.value })} aria-label="Nom du suivi" /><select value={suivi.type} aria-label="Type de suivi" onChange={(e) => onChange({ ...nouveauSuiviPourMode(e.target.value, allowActivationAutomation), id: suivi.id, name: suivi.name })}>{Object.entries(trackerTypeLabels).map(([valeur, label]) => <option value={valeur} key={valeur}>{label}</option>)}</select><button className="danger-btn compact-danger" onClick={onDelete}>x</button></div><div className="sub-options-row"><button className="quick-reset-btn text" onClick={() => onChange(resetTracker(suivi, 'initial'))} title="Remettre au depart">Reset</button>{suivi.type === 'number' && <ChampNombre className="compact-step-field" label="Pas" valeur={suivi.step ?? 1} onChange={(valeur) => modifierSuivi({ step: valeur })} />}<ToggleIconeSuivi suivi={suivi} onChange={modifierSuivi} /></div><div className="grid2">{estNumerique && suivi.type !== 'number' && <ChampNombre label="Valeur actuelle" valeur={suivi.current ?? 0} onChange={(valeur) => modifierSuivi({ current: valeur })} />}{estNumerique && suivi.type !== 'number' && <ChampNombre label="Maximum" valeur={suivi.max ?? 1} onChange={(valeur) => modifierSuivi({ max: valeur })} />}{suivi.type === 'bar' && <ChampNombre label="Minimum" valeur={suivi.min ?? 0} onChange={(valeur) => modifierSuivi({ min: valeur })} />}</div><OptionsParType suivi={suivi} onChange={modifierSuivi} allowActivationAutomation={allowActivationAutomation} />{estCases && <EditeurCases suivi={suivi} onChange={onChange} resetOptions={<OptionsReset suivi={suivi} onChange={modifierSuivi} allowActivationAutomation={allowActivationAutomation} />} />}</div>;
 }
 
-export function FenetreEditionFiche({ participant, initiativeTextOrder, phaseActionMode, phaseCount = defaultPhaseCount, multipleActionSlots = true, utiliserInitiative = true, allowActivationAutomation = true, categoryOrder = participantKinds, tiebreakerVisible = true, tiebreakerLabel = 'Departage', trackerTemplates = [], title = 'Modifier', saveTemplateVisible = true, deleteLabel = 'Supprimer la fiche', className = 'character-edit-sheet', templateSwitchRequest = null, onAnnulerChangementTemplate, onAbandonnerChangementTemplate, onValiderChangementTemplate, onClose, onSave, onDelete, onSaveTemplate }) {
+export function FenetreEditionFiche({ participant, initiativeTextOrder, phaseActionMode, phaseCount = defaultPhaseCount, multipleActionSlots = true, utiliserInitiative = true, allowActivationAutomation = true, categoryOrder = participantKinds, tiebreakerVisible = true, tiebreakerLabel = 'Departage', trackerTemplates = [], title = 'Modifier', templateCategory = '', templateCategories = [], saveTemplateVisible = true, deleteLabel = 'Supprimer la fiche', className = 'character-edit-sheet', templateSwitchRequest = null, onAnnulerChangementTemplate, onAbandonnerChangementTemplate, onValiderChangementTemplate, onClose, onSave, onDelete, onSaveTemplate }) {
   const textConfig = normalizeInitiativeTextOrder(initiativeTextOrder);
   const modePhasesCochees = phaseActionMode === phaseActionModes.CHECKED;
   const typesDisponibles = [...new Set([...participantKinds, ...(categoryOrder || []), participant.kind].filter(Boolean))];
   const [brouillon, setBrouillon] = useState({ ...clone(participant), phaseActions: modePhasesCochees ? (Array.isArray(participant.phaseActions) ? participant.phaseActions : ['1']) : participant.phaseActions, _actionSlotsInput: texteCreneauxAction(participant), _actionSlotsDraft: multipleActionSlots ? brouillonCreneauxAction(participant) : brouillonCreneauxAction(participant).slice(0, 1), stats: normaliserInfosRapides(participant.stats || []) });
   const [trackerTemplateId, setTrackerTemplateId] = useState(trackerTemplates[0]?.id || '');
   const [confirmationSuppression, setConfirmationSuppression] = useState(false);
+  const categoriesTemplateDisponibles = [...new Set([templateCategory, ...(templateCategories || [])].filter(Boolean))];
+  const [categorieTemplate, setCategorieTemplate] = useState(templateCategory || categoriesTemplateDisponibles[0] || '');
+  useEffect(() => {
+    setCategorieTemplate(templateCategory || categoriesTemplateDisponibles[0] || '');
+  }, [templateCategory]);
   const creneauxActionSource = Array.isArray(brouillon._actionSlotsDraft) && brouillon._actionSlotsDraft.length ? brouillon._actionSlotsDraft : brouillonCreneauxAction(brouillon);
   const creneauxAction = multipleActionSlots ? creneauxActionSource : creneauxActionSource.slice(0, 1);
   const modifierCreneauAction = (index, valeur) => setBrouillon((courant) => ({
@@ -524,7 +529,7 @@ export function FenetreEditionFiche({ participant, initiativeTextOrder, phaseAct
   const renduEditionMultiple = (entete, valider, enregistrerCommeTemplate) => (
     <>
       <Fenetre title={title} onClose={onClose} header={entete} className={className}>
-        {templateSwitchRequest && <MessageChangementTemplate onAnnuler={onAnnulerChangementTemplate} onValider={() => onValiderChangementTemplate?.(normaliserFiche(brouillon, textConfig, { phaseActionMode: modePhasesCochees ? phaseActionModes.CHECKED : '', phaseCount, multipleActionSlots }))} onAbandonner={onAbandonnerChangementTemplate} />}
+        {templateSwitchRequest && <MessageChangementTemplate onAnnuler={onAnnulerChangementTemplate} onValider={() => onValiderChangementTemplate?.(normaliserFiche(brouillon, textConfig, { phaseActionMode: modePhasesCochees ? phaseActionModes.CHECKED : '', phaseCount, multipleActionSlots }), categorieTemplate)} onAbandonner={onAbandonnerChangementTemplate} />}
         <label className="field">Nom<input value={brouillon.name} onChange={(e) => modifierChamp('name', e.target.value)} /></label>
         <label className="field">Description<textarea value={brouillon.description || ''} onChange={(e) => modifierChamp('description', e.target.value)} /></label>
         <div className={utiliserInitiative ? 'grid2' : ''}>
@@ -563,9 +568,9 @@ export function FenetreEditionFiche({ participant, initiativeTextOrder, phaseAct
   );
   const modifierChamp = (clef, valeur) => setBrouillon((courant) => ({ ...courant, [clef]: valeur }));
   const modifierSuivi = (id, suivant) => setBrouillon((courant) => ({ ...courant, trackers: courant.trackers.map((suivi) => suivi.id === id ? suivant : suivi) }));
-  const valider = () => onSave(normaliserFiche(brouillon, textConfig, { phaseActionMode: modePhasesCochees ? phaseActionModes.CHECKED : '', phaseCount, multipleActionSlots }));
+  const valider = () => onSave(normaliserFiche(brouillon, textConfig, { phaseActionMode: modePhasesCochees ? phaseActionModes.CHECKED : '', phaseCount, multipleActionSlots }), categorieTemplate);
   const enregistrerCommeTemplate = () => onSaveTemplate?.(normaliserFiche(brouillon, textConfig, { phaseActionMode: modePhasesCochees ? phaseActionModes.CHECKED : '', phaseCount, multipleActionSlots }));
-  const enteteMultiple = <div className="edit-sheet-header"><h2>{title}</h2><button className="icon-btn validate-edit-btn" onClick={valider} aria-label="Valider les modifications">{'✓'}</button></div>;
+  const enteteMultiple = <div className="edit-sheet-header"><div className="template-edit-header-title"><h2>{title}</h2>{categoriesTemplateDisponibles.length > 0 && <label className="template-category-header-field"><span>Categorie</span><select value={categorieTemplate} onChange={(event) => setCategorieTemplate(event.target.value)}>{categoriesTemplateDisponibles.map((categorie) => <option key={categorie} value={categorie}>{categorie}</option>)}</select></label>}</div><button className="icon-btn validate-edit-btn" onClick={valider} aria-label="Valider les modifications">{'✓'}</button></div>;
   return renduEditionMultiple(enteteMultiple, valider, enregistrerCommeTemplate);
   const entete = <div className="edit-sheet-header"><h2>{title}</h2><button className="icon-btn validate-edit-btn" onClick={valider} aria-label="Valider les modifications">{'✓'}</button></div>;
 

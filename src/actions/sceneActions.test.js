@@ -674,6 +674,170 @@ describe('turn rollback', () => {
     });
   });
 
+  it('steps back over the previous initiative-cost action before leaving the round', () => {
+    const harness = createHarness({
+      id: 'scene',
+      temporalite: temporalityModes.CLASSIC,
+      multipleActionMode: 'initiative-cost',
+      multipleActionSlots: true,
+      initiativeCostThreshold: 0,
+      startRound: 1,
+      round: 1,
+      activeId: 'alix',
+      activeSlotId: 'alix:slot-1',
+      participants: [participant('alix', 18), participant('bran', 15)],
+      reserve: [],
+      statuses: [],
+    });
+
+    harness.actions().applyInitiativeCost(6);
+    harness.actions().nextTurn(-1);
+
+    expect(harness.current()).toMatchObject({ round: 1, activeId: 'alix', activeSlotId: 'alix:slot-1' });
+    expect(harness.current().participants.find((item) => item.id === 'alix').actionSlots).toBeUndefined();
+  });
+
+  it('steps back over Terminer son round in initiative-cost mode', () => {
+    const harness = createHarness({
+      id: 'scene',
+      temporalite: temporalityModes.CLASSIC,
+      multipleActionMode: 'initiative-cost',
+      multipleActionSlots: true,
+      initiativeCostThreshold: 0,
+      startRound: 1,
+      round: 1,
+      activeId: 'alix',
+      activeSlotId: 'alix:slot-1',
+      participants: [participant('alix', 18), participant('bran', 15)],
+      reserve: [],
+      statuses: [],
+    });
+
+    harness.actions().applyInitiativeCost(null);
+    harness.actions().nextTurn(-1);
+
+    expect(harness.current()).toMatchObject({ round: 1, activeId: 'alix', activeSlotId: 'alix:slot-1' });
+    expect(harness.current().participants.find((item) => item.id === 'alix').actionSlots).toBeUndefined();
+  });
+
+  it('keeps starting initiatives at or below the initiative-cost threshold out of the active sequence', () => {
+    const harness = createHarness({
+      id: 'scene',
+      temporalite: temporalityModes.CLASSIC,
+      multipleActionMode: 'initiative-cost',
+      multipleActionSlots: true,
+      initiativeCostThreshold: 5,
+      startRound: 1,
+      round: -1,
+      activeId: '',
+      activeSlotId: '',
+      participants: [participant('under', 4), participant('equal', 5), participant('above', 6)],
+      reserve: [],
+      statuses: [],
+    });
+
+    harness.actions().nextTurn(1);
+    expect(harness.current()).toMatchObject({ round: 1, activeId: 'above', activeSlotId: 'above:slot-1' });
+
+    harness.actions().applyInitiativeCost(null);
+    expect(harness.current()).toMatchObject({ round: 2, activeId: 'above' });
+  });
+
+  it('can start an initiative-cost round with no active character when all initiatives are below threshold', () => {
+    const harness = createHarness({
+      id: 'scene',
+      temporalite: temporalityModes.CLASSIC,
+      multipleActionMode: 'initiative-cost',
+      multipleActionSlots: true,
+      initiativeCostThreshold: 0,
+      startRound: 1,
+      round: -1,
+      activeId: '',
+      activeSlotId: '',
+      participants: [participant('zero', 0), participant('negative', -1)],
+      reserve: [],
+      statuses: [],
+    });
+
+    harness.actions().nextTurn(1);
+    expect(harness.current()).toMatchObject({ round: 1, activeId: '', activeSlotId: '' });
+  });
+
+  it('limits initiative cost to the current slot when the rule is active', () => {
+    const harness = createHarness({
+      id: 'scene',
+      temporalite: temporalityModes.CLASSIC,
+      multipleActionMode: 'initiative-cost',
+      multipleActionSlots: true,
+      initiativeCostThreshold: 0,
+      initiativeCostLimitToCurrent: true,
+      startRound: 1,
+      round: 1,
+      activeId: 'alix',
+      activeSlotId: 'alix:slot-1',
+      participants: [participant('alix', 4), participant('bran', 3)],
+      reserve: [],
+      statuses: [],
+    });
+
+    harness.actions().applyInitiativeCost(5);
+    expect(harness.current().participants.find((item) => item.id === 'alix').actionSlots[0]).toMatchObject({
+      played: true,
+      costPaid: 4,
+      costResult: 0,
+    });
+  });
+
+  it('uses the initiative-cost threshold when limiting cost below zero', () => {
+    const harness = createHarness({
+      id: 'scene',
+      temporalite: temporalityModes.CLASSIC,
+      multipleActionMode: 'initiative-cost',
+      multipleActionSlots: true,
+      initiativeCostThreshold: -10,
+      initiativeCostLimitToCurrent: true,
+      startRound: 1,
+      round: 1,
+      activeId: 'alix',
+      activeSlotId: 'alix:slot-1',
+      participants: [participant('alix', -2), participant('bran', -3)],
+      reserve: [],
+      statuses: [],
+    });
+
+    harness.actions().applyInitiativeCost(12);
+    expect(harness.current().participants.find((item) => item.id === 'alix').actionSlots[0]).toMatchObject({
+      played: true,
+      costPaid: 8,
+      costResult: -10,
+    });
+  });
+
+  it('allows initiative cost above the current slot when the rule is inactive', () => {
+    const harness = createHarness({
+      id: 'scene',
+      temporalite: temporalityModes.CLASSIC,
+      multipleActionMode: 'initiative-cost',
+      multipleActionSlots: true,
+      initiativeCostThreshold: 0,
+      initiativeCostLimitToCurrent: false,
+      startRound: 1,
+      round: 1,
+      activeId: 'alix',
+      activeSlotId: 'alix:slot-1',
+      participants: [participant('alix', 4), participant('bran', 3)],
+      reserve: [],
+      statuses: [],
+    });
+
+    harness.actions().applyInitiativeCost(5);
+    expect(harness.current().participants.find((item) => item.id === 'alix').actionSlots[0]).toMatchObject({
+      played: true,
+      costPaid: 5,
+      costResult: -1,
+    });
+  });
+
   it('keeps flexible played marks from triggering activation automations', () => {
     const harness = createHarness({
       id: 'scene',
@@ -706,6 +870,32 @@ describe('turn rollback', () => {
       jouesSouples: [],
       historiqueSouple: [],
       participants: [{ id: 'runner', statuses: [{ id: 'haste', remaining: 2, expired: false }], trackers: [{ id: 'tempo', current: 0 }] }],
+    });
+  });
+
+  it('returns only one flexible action to a participant with several actions', () => {
+    const harness = createHarness({
+      id: 'scene',
+      temporalite: temporalityModes.FLEXIBLE,
+      startRound: 1,
+      round: 1,
+      activeId: '',
+      activeSlotId: '',
+      participants: [{ ...participant('boss', 18), actionSlots: [{ initiative: 18 }, { initiative: 12 }] }],
+      reserve: [],
+      statuses: [],
+      jouesSouples: [],
+      historiqueSouple: [],
+    });
+
+    harness.actions().markFlexiblePlayed('boss');
+    harness.actions().markFlexiblePlayed('boss');
+    harness.actions().unmarkFlexiblePlayed('boss');
+
+    expect(harness.current()).toMatchObject({
+      activeId: 'boss',
+      jouesSouples: ['boss:slot-1'],
+      historiqueSouple: ['boss:slot-1'],
     });
   });
 

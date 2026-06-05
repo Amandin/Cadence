@@ -1,4 +1,4 @@
-export const APP_VERSION = '0.6.2-work';
+export const APP_VERSION = '0.6.8-work';
 export const STORAGE_KEY = 'cadence:campaign:v1';
 export const TEMPLATE_STORAGE_KEY = 'cadence:templates:v1';
 
@@ -43,6 +43,7 @@ export const multipleActionModes = { NONE: 'none', MANUAL: 'manual', INITIATIVE_
 export const defaultMultipleActionMode = multipleActionModes.NONE;
 export const defaultInitiativeCostThreshold = 0;
 export const defaultInitiativeCostQuickCosts = [1, 2, 3, 5];
+export const defaultInitiativeCostLimitToCurrent = false;
 
 export const temporalityLabels = {
   [temporalityModes.CLASSIC]: 'Classique',

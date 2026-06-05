@@ -1,5 +1,5 @@
 import { defaultCategoryOrder, defaultEqualityRule, defaultInitiativeOrder } from '../../constants.js';
-import { actionsRestantesSouples } from '../../actions/flexibleTurnState.js';
+import { actionsRestantesSouples, creneauxJouesSouples } from '../../actions/flexibleTurnState.js';
 import { grouperAffichageParticipants, grouperParInitiative, ordreCreneauxClassique, trierParInitiative } from '../../domain/initiative.js';
 import { rulesAllowMultipleSlots } from '../../domain/initiativeCost.js';
 import { declarationStage, declarationStages, isCheckedPhaseMode, normalizeDeclarations, participantsHorsPhaseAvancee, participantsPourPhaseAvancee } from '../../domain/initiativeModes.js';
@@ -51,14 +51,17 @@ function GroupeSimultane({ groupe, actifId, interactions }) {
 
 function FichetteLibre({ scene, participant, actifId, activeSlotId, interactions, temporaliteSouple, onMarquerAJoue, onAnnulerAJoue, dejaJoue }) {
   const actionsRestantes = temporaliteSouple ? actionsRestantesSouples(scene, participant.id) : 0;
+  const actionsJouees = temporaliteSouple ? creneauxJouesSouples(scene, participant.id).length : 0;
   return (
     <FichetteInitiative
       participant={participant}
       actif={participant.actionSlotId ? participant.actionSlotId === activeSlotId || (!activeSlotId && participant.id === actifId) : participant.id === actifId}
       temporaliteSouple={temporaliteSouple}
       montrerInitiative={!temporaliteSouple || scene.flexibleUseInitiative !== false}
+      afficherActionsSouples={scene.round >= 0}
       dejaJoue={dejaJoue}
       actionsRestantes={actionsRestantes}
+      actionsJouees={actionsJouees}
       onMarquerAJoue={() => onMarquerAJoue?.(participant.id)}
       onAnnulerAJoue={() => onAnnulerAJoue?.(participant.id)}
       onOuvrir={() => interactions.openCharacter(participant.id)}
@@ -156,7 +159,7 @@ function ListeDeclaration({ scene, participants, interactions }) {
 }
 
 export function ListeInitiative({ scene, participants, actifId, interactions, temporaliteSouple, temporalitePhases, temporaliteDeclaration, phaseAttendRelanceInitiative, onMarquerAJoue, onAnnulerAJoue }) {
-  if (temporaliteDeclaration && declarationStage(scene) === declarationStages.DECLARATION) return <ListeDeclaration scene={scene} participants={participants} interactions={interactions} />;
+  if (scene.round >= 0 && temporaliteDeclaration && declarationStage(scene) === declarationStages.DECLARATION) return <ListeDeclaration scene={scene} participants={participants} interactions={interactions} />;
 
   if (temporalitePhases) {
     const sceneAvecParticipants = { ...scene, participants };

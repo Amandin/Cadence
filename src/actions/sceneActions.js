@@ -1,12 +1,16 @@
-import { activationAdvancePolicies, temporalityModes } from '../constants.js';
+import { temporalityModes } from '../constants.js';
 import { indexCreneauActif, initiativeDePhase, ordreCreneauxClassique, premierCreneauClassique, trierParInitiative } from '../domain/initiative.js';
-import { INITIATIVE_COST_SLOT_KIND, baseInitiativeSlots, isInitiativeCostMode, participantWithCleanInitiativeCostRound, normalizeInitiativeCostThreshold, rulesAllowMultipleSlots } from '../domain/initiativeCost.js';
+import { isInitiativeCostMode, participantWithCleanInitiativeCostRound, rulesAllowMultipleSlots } from '../domain/initiativeCost.js';
 import { declarationStage, declarationStages, isCheckedPhaseMode, normalizeDeclarations, setDeclaration } from '../domain/initiativeModes.js';
 import { stepAutoGlobalTracker } from '../domain/globalTracker.js';
-import { createStatus, createSurprisedStatus } from '../domain/statuses.js';
-import { clone, isBoxesTracker, isNumericTracker, resetAutoTrackers, resetTracker, tickParticipant, tickStatuses, triggerActivation, uid, untickParticipant, untickStatuses } from '../logic.js';
+import { createStatus } from '../domain/statuses.js';
+import { clone, resetAutoTrackers, tickParticipant, triggerActivation, untickParticipant } from '../logic.js';
 import { ajouterJoueSouple, annulerDernierJoueSouple, retirerHistoriqueSouple, retirerJoueSouple, toutLeMondeAJoueSouple } from './flexibleTurnState.js';
+import { appliquerCoutInitiative, appliquerDebutNouveauRoundCout, premierCreneauCoutEligible, slotsNonJoues } from './initiativeCostActions.js';
+import { advanceReserveParticipantRound, arreterTempsReelScene, demarrerTempsReelScene, effacerEtatsParticipant, resetSuivisParticipant, tickSceneRoundStatuses, triggerActivationScene, untickSceneRoundStatuses } from './sceneAutomation.js';
 import { actionSlotsDepuisInitiatives, addPreInitiativeRestorePoint, addRestorePoint, createBlankParticipant, initiativesRenseignees, optionsTri, placerEnReserve, valeurInitiativeRenseignee } from './sceneSupport.js';
+import { appliquerSurpriseInitiale, roundDepart } from './sceneSurprise.js';
+import { depilerRetourTour, empilerRetourTour, restaurerDepuisHistorique } from './sceneTurnHistory.js';
 import {
   appliquerDebutNouveauRound,
   appliquerNouveauRoundPhases,
@@ -44,20 +48,6 @@ function recalerActifPhaseSiBesoin(scene) {
   return estModePhases(scene) && !participantsPhase(scene).some((participant) => participant.id === scene.activeId)
     ? { ...scene, activeId: premierParticipantPhase(scene) }
     : scene;
-}
-
-function roundDepart(scene) {
-  return scene?.surpriseRoundActive ? 0 : 1;
-}
-
-function demarrerTempsReelScene(compteur) {
-  if (!compteur?.enabled || !['stopwatch', 'timer'].includes(compteur.mode)) return compteur;
-  return { ...compteur, running: true, startedAt: Date.now(), elapsedMs: 0 };
-}
-
-function arreterTempsReelScene(compteur) {
-  if (!compteur?.enabled || !['stopwatch', 'timer'].includes(compteur.mode)) return compteur;
-  return { ...compteur, running: false, startedAt: null, elapsedMs: 0 };
 }
 
 function reinitialiserDeclarationRound(scene) {
@@ -117,8 +107,10 @@ function demarrerScene(scene) {
     return { ...sceneActive, participants: sceneActive.participants.map((participant) => triggerActivationScene(sceneActive, participant, activeId)) };
   }
   const participants = trierParInitiative(sceneInitiale.participants || [], optionsTri(sceneInitiale));
-  const premierCreneau = premierCreneauClassique(participants, optionsTri(sceneInitiale));
-  const sceneActive = { ...sceneInitiale, participants, activeId: premierCreneau?.id || participants[0]?.id || scene.activeId, activeSlotId: premierCreneau?.actionSlotId || '' };
+  const premierCreneau = isInitiativeCostMode(sceneInitiale)
+    ? premierCreneauCoutEligible(sceneInitiale, participants)
+    : premierCreneauClassique(participants, optionsTri(sceneInitiale));
+  const sceneActive = { ...sceneInitiale, participants, activeId: premierCreneau?.id || (isInitiativeCostMode(sceneInitiale) ? '' : participants[0]?.id || scene.activeId), activeSlotId: premierCreneau?.actionSlotId || '' };
   return { ...sceneActive, participants: sceneActive.participants.map((participant) => triggerActivationScene(sceneActive, participant, sceneActive.activeId)) };
 }
 
@@ -140,34 +132,6 @@ function remettreEnPreparation(scene) {
     participants: (scene.participants || []).map((participant) => isInitiativeCostMode(scene) ? participantWithCleanInitiativeCostRound(participant) : participant),
     _turnHistory: [],
   };
-}
-
-function resetSuivi(suivi) {
-  return resetTracker(suivi);
-}
-
-function resetSuivisParticipant(participant) {
-  return { ...participant, trackers: (participant.trackers || []).map(resetSuivi) };
-}
-
-function effacerEtatsParticipant(participant) {
-  return { ...participant, statuses: [] };
-}
-
-function tickSceneRoundStatuses(scene) {
-  return { ...scene, statuses: tickStatuses(scene.statuses, 'round') };
-}
-
-function untickSceneRoundStatuses(scene) {
-  return { ...scene, statuses: untickStatuses(scene.statuses, 'round') };
-}
-
-function triggerActivationScene(scene, participant, activeId) {
-  if (participant.id !== activeId) return participant;
-  const cible = scene.activationAdvancePolicy === activationAdvancePolicies.EVERY_ACTION
-    ? { ...participant, _activationAutomationsDone: false }
-    : participant;
-  return triggerActivation(cible);
 }
 
 function preparerParticipantPhases(scene, participant) {
@@ -207,141 +171,17 @@ function appliquerInitiativesRenseignees(scene, valuesById, departagesById = {})
   const participants = trierParInitiative([...participantsMisAJour, ...reserveJointe], optionsTri(scene));
   const sceneAvecParticipantsBase = { ...scene, participants, reserve, phase: estModePhases(scene) ? 1 : scene.phase || 1 };
   const sceneAvecParticipants = estModePhases(scene) ? { ...sceneAvecParticipantsBase, phase: premierePhaseDisponible(sceneAvecParticipantsBase) } : sceneAvecParticipantsBase;
-  const premierCreneau = premierCreneauClassique(participants, optionsTri(sceneAvecParticipants));
+  const premierCreneau = isInitiativeCostMode(sceneAvecParticipants)
+    ? premierCreneauCoutEligible(sceneAvecParticipants, participants)
+    : premierCreneauClassique(participants, optionsTri(sceneAvecParticipants));
   const attendDeclarations = estModeDeclaration(scene) && declarationStage(scene) === declarationStages.DECLARATION;
   return {
     ...sceneAvecParticipants,
-    activeId: attendDeclarations ? '' : estModeSouple(scene) ? '' : estModePhases(scene) ? participantsPhase(sceneAvecParticipants)[0]?.id || '' : premierCreneau?.id || participants[0]?.id || '',
+    activeId: attendDeclarations ? '' : estModeSouple(scene) ? '' : estModePhases(scene) ? participantsPhase(sceneAvecParticipants)[0]?.id || '' : premierCreneau?.id || (isInitiativeCostMode(sceneAvecParticipants) ? '' : participants[0]?.id || ''),
     activeSlotId: attendDeclarations || estModeSouple(scene) || estModePhases(scene) ? '' : premierCreneau?.actionSlotId || '',
     jouesSouples: [],
     historiqueSouple: [],
   };
-}
-
-function appliquerSurpriseInitiale(scene, surprisedIds = []) {
-  const ids = new Set(surprisedIds);
-  if (!scene.preparationSurprise || ids.size === 0) return { ...scene, surpriseRoundActive: false };
-  return {
-    ...scene,
-    surpriseRoundActive: !!scene.surpriseDedicatedRound,
-    participants: (scene.participants || []).map((participant) => ids.has(participant.id)
-      ? { ...participant, statuses: [...(participant.statuses || []), createSurprisedStatus(scene.surpriseImpact, { advanceOn: scene.surpriseAdvanceOn, skipNextAdvance: true })] }
-      : participant),
-  };
-}
-
-function slotsNonJoues(scene) {
-  return ordreCreneauxClassique(scene.participants || [], optionsTri(scene)).filter((slot) => !slot.actionSlotPlayed);
-}
-
-function nettoyerCreneauxCoutScene(scene) {
-  return isInitiativeCostMode(scene)
-    ? { ...scene, participants: (scene.participants || []).map(participantWithCleanInitiativeCostRound) }
-    : scene;
-}
-
-function marquerCreneauCout(participant, rawSlotId, cost, costResult) {
-  const slots = baseInitiativeSlots(participant);
-  const raw = Array.isArray(participant.actionSlots) && participant.actionSlots.length ? participant.actionSlots : slots;
-  return raw.map((slot, index) => {
-    const source = slot && typeof slot === 'object' ? slot : { initiative: slot };
-    const id = source.id ? String(source.id) : `slot-${index + 1}`;
-    if (id !== rawSlotId) return source;
-    return {
-      ...source,
-      id,
-      played: true,
-      costPaid: cost,
-      costResult,
-    };
-  });
-}
-
-function appliquerCoutInitiative(scene, cost) {
-  const slots = ordreCreneauxClassique(scene.participants || [], optionsTri(scene));
-  const current = slots[indexCreneauActif(scene, slots)] || slots.find((slot) => !slot.actionSlotPlayed);
-  if (!current) return { scene, nouveauRound: false };
-  const threshold = normalizeInitiativeCostThreshold(scene.initiativeCostThreshold);
-  const numericCost = cost == null ? null : Math.max(1, Math.floor(Number(cost) || 0));
-  const currentInitiative = Number(current.initiative);
-  const costResult = numericCost == null || !Number.isFinite(currentInitiative) ? null : currentInitiative - numericCost;
-  const createsSlot = numericCost != null && Number.isFinite(costResult) && costResult > threshold;
-
-  const participants = (scene.participants || []).map((participant) => {
-    if (participant.id !== current.id) return participant;
-    const markedSlots = marquerCreneauCout(participant, current.actionSlotRawId, numericCost, costResult);
-    const generatedSlot = createsSlot ? {
-      id: `cost-${uid('slot')}`,
-      initiative: costResult,
-      order: markedSlots.length,
-      generatedBy: INITIATIVE_COST_SLOT_KIND,
-      sourceSlotId: current.actionSlotRawId,
-    } : null;
-    const actionSlots = generatedSlot ? [...markedSlots, generatedSlot] : markedSlots;
-    const baseSlots = baseInitiativeSlots({ ...participant, actionSlots });
-    return {
-      ...participant,
-      initiative: baseSlots[0]?.initiative ?? participant.initiative,
-      actionSlots,
-    };
-  });
-
-  const sceneAvecCout = { ...scene, participants };
-  const prochain = slotsNonJoues(sceneAvecCout)[0] || null;
-  if (!prochain) return { scene: { ...sceneAvecCout, activeId: '', activeSlotId: '' }, nouveauRound: true };
-
-  const sceneActive = {
-    ...sceneAvecCout,
-    activeId: prochain.id,
-    activeSlotId: prochain.actionSlotId,
-  };
-  return {
-    scene: {
-      ...sceneActive,
-      participants: sceneActive.participants.map((participant) => triggerActivationScene(sceneActive, participant, prochain.id)),
-    },
-    nouveauRound: false,
-  };
-}
-
-function appliquerDebutNouveauRoundCout(scene) {
-  const sceneNettoyee = nettoyerCreneauxCoutScene(scene);
-  if (sceneNettoyee.phaseRerollEachRound) {
-    const next = appliquerDebutNouveauRound({ ...sceneNettoyee, activeId: '', activeSlotId: '' }, '');
-    return { ...next, activeId: '', activeSlotId: '' };
-  }
-  const premier = premierCreneauClassique(sceneNettoyee.participants || [], optionsTri(sceneNettoyee));
-  return appliquerDebutNouveauRound(sceneNettoyee, premier?.id || '');
-}
-
-const TURN_HISTORY_LIMIT = 40;
-
-function sceneSansHistorique(scene = {}) {
-  const { _turnHistory, ...rest } = scene;
-  return rest;
-}
-
-function empilerRetourTour(sceneAvant, sceneApres) {
-  const historique = Array.isArray(sceneAvant._turnHistory) ? sceneAvant._turnHistory : [];
-  return {
-    ...sceneApres,
-    _turnHistory: [...historique.slice(-(TURN_HISTORY_LIMIT - 1)), clone(sceneSansHistorique(sceneAvant))],
-  };
-}
-
-function depilerRetourTour(scene) {
-  const historique = Array.isArray(scene._turnHistory) ? scene._turnHistory : [];
-  const precedente = historique.at(-1);
-  if (!precedente) return null;
-  return { ...clone(precedente), _turnHistory: historique.slice(0, -1) };
-}
-
-function restaurerPreparationDepuisHistorique(scene) {
-  const historique = Array.isArray(scene._turnHistory) ? scene._turnHistory : [];
-  for (let index = historique.length - 1; index >= 0; index -= 1) {
-    if (historique[index].round < 0) return { ...clone(historique[index]), _turnHistory: historique.slice(0, index) };
-  }
-  return remettreEnPreparation(scene);
 }
 
 export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, setScenes, setRestorePoints, setRoundEffect }) {
@@ -503,7 +343,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
     },
     returnToPreparation() {
       setRoundEffect(null);
-      updateScene(restaurerPreparationDepuisHistorique);
+      updateScene((s) => restaurerDepuisHistorique(s, remettreEnPreparation));
     },
     advanceRound() {
       setRoundEffect('next');
@@ -530,7 +370,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
     advanceReserveRound() {
       updateScene((s) => ({
         ...s,
-        reserve: (s.reserve || []).map((participant) => tickParticipant(resetAutoTrackers(participant, 'round'), 'round')).map(placerEnReserve),
+        reserve: (s.reserve || []).map(advanceReserveParticipantRound).map(placerEnReserve),
       }));
     },
     resetSceneTrackers() {
@@ -675,6 +515,16 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
         return;
       }
 
+      if (isInitiativeCostMode(scene) && direction > 0 && slotsNonJoues(scene).length === 0) {
+        setRoundEffect('next');
+        updateScene((s) => {
+          const nextScene = reinitialiserDeclarationRound(appliquerDebutNouveauRoundCout(s));
+          setRestorePoints((points) => addRestorePoint(points, s.id, nextScene));
+          return empilerRetourTour(s, nextScene);
+        });
+        return;
+      }
+
       const slots = ordreCreneauxClassique(scene.participants || [], optionsTri(scene));
       if (!slots.length) return;
 
@@ -742,7 +592,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
       if (!isInitiativeCostMode(scene)) return;
       setRoundEffect(null);
       updateScene((s) => {
-        const result = appliquerCoutInitiative(s, cost);
+        const result = appliquerCoutInitiative(s, cost, { triggerActivationScene });
         const sceneApresCout = result.nouveauRound ? reinitialiserDeclarationRound(appliquerDebutNouveauRoundCout(result.scene)) : result.scene;
         if (result.nouveauRound) {
           setRoundEffect('next');

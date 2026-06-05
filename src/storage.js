@@ -6,6 +6,10 @@ import {
   defaultEqualityRule,
   defaultFlexibleUseInitiative,
   defaultInitiativeOrder,
+  defaultInitiativeCostLimitToCurrent,
+  defaultInitiativeCostQuickCosts,
+  defaultInitiativeCostThreshold,
+  defaultMultipleActionMode,
   defaultPhaseActionMode,
   defaultPhaseCount,
   defaultPhaseDecrement,
@@ -19,13 +23,14 @@ import {
   defaultTemporalityMode,
   initiativeOrders,
   legacyParticipantKinds,
+  multipleActionModes,
   phaseActionModes,
   temporalityModes,
 } from './constants.js';
 import { campaignRulesFromPayload, normalizeCampaignRules, unifyCampaignScenes } from './domain/campaignRules.js';
 import { normalizeGlobalTracker } from './domain/globalTracker.js';
 import { normaliserCreneauxAction } from './domain/initiative.js';
-import { baseInitiativeSlots } from './domain/initiativeCost.js';
+import { baseInitiativeSlots, multipleActionModeFromRules, normalizeInitiativeCostLimitToCurrent, normalizeInitiativeCostQuickCosts, normalizeInitiativeCostThreshold } from './domain/initiativeCost.js';
 import { isPointsTracker, normalizeBoxTracker, normalizeThresholds, normalizeTrackerThresholds, makeDefaultCampaign, uid } from './logic.js';
 import { isTemplateStoreLike, loadTemplateStore, normalizeTemplateStore } from './templates.js';
 
@@ -299,7 +304,11 @@ export function normalizeCampaignScene(scene) {
     declarations: isPlainObject(scene.declarations) ? scene.declarations : {},
     resolutionOrder: normalizeArray(scene.resolutionOrder).map((id) => String(id)),
     declarationPlayedIds: normalizeArray(scene.declarationPlayedIds).map((id) => String(id)),
-    multipleActionSlots: scene.multipleActionSlots !== false,
+    multipleActionMode: Object.values(multipleActionModes).includes(scene.multipleActionMode) ? scene.multipleActionMode : multipleActionModeFromRules(scene) || defaultMultipleActionMode,
+    multipleActionSlots: multipleActionModeFromRules(scene) !== multipleActionModes.NONE,
+    initiativeCostThreshold: normalizeInitiativeCostThreshold(scene.initiativeCostThreshold ?? defaultInitiativeCostThreshold),
+    initiativeCostQuickCosts: normalizeInitiativeCostQuickCosts(scene.initiativeCostQuickCosts ?? defaultInitiativeCostQuickCosts),
+    initiativeCostLimitToCurrent: normalizeInitiativeCostLimitToCurrent(scene.initiativeCostLimitToCurrent ?? defaultInitiativeCostLimitToCurrent),
     jouesSouples: normalizeArray(scene.jouesSouples).map((id) => String(id)),
     historiqueSouple: normalizeArray(scene.historiqueSouple).map((id) => String(id)),
     equalityRule: stringOr(scene.equalityRule, defaultEqualityRule),

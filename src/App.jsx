@@ -1,21 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { toutLeMondeAJoueSouple as tousCreneauxSouplesJoues } from './actions/flexibleTurnState.js';
-import { participantsPhase as participantsPhaseScene, phaseSuivanteDisponible as phaseSuivanteDisponibleScene, phasesAttendRelanceInitiative } from './actions/tempoState.js';
-import { defaultCategoryOrder, defaultEqualityRule, defaultInitiativeOrder, temporalityModes } from './constants.js';
-import { groupeEgalitePourParticipant, indexCreneauActif, ordreCreneauxClassique } from './domain/initiative.js';
-import { isInitiativeCostMode, isManualMultipleActionMode, rulesAllowMultipleSlots } from './domain/initiativeCost.js';
-import { declarationStage, declarationStages, isCheckedPhaseMode, isDeclarationMode } from './domain/initiativeModes.js';
-import { initiativeMatchesMode, initiativeTextOrderEnabled } from './domain/initiativeTextOrder.js';
+import { phasesAttendRelanceInitiative } from './actions/tempoState.js';
+import { temporalityModes } from './constants.js';
+import { isInitiativeCostMode, rulesAllowMultipleSlots } from './domain/initiativeCost.js';
+import { initiativeMatchesMode } from './domain/initiativeTextOrder.js';
 import { globalTrackerTimerState } from './domain/globalTracker.js';
-import { FenetresSuperposees } from './interface/app/FenetresSuperposees.jsx';
+import { AppOverlays } from './interface/app/AppOverlays.jsx';
+import { buildSceneUiState } from './interface/app/sceneUiState.js';
 import { HubCampagne } from './interface/campaign/HubCampagne.jsx';
-import { Fenetre } from './interface/commun/ComposantsCommuns.jsx';
-import { FenetreAjustementInitiative } from './interface/dialogues/FenetreAjustementInitiative.jsx';
-import { FenetreCoutInitiative } from './interface/dialogues/FenetreCoutInitiative.jsx';
-import { FenetreDeclarationActions } from './interface/dialogues/FenetreDeclarationActions.jsx';
-import { FenetreEtat } from './interface/dialogues/FenetreEtat.jsx';
-import { FenetreExportCampagne } from './interface/dialogues/FenetreExportCampagne.jsx';
-import { FenetreEditionFiche } from './interface/fiches/FenetreEditionFiche.jsx';
 import { BarreActionBas } from './interface/scene/BarreActionBas.jsx';
 import { EnteteScene } from './interface/scene/EnteteScene.jsx';
 import { ListeInitiative } from './interface/scene/ListeInitiative.jsx';
@@ -45,25 +36,6 @@ function initiativesDeclarees(participant = {}, multipleActionSlots = true) {
 function participantsInitiativeIncompatible(scene = {}) {
   if (scene.temporalite === temporalityModes.FLEXIBLE && scene.flexibleUseInitiative === false) return [];
   return (scene.participants || []).filter((participant) => initiativesDeclarees(participant, rulesAllowMultipleSlots(scene)).some((initiative) => !initiativeMatchesMode(initiative, scene.initiativeTextOrder)));
-}
-
-function modeInitiative(scene = {}) {
-  return initiativeTextOrderEnabled(scene.initiativeTextOrder) ? 'labels' : 'valeurs numeriques';
-}
-
-function FenetreInitiativesIncompatibles({ participants, scene, onChanger, onSortir }) {
-  const noms = participants.map((participant) => participant.name).join(', ');
-  return (
-    <Fenetre title="Initiatives a corriger" onClose={() => {}} header={<div className="row" style={{ justifyContent: 'space-between', marginBottom: 10 }}><h2 style={{ margin: 0 }}>Initiatives a corriger</h2></div>}>
-      <div className="stack">
-        <p className="muted compact-help">Cette scene utilise maintenant les {modeInitiative(scene)}. Ces initiatives ne correspondent plus : {noms}.</p>
-        <div className="grid2">
-          <button className="primary" type="button" onClick={onChanger}>Changer les initiatives</button>
-          <button className="danger-btn" type="button" onClick={onSortir}>Sortir de l'initiative</button>
-        </div>
-      </div>
-    </Fenetre>
-  );
 }
 
 export default function App() {
@@ -108,52 +80,8 @@ export default function App() {
     }
   }, [currentView]);
 
-  const temporaliteSouple = scene.temporalite === temporalityModes.FLEXIBLE;
-  const temporalitePhases = scene.temporalite === temporalityModes.PHASES;
-  const temporaliteDeclaration = isDeclarationMode(scene);
-  const coutInitiativeActif = isInitiativeCostMode(scene);
-  const creneauxManuelsActifs = isManualMultipleActionMode(scene);
-  const horlogesBloquantesActives = scene.round >= 0 ? blocked : [];
-  const stageDeclaration = temporaliteDeclaration ? declarationStage(scene) : '';
-  const declarationEnDeclaration = temporaliteDeclaration && stageDeclaration === declarationStages.DECLARATION;
-  const phaseAttendRelanceInitiative = temporalitePhases && phasesAttendRelanceInitiative(scene);
-  const optionsInitiative = {
-    categoryOrder: scene.categoryOrder || defaultCategoryOrder,
-    equalityRule: scene.equalityRule || defaultEqualityRule,
-    initiativeOrder: scene.initiativeOrder || defaultInitiativeOrder,
-    initiativeTextOrder: scene.initiativeTextOrder,
-    initiativeEnabled: !temporaliteSouple || scene.flexibleUseInitiative !== false,
-    tiebreakerVisible: scene.tiebreakerVisible !== false,
-    multipleActionSlots: rulesAllowMultipleSlots(scene),
-  };
-  const utiliserInitiative = optionsInitiative.initiativeEnabled;
-
-  const phaseParticipants = temporalitePhases && !phaseAttendRelanceInitiative
-    ? participantsPhaseScene(scene)
-    : [];
-  const phaseActiveId = temporalitePhases ? phaseParticipants.find((participant) => participant.id === scene.activeId)?.id || phaseParticipants[0]?.id || '' : scene.activeId;
-  const phaseActive = temporalitePhases ? phaseParticipants.find((participant) => participant.id === phaseActiveId) || null : null;
-  const phaseSuivanteDisponible = temporalitePhases && !phaseAttendRelanceInitiative && phaseSuivanteDisponibleScene(scene);
-  const phaseEnFin = temporalitePhases && phaseParticipants.length > 0 && phaseActiveId === phaseParticipants.at(-1)?.id;
-  const phaseDemarreNouveauRound = temporalitePhases && phaseEnFin && !phaseSuivanteDisponible;
-  const toutLeMondeAJoueSouple = temporaliteSouple && tousCreneauxSouplesJoues(scene);
-  const globalAutoTick = roundEffect === 'next' && !!scene.globalTracker?.enabled && !!scene.globalTracker?.auto;
-  const creneauxClassiquesTous = !temporaliteSouple && !temporalitePhases ? ordreCreneauxClassique(scene.participants, optionsInitiative) : [];
-  const creneauxClassiques = coutInitiativeActif ? creneauxClassiquesTous.filter((slot) => !slot.actionSlotPlayed) : creneauxClassiquesTous;
-  const currentIndex = !temporaliteSouple && !temporalitePhases ? indexCreneauActif(scene, creneauxClassiques) : scene.participants.findIndex((participant) => participant.id === scene.activeId);
-  const creneauClassiqueActif = creneauxClassiques[currentIndex] || null;
-  const participantAjustementInitiative = temporalitePhases ? phaseActive : creneauClassiqueActif || active;
-  const phaseCurrentIndex = phaseParticipants.findIndex((participant) => participant.id === phaseActiveId);
-  const libelleRoundCourant = `R${scene.round}`;
-  const roundDepartScene = scene.surpriseRoundActive ? 0 : 1;
-  const retourHistoriqueDisponible = Array.isArray(scene._turnHistory) && scene._turnHistory.length > 0;
-  const retourPreparationVisible = scene.round >= 0 && (declarationEnDeclaration ? scene.round === roundDepartScene : temporaliteSouple ? (scene.historiqueSouple || []).length === 0 && scene.round === roundDepartScene : temporalitePhases ? scene.round === roundDepartScene && Number(scene.phase || 1) <= 1 && (phaseCurrentIndex <= 0 || !phaseParticipants.length) : scene.round === roundDepartScene && currentIndex <= 0);
-  const retourPossible = scene.round < 0 ? false : retourHistoriqueDisponible || (declarationEnDeclaration ? scene.round === roundDepartScene : temporaliteSouple ? (scene.historiqueSouple || []).length > 0 || scene.round === scene.startRound : temporalitePhases ? phaseCurrentIndex > 0 || (scene.round === scene.startRound && Number(scene.phase || 1) <= 1 && (phaseCurrentIndex <= 0 || !phaseParticipants.length)) : scene.participants.length > 0 && (scene.round > 0 || currentIndex > 0));
-
-  const participantsPourEgalites = temporalitePhases ? phaseParticipants : scene.participants;
-  const idActifPourEgalites = temporalitePhases ? phaseActiveId : scene.activeId;
-  const activeGroup = !temporaliteSouple && idActifPourEgalites ? groupeEgalitePourParticipant(participantsPourEgalites, idActifPourEgalites, optionsInitiative) : [];
-  const attendRelanceInitiativeCout = coutInitiativeActif && scene.phaseRerollEachRound && scene.round >= 0 && !scene.activeId;
+  const ui = buildSceneUiState({ scene, active, blocked, nextStartsRound, nextClass, roundEffect });
+  const { temporaliteSouple, temporalitePhases, temporaliteDeclaration, coutInitiativeActif, horlogesBloquantesActives, stageDeclaration, declarationEnDeclaration, phaseAttendRelanceInitiative, optionsInitiative, utiliserInitiative, phaseParticipants, phaseActiveId, phaseActive, phaseSuivanteDisponible, phaseDemarreNouveauRound, toutLeMondeAJoueSouple, globalAutoTick, participantAjustementInitiative, retourPreparationVisible, retourPossible, activeGroup, attendRelanceInitiativeCout, nextLabel, classeSuivantEffective, suivantDesactive, libelleBas } = ui;
   const editingTemplate = editingTemplateId ? templates.getTemplate(editingTemplateId) : null;
   const templatePanelVisible = !!editingTemplate || templatePanelOpen;
   const fermerEditeursTemplates = () => {
@@ -165,7 +93,10 @@ export default function App() {
   useEffect(() => {
     if (currentView !== 'scene' || !scene.activeId) return;
     const element = document.querySelector(`[data-participant-id="${scene.activeId}"]`);
-    element?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    if (!element) return;
+    const rect = element.getBoundingClientRect();
+    const bottomLimit = window.innerHeight - 110;
+    if (rect.bottom > bottomLimit) element.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }, [currentView, scene.activeId]);
 
   useEffect(() => {
@@ -245,10 +176,6 @@ export default function App() {
       setInitiativeCostOpen(true);
       return;
     }
-    if (direction > 0 && scene.promptInitiativeOnNext && !declarationEnDeclaration && !temporaliteSouple && !(temporalitePhases && isCheckedPhaseMode(scene)) && scene.round >= 0 && participantAjustementInitiative && !skipInitiativeAdjustPromptRef.current) {
-      setInitiativeAdjustOpen(true);
-      return;
-    }
     skipInitiativeAdjustPromptRef.current = false;
     actions.nextTurn(direction);
   };
@@ -306,11 +233,11 @@ export default function App() {
     characters.closeCharacterPanels();
     setCurrentView('hub');
   };
-  const importCampaign = async (file, options = {}) => { const result = await actions.importCampaign(file, options); if (result?.ok === false) { setNotice({ title: 'Import impossible', message: result.message || 'Le fichier n’a pas pu être lu. Essaie avec un export .cad récent, et note le nom du fichier si le problème revient.' }); return; } setOpenMenu(false); characters.closeCharacterPanels(); setCurrentView('hub'); setNotice({ title: 'Import terminé', message: result?.needsFileChoice ? 'La campagne est chargée. Choisis maintenant si Cadence travaille sur ce fichier ou sur une copie.' : 'La campagne a bien été chargée.' }); };
+  const importCampaign = async (file, options = {}) => { const result = await actions.importCampaign(file, options); if (result?.ok === false) { setNotice({ title: 'Import impossible', message: result.message || 'Le fichier n’a pas pu être lu. Essaie avec un export .cad récent, et note le nom du fichier si le problème revient.' }); return; } setOpenMenu(false); characters.closeCharacterPanels(); setCurrentView('hub'); if (!result?.needsFileChoice) setNotice({ title: 'Campagne chargée', message: '' }); };
   const importCampaignDirectory = async () => { const result = await actions.importCampaignDirectory(); if (result?.ok === false && !result.cancelled) { setNotice({ title: 'Dossier impossible', message: result.message || 'Cadence n’a pas pu ouvrir ce dossier.' }); return; } if (result?.ok) setNotice({ title: 'Campagnes chargées', message: `${result.count} campagne(s) disponible(s) dans le menu.` }); };
   const chooseCampaignEntry = (id) => { const result = actions.selectCampaignEntry(id); if (result?.ok === false) setNotice({ title: 'Campagne introuvable', message: result.message }); };
-  const workOnLoadedFile = async () => { const result = await actions.useLoadedCampaignFile(); if (result?.ok === false) setNotice({ title: 'Fichier non lié', message: result.message }); };
-  const workOnCampaignCopy = async () => { if (fileChoiceActionRef.current) return; fileChoiceActionRef.current = true; const result = await actions.saveLoadedCampaignAsCopy(); fileChoiceActionRef.current = false; if (result?.ok === false && !result.cancelled) setNotice({ title: 'Copie impossible', message: result.message }); };
+  const workOnLoadedFile = async () => { const result = await actions.useLoadedCampaignFile(); if (result?.ok === false) setNotice({ title: 'Fichier non lié', message: result.message }); else setNotice({ title: 'Campagne chargée', message: '' }); };
+  const workOnCampaignCopy = async () => { if (fileChoiceActionRef.current) return; fileChoiceActionRef.current = true; const result = await actions.saveLoadedCampaignAsCopy(); fileChoiceActionRef.current = false; if (result?.ok === false && !result.cancelled) setNotice({ title: 'Copie impossible', message: result.message }); else if (result?.ok) setNotice({ title: 'Campagne chargée', message: '' }); };
   const importTemplatesFromCampaign = async (file) => { const result = await actions.importTemplatesFromCampaign(file); if (result?.ok === false) { setNotice({ title: 'Import impossible', message: result.message }); return; } setNotice({ title: 'Templates importés', message: `${result.added} ajouté(s), ${result.skipped} ignoré(s) car déjà présents.` }); };
   const ouvrirEditionTemplatePersonnage = (templateId) => { setTemplatePanelOpen(true); setTemplateSwitchRequest(null); setEditingTemplateId(templateId); };
   const fermerEditionTemplatePersonnage = () => { setEditingTemplateId(''); setTemplateSwitchRequest(null); };
@@ -319,11 +246,11 @@ export default function App() {
   const renameTemplateCategory = (category, nextName) => { const result = templates.renameCategory(category, nextName); if (result?.ok === false) setNotice({ title: 'Renommage impossible', message: result.message }); return result; };
   const deleteTemplateCategory = (category) => { const result = templates.deleteCategory(category); if (result?.ok === false) setNotice({ title: 'Suppression impossible', message: result.message }); return result; };
   const duplicateTemplate = (templateId) => { const duplicate = templates.duplicateTemplate(templateId); if (duplicate) ouvrirEditionTemplatePersonnage(duplicate.id); };
-  const saveEditedTemplate = (participant) => { if (!editingTemplateId) return; templates.updateTemplateParticipant(editingTemplateId, participant, editingTemplate.category); setEditingTemplateId(''); setTemplateSwitchRequest(null); };
+  const saveEditedTemplate = (participant, category) => { if (!editingTemplateId) return; templates.updateTemplateParticipant(editingTemplateId, participant, category || editingTemplate.category); setEditingTemplateId(''); setTemplateSwitchRequest(null); };
   const deleteEditedTemplate = () => { if (!editingTemplateId) return; templates.deleteTemplate(editingTemplateId); setEditingTemplateId(''); setTemplateSwitchRequest(null); };
-  const validerChangementDepuisTemplatePersonnage = (participant) => {
+  const validerChangementDepuisTemplatePersonnage = (participant, category) => {
     const request = templateSwitchRequest;
-    if (editingTemplateId) templates.updateTemplateParticipant(editingTemplateId, participant, editingTemplate.category);
+    if (editingTemplateId) templates.updateTemplateParticipant(editingTemplateId, participant, category || editingTemplate.category);
     setEditingTemplateId('');
     setTemplateSwitchRequest(null);
     request?.execute?.();
@@ -381,25 +308,83 @@ export default function App() {
     setDeclarationAdditionTargetId('');
   };
 
-  const phaseVideAvecSuivante = temporalitePhases && !phaseParticipants.length && phaseSuivanteDisponible;
-  const nextLabel = scene.round < 0 ? 'Commencer' : phaseAttendRelanceInitiative || attendRelanceInitiativeCout ? 'Saisir les initiatives' : declarationEnDeclaration ? 'Declarer les actions' : temporaliteSouple ? toutLeMondeAJoueSouple ? 'Nouveau round' : 'Mode souple : choisir dans la liste' : blocked.length ? 'Gerer horloge bloquante' : temporalitePhases ? phaseVideAvecSuivante ? 'Phase suivante' : !phaseParticipants.length ? 'Aucun participant actif' : phaseEnFin && phaseSuivanteDisponible ? 'Phase suivante' : phaseDemarreNouveauRound ? 'Nouveau round' : 'Participant suivant' : nextStartsRound ? 'Nouveau round' : 'Participant suivant';
-  const classeSuivantEffective = scene.round < 0 ? 'next-round' : temporaliteSouple && toutLeMondeAJoueSouple ? 'next-round' : blocked.length ? 'blocked' : temporalitePhases ? phaseDemarreNouveauRound ? 'next-round' : phaseVideAvecSuivante || (phaseEnFin && phaseSuivanteDisponible) ? 'next-phase' : '' : nextClass;
-  const suivantDesactive = scene.round < 0 ? false : declarationEnDeclaration ? scene.participants.length === 0 : (temporaliteSouple && !toutLeMondeAJoueSouple) || (temporalitePhases && !phaseParticipants.length && !phaseSuivanteDisponible) || attendRelanceInitiativeCout;
-  const libelleBas = scene.round < 0 ? 'Commencer' : phaseAttendRelanceInitiative || attendRelanceInitiativeCout ? 'Init requise' : declarationEnDeclaration ? 'Declarer' : temporaliteSouple ? toutLeMondeAJoueSouple ? `Nouveau round - R${scene.round + 1}` : 'Choisir' : temporalitePhases ? phaseDemarreNouveauRound ? `Nouveau round - R${scene.round + 1}` : phaseVideAvecSuivante || (phaseEnFin && phaseSuivanteDisponible) ? 'Phase suivante' : `Suivant - P${scene.phase}` : nextStartsRound ? `Nouveau round - R${scene.round + 1}` : `Suivant - ${libelleRoundCourant}`;
+  const fenetresCommunes = <AppOverlays
+    campaignName={campaignName}
+    scene={scene}
+    restorePoints={restorePoints}
+    dark={dark}
+    currentView={currentView}
+    characters={characters}
+    templates={templates}
+    actions={actions}
+    ui={ui}
+    overlayState={{ addSheetOpen, openMenu, notice, globalSheetOpen, clockModalOpen, initiativeEntryOpen, initiativeEntryScopeIds, initiativeEntryInitialLaunch, initiativeAdjustOpen, initiativeCostOpen, declarationActionsOpen, declarationAdditionTargetId, exportOpen, timerDoneOpen, pendingFileChoice, sceneStatusOpen, participantsIncompatibles }}
+    overlayActions={{
+      openAddCharacter,
+      openInitiativeEntry,
+      retourHub,
+      ouvrirCompteurGlobal: () => setGlobalSheetOpen(true),
+      ouvrirEtatScene: () => setSceneStatusOpen(true),
+      fermerAjoutPersonnage: () => setAddSheetOpen(false),
+      fermerMenu: () => setOpenMenu(false),
+      fermerNotice: () => setNotice(null),
+      fermerCompteurGlobal: () => setGlobalSheetOpen(false),
+      fermerResolutionHorloge: () => setClockModalOpen(false),
+      fermerEtatScene: () => setSceneStatusOpen(false),
+      validerEtatScene: (data) => { actions.addSceneStatus(data); setSceneStatusOpen(false); },
+    }}
+    templateState={{ editingTemplate, templateTarget, templateError, templateSwitchRequest }}
+    templateActions={{
+      openTemplateSave,
+      fermerSauvegardeTemplate: () => setTemplateTarget(null),
+      saveTemplate,
+      annulerChangementTemplate: () => setTemplateSwitchRequest(null),
+      abandonnerChangementDepuisTemplatePersonnage,
+      validerChangementDepuisTemplatePersonnage,
+      fermerEditionTemplatePersonnage,
+      saveEditedTemplate,
+      deleteEditedTemplate,
+    }}
+    timerActions={{
+      fermerTimerDone: () => setTimerDoneOpen(false),
+      restartTimer,
+      resetTimer,
+      openTimerMenu,
+    }}
+    campaignFileActions={{
+      fermerExport: () => setExportOpen(false),
+      exportCampaign,
+      workOnLoadedFile,
+      workOnCampaignCopy,
+    }}
+    initiativeActions={{
+      fermerSaisieInitiatives,
+      validerSaisieInitiatives,
+      fermerAjustementInitiative: () => setInitiativeAdjustOpen(false),
+      validerAjustementInitiative,
+      passerAjustementInitiative,
+      fermerCoutInitiative: () => setInitiativeCostOpen(false),
+      validerCoutInitiative,
+      terminerRoundPersonnage,
+      fermerDeclarationActions: () => setDeclarationActionsOpen(false),
+      validerActionsDeclarees,
+      fermerDeclarationAjout: () => setDeclarationAdditionTargetId(''),
+      validerDeclarationAjout,
+      changerInitiativesIncompatibles,
+      sortirInitiativesIncompatibles,
+    }}
+    sceneActions={{
+      createBlankCharacter,
+      createFromTemplate,
+      restoreScene,
+      returnToPreparation,
+      advanceRound,
+      resetSceneTrackers,
+      clearSceneStatuses,
+    }}
+    clockActions={{ resetClock, deleteClock }}
+  />;
 
-  const fenetresCommunes = <>
-    <FenetresSuperposees campaignName={campaignName} scene={scene} restorePoints={restorePoints} dark={dark} characters={characters} templates={templates} actions={actions} etatInterface={{ addSheetOpen, openMenu: currentView === 'scene' && openMenu, notice, globalSheetOpen, clockModalOpen, initiativeEntryOpen: currentView === 'scene' && initiativeEntryOpen, initiativeEntryScopeIds, initiativeEntryInitialLaunch, creneauxManuelsActifs }} commandesInterface={{ ouvrirAjoutPersonnage: openAddCharacter, ouvrirSaisieInitiatives: openInitiativeEntry, ouvrirHubCampagne: retourHub, ouvrirCompteurGlobal: () => setGlobalSheetOpen(true), ouvrirEtatScene: () => setSceneStatusOpen(true), fermerAjoutPersonnage: () => setAddSheetOpen(false), fermerMenu: () => setOpenMenu(false), fermerNotice: () => setNotice(null), fermerCompteurGlobal: () => setGlobalSheetOpen(false), fermerResolutionHorloge: () => setClockModalOpen(false), fermerSaisieInitiatives, validerSaisieInitiatives, ouvrirSauvegardeTemplate: openTemplateSave, creerPersonnageVierge: createBlankCharacter, creerDepuisTemplate: createFromTemplate, restaurerScene: restoreScene, retourPreparation: returnToPreparation, avancerRound: advanceRound, resetSuivisScene: resetSceneTrackers, effacerEtatsScene: clearSceneStatuses }} compteurGlobal={{ horlogesBloquantes: horlogesBloquantesActives }} resolutionHorloge={{ resetClock, deleteClock }} templatesUi={{ templateTarget, templateError, fermerSauvegardeTemplate: () => setTemplateTarget(null), enregistrerTemplate: saveTemplate }} />
-    {initiativeAdjustOpen && participantAjustementInitiative && <FenetreAjustementInitiative participant={participantAjustementInitiative} valeurInitiale={participantAjustementInitiative.initiative} initiativeTextOrder={scene.initiativeTextOrder} onFermer={() => setInitiativeAdjustOpen(false)} onValider={validerAjustementInitiative} onPasser={passerAjustementInitiative} />}
-    {initiativeCostOpen && participantAjustementInitiative && <FenetreCoutInitiative participant={participantAjustementInitiative} quickCosts={scene.initiativeCostQuickCosts} threshold={scene.initiativeCostThreshold} onFermer={() => setInitiativeCostOpen(false)} onValider={validerCoutInitiative} onTerminer={terminerRoundPersonnage} />}
-    {declarationActionsOpen && !declarationAdditionTargetId && <FenetreDeclarationActions scene={scene} optionsInitiative={optionsInitiative} onFermer={() => setDeclarationActionsOpen(false)} onValider={validerActionsDeclarees} />}
-    {declarationAdditionTargetId && <FenetreDeclarationActions scene={scene} optionsInitiative={optionsInitiative} participantIds={[declarationAdditionTargetId]} lancerResolution={false} onFermer={() => setDeclarationAdditionTargetId('')} onValider={validerDeclarationAjout} />}
-    {participantsIncompatibles.length > 0 && <FenetreInitiativesIncompatibles scene={scene} participants={participantsIncompatibles} onChanger={changerInitiativesIncompatibles} onSortir={sortirInitiativesIncompatibles} />}
-    {exportOpen && <FenetreExportCampagne nomInitial={campaignName} onFermer={() => setExportOpen(false)} onExporter={exportCampaign} />}
-    {timerDoneOpen && <Fenetre title="Minuteur terminé" onClose={() => setTimerDoneOpen(false)}><div className="stack"><p className="muted compact-help">Le minuteur est arrivé à zéro.</p><div className="grid2"><button className="primary" onClick={restartTimer}>Relancer</button><button className="small-btn" onClick={resetTimer}>Remettre à zéro</button></div><button className="small-btn" onClick={openTimerMenu}>Ouvrir le menu</button></div></Fenetre>}
-    {pendingFileChoice && <Fenetre title="Fichier de campagne" onClose={actions.dismissLoadedCampaignChoice}><div className="stack"><p className="muted compact-help">Cette campagne vient de {pendingFileChoice.fileName}. Tu peux travailler directement sur ce fichier, ou créer une copie séparée.</p><div className="grid2"><button className="primary" onClick={workOnLoadedFile} disabled={!pendingFileChoice.canUseOriginal}>Travailler sur ce fichier</button><button className="small-btn" onClick={workOnCampaignCopy}>Créer une copie</button></div>{!pendingFileChoice.canUseOriginal && <p className="rule-warning">Le fichier original n'est pas accessible en écriture depuis ce mode d'import. La copie est le choix sûr.</p>}</div></Fenetre>}
-    {currentView === 'hub' && editingTemplate && <FenetreEditionFiche participant={editingTemplate.participant} initiativeTextOrder={scene.initiativeTextOrder} phaseActionMode={scene.phaseActionMode} phaseCount={scene.phaseCount} multipleActionSlots={creneauxManuelsActifs} categoryOrder={scene.categoryOrder} tiebreakerVisible={scene.tiebreakerVisible !== false} tiebreakerLabel={scene.tiebreakerLabel} trackerTemplates={templates.trackerTemplates} title={`Modifier le template · ${editingTemplate.name}`} saveTemplateVisible={false} deleteLabel="Supprimer le template" className="template-edit-sheet" templateSwitchRequest={templateSwitchRequest} onAnnulerChangementTemplate={() => setTemplateSwitchRequest(null)} onAbandonnerChangementTemplate={abandonnerChangementDepuisTemplatePersonnage} onValiderChangementTemplate={validerChangementDepuisTemplatePersonnage} onClose={fermerEditionTemplatePersonnage} onSave={saveEditedTemplate} onDelete={deleteEditedTemplate} />}
-    {sceneStatusOpen && <FenetreEtat participant={{ name: scene.title }} defaultAdvanceOn="round" afficherChoixEvolution={false} afficherInactif={false} statusTemplates={templates.sceneStatusTemplates} onFermer={() => setSceneStatusOpen(false)} onValider={(data) => { actions.addSceneStatus(data); setSceneStatusOpen(false); }} />}
-  </>;
 
   if (currentView === 'hub') return <div className={`app hub-app ${dark ? 'dark' : ''} ${templatePanelVisible ? 'has-template-panel' : ''}`}><HubCampagne campaignName={campaignName} scene={scene} scenes={scenes} templates={templates.templates} trackerTemplates={templates.trackerTemplates} statusTemplates={templates.statusTemplates} sceneCounterTemplates={templates.sceneCounterTemplates} sceneStatusTemplates={templates.sceneStatusTemplates} ruleTemplates={templates.rulePresets} templateCategories={templates.categories} campaignEntries={campaignEntries} activeCampaignEntryId={activeCampaignEntryId} fileSaveStatus={fileSaveStatus} dark={dark} onChangerTheme={actions.setDark} onChoisirScene={chooseScene} onNouvelleScene={newScene} onModifierScene={actions.updateSceneMeta} onDupliquerScene={actions.duplicateScene} onSupprimerScene={actions.deleteScene} onModifierReglesInitiative={actions.updateCampaignInitiativeRules} onChoisirCampagne={chooseCampaignEntry} onExporter={() => setExportOpen(true)} onImporter={importCampaign} onReinitialiser={resetDemo} onAjouterTemplateCategorie={createTemplateInCategory} onAjouterCategorieTemplate={addTemplateCategory} onRenommerCategorieTemplate={renameTemplateCategory} onSupprimerCategorieTemplate={deleteTemplateCategory} onDeplacerCategorieTemplate={templates.moveCategory} onChangerCategorieTemplate={templates.setTemplateCategory} onEditerTemplate={ouvrirEditionTemplatePersonnage} onDupliquerTemplate={duplicateTemplate} onSupprimerTemplate={templates.deleteTemplate} onAjouterTemplateSuivi={templates.createTrackerTemplate} onModifierTemplateSuivi={templates.updateTrackerTemplate} onDupliquerTemplateSuivi={templates.duplicateTrackerTemplate} onSupprimerTemplateSuivi={templates.deleteTrackerTemplate} onAjouterTemplateEtat={templates.createStatusTemplate} onModifierTemplateEtat={templates.updateStatusTemplate} onDupliquerTemplateEtat={templates.duplicateStatusTemplate} onSupprimerTemplateEtat={templates.deleteStatusTemplate} onAjouterTemplateCompteurScene={templates.createSceneCounterTemplate} onModifierTemplateCompteurScene={templates.updateSceneCounterTemplate} onDupliquerTemplateCompteurScene={templates.duplicateSceneCounterTemplate} onSupprimerTemplateCompteurScene={templates.deleteSceneCounterTemplate} onAjouterTemplateEtatScene={templates.createSceneStatusTemplate} onModifierTemplateEtatScene={templates.updateSceneStatusTemplate} onDupliquerTemplateEtatScene={templates.duplicateSceneStatusTemplate} onSupprimerTemplateEtatScene={templates.deleteSceneStatusTemplate} onAppliquerTemplateRegles={actions.updateCampaignInitiativeRules} onEnregistrerTemplateRegles={templates.saveRuleTemplate} onDupliquerTemplateRegles={templates.duplicateRuleTemplate} onSupprimerTemplateRegles={templates.deleteRuleTemplate} onImporterTemplates={importTemplatesFromCampaign} onFermerEditeursTemplates={fermerEditeursTemplates} templatePersonnageId={editingTemplateId} templatePersonnageOuvert={!!editingTemplate} onFermerEditionTemplatePersonnage={fermerEditionTemplatePersonnage} onDemanderChangementDepuisTemplatePersonnage={setTemplateSwitchRequest} onTemplatePanelOpenChange={setTemplatePanelOpen} />{fenetresCommunes}</div>;
 
