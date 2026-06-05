@@ -33,6 +33,7 @@ import { normaliserCreneauxAction } from './domain/initiative.js';
 import { baseInitiativeSlots, multipleActionModeFromRules, normalizeInitiativeCostLimitToCurrent, normalizeInitiativeCostQuickCosts, normalizeInitiativeCostThreshold } from './domain/initiativeCost.js';
 import { isPointsTracker, normalizeBoxTracker, normalizeThresholds, normalizeTrackerThresholds, makeDefaultCampaign, uid } from './logic.js';
 import { isTemplateStoreLike, loadTemplateStore, normalizeTemplateStore } from './templates.js';
+import { readLocalCampaignPayload, writeLocalCampaignPayload } from './localCampaignStorage.js';
 
 export const CADENCE_CAMPAIGN_FORMAT = 'cadence-campaign';
 export const CADENCE_CAMPAIGN_SCHEMA_VERSION = 2;
@@ -395,7 +396,7 @@ export function normalizeCampaignPayload(data) {
 
 export function loadCampaign() {
   try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    const saved = readLocalCampaignPayload(STORAGE_KEY);
     if (isValidCampaign(saved)) return normalizeCampaignPayload(saved);
   } catch (error) {
     console.warn('Impossible de charger la campagne sauvegardée.', error);
@@ -405,7 +406,7 @@ export function loadCampaign() {
 }
 
 export function saveCampaign(scenes, dark, campaignName, templates, initiativeRules, campaignMeta = {}) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(createCampaignPayload(scenes, dark, campaignName, templates, initiativeRules, campaignMeta)));
+  writeLocalCampaignPayload(STORAGE_KEY, createCampaignPayload(scenes, dark, campaignName, templates, initiativeRules, campaignMeta));
 }
 
 export function serializeCampaign(scenes, dark, campaignName, templates, initiativeRules, campaignMeta = {}) {

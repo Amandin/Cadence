@@ -83,7 +83,7 @@ describe('rule compatibility', () => {
       declarationMode: true,
       multipleActionSlots: true,
       initiativeTextOrder: labels,
-    })).toEqual(['Classique', 'Initiative par labels', 'Creneaux manuels', 'Declaration puis resolution']);
+    })).toEqual(['Classique', 'Initiative par labels', 'Créneaux manuels', 'Déclaration puis résolution']);
   });
 
   it('explains that label initiative is dormant in flexible mode without initiative', () => {

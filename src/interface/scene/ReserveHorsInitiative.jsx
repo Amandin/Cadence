@@ -1,5 +1,6 @@
 import { defaultCategoryOrder } from '../../constants.js';
 import { trierReserve } from '../../domain/initiative.js';
+import { t } from '../../i18n/index.js';
 import { FichetteReserve } from '../fiches/FichetteReserve.jsx';
 
 export function ReserveHorsInitiative({ scene, interactions, onModifierNotes, onAvancerReserve }) {
@@ -13,8 +14,8 @@ export function ReserveHorsInitiative({ scene, interactions, onModifierNotes, on
   return (
     <section className="reserve">
       <div className="reserve-head">
-        <h3>Reserve</h3>
-        {onAvancerReserve && <button className="small-btn" type="button" onClick={onAvancerReserve}>Appliquer le debut de round a la reserve</button>}
+        <h3>{t('reserve.title')}</h3>
+        {onAvancerReserve && <button className="small-btn" type="button" onClick={onAvancerReserve}>{t('reserve.advance')}</button>}
       </div>
       {reserveTriee.map((participant) => (
         <FichetteReserve
@@ -28,7 +29,7 @@ export function ReserveHorsInitiative({ scene, interactions, onModifierNotes, on
           onRetirerEtat={(statusId) => interactions.removeCharacterStatus(participant.id, statusId)}
         />
       ))}
-      <label className="field reserve-notes">Notes de reserve<textarea value={scene.reserveNotes || ''} onChange={(event) => onModifierNotes(event.target.value)} placeholder="Renforts, evenements en attente, elements hors scene immediate..." /></label>
+      <label className="field reserve-notes">{t('reserve.notes')}<textarea value={scene.reserveNotes || ''} onChange={(event) => onModifierNotes(event.target.value)} placeholder={t('reserve.notes.placeholder')} /></label>
     </section>
   );
 }

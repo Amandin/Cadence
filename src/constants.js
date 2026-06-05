@@ -1,4 +1,4 @@
-export const APP_VERSION = '0.6.11-work';
+export const APP_VERSION = '0.6.15-work';
 export const STORAGE_KEY = 'cadence:campaign:v1';
 export const TEMPLATE_STORAGE_KEY = 'cadence:templates:v1';
 
@@ -12,7 +12,7 @@ export const legacyParticipantKinds = {
 
 export const defaultCategoryOrder = ['PJ', 'Opposant', 'Allié', 'Environnement'];
 export const defaultTiebreakerVisible = true;
-export const defaultTiebreakerLabel = 'Departage';
+export const defaultTiebreakerLabel = 'Départage';
 export const defaultFlexibleUseInitiative = true;
 export const surpriseImpacts = { LIMITED: 'limited', INACTIVE: 'inactive' };
 export const defaultSurpriseImpact = surpriseImpacts.LIMITED;
@@ -54,7 +54,7 @@ export const temporalityLabels = {
 
 export const temporalityDescriptions = {
   [temporalityModes.CLASSIC]: 'Cadence suit l’ordre d’initiative et avance au participant suivant.',
-  [temporalityModes.FLEXIBLE]: "Les effets lies a l'activation sont resolus au debut du round pour tous les personnages. Le bouton A joue ne declenche pas d'evolution.",
+  [temporalityModes.FLEXIBLE]: 'Les effets liés à l’activation sont résolus au début du round pour tous les personnages. Le bouton A joué ne déclenche pas d’évolution.',
   [temporalityModes.PHASES]: 'Cadence enchaîne des phases et applique un décrément aux initiatives.',
   [temporalityModes.DECLARATION]: 'Un temps de déclaration précède une résolution ordonnée des actions déclarées.',
 };

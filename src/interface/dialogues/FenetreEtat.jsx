@@ -61,7 +61,7 @@ export function FenetreEtat({ participant, onFermer, onValider, defaultAdvanceOn
         {t('common.name')}
         <input value={nom} onChange={(event) => setNom(event.target.value)} autoFocus />
       </label>
-      {nomSurpris && <p className="rule-warning">Cet etat s'appelle Surpris. Cadence utilise ce nom pour la surprise automatique ; verifie que ses options correspondent bien a ce que tu veux.</p>}
+      {nomSurpris && <p className="rule-warning">{t('status.surprised.warning')}</p>}
       {afficherInactif && <SelecteurImpactEtat value={impact} onChange={setImpact} />}
       <div className="field">
         {t('status.duration')}

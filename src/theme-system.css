@@ -1,11 +1,19 @@
 /*
   Socle de theming et de responsive.
 
-  Les futurs themes devront principalement redefinir les variables --ui-*,
-  --radius-* et --layout-* plutot que recoder chaque composant.
+  Organisation des tokens :
+  - --layout-* decrit les largeurs et points d'appui responsive.
+  - --space-* decrit les espacements transverses.
+  - --radius-* decrit les arrondis reutilisables.
+  - --skin-* est la couche a redefinir pour de futurs skins d'ambiance.
+  - --ui-* est la couche consommee par les composants existants.
+
+  Pour ajouter un futur skin, surcharger d'abord --skin-* dans un scope
+  dedie, puis laisser --ui-* alimenter les composants autant que possible.
 */
 
 :root {
+  /* Layout */
   --layout-reference-width: 390px;
   --layout-min-width: 320px;
   --layout-tablet-width: 768px;
@@ -16,12 +24,14 @@
   --layout-bottom-max-width: var(--layout-scene-max-width);
   --layout-reserve-width: 320px;
 
+  /* Spacing */
   --space-page-inline: 8px;
   --space-page-bottom: 96px;
   --space-compact: 6px;
   --space-default: 10px;
   --space-comfortable: 14px;
 
+  /* Shape */
   --radius-surface: 28px;
   --radius-sheet: 30px;
   --radius-card: 28px;
@@ -29,47 +39,71 @@
   --radius-action: 24px;
   --radius-pill: 999px;
 
-  --ui-bg: var(--theme-light-bg);
-  --ui-bg-soft: var(--theme-light-bg-soft);
-  --ui-app-bg: radial-gradient(circle at top left, #fffdf9 0, var(--ui-bg-soft) 36%, var(--ui-bg) 100%);
-  --ui-surface: var(--theme-light-surface);
-  --ui-surface-strong: var(--theme-light-surface-strong);
-  --ui-surface-soft: rgba(255, 250, 245, .72);
-  --ui-border: var(--theme-light-border);
-  --ui-border-strong: rgba(199, 94, 25, .42);
-  --ui-text: var(--theme-light-text);
-  --ui-muted: var(--theme-light-muted);
-  --ui-primary: var(--theme-purple);
-  --ui-primary-strong: var(--theme-purple-deep);
-  --ui-primary-contrast: #fff7ed;
-  --ui-accent: var(--theme-orange-deep);
-  --ui-accent-soft: rgba(199, 94, 25, .16);
-  --ui-danger: var(--theme-danger);
-  --ui-danger-soft: var(--theme-danger-soft);
-  --ui-success: var(--theme-success);
-  --ui-success-soft: var(--theme-success-soft);
-  --ui-shadow-surface: 0 14px 34px rgba(49, 18, 54, .12);
-  --ui-shadow-action: 0 4px 16px rgba(81, 22, 90, .24);
+  /* Skin palette. Future ambience skins should override this block first. */
+  --skin-bg: var(--theme-light-bg);
+  --skin-bg-soft: var(--theme-light-bg-soft);
+  --skin-app-bg: radial-gradient(circle at top left, #fffdf9 0, var(--skin-bg-soft) 36%, var(--skin-bg) 100%);
+  --skin-surface: var(--theme-light-surface);
+  --skin-surface-strong: var(--theme-light-surface-strong);
+  --skin-surface-soft: rgba(255, 250, 245, .72);
+  --skin-border: var(--theme-light-border);
+  --skin-border-strong: rgba(199, 94, 25, .42);
+  --skin-text: var(--theme-light-text);
+  --skin-muted: var(--theme-light-muted);
+  --skin-primary: var(--theme-purple);
+  --skin-primary-strong: var(--theme-purple-deep);
+  --skin-primary-contrast: #fff7ed;
+  --skin-accent: var(--theme-orange-deep);
+  --skin-accent-soft: rgba(199, 94, 25, .16);
+  --skin-danger: var(--theme-danger);
+  --skin-danger-soft: var(--theme-danger-soft);
+  --skin-success: var(--theme-success);
+  --skin-success-soft: var(--theme-success-soft);
+  --skin-shadow-surface: 0 14px 34px rgba(49, 18, 54, .12);
+  --skin-shadow-action: 0 4px 16px rgba(81, 22, 90, .24);
+
+  /* UI aliases used by existing components. Keep these stable. */
+  --ui-bg: var(--skin-bg);
+  --ui-bg-soft: var(--skin-bg-soft);
+  --ui-app-bg: var(--skin-app-bg);
+  --ui-surface: var(--skin-surface);
+  --ui-surface-strong: var(--skin-surface-strong);
+  --ui-surface-soft: var(--skin-surface-soft);
+  --ui-border: var(--skin-border);
+  --ui-border-strong: var(--skin-border-strong);
+  --ui-text: var(--skin-text);
+  --ui-muted: var(--skin-muted);
+  --ui-primary: var(--skin-primary);
+  --ui-primary-strong: var(--skin-primary-strong);
+  --ui-primary-contrast: var(--skin-primary-contrast);
+  --ui-accent: var(--skin-accent);
+  --ui-accent-soft: var(--skin-accent-soft);
+  --ui-danger: var(--skin-danger);
+  --ui-danger-soft: var(--skin-danger-soft);
+  --ui-success: var(--skin-success);
+  --ui-success-soft: var(--skin-success-soft);
+  --ui-shadow-surface: var(--skin-shadow-surface);
+  --ui-shadow-action: var(--skin-shadow-action);
 }
 
 .app.dark {
-  --ui-bg: var(--theme-dark-bg);
-  --ui-bg-soft: var(--theme-dark-bg-deep);
-  --ui-app-bg: radial-gradient(circle at top left, var(--theme-purple) 0, var(--theme-dark-bg) 38%, var(--theme-dark-bg-deep) 100%);
-  --ui-surface: var(--theme-dark-surface);
-  --ui-surface-strong: var(--theme-dark-surface-soft);
-  --ui-surface-soft: rgba(52, 23, 58, .52);
-  --ui-border: var(--theme-dark-border);
-  --ui-border-strong: rgba(210, 164, 86, .44);
-  --ui-text: var(--theme-dark-text);
-  --ui-muted: var(--theme-dark-muted);
-  --ui-primary: var(--theme-purple);
-  --ui-primary-strong: #3b1245;
-  --ui-primary-contrast: var(--theme-dark-text);
-  --ui-accent: var(--theme-orange-deep);
-  --ui-accent-soft: rgba(199, 94, 25, .24);
-  --ui-shadow-surface: 0 20px 42px rgba(0, 0, 0, .48), inset 0 1px 0 rgba(240, 221, 182, .05);
-  --ui-shadow-action: 0 0 0 1px rgba(164, 90, 177, .20), 0 4px 18px rgba(0, 0, 0, .38);
+  --skin-bg: var(--theme-dark-bg);
+  --skin-bg-soft: var(--theme-dark-bg-deep);
+  --skin-app-bg: radial-gradient(circle at top left, var(--theme-purple) 0, var(--theme-dark-bg) 38%, var(--theme-dark-bg-deep) 100%);
+  --skin-surface: var(--theme-dark-surface);
+  --skin-surface-strong: var(--theme-dark-surface-soft);
+  --skin-surface-soft: rgba(52, 23, 58, .52);
+  --skin-border: var(--theme-dark-border);
+  --skin-border-strong: rgba(210, 164, 86, .44);
+  --skin-text: var(--theme-dark-text);
+  --skin-muted: var(--theme-dark-muted);
+  --skin-primary: var(--theme-purple);
+  --skin-primary-strong: #3b1245;
+  --skin-primary-contrast: var(--theme-dark-text);
+  --skin-accent: var(--theme-orange-deep);
+  --skin-accent-soft: rgba(199, 94, 25, .24);
+  --skin-shadow-surface: 0 20px 42px rgba(0, 0, 0, .48), inset 0 1px 0 rgba(240, 221, 182, .05);
+  --skin-shadow-action: 0 0 0 1px rgba(164, 90, 177, .20), 0 4px 18px rgba(0, 0, 0, .38);
 }
 
 body {
