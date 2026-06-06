@@ -3,6 +3,35 @@ import { FenetreEditionTemplateCompteurScene, FenetreEditionTemplateEtat, Fenetr
 import { OngletTemplatesPersonnages } from './TemplatePersonnageList.jsx';
 import { OngletTemplatesEtats, OngletTemplatesScene, OngletTemplatesSuivis } from './TemplateSections.jsx';
 
+const ordreTypesIndicateurs = { bar: 0, number: 1, clock: 2, boxes: 3, points: 4, dots: 4 };
+
+function trierParNom(a, b) {
+  return (a.name || '').localeCompare(b.name || '', 'fr', { sensitivity: 'base' });
+}
+
+function trierCategories(categories = []) {
+  return [...categories].sort((a, b) => (a || '').localeCompare(b || '', 'fr', { sensitivity: 'base' }));
+}
+
+function trierTemplatesPersonnages(templates = []) {
+  return [...templates].sort((a, b) => {
+    const categorie = (a.category || '').localeCompare(b.category || '', 'fr', { sensitivity: 'base' });
+    return categorie || trierParNom(a, b);
+  });
+}
+
+function trierTemplatesIndicateurs(templates = []) {
+  return [...templates].sort((a, b) => {
+    const typeA = ordreTypesIndicateurs[a.tracker?.type] ?? 99;
+    const typeB = ordreTypesIndicateurs[b.tracker?.type] ?? 99;
+    return typeA - typeB || trierParNom(a, b);
+  });
+}
+
+function trierTemplatesSimples(templates = []) {
+  return [...templates].sort(trierParNom);
+}
+
 export function OngletTemplates({
   categories = [],
   templates = [],
@@ -55,10 +84,15 @@ export function OngletTemplates({
   const compteurSceneEdite = sceneCounterTemplates.find((template) => template.id === compteurSceneEditeId) || null;
   const etatSceneEdite = sceneStatusTemplates.find((template) => template.id === etatSceneEditeId) || null;
   const editeurLocalOuvert = !!(suiviEdite || etatEdite || compteurSceneEdite || etatSceneEdite);
+  const categoriesAffichees = trierCategories(categories);
+  const templatesPersonnagesAffiches = trierTemplatesPersonnages(templates);
+  const trackerTemplatesAffiches = trierTemplatesIndicateurs(trackerTemplates);
+  const sceneCounterTemplatesAffiches = trierTemplatesSimples(sceneCounterTemplates);
+  const sceneStatusTemplatesAffiches = trierTemplatesSimples(sceneStatusTemplates);
   const statusTemplatesAffiches = statusTemplates.map((template) => template.id !== 'status-template-surpris' ? template : {
     ...template,
     status: { ...template.status, inactive: surpriseImpact === 'inactive', limited: surpriseImpact !== 'inactive', advanceOn: surpriseAdvanceOn === 'round' ? 'round' : 'activation' },
-  });
+  }).sort(trierParNom);
   useEffect(() => {
     if (editeurLocalOuvert) onTemplatePanelOpenChange?.(true);
   }, [editeurLocalOuvert, onTemplatePanelOpenChange]);
@@ -173,8 +207,8 @@ export function OngletTemplates({
       </div>
       {sousPage === 'personnages' && (
         <OngletTemplatesPersonnages
-          categories={categories}
-          templates={templates}
+          categories={categoriesAffichees}
+          templates={templatesPersonnagesAffiches}
           onAjouterTemplateCategorie={ajouterTemplateCategorie}
           onAjouterCategorie={onAjouterCategorie}
           onRenommerCategorie={onRenommerCategorie}
@@ -187,7 +221,7 @@ export function OngletTemplates({
       )}
       {sousPage === 'suivis' && (
         <OngletTemplatesSuivis
-          templates={trackerTemplates}
+          templates={trackerTemplatesAffiches}
           onAjouter={ajouterSuivi}
           onEditer={ouvrirSuivi}
           onDupliquer={onDupliquerTemplateSuivi}
@@ -205,8 +239,8 @@ export function OngletTemplates({
       )}
       {sousPage === 'scene' && (
         <OngletTemplatesScene
-          counterTemplates={sceneCounterTemplates}
-          statusTemplates={sceneStatusTemplates}
+          counterTemplates={sceneCounterTemplatesAffiches}
+          statusTemplates={sceneStatusTemplatesAffiches}
           onAjouterCompteur={ajouterCompteurScene}
           onEditerCompteur={ouvrirCompteurScene}
           onDupliquerCompteur={onDupliquerTemplateCompteurScene}

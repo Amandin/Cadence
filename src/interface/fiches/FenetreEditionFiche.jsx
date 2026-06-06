@@ -483,7 +483,29 @@ export function EditeurSuivi({ suivi, onChange, onDelete, allowActivationAutomat
   const estCases = isBoxesTracker(suivi);
   const estNumerique = isNumericTracker(suivi);
 
-  return <div className="tracker"><div className="tracker-edit-head"><input value={suivi.name} onChange={(e) => modifierSuivi({ name: e.target.value })} aria-label="Nom de l’indicateur" /><select value={suivi.type} aria-label="Type d’indicateur" onChange={(e) => onChange({ ...nouveauSuiviPourMode(e.target.value, allowActivationAutomation), id: suivi.id, name: suivi.name })}>{Object.entries(trackerTypeLabels).map(([valeur, label]) => <option value={valeur} key={valeur}>{label}</option>)}</select><button className="danger-btn compact-danger" onClick={onDelete}>x</button></div><div className="sub-options-row"><button className="quick-reset-btn text" onClick={() => onChange(resetTracker(suivi, 'initial'))} title="Remettre à la valeur de départ">Départ</button>{suivi.type === 'number' && <ChampNombre className="compact-step-field" label="Pas" valeur={suivi.step ?? 1} onChange={(valeur) => modifierSuivi({ step: valeur })} />}<ToggleIconeSuivi suivi={suivi} onChange={modifierSuivi} /></div><div className="grid2">{estNumerique && suivi.type !== 'number' && <ChampNombre label="Valeur actuelle" valeur={suivi.current ?? 0} onChange={(valeur) => modifierSuivi({ current: valeur })} />}{estNumerique && suivi.type !== 'number' && <ChampNombre label="Maximum" valeur={suivi.max ?? 1} onChange={(valeur) => modifierSuivi({ max: valeur })} />}{suivi.type === 'bar' && <ChampNombre label="Minimum" valeur={suivi.min ?? 0} onChange={(valeur) => modifierSuivi({ min: valeur })} />}</div><OptionsParType suivi={suivi} onChange={modifierSuivi} allowActivationAutomation={allowActivationAutomation} />{estCases && <EditeurCases suivi={suivi} onChange={onChange} resetOptions={<OptionsReset suivi={suivi} onChange={modifierSuivi} allowActivationAutomation={allowActivationAutomation} />} />}</div>;
+  return (
+    <div className="tracker">
+      <div className="tracker-edit-head">
+        <ToggleIconeSuivi suivi={suivi} onChange={modifierSuivi} />
+        <input value={suivi.name} onChange={(e) => modifierSuivi({ name: e.target.value })} aria-label="Nom de l’indicateur" />
+        <select value={suivi.type} aria-label="Type d’indicateur" onChange={(e) => onChange({ ...nouveauSuiviPourMode(e.target.value, allowActivationAutomation), id: suivi.id, name: suivi.name })}>
+          {Object.entries(trackerTypeLabels).map(([valeur, label]) => <option value={valeur} key={valeur}>{label}</option>)}
+        </select>
+        <button className="danger-btn compact-danger" onClick={onDelete}>x</button>
+      </div>
+      <div className="sub-options-row">
+        <button className="quick-reset-btn text" onClick={() => onChange(resetTracker(suivi, 'initial'))} title="Réinitialiser à la valeur de départ">Réinitialiser</button>
+        {suivi.type === 'number' && <ChampNombre className="compact-step-field" label="Pas" valeur={suivi.step ?? 1} onChange={(valeur) => modifierSuivi({ step: valeur })} />}
+      </div>
+      <div className="grid2">
+        {estNumerique && suivi.type !== 'number' && <ChampNombre label="Valeur actuelle" valeur={suivi.current ?? 0} onChange={(valeur) => modifierSuivi({ current: valeur })} />}
+        {estNumerique && suivi.type !== 'number' && <ChampNombre label="Maximum" valeur={suivi.max ?? 1} onChange={(valeur) => modifierSuivi({ max: valeur })} />}
+        {suivi.type === 'bar' && <ChampNombre label="Minimum" valeur={suivi.min ?? 0} onChange={(valeur) => modifierSuivi({ min: valeur })} />}
+      </div>
+      <OptionsParType suivi={suivi} onChange={modifierSuivi} allowActivationAutomation={allowActivationAutomation} />
+      {estCases && <EditeurCases suivi={suivi} onChange={onChange} resetOptions={<OptionsReset suivi={suivi} onChange={modifierSuivi} allowActivationAutomation={allowActivationAutomation} />} />}
+    </div>
+  );
 }
 
 export function FenetreEditionFiche({ participant, initiativeTextOrder, phaseActionMode, phaseCount = defaultPhaseCount, multipleActionSlots = true, utiliserInitiative = true, allowActivationAutomation = true, categoryOrder = participantKinds, tiebreakerVisible = true, tiebreakerLabel = 'Départage', trackerTemplates = [], title = 'Modifier', templateCategory = '', templateCategories = [], saveTemplateVisible = true, deleteLabel = 'Supprimer la fiche', className = 'character-edit-sheet', templateSwitchRequest = null, onAnnulerChangementTemplate, onAbandonnerChangementTemplate, onValiderChangementTemplate, onClose, onSave, onDelete, onSaveTemplate }) {
@@ -492,6 +514,7 @@ export function FenetreEditionFiche({ participant, initiativeTextOrder, phaseAct
   const typesDisponibles = [...new Set([...participantKinds, ...(categoryOrder || []), participant.kind].filter(Boolean))];
   const [brouillon, setBrouillon] = useState({ ...clone(participant), phaseActions: modePhasesCochees ? (Array.isArray(participant.phaseActions) ? participant.phaseActions : ['1']) : participant.phaseActions, _actionSlotsInput: texteCreneauxAction(participant), _actionSlotsDraft: multipleActionSlots ? brouillonCreneauxAction(participant) : brouillonCreneauxAction(participant).slice(0, 1), stats: normaliserInfosRapides(participant.stats || []) });
   const [trackerTemplateId, setTrackerTemplateId] = useState(trackerTemplates[0]?.id || '');
+  const [ajoutIndicateurOuvert, setAjoutIndicateurOuvert] = useState(false);
   const [confirmationSuppression, setConfirmationSuppression] = useState(false);
   const categoriesTemplateDisponibles = [...new Set([templateCategory, ...(templateCategories || [])].filter(Boolean))];
   const [categorieTemplate, setCategorieTemplate] = useState(templateCategory || categoriesTemplateDisponibles[0] || '');
@@ -525,17 +548,25 @@ export function FenetreEditionFiche({ participant, initiativeTextOrder, phaseAct
     if (!suivi) return;
     const suiviCompatible = allowActivationAutomation || suivi.autoReset !== 'activation' ? suivi : { ...suivi, autoReset: 'never' };
     setBrouillon((courant) => ({ ...courant, trackers: [...(courant.trackers || []), suiviCompatible] }));
+    setAjoutIndicateurOuvert(false);
+  };
+  const ajouterSuiviPersonnalise = () => {
+    setBrouillon((courant) => ({ ...courant, trackers: [...courant.trackers, nouveauSuiviPourMode('bar', allowActivationAutomation)] }));
+    setAjoutIndicateurOuvert(false);
   };
   const renduEditionMultiple = (entete, valider, enregistrerCommeTemplate) => (
     <>
       <Fenetre title={title} onClose={onClose} header={entete} className={className}>
         {templateSwitchRequest && <MessageChangementTemplate onAnnuler={onAnnulerChangementTemplate} onValider={() => onValiderChangementTemplate?.(normaliserFiche(brouillon, textConfig, { phaseActionMode: modePhasesCochees ? phaseActionModes.CHECKED : '', phaseCount, multipleActionSlots }), categorieTemplate)} onAbandonner={onAbandonnerChangementTemplate} />}
-        <label className="field">Nom<input value={brouillon.name} onChange={(e) => modifierChamp('name', e.target.value)} /></label>
-        <label className="field">Description<textarea value={brouillon.description || ''} onChange={(e) => modifierChamp('description', e.target.value)} /></label>
-        <div className={utiliserInitiative ? 'grid2' : ''}>
+        <div className="grid2">
+          <label className="field">Nom<input value={brouillon.name} onChange={(e) => modifierChamp('name', e.target.value)} /></label>
           <label className="field">Type<select value={brouillon.kind} onChange={(e) => modifierChamp('kind', e.target.value)}>{typesDisponibles.map((type) => <option key={type}>{type}</option>)}</select></label>
-          {utiliserInitiative && <ChampInitiative label="Initiative 1" valeur={creneauxAction[0]?.initiative ?? brouillon.initiative ?? 0} textConfig={textConfig} onChange={(valeur) => modifierCreneauAction(0, valeur)} />}
         </div>
+        <label className="field">Description<textarea value={brouillon.description || ''} onChange={(e) => modifierChamp('description', e.target.value)} /></label>
+        {utiliserInitiative && <div className="grid2">
+          <ChampInitiative label="Initiative 1" valeur={creneauxAction[0]?.initiative ?? brouillon.initiative ?? 0} textConfig={textConfig} onChange={(valeur) => modifierCreneauAction(0, valeur)} />
+          {tiebreakerVisible ? <ChampNombre label={tiebreakerLabel} valeur={brouillon.departage} onChange={(valeur) => modifierChamp('departage', valeur)} /> : <div />}
+        </div>}
         {multipleActionSlots && <div className="action-slots-editor">
           <label className="row"><input type="checkbox" checked={creneauxAction.length > 1} onChange={(e) => basculerActionsMultiples(e.target.checked)} /> plusieurs actions</label>
           {utiliserInitiative && creneauxAction.length > 1 && <div className="stack action-slot-list">
@@ -556,14 +587,24 @@ export function FenetreEditionFiche({ participant, initiativeTextOrder, phaseAct
         {modePhasesCochees && <EditeurPhasesParticipant phaseActions={brouillon.phaseActions} phaseCount={phaseCount} onChange={(phaseActions) => modifierChamp('phaseActions', phaseActions)} />}
         <details className="advanced-options">
           <summary>Options avancées</summary>
-          {utiliserInitiative && tiebreakerVisible && <div className="grid2"><ChampNombre label={tiebreakerLabel} valeur={brouillon.departage} onChange={(valeur) => modifierChamp('departage', valeur)} /><div /></div>}
           <div className="grid2"><label className="field">Symbole<select value={brouillon.symbol || symbols[0]} onChange={(e) => modifierChamp('symbol', e.target.value)}>{symbols.map((symbole) => <option key={symbole} value={symbole}>{symbole}</option>)}</select></label><label className="field">Couleur<select value={brouillon.color || colors[0]} onChange={(e) => modifierChamp('color', e.target.value)}>{colors.map((couleur) => <option key={couleur} value={couleur}>{colorNames[couleur] || couleur}</option>)}</select></label></div>
+          {saveTemplateVisible && <button className="small-btn" style={{ width: '100%', marginTop: 12 }} onClick={enregistrerCommeTemplate}>Enregistrer comme modèle</button>}
         </details>
         <h3>Infos rapides</h3>
         <EditeurInfosRapides stats={brouillon.stats || []} onChange={(stats) => modifierChamp('stats', stats)} />
         <h3>Indicateurs</h3>
-        <div className="stack tracker-list">{brouillon.trackers.map((suivi) => <EditeurSuivi key={suivi.id} suivi={suivi} onChange={(suivant) => modifierSuivi(suivi.id, suivant)} onDelete={() => setBrouillon((courant) => ({ ...courant, trackers: courant.trackers.filter((item) => item.id !== suivi.id) }))} allowActivationAutomation={allowActivationAutomation} />)}<button className="primary add-tracker-btn" onClick={() => setBrouillon((courant) => ({ ...courant, trackers: [...courant.trackers, nouveauSuiviPourMode('bar', allowActivationAutomation)] }))}>Ajouter un indicateur</button>{trackerTemplates.length > 0 && <div className="template-picker-row"><select value={trackerTemplateId} onChange={(event) => setTrackerTemplateId(event.target.value)}>{trackerTemplates.map((template) => <option key={template.id} value={template.id}>{template.name}</option>)}</select><button className="small-btn" type="button" onClick={ajouterSuiviDepuisTemplate}>Depuis modèle</button></div>}</div>
-        {saveTemplateVisible && <button className="small-btn" style={{ width: '100%', marginTop: 12 }} onClick={enregistrerCommeTemplate}>Enregistrer comme modèle</button>}
+        <div className="stack tracker-list">
+          {brouillon.trackers.map((suivi) => <EditeurSuivi key={suivi.id} suivi={suivi} onChange={(suivant) => modifierSuivi(suivi.id, suivant)} onDelete={() => setBrouillon((courant) => ({ ...courant, trackers: courant.trackers.filter((item) => item.id !== suivi.id) }))} allowActivationAutomation={allowActivationAutomation} />)}
+          {!ajoutIndicateurOuvert && <button className="primary add-tracker-btn" onClick={trackerTemplates.length > 0 ? () => setAjoutIndicateurOuvert(true) : ajouterSuiviPersonnalise}>Ajouter un indicateur</button>}
+          {ajoutIndicateurOuvert && <div className="template-picker-row">
+            <select value={trackerTemplateId || 'custom'} onChange={(event) => setTrackerTemplateId(event.target.value)}>
+              {trackerTemplates.map((template) => <option key={template.id} value={template.id}>{template.name}</option>)}
+              <option value="custom">Personnalisé</option>
+            </select>
+            <button className="small-btn" type="button" onClick={trackerTemplateId === 'custom' ? ajouterSuiviPersonnalise : ajouterSuiviDepuisTemplate}>Ajouter</button>
+            <button className="small-btn" type="button" onClick={() => setAjoutIndicateurOuvert(false)}>Annuler</button>
+          </div>}
+        </div>
         <div className="edit-actions-row" style={{ marginTop: 12 }}><button className="small-btn" onClick={onClose}>Annuler</button><button className="primary" onClick={valider}>Valider</button><button className="danger-btn" onClick={() => setConfirmationSuppression(true)}>{deleteLabel}</button></div>
       </Fenetre>
       {confirmationSuppression && <FenetreConfirmationSuppression nom={brouillon.name} onAnnuler={() => setConfirmationSuppression(false)} onConfirmer={onDelete} />}

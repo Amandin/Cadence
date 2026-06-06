@@ -17,7 +17,7 @@ export function FenetreAjoutPersonnage({ templates = [], categories = [], initia
   const templatesTries = useMemo(() => trierTemplates(templates), [templates]);
   const categoriesDisponibles = useMemo(() => listerCategories(categories, templatesTries), [categories, templatesTries]);
   const textConfig = useMemo(() => normalizeInitiativeTextOrder(initiativeTextOrder), [initiativeTextOrder]);
-  const [mode, setMode] = useState(templatesTries.length ? 'template' : 'blank');
+  const [mode, setMode] = useState('blank');
   const [categorie, setCategorie] = useState(categoriesDisponibles[0] || '');
   const templatesCategorie = templatesTries.filter((template) => template.category === categorie);
   const [templateId, setTemplateId] = useState(templatesCategorie[0]?.id || '');

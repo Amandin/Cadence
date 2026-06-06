@@ -29,67 +29,17 @@ function tempsEcoule(compteur) {
   return base + Math.max(0, Date.now() - Number(compteur.startedAt));
 }
 
-function formaterTemps(ms) {
-  const total = Math.max(0, Math.floor(ms / 1000));
-  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
-}
-
-function OptionsCompteurScene({ scene, compteur, onModifier, onChanger, onOuvrirAvance }) {
-  const courant = compteur || { enabled: false, name: 'Menace', mode: 'clock', current: 0, max: 10, auto: false, running: false, startedAt: null, elapsedMs: 0 };
-  const tempsReel = ['stopwatch', 'timer'].includes(courant.mode);
-  const enPreparation = scene?.round < 0;
-  const temps = tempsEcoule(courant);
-  const dureeSecondes = Math.max(1, Number(courant.max || 60));
-  const affichageTemps = courant.mode === 'timer' ? formaterTemps(Math.max(0, dureeSecondes * 1000 - temps)) : formaterTemps(temps);
-  const modifier = (patch) => onModifier({ ...courant, ...patch });
-  const demarrer = () => {
-    if (enPreparation) return;
-    modifier({ running: true, startedAt: Date.now() });
-  };
-  const pause = () => modifier({ running: false, startedAt: null, elapsedMs: temps });
-  const resetTemps = () => modifier({ running: false, startedAt: null, elapsedMs: 0 });
-
-  return (
-    <div className="scene-options compact-options">
-      <div className="compact-option-title">
-        <h3>Indicateur de scène</h3>
-        <div className="row">
-          <button className="small-btn" onClick={onOuvrirAvance}>Modifier</button>
-          <button className={`scene-clock-toggle ${courant.enabled ? 'active' : ''}`} onClick={() => modifier({ enabled: !courant.enabled })} aria-label="Activer ou désactiver l’indicateur de scène" title="Indicateur de scène">
-            <span>{courant.enabled ? '◷' : '○'}</span>
-          </button>
-        </div>
-      </div>
-      <div className="menu-counter-config">
-        <label className="field">Nom<input value={courant.name || ''} onChange={(event) => modifier({ name: event.target.value })} placeholder="Menace" /></label>
-        <div className="grid2">
-          <label className="field">Type<select value={courant.mode || 'clock'} onChange={(event) => modifier({ mode: event.target.value, running: false, startedAt: null })}><option value="clock">Horloge</option><option value="counter">Compteur</option><option value="stopwatch">Chronomètre</option><option value="timer">Minuteur</option></select></label>
-          {!tempsReel && <label className="field">Valeur<input type="number" inputMode="numeric" value={courant.current ?? 0} onChange={(event) => modifier({ current: event.target.value === '' ? 0 : Number(event.target.value) })} /></label>}
-          {courant.mode === 'timer' && <label className="field">Minutes<input type="number" inputMode="numeric" min="1" value={Math.max(1, Math.round(dureeSecondes / 60))} onChange={(event) => modifier({ max: Math.max(1, Number(event.target.value) || 1) * 60 })} /></label>}
-        </div>
-        {!tempsReel && <label className="field">Maximum<input type="number" inputMode="numeric" min="1" value={courant.max ?? 10} onChange={(event) => modifier({ max: Math.max(1, Number(event.target.value) || 1) })} /></label>}
-        {!tempsReel && <label className="row counter-auto-row"><input type="checkbox" checked={!!courant.auto} onChange={(event) => modifier({ auto: event.target.checked })} /> avancer à chaque nouveau round</label>}
-        {!tempsReel && <div className="grid2"><button className="small-btn" onClick={() => onChanger(-1)}>−1</button><button className="small-btn" onClick={() => onChanger(1)}>+1</button></div>}
-        {tempsReel && <div className="timer-control-panel menu-timer-panel">
-          <strong>{affichageTemps}</strong>
-          {enPreparation && <p className="muted compact-help">Le temps démarrera avec Commencer.</p>}
-          <div className="grid2">
-            <button className="primary" onClick={courant.running ? pause : demarrer} disabled={enPreparation && !courant.running}>{courant.running ? 'Pause' : 'Démarrer'}</button>
-            <button className="small-btn" onClick={resetTemps}>Remettre à zéro</button>
-          </div>
-        </div>}
-      </div>
-    </div>
-  );
-}
-
 function formaterSecondes(secondes) {
   const total = Math.max(0, Math.floor(secondes));
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
 }
 
-function resumeSuiviGlobal(compteur) {
-  if (!compteur?.enabled) return 'Aucun indicateur de scène configuré';
+function formaterTemps(ms) {
+  return formaterSecondes(Math.max(0, Math.floor(ms / 1000)));
+}
+
+function resumeIndicateurScene(compteur) {
+  if (!compteur?.enabled) return '';
   const nom = compteur.name || (compteur.mode === 'timer' ? 'Minuteur' : compteur.mode === 'stopwatch' ? 'Chrono' : 'Indicateur de scène');
   if (compteur.mode === 'timer') {
     const etat = globalTrackerTimerState(compteur);
@@ -110,29 +60,9 @@ function resumeSuiviGlobal(compteur) {
   return `${nom} - ${valeur} / ${max}${seuil ? `, seuil : ${seuil}` : ''}`;
 }
 
-function OptionsSuiviGlobal({ compteur, onModifier, onOuvrirAvance }) {
-  const courant = compteur || { enabled: false, name: 'Menace', mode: 'clock', current: 0, max: 10 };
-  const modifier = (patch) => onModifier({ ...courant, ...patch });
-
-  return (
-    <div className="scene-options compact-options menu-global-tracker">
-      <div className="compact-option-title">
-        <h3>Indicateur de scène</h3>
-        <label className={`global-switch ${courant.enabled ? 'active' : ''}`}>
-          <span>{courant.enabled ? 'ON' : 'OFF'}</span>
-          <input type="checkbox" checked={!!courant.enabled} onChange={(event) => modifier({ enabled: event.target.checked })} aria-label="Activer ou désactiver l’indicateur de scène" />
-        </label>
-      </div>
-      <p className="global-summary">{resumeSuiviGlobal(courant)}</p>
-      <button className="small-btn global-edit-btn" onClick={onOuvrirAvance}>Modifier</button>
-    </div>
-  );
-}
-
 function ActionsScene({ onAjouterParticipant, onSaisirInitiatives }) {
   return (
     <div className="scene-options compact-options menu-action-section">
-      <h3>Personnages et initiative</h3>
       <div className={`menu-action-grid ${onSaisirInitiatives ? '' : 'single-action'}`}>
         <button className="primary" onClick={onAjouterParticipant}>Ajouter un personnage</button>
         {onSaisirInitiatives && <button className="small-btn" onClick={onSaisirInitiatives}>Saisir les initiatives</button>}
@@ -141,23 +71,42 @@ function ActionsScene({ onAjouterParticipant, onSaisirInitiatives }) {
   );
 }
 
-function EtatsSceneMenu({ scene, onAjouterEtatScene, onRetirerEtatScene, onEffacerEtats }) {
+function ElementsSceneMenu({ scene, onIndicateurScene, onModifierIndicateurScene, onAjouterEtatScene, onRetirerEtatScene, onEffacerEtats }) {
+  const compteur = scene?.globalTracker || {};
   const etats = scene?.statuses || [];
+  const indicateurActif = !!compteur.enabled;
+  const hasDetails = indicateurActif || etats.length > 0;
+  const resume = resumeIndicateurScene(compteur);
+
   return (
-    <div className="scene-options compact-options menu-scene-statuses">
+    <div className="scene-options compact-options menu-scene-elements">
       <div className="compact-option-title">
-        <h3>États de scène</h3>
+        <h3>Éléments de scène</h3>
+      </div>
+      <div className="menu-action-grid">
+        <button className="small-btn" onClick={onModifierIndicateurScene}>{indicateurActif ? 'Modifier l’indicateur' : 'Activer un indicateur'}</button>
         <button className="small-btn" onClick={onAjouterEtatScene}>Ajouter un état</button>
       </div>
-      {etats.length > 0 ? (
-        <>
-          <div className="statuses status-control-row menu-status-list">
-            {etats.map((etat) => <EtiquetteEtat key={etat.id} etat={etat} onRetirer={() => onRetirerEtatScene?.(etat.id)} />)}
-          </div>
-          <button className="small-btn subtle-danger menu-clear-statuses" onClick={onEffacerEtats}>Effacer tous les états de scène</button>
-        </>
-      ) : (
-        <p className="muted compact-help menu-empty-note">Aucun état de scène actif.</p>
+      {hasDetails && (
+        <div className="stack menu-scene-elements-details">
+          {indicateurActif && (
+            <div className="restore-row discreet">
+              <span>{resume}</span>
+              <label className={`global-switch ${indicateurActif ? 'active' : ''}`}>
+                <span>{indicateurActif ? 'ON' : 'OFF'}</span>
+                <input type="checkbox" checked={indicateurActif} onChange={(event) => onIndicateurScene({ ...compteur, enabled: event.target.checked })} aria-label="Activer ou désactiver l’indicateur de scène" />
+              </label>
+            </div>
+          )}
+          {etats.length > 0 && (
+            <>
+              <div className="statuses status-control-row menu-status-list">
+                {etats.map((etat) => <EtiquetteEtat key={etat.id} etat={etat} onRetirer={() => onRetirerEtatScene?.(etat.id)} />)}
+              </div>
+              <button className="small-btn subtle-danger menu-clear-statuses" onClick={onEffacerEtats}>Effacer les états de scène</button>
+            </>
+          )}
+        </div>
       )}
     </div>
   );
@@ -165,9 +114,21 @@ function EtatsSceneMenu({ scene, onAjouterEtatScene, onRetirerEtatScene, onEffac
 
 function NotesSceneMenu({ scene, onModifierNotes }) {
   return (
-    <div className="scene-options compact-options menu-scene-notes">
-      <label className="field">Notes de scène<textarea rows={4} value={scene?.notes || ''} onChange={(event) => onModifierNotes?.(event.target.value)} placeholder="Ambiance, objectifs, éléments importants..." /></label>
-    </div>
+    <details className="scene-options compact-options menu-scene-notes">
+      <summary>Notes de scène</summary>
+      <label className="field"><textarea rows={4} value={scene?.notes || ''} onChange={(event) => onModifierNotes?.(event.target.value)} placeholder="Ambiance, objectifs, éléments importants..." /></label>
+    </details>
+  );
+}
+
+function OptionsAvanceesScene({ scene, onAvancerRound }) {
+  if (!scene || scene.round < 0) return null;
+  return (
+    <details className="advanced-options menu-advanced-scene-actions">
+      <summary>Actions avancées</summary>
+      <button className="small-btn" onClick={onAvancerRound} title="Passe au round suivant et applique les automatismes de début de round.">Forcer le round suivant</button>
+      <p className="muted compact-help">Cette action déclenche les automatismes de changement de round. Utilise plutôt “Suivant” pendant le jeu normal.</p>
+    </details>
   );
 }
 
@@ -175,18 +136,15 @@ function OptionsDerouleScene({ scene, points, pointActif, onChoisirPoint, onRest
   if (!scene) return null;
 
   return (
-    <div className="scene-options compact-options">
-      <div className="compact-option-title">
-        <h3>Déroulé</h3>
-        {scene.round >= 0 && <button className="small-btn" onClick={onRetourPreparation}>Préparation</button>}
-      </div>
-      <p className="muted" style={{ marginTop: 4, fontSize: 12 }}>Replace la scène avant le lancement de l’initiative.</p>
+    <details className="scene-options compact-options menu-flow-section">
+      <summary>Déroulé</summary>
       <div className="menu-action-grid scene-management-grid">
-        <button className="small-btn" onClick={onAvancerRound}>Round +1</button>
+        {scene.round >= 0 && <button className="small-btn" onClick={onRetourPreparation}>Retour à la préparation</button>}
         <button className="small-btn" onClick={onResetSuivis}>Réinitialiser les indicateurs</button>
       </div>
       {points.length > 0 && <RestaurationScene points={points} pointActif={pointActif} onChoisirPoint={onChoisirPoint} onRestaurer={onRestaurer} />}
-    </div>
+      <OptionsAvanceesScene scene={scene} onAvancerRound={onAvancerRound} />
+    </details>
   );
 }
 
@@ -204,9 +162,50 @@ function RestaurationScene({ points, pointActif, onChoisirPoint, onRestaurer }) 
   );
 }
 
-export function MenuPrincipal({ scene, restorePoints = [], onRestore, onReturnToPreparation, onAdvanceRound, onResetTrackers, onClearStatuses, onClose, dark, setDark, onAddParticipant, onOpenInitiativeRoller, onOpenCampaignHub, onGlobalTracker, onStepGlobalTracker, onOpenGlobalTracker, onAddSceneStatus, onRemoveSceneStatus, onUpdateSceneNotes }) {
+function FenetreEditionIndicateurScene({ scene, compteur, onModifier, onChanger, onFermer }) {
+  const courant = compteur || { enabled: false, name: 'Menace', mode: 'clock', current: 0, max: 10, auto: false, running: false, startedAt: null, elapsedMs: 0 };
+  const tempsReel = ['stopwatch', 'timer'].includes(courant.mode);
+  const enPreparation = scene?.round < 0;
+  const temps = tempsEcoule(courant);
+  const dureeSecondes = Math.max(1, Number(courant.max || 60));
+  const affichageTemps = courant.mode === 'timer' ? formaterTemps(Math.max(0, dureeSecondes * 1000 - temps)) : formaterTemps(temps);
+  const modifier = (patch) => onModifier({ ...courant, ...patch });
+  const demarrer = () => {
+    if (enPreparation) return;
+    modifier({ running: true, startedAt: Date.now() });
+  };
+  const pause = () => modifier({ running: false, startedAt: null, elapsedMs: temps });
+  const resetTemps = () => modifier({ running: false, startedAt: null, elapsedMs: 0 });
+
+  return (
+    <Fenetre title="Indicateur de scène" onClose={onFermer}>
+      <div className="stack menu-counter-config">
+        <label className="field">Nom<input value={courant.name || ''} onChange={(event) => modifier({ name: event.target.value })} placeholder="Menace" /></label>
+        <div className="grid2">
+          <label className="field">Type<select value={courant.mode || 'clock'} onChange={(event) => modifier({ mode: event.target.value, enabled: true, running: false, startedAt: null })}><option value="clock">Horloge</option><option value="counter">Compteur</option><option value="stopwatch">Chronomètre</option><option value="timer">Minuteur</option></select></label>
+          {!tempsReel && <label className="field">Valeur<input type="number" inputMode="numeric" value={courant.current ?? 0} onChange={(event) => modifier({ current: event.target.value === '' ? 0 : Number(event.target.value), enabled: true })} /></label>}
+          {courant.mode === 'timer' && <label className="field">Minutes<input type="number" inputMode="numeric" min="1" value={Math.max(1, Math.round(dureeSecondes / 60))} onChange={(event) => modifier({ max: Math.max(1, Number(event.target.value) || 1) * 60, enabled: true })} /></label>}
+        </div>
+        {!tempsReel && <label className="field">Maximum<input type="number" inputMode="numeric" min="1" value={courant.max ?? 10} onChange={(event) => modifier({ max: Math.max(1, Number(event.target.value) || 1), enabled: true })} /></label>}
+        {!tempsReel && <label className="row counter-auto-row"><input type="checkbox" checked={!!courant.auto} onChange={(event) => modifier({ auto: event.target.checked, enabled: true })} /> avancer à chaque nouveau round</label>}
+        {!tempsReel && <div className="grid2"><button className="small-btn" onClick={() => onChanger(-1)}>−1</button><button className="small-btn" onClick={() => onChanger(1)}>+1</button></div>}
+        {tempsReel && <div className="timer-control-panel menu-timer-panel">
+          <strong>{affichageTemps}</strong>
+          {enPreparation && <p className="muted compact-help">Le temps démarrera avec Commencer.</p>}
+          <div className="grid2">
+            <button className="primary" onClick={courant.running ? pause : demarrer} disabled={enPreparation && !courant.running}>{courant.running ? 'Pause' : 'Démarrer'}</button>
+            <button className="small-btn" onClick={resetTemps}>Remettre à zéro</button>
+          </div>
+        </div>}
+      </div>
+    </Fenetre>
+  );
+}
+
+export function MenuPrincipal({ scene, restorePoints = [], onRestore, onReturnToPreparation, onAdvanceRound, onResetTrackers, onClearStatuses, onClose, dark, setDark, onAddParticipant, onOpenInitiativeRoller, onOpenCampaignHub, onGlobalTracker, onStepGlobalTracker, onAddSceneStatus, onRemoveSceneStatus, onUpdateSceneNotes }) {
   const pointsRestauration = [...restorePoints].sort((a, b) => a.round - b.round);
   const [pointRestaurationId, setPointRestaurationId] = useState(pointsRestauration.at(-1)?.id || '');
+  const [editionIndicateurOuverte, setEditionIndicateurOuverte] = useState(false);
 
   return (
     <Fenetre title="Menu" onClose={onClose} header={<MenuEntete sombre={dark} onChangerTheme={setDark} onClose={onClose} />} className="main-menu">
@@ -214,14 +213,14 @@ export function MenuPrincipal({ scene, restorePoints = [], onRestore, onReturnTo
         <div className="main-menu-primary">
           <button className="primary hub-menu-main-action" onClick={onOpenCampaignHub}>Retour au hub de campagne</button>
           <ActionsScene onAjouterParticipant={onAddParticipant} onSaisirInitiatives={onOpenInitiativeRoller} />
-          <EtatsSceneMenu scene={scene} onAjouterEtatScene={onAddSceneStatus} onRetirerEtatScene={onRemoveSceneStatus} onEffacerEtats={onClearStatuses} />
-          <OptionsSuiviGlobal compteur={scene?.globalTracker} onModifier={onGlobalTracker} onOuvrirAvance={onOpenGlobalTracker} />
+          <ElementsSceneMenu scene={scene} onIndicateurScene={onGlobalTracker} onModifierIndicateurScene={() => setEditionIndicateurOuverte(true)} onAjouterEtatScene={onAddSceneStatus} onRetirerEtatScene={onRemoveSceneStatus} onEffacerEtats={onClearStatuses} />
+          <OptionsDerouleScene scene={scene} points={pointsRestauration} pointActif={pointRestaurationId} onChoisirPoint={setPointRestaurationId} onRestaurer={onRestore} onRetourPreparation={onReturnToPreparation} onAvancerRound={onAdvanceRound} onResetSuivis={onResetTrackers} />
         </div>
         <div className="main-menu-secondary">
           <NotesSceneMenu scene={scene} onModifierNotes={onUpdateSceneNotes} />
-          <OptionsDerouleScene scene={scene} points={pointsRestauration} pointActif={pointRestaurationId} onChoisirPoint={setPointRestaurationId} onRestaurer={onRestore} onRetourPreparation={onReturnToPreparation} onAvancerRound={onAdvanceRound} onResetSuivis={onResetTrackers} onEffacerEtats={onClearStatuses} />
         </div>
       </div>
+      {editionIndicateurOuverte && <FenetreEditionIndicateurScene scene={scene} compteur={scene?.globalTracker} onModifier={onGlobalTracker} onChanger={onStepGlobalTracker} onFermer={() => setEditionIndicateurOuverte(false)} />}
     </Fenetre>
   );
 }

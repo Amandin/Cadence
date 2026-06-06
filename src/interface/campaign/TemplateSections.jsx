@@ -50,7 +50,7 @@ export function OngletTemplatesScene({ counterTemplates, statusTemplates, onAjou
       <section className="scene-template-group">
         <div className="hub-section-head">
           <div><h4>Indicateurs de scène</h4><p className="muted compact-help">Ces modèles remplacent ou préparent l’indicateur global de la scène.</p></div>
-          <button className="small-btn" onClick={onAjouterCompteur}>+ compteur</button>
+          <button className="small-btn" onClick={onAjouterCompteur}>+ indicateur</button>
         </div>
         {counterTemplates.length === 0 ? <div className="empty-section panel">Aucun modèle d’indicateur de scène.</div> : counterTemplates.map((template) => (
           <LigneTemplateSimple key={template.id} template={template} detail={libelleCompteurScene(template.counter)} onEditer={onEditerCompteur} onDupliquer={onDupliquerCompteur} onSupprimer={onSupprimerCompteur} />
