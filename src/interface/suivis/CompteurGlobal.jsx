@@ -236,7 +236,7 @@ export function EditeurSeuilsCompteurScene({ compteur, onModifier }) {
   const aide = mode === 'timer'
     ? 'Les seuils du minuteur lisent le cycle en cours ou le nombre de boucles si le minuteur boucle.'
     : mode === 'stopwatch'
-      ? 'Pour un chronometre, les seuils lisent le temps ecoule en minutes/secondes.'
+      ? 'Pour un chronomètre, les seuils lisent le temps écoulé en minutes/secondes.'
       : mode === 'counter'
         ? 'Pour un compteur, les seuils lisent simplement la valeur courante.'
         : 'Pour une horloge, les seuils lisent le cycle en cours ou le nombre de boucles si elle boucle.';
@@ -246,7 +246,7 @@ export function EditeurSeuilsCompteurScene({ compteur, onModifier }) {
 
   return (
     <div className="threshold-editor global-threshold-editor">
-      <div className="line-count-row"><label>Seuils du suivi global</label><button className="small-btn" onClick={ajouter}>+ seuil</button></div>
+      <div className="line-count-row"><label>Seuils de l’indicateur de scène</label><button className="small-btn" onClick={ajouter}>+ seuil</button></div>
       <p className="muted compact-help">{aide}</p>
       {seuils.map((seuil, index) => (
         <div className={`threshold-edit-row ${afficherScope ? 'has-target' : ''} ${afficherBase && (seuil.scope || 'current') !== 'loops' ? 'has-basis' : ''}`} key={index}>
@@ -258,7 +258,7 @@ export function EditeurSeuilsCompteurScene({ compteur, onModifier }) {
             : <input className="threshold-value-input" type="number" inputMode="numeric" value={seuil.value ?? 0} onChange={(event) => modifier(index, { value: Number(event.target.value) })} />}
           <select className={`threshold-color-select threshold-${seuil.color || 'neutral'}`} value={seuil.color || 'neutral'} onChange={(event) => modifier(index, { color: event.target.value })}>{thresholdColors.map(([value, label]) => <option key={value} value={value} style={thresholdOptionStyles[value]}>{label}</option>)}</select>
           <button className="small-btn subtle-danger threshold-delete" onClick={() => supprimer(index)}>x</button>
-          <input className="threshold-label-input" value={seuil.label || ''} placeholder="Texte affiche" onChange={(event) => modifier(index, { label: event.target.value })} />
+          <input className="threshold-label-input" value={seuil.label || ''} placeholder="Texte affiché" onChange={(event) => modifier(index, { label: event.target.value })} />
           {afficherSon && <div className="threshold-sound-toggle">
             <span>Son</span>
             <SelecteurSon
@@ -384,7 +384,7 @@ export function CompteurGlobal({ compteur, onChanger, onToggleTemps, animationTi
         <div
           className={`clock-face global-clock ${compteur.mode === 'counter' ? 'counter-mode' : ''} ${cycleExact ? 'cycle-complete' : ''} ${deborde ? 'overflowing' : ''}`}
           style={{ '--clock-progress': `${progression * 360}deg`, '--overflow-progress': `${ratioDebordement * 360}deg` }}
-          aria-label="Suivi global"
+          aria-label="Indicateur de scène"
         >
           <span>{valeur}</span>
           {compteur.mode === 'clock' && <small>/{maximum}</small>}
@@ -424,20 +424,20 @@ export function FenetreCompteurGlobal({ compteur, sceneCounterTemplates = [], on
   }, [sceneCounterTemplates, templateId]);
 
   return (
-    <Fenetre title="Suivi global" onClose={onFermer}>
+    <Fenetre title="Indicateur de scène" onClose={onFermer}>
       <div className="stack">
         {sceneCounterTemplates.length > 0 && (
           <div className="template-picker-row">
-            <select value={templateId} onChange={(event) => setTemplateId(event.target.value)} aria-label="Template de suivi global">
+            <select value={templateId} onChange={(event) => setTemplateId(event.target.value)} aria-label="Modèle d’indicateur de scène">
               {sceneCounterTemplates.map((template) => <option key={template.id} value={template.id}>{template.name}</option>)}
             </select>
             <button className="small-btn" onClick={appliquerTemplate} disabled={!templateChoisi}>Utiliser</button>
           </div>
         )}
-        <label className="row"><input type="checkbox" checked={!!courant.enabled} onChange={(event) => modifier({ enabled: event.target.checked })} /> actif dans l'entete</label>
+        <label className="row"><input type="checkbox" checked={!!courant.enabled} onChange={(event) => modifier({ enabled: event.target.checked })} /> visible dans l’en-tête</label>
         <label className="field">Nom<input value={courant.name || ''} onChange={(event) => modifier({ name: event.target.value })} placeholder="Menace" /></label>
         <div className="grid2">
-          <label className="field">Type<select value={mode} onChange={(event) => modifier({ mode: event.target.value, running: false, startedAt: null, trigger: ['stopwatch', 'timer'].includes(event.target.value) ? 'realtime' : 'manual' })}><option value="clock">Horloge</option><option value="counter">Compteur</option><option value="stopwatch">Chronometre</option><option value="timer">Minuteur</option></select></label>
+          <label className="field">Type<select value={mode} onChange={(event) => modifier({ mode: event.target.value, running: false, startedAt: null, trigger: ['stopwatch', 'timer'].includes(event.target.value) ? 'realtime' : 'manual' })}><option value="clock">Horloge</option><option value="counter">Compteur</option><option value="stopwatch">Chronomètre</option><option value="timer">Minuteur</option></select></label>
           {estCompteur && <label className="field">Valeur<input type="number" inputMode="numeric" value={courant.current ?? 0} onChange={(event) => modifier({ current: event.target.value === '' ? 0 : Number(event.target.value) })} /></label>}
           {estHorloge && <label className="field">Valeur actuelle<input type="number" inputMode="numeric" value={courant.current ?? 0} onChange={(event) => modifier({ current: event.target.value === '' ? 0 : Number(event.target.value) })} /></label>}
           {estMinuteur && <ChampsTemps prefixe="duree " totalSecondes={courant.max ?? 60} onChanger={(value) => modifier({ max: Math.max(1, value) })} />}
@@ -445,14 +445,14 @@ export function FenetreCompteurGlobal({ compteur, sceneCounterTemplates = [], on
         {estHorloge && <label className="field">Segments<input type="number" inputMode="numeric" min="1" value={courant.max ?? 10} onChange={(event) => modifier({ max: Math.max(1, Number(event.target.value) || 1) })} /></label>}
         {estHorloge && <div className="grid2">
           <label className="field">Sens<select value={courant.direction || 'progression'} onChange={(event) => modifier({ direction: event.target.value })}><option value="progression">Progression</option><option value="countdown">Countdown</option></select></label>
-          <label className="field">Declencheur<select value={courant.trigger || (courant.auto ? 'round' : 'manual')} onChange={(event) => modifier({ trigger: event.target.value, auto: event.target.value === 'round' })}><option value="manual">Manuel</option><option value="round">Nouveau round</option>{courant.trigger === 'phase' && <option value="phase" disabled>Ancien reglage : nouvelle phase</option>}</select></label>
+          <label className="field">Quand avancer<select value={courant.trigger || (courant.auto ? 'round' : 'manual')} onChange={(event) => modifier({ trigger: event.target.value, auto: event.target.value === 'round' })}><option value="manual">Manuel</option><option value="round">Nouveau round</option>{courant.trigger === 'phase' && <option value="phase" disabled>Ancien réglage : nouvelle phase</option>}</select></label>
         </div>}
-        {estHorloge && courant.trigger === 'phase' && <p className="rule-warning">Ce reglage historique est conserve mais inactif. Les phases ne font plus avancer les horloges.</p>}
-        {estHorloge && <label className="field">Limite<select value={courant.limitMode || 'clamp'} onChange={(event) => modifier({ limitMode: event.target.value })}><option value="clamp">Bloquer</option><option value="overflow">Depasser</option><option value="loop">Boucler</option><option value="restart">Redemarrer</option></select></label>}
+        {estHorloge && courant.trigger === 'phase' && <p className="rule-warning">Ce réglage historique est conservé mais inactif. Les phases ne font plus avancer les horloges.</p>}
+        {estHorloge && <label className="field">Limite<select value={courant.limitMode || 'clamp'} onChange={(event) => modifier({ limitMode: event.target.value })}><option value="clamp">Bloquer</option><option value="overflow">Dépasser</option><option value="loop">Boucler</option><option value="restart">Redémarrer</option></select></label>}
         {estHorloge && courant.limitMode === 'loop' && <div className="grid2"><label className="field">Total<input type="number" inputMode="numeric" value={courant.total ?? courant.current ?? 0} onChange={(event) => modifier({ total: Math.max(0, Number(event.target.value) || 0) })} /></label><label className="field">Boucles<input type="number" inputMode="numeric" value={courant.loops ?? 0} onChange={(event) => modifier({ loops: Math.max(0, Number(event.target.value) || 0) })} /></label></div>}
-        {estMinuteur && <label className="field">Fin du minuteur<select value={courant.limitMode || 'clamp'} onChange={(event) => modifier({ limitMode: event.target.value })}><option value="clamp">Bloquer</option><option value="restart">Redemarrer</option><option value="loop">Boucler</option><option value="overflow">Depasser</option></select></label>}
+        {estMinuteur && <label className="field">Fin du minuteur<select value={courant.limitMode || 'clamp'} onChange={(event) => modifier({ limitMode: event.target.value })}><option value="clamp">Bloquer</option><option value="restart">Redémarrer</option><option value="loop">Boucler</option><option value="overflow">Dépasser</option></select></label>}
         {estMinuteur && <div className="threshold-sound-toggle completion-sound-toggle">
-          <span>Son a la fin</span>
+          <span>Son à la fin</span>
           <SelecteurSon
             soundId={courant.soundOnComplete ? courant.completeSoundId || 'beep' : 'none'}
             soundUrl={courant.completeSoundUrl || ''}
@@ -461,9 +461,9 @@ export function FenetreCompteurGlobal({ compteur, sceneCounterTemplates = [], on
         </div>}
         {tempsReel && <div className="timer-control-panel">
           <strong>{temps.affichage}</strong>
-          {estChronometre && <p className="muted compact-help">Temps ecoule.</p>}
+          {estChronometre && <p className="muted compact-help">Temps écoulé.</p>}
           <div className="grid2">
-            <button className="primary" onClick={courant.running ? pause : demarrer}>{courant.running ? 'Pause' : courant.elapsedMs > 0 ? 'Reprendre' : 'Demarrer'}</button>
+            <button className="primary" onClick={courant.running ? pause : demarrer}>{courant.running ? 'Pause' : courant.elapsedMs > 0 ? 'Reprendre' : 'Démarrer'}</button>
             <button className="small-btn" onClick={resetTemps}>Remettre à zéro</button>
           </div>
         </div>}

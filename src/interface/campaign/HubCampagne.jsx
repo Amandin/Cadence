@@ -15,7 +15,7 @@ function initialHubTab() {
 }
 
 function OngletsHub({ onglet, setOnglet }) {
-  return <div className="grid4 hub-tabs"><button className={`choice ${onglet === 'scenes' ? 'selected' : ''}`} onClick={() => setOnglet('scenes')}>Scènes</button><button className={`choice ${onglet === 'regles' ? 'selected' : ''}`} onClick={() => setOnglet('regles')}>Règles</button><button className={`choice ${onglet === 'campagnes' ? 'selected' : ''}`} onClick={() => setOnglet('campagnes')}>Campagnes</button><button className={`choice ${onglet === 'templates' ? 'selected' : ''}`} onClick={() => setOnglet('templates')}>Templates</button></div>;
+  return <div className="grid4 hub-tabs"><button className={`choice ${onglet === 'scenes' ? 'selected' : ''}`} onClick={() => setOnglet('scenes')}>Scènes</button><button className={`choice ${onglet === 'regles' ? 'selected' : ''}`} onClick={() => setOnglet('regles')}>Règles</button><button className={`choice ${onglet === 'campagnes' ? 'selected' : ''}`} onClick={() => setOnglet('campagnes')}>Campagnes</button><button className={`choice ${onglet === 'templates' ? 'selected' : ''}`} onClick={() => setOnglet('templates')}>Modèles</button></div>;
 }
 
 function EnteteHub({ campaignName, sombre, onChangerTheme }) {
@@ -34,7 +34,7 @@ function CarteScene({ scene, index, canDelete, editing, onEditer, onFermerEditio
 }
 
 function OngletScenes({ scenes, editingSceneId, onEditerScene, onFermerEditionScene, onChoisirScene, onNouvelleScene, onModifierScene, onDupliquerScene, onSupprimerScene }) {
-  return <div className="stack hub-section panel"><div className="hub-section-head"><h3>Scènes</h3><button className="small-btn" onClick={onNouvelleScene}>Nouvelle scène</button></div><div className="stack hub-scene-list">{scenes.map((scene, index) => <CarteScene key={scene.id} scene={scene} index={index} editing={scene.id === editingSceneId} canDelete={scenes.length > 1} onEditer={onEditerScene} onFermerEdition={onFermerEditionScene} onChoisirScene={onChoisirScene} onModifierScene={onModifierScene} onDupliquerScene={onDupliquerScene} onSupprimerScene={onSupprimerScene} />)}</div></div>;
+  return <div className="stack hub-section panel"><div className="hub-section-head"><div><h3>Scènes</h3><p className="muted compact-help">Crée ou ouvre une scène pour suivre l’initiative, les rounds, les états et les indicateurs.</p></div><button className="small-btn" onClick={onNouvelleScene}>Nouvelle scène</button></div><div className="stack hub-scene-list">{scenes.length > 0 ? scenes.map((scene, index) => <CarteScene key={scene.id} scene={scene} index={index} editing={scene.id === editingSceneId} canDelete={scenes.length > 1} onEditer={onEditerScene} onFermerEdition={onFermerEditionScene} onChoisirScene={onChoisirScene} onModifierScene={onModifierScene} onDupliquerScene={onDupliquerScene} onSupprimerScene={onSupprimerScene} />) : <div className="empty-section panel">Aucune scène pour le moment. Crée une scène pour commencer.</div>}</div></div>;
 }
 
 function OngletCampagnes({ campaignEntries = [], activeCampaignEntryId, fileSaveStatus, onChoisirCampagne, onExporter, onImporter, onReinitialiser }) {

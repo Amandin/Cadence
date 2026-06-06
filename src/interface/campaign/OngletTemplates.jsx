@@ -161,15 +161,15 @@ export function OngletTemplates({
   return (
     <div className="stack hub-section panel">
       <div className="hub-section-head">
-        <h3>Templates</h3>
+        <h3>Modèles</h3>
         <button className="small-btn" onClick={choisirFichier}>Importer depuis une autre campagne</button>
         <input ref={importInputRef} type="file" accept=".cad,application/json" style={{ display: 'none' }} onChange={importerFichier} />
       </div>
       <div className="template-subtabs">
         <button className={`choice ${sousPage === 'personnages' ? 'selected' : ''}`} onClick={() => changerSousPage('personnages')}>Personnages</button>
-        <button className={`choice ${sousPage === 'suivis' ? 'selected' : ''}`} onClick={() => changerSousPage('suivis')}>Suivis</button>
-        <button className={`choice ${sousPage === 'etats' ? 'selected' : ''}`} onClick={() => changerSousPage('etats')}>Etats</button>
-        <button className={`choice ${sousPage === 'scene' ? 'selected' : ''}`} onClick={() => changerSousPage('scene')}>Scene</button>
+        <button className={`choice ${sousPage === 'suivis' ? 'selected' : ''}`} onClick={() => changerSousPage('suivis')}>Indicateurs</button>
+        <button className={`choice ${sousPage === 'etats' ? 'selected' : ''}`} onClick={() => changerSousPage('etats')}>États</button>
+        <button className={`choice ${sousPage === 'scene' ? 'selected' : ''}`} onClick={() => changerSousPage('scene')}>Scène</button>
       </div>
       {sousPage === 'personnages' && (
         <OngletTemplatesPersonnages

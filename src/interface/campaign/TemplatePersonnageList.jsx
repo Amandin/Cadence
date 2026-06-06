@@ -4,7 +4,7 @@ import { BoutonIconeTemplate } from './TemplateRows.jsx';
 function grouperTemplates(templates = [], categories = []) {
   const groupes = categories.map((categorie) => ({ categorie, templates: [] }));
   const trouverOuCreerGroupe = (categorie) => {
-    const nom = categorie || 'Sans categorie';
+    const nom = categorie || 'Sans catégorie';
     const existant = groupes.find((item) => item.categorie === nom);
     if (existant) return existant;
     const nouveau = { categorie: nom, templates: [] };
@@ -26,7 +26,7 @@ function NouvelleCategorieTemplate({ onAjouterCategorie }) {
 
   return (
     <div className="template-new-category">
-      <input value={nom} placeholder="Nouvelle categorie" onChange={(event) => setNom(event.target.value)} />
+      <input value={nom} placeholder="Nouvelle catégorie" onChange={(event) => setNom(event.target.value)} />
       <button className="small-btn" onClick={ajouter}>Ajouter</button>
     </div>
   );
@@ -60,10 +60,10 @@ function EnteteCategorieTemplate({ groupe, index, total, onAjouterTemplateCatego
       <strong>{groupe.templates.length}</strong>
       <span className="template-category-label template-title-with-action">
         <span>{groupe.categorie}</span>
-        <BoutonIconeTemplate className="template-edit-icon" label="Renommer la categorie" onClick={() => setRenommage(true)}>✎</BoutonIconeTemplate>
+        <BoutonIconeTemplate className="template-edit-icon" label="Renommer la catégorie" onClick={() => setRenommage(true)}>✎</BoutonIconeTemplate>
       </span>
       <div className="compact-arrows template-category-actions">
-        <BoutonIconeTemplate label="Ajouter un template" onClick={() => onAjouterTemplateCategorie(groupe.categorie)}>+</BoutonIconeTemplate>
+        <BoutonIconeTemplate label="Ajouter un modèle" onClick={() => onAjouterTemplateCategorie(groupe.categorie)}>+</BoutonIconeTemplate>
         <button className="small-btn" onClick={() => onDeplacerCategorie(groupe.categorie, -1)} disabled={index <= 0}>↑</button>
         <button className="small-btn" onClick={() => onDeplacerCategorie(groupe.categorie, 1)} disabled={index >= total - 1}>↓</button>
         {groupe.templates.length === 0 && <button className="danger-btn mini-danger" onClick={() => onSupprimerCategorie(groupe.categorie)}>Suppr.</button>}
@@ -100,13 +100,13 @@ export function OngletTemplatesPersonnages({ categories, templates, onAjouterTem
   const groupes = useMemo(() => grouperTemplates(templates, categories), [categories, templates]);
   return (
     <div className="stack">
-      <p className="muted compact-help">Les templates de personnages servent de fiches modeles, avec leurs infos rapides et leurs suivis.</p>
+      <p className="muted compact-help">Les modèles de personnages servent de fiches prêtes à réutiliser, avec leurs infos rapides et leurs indicateurs.</p>
       <NouvelleCategorieTemplate onAjouterCategorie={onAjouterCategorie} />
       {groupes.map((groupe, index) => (
         <section className="hub-template-group" key={groupe.categorie}>
           <EnteteCategorieTemplate groupe={groupe} index={index} total={groupes.length} onAjouterTemplateCategorie={onAjouterTemplateCategorie} onRenommerCategorie={onRenommerCategorie} onSupprimerCategorie={onSupprimerCategorie} onDeplacerCategorie={onDeplacerCategorie} />
           {groupe.templates.length === 0 ? (
-            <div className="empty-section panel">Aucun template dans cette categorie.</div>
+            <div className="empty-section panel">Aucun modèle dans cette catégorie.</div>
           ) : (
             <div className="stack">
               {groupe.templates.map((template) => (

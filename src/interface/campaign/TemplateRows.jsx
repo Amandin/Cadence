@@ -32,5 +32,5 @@ export function LigneTemplateSimple({ template, detail, onEditer, onDupliquer, o
 }
 
 export function LigneTemplateSysteme({ template, detail }) {
-  return <div className="restore-row hub-row template-row"><span className="template-row-main"><strong>{template.name}</strong><small>{detail}</small></span><span className="chip">Automatise depuis les regles</span></div>;
+  return <div className="restore-row hub-row template-row"><span className="template-row-main"><strong>{template.name}</strong><small>{detail}</small></span><span className="chip">Automatisé par les règles</span></div>;
 }

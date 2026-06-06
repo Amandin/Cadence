@@ -52,7 +52,7 @@ rules.compat.initiativeCostPhases,Les actions multiples avec coût d’initiativ
 rules.compat.initiativeCostLabels,Les actions multiples avec coût d’initiative exigent une initiative numérique.
 rules.compat.initiativeCostDeclaration,Les actions multiples avec coût d’initiative sont incompatibles avec déclaration puis résolution.
 rules.compat.initiativeCostAscending,Les actions multiples avec coût d’initiative exigent un ordre décroissant.
-rules.compat.automaticPhasesTextInitiative,Les phases par initiative exigent une initiative numérique. Les labels restent possibles avec les phases cochées.
+rules.compat.automaticPhasesTextInitiative,Les phases par initiative exigent une initiative numérique. Les libellés restent possibles avec les phases cochées.
 rules.compat.surpriseFlexible,En mode souple, la surprise doit prendre fin au début du round.
 rules.compat.disableInitiativeCostFirst,Désactive d’abord le coût d’initiative.
 rules.compat.disableInitiativeCostActionsFirst,Désactive d’abord les actions multiples avec coût d’initiative.
@@ -62,9 +62,9 @@ rules.compat.unavailablePhases,Indisponible avec les phases.
 rules.compat.numericOnly,Disponible seulement avec une initiative numérique.
 rules.compat.disableDeclarationFirst,Désactive d’abord déclaration puis résolution.
 rules.compat.unavailableAscending,Indisponible en ordre ascendant.
-rules.compat.flexibleNoLabels,Le mode souple sans initiative classe seulement les personnages par type puis par nom. Réactive l’initiative pour utiliser des labels.
-rules.compat.automaticPhasesNeedNumeric,Les phases par initiative nécessitent une initiative numérique. Avec l’initiative par labels, utilise les phases cochées.
-rules.compat.textInitiativeAutomaticPhases,Les phases par initiative ne sont pas compatibles avec l’initiative par labels. Utilise les phases cochées ou repasse en initiative numérique.
+rules.compat.flexibleNoLabels,Le mode souple sans initiative classe seulement les personnages par type puis par nom. Réactive l’initiative pour utiliser des libellés.
+rules.compat.automaticPhasesNeedNumeric,Les phases par initiative nécessitent une initiative numérique. Avec l’initiative par libellés, utilise les phases cochées.
+rules.compat.textInitiativeAutomaticPhases,Les phases par initiative ne sont pas compatibles avec l’initiative par libellés. Utilise les phases cochées ou repasse en initiative numérique.
 rules.summary.numericInitiative,Initiative numérique
 rules.summary.manualSlots,Créneaux manuels
 rules.summary.initiativeCost,Actions multiples avec coût d’initiative

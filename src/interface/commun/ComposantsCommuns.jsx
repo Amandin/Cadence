@@ -10,7 +10,7 @@ export function AvatarParticipant({ participant }) {
 
 export function BoutonRepliFichette({ repliee = false, onClick, className = '' }) {
   return (
-    <button className={`icon-btn collapse-btn fiche-collapse-btn ${className}`} onClick={onClick} aria-label={repliee ? 'Derouler la fichette' : 'Enrouler la fichette'} type="button">
+    <button className={`icon-btn collapse-btn fiche-collapse-btn ${className}`} onClick={onClick} aria-label={repliee ? 'Dérouler la fichette' : 'Enrouler la fichette'} type="button">
       <svg viewBox="0 0 24 24" aria-hidden="true" className={repliee ? 'is-collapsed' : ''}>
         <path d="M7 13.5 12 9l5 4.5" />
         <path d="M7 17.5 12 13l5 4.5" />
@@ -37,7 +37,7 @@ export function EtiquetteEtat({ etat, onRetirer }) {
   const marqueurImpact = impactActif && etat.inactive
     ? <span className="inactive-status-mark" aria-label="Rend inactif">!</span>
     : impactActif && etat.limited
-      ? <span className="limited-status-mark" aria-label="Rend limite">!</span>
+      ? <span className="limited-status-mark" aria-label="Rend limité">!</span>
       : null;
   return <span className={`status ${typeEtat(etat)} ${etat.advanceOn === 'round' ? 'round-status' : ''} ${etat.inactive ? 'inactive-status' : ''} ${etat.limited ? 'limited-status' : ''} ${etat.expired ? 'expired' : ''}`}>{marqueurImpact}{etat.name} · {libelleEtat(etat)}<button onClick={onRetirer}>×</button></span>;
 }
@@ -46,8 +46,8 @@ export function BadgeRound({ round, effect, phase, surpriseRound = false }) {
   if (round < 0) {
     return (
       <div className="round prep-round">
-        <small>Scene</small>
-        <strong>Preparation</strong>
+        <small>Scène</small>
+        <strong>Préparation</strong>
       </div>
     );
   }
@@ -79,8 +79,8 @@ export function MessageChangementTemplate({ onAnnuler, onValider, onAbandonner }
   return (
     <div className="template-switch-notice">
       <div>
-        <strong>Un template est deja ouvert.</strong>
-        <p>Que faire des modifications en cours avant d'ouvrir l'autre template ?</p>
+        <strong>Un modèle est déjà ouvert.</strong>
+        <p>Que faire des modifications en cours avant d’ouvrir l’autre modèle ?</p>
       </div>
       <div className="template-switch-actions">
         <button className="small-btn" type="button" onClick={onAnnuler}>Rester ici</button>

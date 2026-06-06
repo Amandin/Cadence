@@ -148,7 +148,7 @@ export function createCampaignActions({ scenes, campaignRules, setCampaignRules,
         setTemplateStore(result.store);
         return { ok: true, added: result.added.length, skipped: result.skipped.length };
       } catch {
-        return { ok: false, message: 'Impossible de lire les templates de cette campagne.' };
+        return { ok: false, message: 'Impossible de lire les modèles de cette campagne.' };
       }
     },
     resetDemo() {

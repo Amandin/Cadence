@@ -149,7 +149,7 @@ function ListeDeclaration({ scene, participants, interactions }) {
           {ordreDeclaration.map((participant) => (
             <div className="declaration-entry" key={participant.id}>
               <FichetteLibre scene={scene} participant={participant} actifId="" activeSlotId="" interactions={interactions} />
-              <span className={`chip declaration-action-chip ${declarations[participant.id] ? 'ready' : ''}`}>{declarations[participant.id] || 'A choisir'}</span>
+              <span className={`chip declaration-action-chip ${declarations[participant.id] ? 'ready' : ''}`}>{declarations[participant.id] || 'À choisir'}</span>
             </div>
           ))}
         </div>

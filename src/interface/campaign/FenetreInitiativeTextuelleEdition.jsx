@@ -42,7 +42,7 @@ function ListeLibelles({ part, partIndex, totalParts, separatorAfter, onModifier
         <button className="small-btn subtle-danger" type="button" onClick={() => onSupprimerPartie(partIndex)} disabled={totalParts <= 1}>x</button>
       </div>
       <label className="field">Nom de la partie<input type="text" value={part.label} onChange={(event) => onModifierPart(partIndex, { label: event.target.value })} /></label>
-      {partIndex < totalParts - 1 && <label className="field">Separateur vers la partie suivante<input type="text" value={separatorAfter ?? ''} onChange={(event) => onModifierSeparateur(partIndex, event.target.value)} placeholder="ex: de, /, -" /></label>}
+      {partIndex < totalParts - 1 && <label className="field">Séparateur vers la partie suivante<input type="text" value={separatorAfter ?? ''} onChange={(event) => onModifierSeparateur(partIndex, event.target.value)} placeholder="ex: de, /, -" /></label>}
       <div className="stack compact-category-order">
         {(part.values || []).map((valeur, index) => (
           <div className="restore-row discreet" key={`${valeur}-${index}`}>
@@ -56,11 +56,11 @@ function ListeLibelles({ part, partIndex, totalParts, separatorAfter, onModifier
         ))}
       </div>
       <div className="row compact-toolbar-actions">
-        <input type="text" placeholder="Nouveau libelle" value={nouveau} onChange={(event) => setNouveau(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); ajouter(); } }} />
+        <input type="text" placeholder="Nouveau libellé" value={nouveau} onChange={(event) => setNouveau(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); ajouter(); } }} />
         <button className="small-btn" type="button" onClick={ajouter}>Ajouter</button>
       </div>
-      <button className="small-btn" type="button" onClick={() => onAjouterPartie(partIndex + 1)}>+ partie apres</button>
-      <p className="muted compact-help">L'ordre affiche est l'ordre de priorite : le premier libelle passe avant le suivant.</p>
+      <button className="small-btn" type="button" onClick={() => onAjouterPartie(partIndex + 1)}>+ partie après</button>
+      <p className="muted compact-help">L’ordre affiché est l’ordre de priorité : le premier libellé passe avant le suivant.</p>
     </div>
   );
 }
@@ -69,9 +69,9 @@ function ConfirmationSortie({ onAnnuler, onConfirmer }) {
   return (
     <Fenetre title="Quitter sans enregistrer ?" onClose={onAnnuler}>
       <div className="stack">
-        <p className="muted compact-help" style={{ margin: 0 }}>Les modifications du preset ne seront pas conservees.</p>
+        <p className="muted compact-help" style={{ margin: 0 }}>Les modifications du préréglage ne seront pas conservées.</p>
         <div className="grid2">
-          <button className="small-btn" type="button" onClick={onAnnuler}>Continuer l'edition</button>
+          <button className="small-btn" type="button" onClick={onAnnuler}>Continuer l’édition</button>
           <button className="danger-btn" type="button" onClick={onConfirmer}>Quitter sans conserver</button>
         </div>
       </div>
@@ -147,13 +147,13 @@ export function FenetreInitiativeTextuelleEdition({ config, onFermer, onValider 
     [values[valueIndex], values[target]] = [values[target], values[valueIndex]];
     modifierPart(partIndex, { values });
   };
-  const header = <div className="row" style={{ justifyContent: 'space-between', marginBottom: 10 }}><h2 style={{ margin: 0 }}>Modifier les labels d'initiative</h2><div className="row"><button className="small-btn" type="button" onClick={demanderFermeture}>Annuler</button><button className="icon-btn validate-edit-btn" type="button" onClick={valider} aria-label="Enregistrer les labels">✓</button></div></div>;
+  const header = <div className="row" style={{ justifyContent: 'space-between', marginBottom: 10 }}><h2 style={{ margin: 0 }}>Modifier les libellés d’initiative</h2><div className="row"><button className="small-btn" type="button" onClick={demanderFermeture}>Annuler</button><button className="icon-btn validate-edit-btn" type="button" onClick={valider} aria-label="Enregistrer les libellés">✓</button></div></div>;
 
   return (
     <>
-      <Fenetre title="Modifier les labels d'initiative" onClose={demanderFermeture} header={header}>
+      <Fenetre title="Modifier les libellés d’initiative" onClose={demanderFermeture} header={header}>
         <div className="stack">
-          <label className="field">Preset<select value={draft.preset || ''} onChange={(event) => appliquerPreset(event.target.value)}><option value="">Personnalise</option>{Object.values(initiativeTextOrderPresetIds).map((id) => <option key={id} value={id}>{initiativeTextOrderPresets[id].label}</option>)}</select></label>
+          <label className="field">Préréglage<select value={draft.preset || ''} onChange={(event) => appliquerPreset(event.target.value)}><option value="">Personnalisé</option>{Object.values(initiativeTextOrderPresetIds).map((id) => <option key={id} value={id}>{initiativeTextOrderPresets[id].label}</option>)}</select></label>
           {parts.map((part, index) => <ListeLibelles key={`${part.label}-${index}`} part={part} partIndex={index} totalParts={parts.length} separatorAfter={normalizedDraft.separators[index]} onModifierPart={modifierPart} onModifierSeparateur={modifierSeparateur} onAjouterValeur={ajouterValeur} onModifierValeur={modifierValeur} onSupprimerValeur={supprimerValeur} onDeplacerValeur={deplacerValeur} onAjouterPartie={ajouterPartie} onSupprimerPartie={supprimerPartie} onDeplacerPartie={deplacerPartie} />)}
           <button className="small-btn" type="button" onClick={() => ajouterPartie(parts.length)}>+ partie</button>
         </div>

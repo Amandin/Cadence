@@ -52,10 +52,10 @@ function OptionsCompteurScene({ scene, compteur, onModifier, onChanger, onOuvrir
   return (
     <div className="scene-options compact-options">
       <div className="compact-option-title">
-        <h3>Suivi global</h3>
+        <h3>Indicateur de scène</h3>
         <div className="row">
           <button className="small-btn" onClick={onOuvrirAvance}>Modifier</button>
-          <button className={`scene-clock-toggle ${courant.enabled ? 'active' : ''}`} onClick={() => modifier({ enabled: !courant.enabled })} aria-label="Activer ou desactiver le suivi global" title="Suivi global">
+          <button className={`scene-clock-toggle ${courant.enabled ? 'active' : ''}`} onClick={() => modifier({ enabled: !courant.enabled })} aria-label="Activer ou désactiver l’indicateur de scène" title="Indicateur de scène">
             <span>{courant.enabled ? '◷' : '○'}</span>
           </button>
         </div>
@@ -68,7 +68,7 @@ function OptionsCompteurScene({ scene, compteur, onModifier, onChanger, onOuvrir
           {courant.mode === 'timer' && <label className="field">Minutes<input type="number" inputMode="numeric" min="1" value={Math.max(1, Math.round(dureeSecondes / 60))} onChange={(event) => modifier({ max: Math.max(1, Number(event.target.value) || 1) * 60 })} /></label>}
         </div>
         {!tempsReel && <label className="field">Maximum<input type="number" inputMode="numeric" min="1" value={courant.max ?? 10} onChange={(event) => modifier({ max: Math.max(1, Number(event.target.value) || 1) })} /></label>}
-        {!tempsReel && <label className="row counter-auto-row"><input type="checkbox" checked={!!courant.auto} onChange={(event) => modifier({ auto: event.target.checked })} /> avance à chaque nouveau round</label>}
+        {!tempsReel && <label className="row counter-auto-row"><input type="checkbox" checked={!!courant.auto} onChange={(event) => modifier({ auto: event.target.checked })} /> avancer à chaque nouveau round</label>}
         {!tempsReel && <div className="grid2"><button className="small-btn" onClick={() => onChanger(-1)}>−1</button><button className="small-btn" onClick={() => onChanger(1)}>+1</button></div>}
         {tempsReel && <div className="timer-control-panel menu-timer-panel">
           <strong>{affichageTemps}</strong>
@@ -89,8 +89,8 @@ function formaterSecondes(secondes) {
 }
 
 function resumeSuiviGlobal(compteur) {
-  if (!compteur?.enabled) return 'Aucun suivi global configure';
-  const nom = compteur.name || (compteur.mode === 'timer' ? 'Minuteur' : compteur.mode === 'stopwatch' ? 'Chrono' : 'Suivi global');
+  if (!compteur?.enabled) return 'Aucun indicateur de scène configuré';
+  const nom = compteur.name || (compteur.mode === 'timer' ? 'Minuteur' : compteur.mode === 'stopwatch' ? 'Chrono' : 'Indicateur de scène');
   if (compteur.mode === 'timer') {
     const etat = globalTrackerTimerState(compteur);
     const valeur = compteur.limitMode === 'overflow' && etat.complete ? `+${formaterSecondes(etat.overrunSeconds)}` : formaterSecondes(etat.remainingSeconds);
@@ -117,10 +117,10 @@ function OptionsSuiviGlobal({ compteur, onModifier, onOuvrirAvance }) {
   return (
     <div className="scene-options compact-options menu-global-tracker">
       <div className="compact-option-title">
-        <h3>Suivi global</h3>
+        <h3>Indicateur de scène</h3>
         <label className={`global-switch ${courant.enabled ? 'active' : ''}`}>
           <span>{courant.enabled ? 'ON' : 'OFF'}</span>
-          <input type="checkbox" checked={!!courant.enabled} onChange={(event) => modifier({ enabled: event.target.checked })} aria-label="Activer ou desactiver le suivi global" />
+          <input type="checkbox" checked={!!courant.enabled} onChange={(event) => modifier({ enabled: event.target.checked })} aria-label="Activer ou désactiver l’indicateur de scène" />
         </label>
       </div>
       <p className="global-summary">{resumeSuiviGlobal(courant)}</p>
@@ -171,7 +171,7 @@ function NotesSceneMenu({ scene, onModifierNotes }) {
   );
 }
 
-function OptionsDerouleScene({ scene, points, pointActif, onChoisirPoint, onRestaurer, onRetourPreparation, onAvancerRound, onResetSuivis, onEffacerEtats }) {
+function OptionsDerouleScene({ scene, points, pointActif, onChoisirPoint, onRestaurer, onRetourPreparation, onAvancerRound, onResetSuivis }) {
   if (!scene) return null;
 
   return (
@@ -183,7 +183,7 @@ function OptionsDerouleScene({ scene, points, pointActif, onChoisirPoint, onRest
       <p className="muted" style={{ marginTop: 4, fontSize: 12 }}>Replace la scène avant le lancement de l’initiative.</p>
       <div className="menu-action-grid scene-management-grid">
         <button className="small-btn" onClick={onAvancerRound}>Round +1</button>
-        <button className="small-btn" onClick={onResetSuivis}>Réinitialiser les suivis</button>
+        <button className="small-btn" onClick={onResetSuivis}>Réinitialiser les indicateurs</button>
       </div>
       {points.length > 0 && <RestaurationScene points={points} pointActif={pointActif} onChoisirPoint={onChoisirPoint} onRestaurer={onRestaurer} />}
     </div>
