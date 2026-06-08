@@ -292,7 +292,7 @@ function EditeurInfosRapides({ stats = [], onChange }) {
     if (normalisee.editable) modifier(index, normalisee);
   };
 
-  return <div className="stack quick-stats-editor">{lignes.map((info, index) => <div className={`quick-stat-row ${info.editable ? 'editable' : ''}`} key={index}>{info.editable ? <><input className="quick-stat-label-input" value={info.label} placeholder="Libelle" onChange={(e) => modifier(index, { label: e.target.value })} /><input className="quick-stat-value-input" value={info.value} placeholder="Valeur" onChange={(e) => modifier(index, { value: e.target.value })} /></> : <input value={info.label} placeholder="CA 21, Attaque +6, Armure lourde..." onChange={(e) => changerTexte(index, e.target.value)} onBlur={() => separerValeurFinale(index)} />}<button className="small-btn subtle-danger" onClick={() => supprimer(index)} disabled={lignes.length <= 1 && !info.label && !info.value}>x</button></div>)}<button className="small-btn" onClick={ajouter}>+ info rapide</button></div>;
+  return <div className="stack quick-stats-editor">{lignes.map((info, index) => <div className={`quick-stat-row ${info.editable ? 'editable' : ''}`} key={index}>{info.editable ? <><input className="quick-stat-label-input" value={info.label} placeholder="Libellé" onChange={(e) => modifier(index, { label: e.target.value })} /><input className="quick-stat-value-input" value={info.value} placeholder="Valeur" onChange={(e) => modifier(index, { value: e.target.value })} /></> : <input value={info.label} placeholder="CA 21, Attaque +6, Armure lourde..." onChange={(e) => changerTexte(index, e.target.value)} onBlur={() => separerValeurFinale(index)} />}<button className="small-btn subtle-danger" onClick={() => supprimer(index)} disabled={lignes.length <= 1 && !info.label && !info.value}>x</button></div>)}<button className="small-btn" onClick={ajouter}>+ info rapide</button></div>;
 }
 
 function thresholdOutOfBounds(seuil, suivi, bounds = {}) {
@@ -405,7 +405,7 @@ function OptionsReset({ suivi, onChange, allowActivationAutomation = true }) {
         <div className="line-count-row">
           <label>État par défaut</label>
           <button className={`small-btn ${defaultMode === 'full' ? 'suggested' : ''}`} onClick={() => onChange({ ...presetPatch('full'), resetDefaultMode: 'full' })}>max</button>
-          <button className={`small-btn ${defaultMode === 'empty' ? 'suggested' : ''}`} onClick={() => onChange({ ...presetPatch('empty'), resetDefaultMode: 'empty' })}>zero</button>
+          <button className={`small-btn ${defaultMode === 'empty' ? 'suggested' : ''}`} onClick={() => onChange({ ...presetPatch('empty'), resetDefaultMode: 'empty' })}>zéro</button>
           <button className={`small-btn ${defaultMode === 'custom' ? 'suggested' : ''}`} onClick={() => onChange({ resetDefaultMode: 'custom' })}>personnalisé</button>
         </div>
         {defaultMode === 'custom' && <ChampNombre label="Valeur" valeur={suivi.initial ?? 0} onChange={(valeur) => onChange({ initial: valeur })} />}
@@ -453,19 +453,19 @@ function OptionsReset({ suivi, onChange, allowActivationAutomation = true }) {
       )}
       {estCompteur && <p className="muted tracker-help">Le retour par défaut d’un compteur utilise ses valeurs initiales. Le pas automatique peut être borné par les limites ci-dessous.</p>}
       <label className={`reset-switch ${activationVerrouillee ? 'disabled' : ''}`}>
-        <span>Automatique a l'activation</span>
+        <span>Automatique à l’activation</span>
         <input type="checkbox" checked={autoActif} disabled={activationVerrouillee} onChange={(e) => onChange({ autoReset: e.target.checked ? 'activation' : 'never', resetRule: { ...rule, mode: 'towardDefault' } })} />
       </label>
-      {activationVerrouillee && <p className="rule-option-note">Mode souple : pas de nouvel automatisme a activation.</p>}
+      {activationVerrouillee && <p className="rule-option-note">Mode souple : pas de nouvel automatisme à l’activation.</p>}
       {autoActif && (
         <div className="grid2">
-          <ChampNombre label={estPuces ? 'Pas non signe' : rule.stepMode === 'percent' ? 'Pas en %' : 'Pas'} valeur={rule.step ?? 1} onChange={(valeur) => onChange({ resetRule: { ...rule, mode: 'towardDefault', step: valeur } })} />
+          <ChampNombre label={estPuces ? 'Pas non signé' : rule.stepMode === 'percent' ? 'Pas en %' : 'Pas'} valeur={rule.step ?? 1} onChange={(valeur) => onChange({ resetRule: { ...rule, mode: 'towardDefault', step: valeur } })} />
           {estCompteur && <label className="field">Mode du pas<select value={rule.stepMode || 'flat'} onChange={(e) => onChange({ resetRule: { ...rule, stepMode: e.target.value } })}><option value="flat">Valeur fixe</option><option value="percent">Pourcentage</option></select></label>}
         </div>
       )}
       {autoActif && estCompteur && <div className="grid2"><ChampNombre label="Min optionnel" valeur={rule.minCap ?? ''} placeholder="pas de borne" onChange={(valeur) => onChange({ resetRule: { ...rule, minCap: valeur } })} /><ChampNombre label="Max optionnel" valeur={rule.maxCap ?? ''} placeholder="pas de borne" onChange={(valeur) => onChange({ resetRule: { ...rule, maxCap: valeur } })} /></div>}
-      {autoActif && estCompteur && rule.stepMode === 'percent' && <label className="field">Arrondi<select value={rule.rounding || 'nearest'} onChange={(e) => onChange({ resetRule: { ...rule, rounding: e.target.value } })}><option value="nearest">Mathematique</option><option value="floor">Inferieur</option><option value="ceil">Superieur</option></select></label>}
-      {autoActif && estBarre && <div className="grid2"><ChampNombre label="% du depassement retire" valeur={rule.overflowTrimPercent ?? 0} onChange={(valeur) => onChange({ resetRule: { ...rule, overflowTrimPercent: valeur } })} /><div /></div>}
+      {autoActif && estCompteur && rule.stepMode === 'percent' && <label className="field">Arrondi<select value={rule.rounding || 'nearest'} onChange={(e) => onChange({ resetRule: { ...rule, rounding: e.target.value } })}><option value="nearest">Mathématique</option><option value="floor">Inférieur</option><option value="ceil">Supérieur</option></select></label>}
+      {autoActif && estBarre && <div className="grid2"><ChampNombre label="% du dépassement retiré" valeur={rule.overflowTrimPercent ?? 0} onChange={(valeur) => onChange({ resetRule: { ...rule, overflowTrimPercent: valeur } })} /><div /></div>}
     </div>
   );
 }
