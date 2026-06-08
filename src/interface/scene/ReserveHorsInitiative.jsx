@@ -3,7 +3,7 @@ import { trierReserve } from '../../domain/initiative.js';
 import { t } from '../../i18n/index.js';
 import { FichetteReserve } from '../fiches/FichetteReserve.jsx';
 
-export function ReserveHorsInitiative({ scene, interactions, onModifierNotes, onAvancerReserve }) {
+export function ReserveHorsInitiative({ scene, interactions, onModifierNotes }) {
   if (!scene.reserve?.length) return null;
 
   const reserveTriee = trierReserve(scene.reserve, {
@@ -15,7 +15,6 @@ export function ReserveHorsInitiative({ scene, interactions, onModifierNotes, on
     <section className="reserve">
       <div className="reserve-head">
         <h3>{t('reserve.title')}</h3>
-        {onAvancerReserve && <button className="small-btn" type="button" onClick={onAvancerReserve}>{t('reserve.advance')}</button>}
       </div>
       {reserveTriee.map((participant) => (
         <FichetteReserve

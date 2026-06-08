@@ -514,6 +514,8 @@ export function FenetreEditionFiche({ participant, initiativeTextOrder, phaseAct
   const typesDisponibles = [...new Set([...participantKinds, ...(categoryOrder || []), participant.kind].filter(Boolean))];
   const [brouillon, setBrouillon] = useState({ ...clone(participant), phaseActions: modePhasesCochees ? (Array.isArray(participant.phaseActions) ? participant.phaseActions : ['1']) : participant.phaseActions, _actionSlotsInput: texteCreneauxAction(participant), _actionSlotsDraft: multipleActionSlots ? brouillonCreneauxAction(participant) : brouillonCreneauxAction(participant).slice(0, 1), stats: normaliserInfosRapides(participant.stats || []) });
   const [trackerTemplateId, setTrackerTemplateId] = useState(trackerTemplates[0]?.id || '');
+  const [trackerPersonnaliseType, setTrackerPersonnaliseType] = useState('bar');
+  const [trackerPersonnaliseNom, setTrackerPersonnaliseNom] = useState('');
   const [ajoutIndicateurOuvert, setAjoutIndicateurOuvert] = useState(false);
   const [confirmationSuppression, setConfirmationSuppression] = useState(false);
   const categoriesTemplateDisponibles = [...new Set([templateCategory, ...(templateCategories || [])].filter(Boolean))];
@@ -523,6 +525,8 @@ export function FenetreEditionFiche({ participant, initiativeTextOrder, phaseAct
   }, [templateCategory]);
   const creneauxActionSource = Array.isArray(brouillon._actionSlotsDraft) && brouillon._actionSlotsDraft.length ? brouillon._actionSlotsDraft : brouillonCreneauxAction(brouillon);
   const creneauxAction = multipleActionSlots ? creneauxActionSource : creneauxActionSource.slice(0, 1);
+  const selectionAjoutIndicateur = trackerTemplateId || trackerTemplates[0]?.id || 'custom';
+  const ajoutIndicateurPersonnalise = selectionAjoutIndicateur === 'custom';
   const modifierCreneauAction = (index, valeur) => setBrouillon((courant) => ({
     ...courant,
     _actionSlotsDraft: (courant._actionSlotsDraft || brouillonCreneauxAction(courant)).map((slot, position) => position === index ? { ...slot, initiative: valeur } : slot),
@@ -543,7 +547,7 @@ export function FenetreEditionFiche({ participant, initiativeTextOrder, phaseAct
     return { ...courant, _actionSlotsDraft: slots.length > 1 ? slots : [...slots, { id: uid('slot'), initiative: slots[0]?.initiative ?? courant.initiative ?? 0 }] };
   });
   const ajouterSuiviDepuisTemplate = () => {
-    const template = trackerTemplates.find((item) => item.id === trackerTemplateId) || trackerTemplates[0];
+    const template = trackerTemplates.find((item) => item.id === selectionAjoutIndicateur) || trackerTemplates[0];
     const suivi = instantiateTrackerTemplate(template);
     if (!suivi) return;
     const suiviCompatible = allowActivationAutomation || suivi.autoReset !== 'activation' ? suivi : { ...suivi, autoReset: 'never' };
@@ -551,7 +555,11 @@ export function FenetreEditionFiche({ participant, initiativeTextOrder, phaseAct
     setAjoutIndicateurOuvert(false);
   };
   const ajouterSuiviPersonnalise = () => {
-    setBrouillon((courant) => ({ ...courant, trackers: [...courant.trackers, nouveauSuiviPourMode('bar', allowActivationAutomation)] }));
+    const nom = trackerPersonnaliseNom.trim();
+    const suivi = nouveauSuiviPourMode(trackerPersonnaliseType, allowActivationAutomation);
+    const suiviNomme = nom ? { ...suivi, name: nom } : suivi;
+    setBrouillon((courant) => ({ ...courant, trackers: [...(courant.trackers || []), suiviNomme] }));
+    setTrackerPersonnaliseNom('');
     setAjoutIndicateurOuvert(false);
   };
   const renduEditionMultiple = (entete, valider, enregistrerCommeTemplate) => (
@@ -594,15 +602,23 @@ export function FenetreEditionFiche({ participant, initiativeTextOrder, phaseAct
         <EditeurInfosRapides stats={brouillon.stats || []} onChange={(stats) => modifierChamp('stats', stats)} />
         <h3>Indicateurs</h3>
         <div className="stack tracker-list">
-          {brouillon.trackers.map((suivi) => <EditeurSuivi key={suivi.id} suivi={suivi} onChange={(suivant) => modifierSuivi(suivi.id, suivant)} onDelete={() => setBrouillon((courant) => ({ ...courant, trackers: courant.trackers.filter((item) => item.id !== suivi.id) }))} allowActivationAutomation={allowActivationAutomation} />)}
-          {!ajoutIndicateurOuvert && <button className="primary add-tracker-btn" onClick={trackerTemplates.length > 0 ? () => setAjoutIndicateurOuvert(true) : ajouterSuiviPersonnalise}>Ajouter un indicateur</button>}
-          {ajoutIndicateurOuvert && <div className="template-picker-row">
-            <select value={trackerTemplateId || 'custom'} onChange={(event) => setTrackerTemplateId(event.target.value)}>
-              {trackerTemplates.map((template) => <option key={template.id} value={template.id}>{template.name}</option>)}
-              <option value="custom">Personnalisé</option>
-            </select>
-            <button className="small-btn" type="button" onClick={trackerTemplateId === 'custom' ? ajouterSuiviPersonnalise : ajouterSuiviDepuisTemplate}>Ajouter</button>
-            <button className="small-btn" type="button" onClick={() => setAjoutIndicateurOuvert(false)}>Annuler</button>
+          {(brouillon.trackers || []).map((suivi) => <EditeurSuivi key={suivi.id} suivi={suivi} onChange={(suivant) => modifierSuivi(suivi.id, suivant)} onDelete={() => setBrouillon((courant) => ({ ...courant, trackers: (courant.trackers || []).filter((item) => item.id !== suivi.id) }))} allowActivationAutomation={allowActivationAutomation} />)}
+          {!ajoutIndicateurOuvert && <button className="primary add-tracker-btn" onClick={() => setAjoutIndicateurOuvert(true)}>Ajouter un indicateur</button>}
+          {ajoutIndicateurOuvert && <div className="stack tracker-add-panel">
+            <div className="template-picker-row">
+              <select value={selectionAjoutIndicateur} onChange={(event) => setTrackerTemplateId(event.target.value)}>
+                {trackerTemplates.map((template) => <option key={template.id} value={template.id}>{template.name}</option>)}
+                <option value="custom">Personnalisé</option>
+              </select>
+            </div>
+            {ajoutIndicateurPersonnalise && <div className="grid2">
+              <label className="field">Type<select value={trackerPersonnaliseType} onChange={(event) => setTrackerPersonnaliseType(event.target.value)}>{Object.entries(trackerTypeLabels).map(([type, label]) => <option key={type} value={type}>{label}</option>)}</select></label>
+              <label className="field">Titre<input value={trackerPersonnaliseNom} placeholder={trackerTypeLabels[trackerPersonnaliseType] || 'Indicateur'} onChange={(event) => setTrackerPersonnaliseNom(event.target.value)} /></label>
+            </div>}
+            <div className="grid2">
+              <button className="small-btn" type="button" onClick={ajoutIndicateurPersonnalise ? ajouterSuiviPersonnalise : ajouterSuiviDepuisTemplate}>Ajouter</button>
+              <button className="small-btn" type="button" onClick={() => setAjoutIndicateurOuvert(false)}>Annuler</button>
+            </div>
           </div>}
         </div>
         <div className="edit-actions-row" style={{ marginTop: 12 }}><button className="small-btn" onClick={onClose}>Annuler</button><button className="primary" onClick={valider}>Valider</button><button className="danger-btn" onClick={() => setConfirmationSuppression(true)}>{deleteLabel}</button></div>

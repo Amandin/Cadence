@@ -1090,28 +1090,25 @@ body {
   }
 
   .scene-main.with-reserve {
-    grid-template-columns: minmax(0, 1fr) minmax(280px, var(--layout-reserve-width));
-    align-items: start;
-    gap: 16px;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+    gap: 14px;
   }
 
   .scene-main.with-reserve .reserve {
-    position: sticky;
-    top: 126px;
-    max-height: calc(100vh - 152px);
-    margin-top: 0;
+    position: static;
+    max-height: none;
+    margin-top: 18px;
     padding: 10px;
-    overflow: auto;
+    overflow: visible;
     border: 1px solid var(--ui-border);
     border-radius: 24px;
     background: var(--ui-surface-soft);
     box-shadow: var(--ui-shadow-surface);
   }
 
-  .scene-main.with-reserve .reserve > h3 {
-    position: sticky;
-    top: -10px;
-    z-index: 2;
+  .scene-main.with-reserve .reserve > .reserve-head {
+    position: static;
     margin: -10px -10px 8px;
     padding: 10px;
     background: var(--ui-surface);
@@ -1165,9 +1162,9 @@ body {
   }
 
   .scene-main.with-reserve {
-    grid-template-columns: minmax(0, 760px) minmax(320px, var(--layout-reserve-width));
+    grid-template-columns: minmax(0, 760px);
     justify-content: center;
-    gap: 20px;
+    gap: 14px;
   }
 
   .scene-app.has-character-panel .shell {

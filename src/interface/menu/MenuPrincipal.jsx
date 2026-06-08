@@ -121,18 +121,23 @@ function NotesSceneMenu({ scene, onModifierNotes }) {
   );
 }
 
-function OptionsAvanceesScene({ scene, onAvancerRound }) {
+function OptionsAvanceesScene({ scene, onAvancerRound, onReculerRound, onAvancerAutomatismes, onReculerAutomatismes }) {
   if (!scene || scene.round < 0) return null;
   return (
     <details className="advanced-options menu-advanced-scene-actions">
       <summary>Actions avancées</summary>
-      <button className="small-btn" onClick={onAvancerRound} title="Passe au round suivant et applique les automatismes de début de round.">Forcer le round suivant</button>
-      <p className="muted compact-help">Cette action déclenche les automatismes de changement de round. Utilise plutôt “Suivant” pendant le jeu normal.</p>
+      <div className="menu-action-grid">
+        <button className="small-btn" onClick={onReculerRound} disabled={scene.round <= 0} title="Baisse seulement le numéro du round.">Reculer le numéro de round</button>
+        <button className="small-btn" onClick={onAvancerRound} title="Passe au round suivant et applique les automatismes de début de round.">Passer au round suivant maintenant</button>
+        <button className="small-btn" onClick={onAvancerAutomatismes} title="Applique les automatismes de début de round et d’activation aux personnages en initiative.">Avancer les automatismes</button>
+        <button className="small-btn" onClick={onReculerAutomatismes} title="Recule les automatismes de round et d’activation quand Cadence sait les inverser.">Reculer les automatismes</button>
+      </div>
+      <p className="muted compact-help">Ces actions servent à corriger une scène. Pendant le jeu normal, utilise plutôt “Suivant”.</p>
     </details>
   );
 }
 
-function OptionsDerouleScene({ scene, points, pointActif, onChoisirPoint, onRestaurer, onRetourPreparation, onAvancerRound, onResetSuivis }) {
+function OptionsDerouleScene({ scene, points, pointActif, onChoisirPoint, onRestaurer, onRetourPreparation, onAvancerRound, onReculerRound, onAvancerAutomatismes, onReculerAutomatismes, onResetSuivis }) {
   if (!scene) return null;
 
   return (
@@ -143,7 +148,7 @@ function OptionsDerouleScene({ scene, points, pointActif, onChoisirPoint, onRest
         <button className="small-btn" onClick={onResetSuivis}>Réinitialiser les indicateurs</button>
       </div>
       {points.length > 0 && <RestaurationScene points={points} pointActif={pointActif} onChoisirPoint={onChoisirPoint} onRestaurer={onRestaurer} />}
-      <OptionsAvanceesScene scene={scene} onAvancerRound={onAvancerRound} />
+      <OptionsAvanceesScene scene={scene} onAvancerRound={onAvancerRound} onReculerRound={onReculerRound} onAvancerAutomatismes={onAvancerAutomatismes} onReculerAutomatismes={onReculerAutomatismes} />
     </details>
   );
 }
@@ -202,7 +207,7 @@ function FenetreEditionIndicateurScene({ scene, compteur, onModifier, onChanger,
   );
 }
 
-export function MenuPrincipal({ scene, restorePoints = [], onRestore, onReturnToPreparation, onAdvanceRound, onResetTrackers, onClearStatuses, onClose, dark, setDark, onAddParticipant, onOpenInitiativeRoller, onOpenCampaignHub, onGlobalTracker, onStepGlobalTracker, onAddSceneStatus, onRemoveSceneStatus, onUpdateSceneNotes }) {
+export function MenuPrincipal({ scene, restorePoints = [], onRestore, onReturnToPreparation, onAdvanceRound, onDecreaseRound, onAdvanceAutomations, onRewindAutomations, onResetTrackers, onClearStatuses, onClose, dark, setDark, onAddParticipant, onOpenInitiativeRoller, onOpenCampaignHub, onGlobalTracker, onStepGlobalTracker, onAddSceneStatus, onRemoveSceneStatus, onUpdateSceneNotes }) {
   const pointsRestauration = [...restorePoints].sort((a, b) => a.round - b.round);
   const [pointRestaurationId, setPointRestaurationId] = useState(pointsRestauration.at(-1)?.id || '');
   const [editionIndicateurOuverte, setEditionIndicateurOuverte] = useState(false);
@@ -214,7 +219,7 @@ export function MenuPrincipal({ scene, restorePoints = [], onRestore, onReturnTo
           <button className="primary hub-menu-main-action" onClick={onOpenCampaignHub}>Retour au hub de campagne</button>
           <ActionsScene onAjouterParticipant={onAddParticipant} onSaisirInitiatives={onOpenInitiativeRoller} />
           <ElementsSceneMenu scene={scene} onIndicateurScene={onGlobalTracker} onModifierIndicateurScene={() => setEditionIndicateurOuverte(true)} onAjouterEtatScene={onAddSceneStatus} onRetirerEtatScene={onRemoveSceneStatus} onEffacerEtats={onClearStatuses} />
-          <OptionsDerouleScene scene={scene} points={pointsRestauration} pointActif={pointRestaurationId} onChoisirPoint={setPointRestaurationId} onRestaurer={onRestore} onRetourPreparation={onReturnToPreparation} onAvancerRound={onAdvanceRound} onResetSuivis={onResetTrackers} />
+          <OptionsDerouleScene scene={scene} points={pointsRestauration} pointActif={pointRestaurationId} onChoisirPoint={setPointRestaurationId} onRestaurer={onRestore} onRetourPreparation={onReturnToPreparation} onAvancerRound={onAdvanceRound} onReculerRound={onDecreaseRound} onAvancerAutomatismes={onAdvanceAutomations} onReculerAutomatismes={onRewindAutomations} onResetSuivis={onResetTrackers} />
         </div>
         <div className="main-menu-secondary">
           <NotesSceneMenu scene={scene} onModifierNotes={onUpdateSceneNotes} />

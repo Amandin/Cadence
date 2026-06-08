@@ -638,6 +638,53 @@ describe('turn rollback', () => {
     expect(harness.current().reserve[0]).toMatchObject({ statuses: [{ id: 'wait', remaining: 1 }], trackers: [{ id: 'reserve-clock', current: 1 }] });
   });
 
+  it('advances manual automation correction for round and activation effects', () => {
+    const harness = createHarness({
+      id: 'scene',
+      temporalite: temporalityModes.CLASSIC,
+      startRound: 1,
+      round: 1,
+      activeId: 'solo',
+      activeSlotId: '',
+      globalTracker: { enabled: true, name: 'Menace', mode: 'counter', current: 0, max: 6, total: 0, auto: true, trigger: 'round' },
+      participants: [{
+        ...participant('solo', 12),
+        statuses: [
+          { id: 'round-status', name: 'Round', duration: 2, remaining: 2, advanceOn: 'round', expired: false },
+          { id: 'activation-status', name: 'Activation', duration: 2, remaining: 2, advanceOn: 'activation', expired: false },
+        ],
+        trackers: [
+          { id: 'round-clock', type: 'clock', current: 0, min: 0, max: 6, step: 1, autoReset: 'round' },
+          { id: 'activation-clock', type: 'clock', current: 0, min: 0, max: 6, step: 1, autoReset: 'activation' },
+        ],
+      }],
+      reserve: [{
+        ...participant('reserve', 0),
+        actionSlots: [],
+        statuses: [{ id: 'reserve-status', name: 'Reserve', duration: 2, remaining: 2, advanceOn: 'activation', expired: false }],
+        trackers: [{ id: 'reserve-clock', type: 'clock', current: 0, min: 0, max: 6, step: 1, autoReset: 'activation' }],
+      }],
+      statuses: [{ id: 'scene-status', name: 'Scene', duration: 2, remaining: 2, advanceOn: 'round', expired: false }],
+    });
+
+    harness.actions().advanceAllAutomations();
+
+    expect(harness.current().globalTracker.current).toBe(1);
+    expect(harness.current().statuses[0]).toMatchObject({ id: 'scene-status', remaining: 1 });
+    expect(harness.current().participants[0].statuses).toEqual([
+      expect.objectContaining({ id: 'round-status', remaining: 1 }),
+      expect.objectContaining({ id: 'activation-status', remaining: 1 }),
+    ]);
+    expect(harness.current().participants[0].trackers).toEqual([
+      expect.objectContaining({ id: 'round-clock', current: 1 }),
+      expect.objectContaining({ id: 'activation-clock', current: 1 }),
+    ]);
+    expect(harness.current().reserve[0]).toMatchObject({
+      statuses: [{ id: 'reserve-status', remaining: 2 }],
+      trackers: [{ id: 'reserve-clock', current: 0 }],
+    });
+  });
+
   it('creates and clears initiative-cost slots without changing base initiative', () => {
     const harness = createHarness({
       id: 'scene',

@@ -86,6 +86,34 @@ function appliquerDebutRoundInitial(scene) {
   };
 }
 
+function avancerAutomatismesParticipant(participant) {
+  return triggerActivation(tickParticipant(resetAutoTrackers(participant, 'round'), 'round'));
+}
+
+function reculerAutomatismesParticipant(participant) {
+  return {
+    ...untickParticipant(untickParticipant(participant, 'activation'), 'round'),
+    _activationAutomationsDone: false,
+  };
+}
+
+function avancerTousLesAutomatismes(scene) {
+  const sceneAvecEtats = tickSceneRoundStatuses(scene);
+  return {
+    ...sceneAvecEtats,
+    globalTracker: stepAutoGlobalTracker(sceneAvecEtats.globalTracker, 1),
+    participants: (sceneAvecEtats.participants || []).map(avancerAutomatismesParticipant),
+  };
+}
+
+function reculerTousLesAutomatismes(scene) {
+  return {
+    ...untickSceneRoundStatuses(scene),
+    globalTracker: stepAutoGlobalTracker(scene.globalTracker, -1),
+    participants: (scene.participants || []).map(reculerAutomatismesParticipant),
+  };
+}
+
 function demarrerScene(scene) {
   const sceneInitiale = appliquerDebutRoundInitial(scene);
   if (estModeDeclaration(scene)) {
@@ -366,6 +394,23 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
         setRestorePoints((points) => addRestorePoint(points, s.id, nextSceneAvecDeclaration));
         return empilerRetourTour(s, nextSceneAvecDeclaration);
       });
+    },
+    changeRoundNumber(delta = -1) {
+      setRoundEffect(null);
+      updateScene((s) => {
+        if (s.round < 0) return s;
+        const round = Math.max(0, Number(s.round || 0) + Number(delta || 0));
+        if (round === s.round) return s;
+        return empilerRetourTour(s, { ...s, round });
+      });
+    },
+    advanceAllAutomations() {
+      setRoundEffect(null);
+      updateScene((s) => empilerRetourTour(s, avancerTousLesAutomatismes(s)));
+    },
+    rewindAllAutomations() {
+      setRoundEffect(null);
+      updateScene((s) => empilerRetourTour(s, reculerTousLesAutomatismes(s)));
     },
     advanceReserveRound() {
       updateScene((s) => ({

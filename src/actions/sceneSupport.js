@@ -15,7 +15,7 @@ export function createBlankParticipant() {
     description: '',
     stats: [],
     statuses: [],
-    trackers: [newTracker('bar')],
+    trackers: [],
   };
 }
 

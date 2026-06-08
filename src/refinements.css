@@ -1996,11 +1996,44 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin-bottom: 8px;
+  margin: 0 0 10px;
+  padding-top: 12px;
+  border-top: 3px solid rgba(88, 28, 135, .34);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .55);
 }
 
 .reserve-head h3 {
   margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--theme-purple-deep);
+}
+
+.reserve-head h3::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--theme-purple);
+  box-shadow: 0 0 0 4px rgba(88, 28, 135, .12);
+}
+
+.dark .reserve-head {
+  border-top-color: rgba(210, 164, 86, .46);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08);
+}
+
+.dark .reserve-head h3 {
+  color: var(--theme-gold);
+}
+
+.dark .reserve-head h3::before {
+  background: var(--theme-gold);
+  box-shadow: 0 0 0 4px rgba(210, 164, 86, .14);
 }
 
 .initiative-card.played-slot {
