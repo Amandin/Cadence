@@ -1,4 +1,5 @@
 import { clone, newTracker, uid } from '../logic.js';
+import { mergeRulePresetCatalog } from '../rulePresets.js';
 import {
   categoryExists,
   createBlankParticipant,
@@ -26,7 +27,7 @@ function sameCategory(left, right) {
   return templateCategoryFromName(left)?.toLocaleLowerCase() === templateCategoryFromName(right)?.toLocaleLowerCase();
 }
 
-function uniqueTemplateName(templates, category, baseName = 'Nouveau template') {
+function uniqueTemplateName(templates, category, baseName = 'Nouveau modèle') {
   const cleanCategory = templateCategoryFromName(category) || 'PNJ';
   const existingNames = new Set(
     templates
@@ -39,7 +40,7 @@ function uniqueTemplateName(templates, category, baseName = 'Nouveau template') 
   return `${baseName} ${index}`;
 }
 
-function uniqueFlatTemplateName(templates, baseName = 'Nouveau template') {
+function uniqueFlatTemplateName(templates, baseName = 'Nouveau modèle') {
   const existingNames = new Set(templates.map((template) => template.name.toLocaleLowerCase()));
   if (!existingNames.has(baseName.toLocaleLowerCase())) return baseName;
   let index = 2;
@@ -68,10 +69,10 @@ export function useTemplates(store, setStore) {
   const saveParticipantAsTemplate = (participant, { name, category, newCategory, overwrite = false }) => {
     const targetCategory = newCategory?.trim() || category;
     const cleanName = name?.trim();
-    if (!cleanName) return { ok: false, kind: 'missing-name', message: 'Donne un nom au template.' };
+    if (!cleanName) return { ok: false, kind: 'missing-name', message: 'Donne un nom au modèle.' };
     if (!targetCategory?.trim()) return { ok: false, kind: 'missing-category', message: 'Choisis ou crée une catégorie.' };
     const duplicate = templateNameExists(templateStore.templates, targetCategory, cleanName);
-    if (duplicate && !overwrite) return { ok: false, kind: 'duplicate', message: 'Un template porte déjà ce nom dans cette catégorie. Tu peux l’écraser ou modifier le nom.' };
+    if (duplicate && !overwrite) return { ok: false, kind: 'duplicate', message: 'Un modèle porte déjà ce nom dans cette catégorie. Tu peux l’écraser ou modifier le nom.' };
 
     const template = makeTemplateFromParticipant(participant, { name: cleanName, category: targetCategory });
     updateStore((currentStore) => ({
@@ -120,7 +121,7 @@ export function useTemplates(store, setStore) {
     const cleanCategory = templateCategoryFromName(category);
     if (!cleanCategory) return { ok: false, message: 'Catégorie introuvable.' };
     const containsTemplates = templateStore.templates.some((template) => sameCategory(template.category, cleanCategory));
-    if (containsTemplates) return { ok: false, message: 'Cette catégorie contient encore des templates.' };
+    if (containsTemplates) return { ok: false, message: 'Cette catégorie contient encore des modèles.' };
 
     updateStore((currentStore) => ({
         ...currentStore,
@@ -160,7 +161,7 @@ export function useTemplates(store, setStore) {
 
   const updateTemplateParticipant = (templateId, participant, category) => {
     const cleanParticipant = { ...clone(participant), id: 'template-participant', statuses: [] };
-    const cleanName = cleanParticipant.name?.trim() || 'Template sans nom';
+    const cleanName = cleanParticipant.name?.trim() || 'Modèle sans nom';
     const cleanCategory = templateCategoryFromName(category);
     updateStore((currentStore) => ({
         ...currentStore,
@@ -185,7 +186,7 @@ export function useTemplates(store, setStore) {
   const duplicateTemplate = (templateId) => {
     const source = getTemplate(templateId);
     if (!source) return null;
-    const baseName = uniqueTemplateName(templateStore.templates, source.category, `${source.name || source.participant?.name || 'Template'} — copie`);
+    const baseName = uniqueTemplateName(templateStore.templates, source.category, `${source.name || source.participant?.name || 'Modèle'} — copie`);
     const duplicate = {
       ...clone(source),
       id: uid('tpl'),
@@ -216,12 +217,12 @@ export function useTemplates(store, setStore) {
   const getTrackerTemplate = (templateId) => templateStore.trackerTemplates.find((template) => template.id === templateId) || null;
   const createTrackerTemplate = (type = 'bar') => {
     const tracker = newTracker(type);
-    const template = makeTrackerTemplateFromTracker(tracker, { name: uniqueFlatTemplateName(templateStore.trackerTemplates, tracker.name || 'Suivi') });
+    const template = makeTrackerTemplateFromTracker(tracker, { name: uniqueFlatTemplateName(templateStore.trackerTemplates, tracker.name || 'Indicateur') });
     updateStore((currentStore) => ({ ...currentStore, trackerTemplates: [...currentStore.trackerTemplates, template] }));
     return template;
   };
   const updateTrackerTemplate = (templateId, tracker, name) => {
-    const cleanName = templateCategoryFromName(name || tracker?.name) || 'Suivi';
+    const cleanName = templateCategoryFromName(name || tracker?.name) || 'Indicateur';
     updateStore((currentStore) => ({
       ...currentStore,
       trackerTemplates: currentStore.trackerTemplates.map((template) => template.id === templateId
@@ -241,13 +242,13 @@ export function useTemplates(store, setStore) {
 
   const getStatusTemplate = (templateId) => templateStore.statusTemplates.find((template) => template.id === templateId) || null;
   const createStatusTemplate = () => {
-    const status = { id: 'template-status', name: 'Nouvel etat', duration: null, remaining: null, loop: false, inactive: false, advanceOn: 'activation', expired: false };
+    const status = { id: 'template-status', name: 'Nouvel état', duration: null, remaining: null, loop: false, inactive: false, advanceOn: 'activation', expired: false };
     const template = makeStatusTemplateFromStatus(status, { name: uniqueFlatTemplateName(templateStore.statusTemplates, status.name) });
     updateStore((currentStore) => ({ ...currentStore, statusTemplates: [...currentStore.statusTemplates, template] }));
     return template;
   };
   const updateStatusTemplate = (templateId, status, name) => {
-    const cleanName = templateCategoryFromName(name || status?.name) || 'Etat';
+    const cleanName = templateCategoryFromName(name || status?.name) || 'État';
     const duration = status.duration == null ? null : Math.max(1, Number(status.duration) || 1);
     updateStore((currentStore) => ({
       ...currentStore,
@@ -268,13 +269,13 @@ export function useTemplates(store, setStore) {
 
   const getSceneStatusTemplate = (templateId) => templateStore.sceneStatusTemplates.find((template) => template.id === templateId) || null;
   const createSceneStatusTemplate = () => {
-    const status = { id: 'template-status', name: 'Nouvel etat de scene', duration: null, remaining: null, loop: false, inactive: false, advanceOn: 'round', expired: false };
+    const status = { id: 'template-status', name: 'Nouvel état de scène', duration: null, remaining: null, loop: false, inactive: false, advanceOn: 'round', expired: false };
     const template = makeSceneStatusTemplateFromStatus(status, { name: uniqueFlatTemplateName(templateStore.sceneStatusTemplates, status.name) });
     updateStore((currentStore) => ({ ...currentStore, sceneStatusTemplates: [...currentStore.sceneStatusTemplates, template] }));
     return template;
   };
   const updateSceneStatusTemplate = (templateId, status, name) => {
-    const cleanName = templateCategoryFromName(name || status?.name) || 'Etat de scene';
+    const cleanName = templateCategoryFromName(name || status?.name) || 'État de scène';
     const duration = status.duration == null ? null : Math.max(1, Number(status.duration) || 1);
     updateStore((currentStore) => ({
       ...currentStore,
@@ -295,13 +296,13 @@ export function useTemplates(store, setStore) {
 
   const getSceneCounterTemplate = (templateId) => templateStore.sceneCounterTemplates.find((template) => template.id === templateId) || null;
   const createSceneCounterTemplate = () => {
-    const counter = { enabled: true, name: 'Nouveau suivi global', mode: 'clock', current: 0, max: 6, direction: 'progression', trigger: 'manual', limitMode: 'clamp', total: 0, loops: 0, auto: false, thresholds: [] };
+    const counter = { enabled: true, name: 'Nouvel indicateur de scène', mode: 'clock', current: 0, max: 6, direction: 'progression', trigger: 'manual', limitMode: 'clamp', total: 0, loops: 0, auto: false, thresholds: [] };
     const template = makeSceneCounterTemplateFromCounter(counter, { name: uniqueFlatTemplateName(templateStore.sceneCounterTemplates, counter.name) });
     updateStore((currentStore) => ({ ...currentStore, sceneCounterTemplates: [...currentStore.sceneCounterTemplates, template] }));
     return template;
   };
   const updateSceneCounterTemplate = (templateId, counter, name) => {
-    const cleanName = templateCategoryFromName(name || counter?.name) || 'Suivi global';
+    const cleanName = templateCategoryFromName(name || counter?.name) || 'Indicateur de scène';
     updateStore((currentStore) => ({
       ...currentStore,
       sceneCounterTemplates: currentStore.sceneCounterTemplates.map((template) => template.id === templateId
@@ -322,12 +323,12 @@ export function useTemplates(store, setStore) {
   const getRuleTemplate = (templateId) => templateStore.ruleTemplates.find((template) => template.id === templateId) || null;
   const saveRuleTemplate = (rules, options) => {
     const config = typeof options === 'string' ? { name: options } : (options || {});
-    const cleanName = templateCategoryFromName(config.name) || 'Regles';
+    const cleanName = templateCategoryFromName(config.name) || 'Règles';
     const sameName = (template) => template.name.toLocaleLowerCase() === cleanName.toLocaleLowerCase();
     const targetId = config.overwriteExistingId || config.templateId;
     const conflict = templateStore.ruleTemplates.find((template) => sameName(template) && template.id !== targetId);
     if (conflict && !config.confirmDuplicate) {
-      return { ok: false, kind: 'duplicate', message: 'Un template de regles porte deja ce nom.', conflict };
+      return { ok: false, kind: 'duplicate', message: 'Un préréglage de règles porte déjà ce nom.', conflict };
     }
 
     const source = makeRuleTemplateFromRules(rules, { name: cleanName });
@@ -373,6 +374,7 @@ export function useTemplates(store, setStore) {
     sceneStatusTemplates: templateStore.sceneStatusTemplates,
     sceneCounterTemplates: templateStore.sceneCounterTemplates,
     ruleTemplates: templateStore.ruleTemplates,
+    rulePresets: mergeRulePresetCatalog(templateStore.ruleTemplates),
     saveParticipantAsTemplate,
     createParticipantFromTemplate,
     getTemplate,

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { normalizeCampaignName } from '../../storage.js';
 import { Fenetre } from '../commun/ComposantsCommuns.jsx';
 
@@ -6,12 +6,16 @@ export function FenetreExportCampagne({ nomInitial, onFermer, onExporter }) {
   const [nom, setNom] = useState(nomInitial || 'Campagne Cadence');
   const [exportEnCours, setExportEnCours] = useState(false);
   const [message, setMessage] = useState('');
+  const exportEnCoursRef = useRef(false);
 
   const valider = async () => {
+    if (exportEnCoursRef.current) return;
+    exportEnCoursRef.current = true;
     setMessage('');
     setExportEnCours(true);
     const result = await onExporter(normalizeCampaignName(nom));
     setExportEnCours(false);
+    exportEnCoursRef.current = false;
     if (result?.ok) {
       onFermer();
       return;

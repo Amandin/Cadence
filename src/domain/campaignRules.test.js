@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { defaultTiebreakerLabel } from '../constants.js';
+import { defaultTiebreakerLabel, multipleActionModes } from '../constants.js';
 import { applyInitiativeRules, normalizeCampaignRules } from './campaignRules.js';
 
 describe('campaign rules', () => {
@@ -55,6 +55,16 @@ describe('campaign rules', () => {
     });
   });
 
+  it('forces surprise to end on round start in flexible mode', () => {
+    expect(applyInitiativeRules({ participants: [], reserve: [] }, {
+      temporalite: 'souple',
+      surpriseAdvanceOn: 'activation',
+    })).toMatchObject({
+      temporalite: 'souple',
+      surpriseAdvanceOn: 'round',
+    });
+  });
+
   it('updates existing surprised statuses when the campaign surprise rule changes', () => {
     expect(applyInitiativeRules({
       participants: [{ id: 'a', statuses: [{ id: 'surpris', name: 'Surpris', limited: true, inactive: false, advanceOn: 'activation' }] }],
@@ -101,5 +111,29 @@ describe('campaign rules', () => {
 
   it('retires the legacy surprise start rule', () => {
     expect(normalizeCampaignRules({ startRound: 0 }).startRound).toBe(1);
+  });
+
+  it('normalizes the retired adjustment before Next rule into initiative cost when compatible', () => {
+    expect(normalizeCampaignRules({
+      promptInitiativeOnNext: true,
+      temporalite: 'classic',
+      multipleActionSlots: false,
+    })).toMatchObject({
+      promptInitiativeOnNext: false,
+      multipleActionMode: multipleActionModes.INITIATIVE_COST,
+      multipleActionSlots: true,
+    });
+  });
+
+  it('disables the retired adjustment before Next rule when legacy manual slots were active', () => {
+    expect(normalizeCampaignRules({
+      promptInitiativeOnNext: true,
+      temporalite: 'classic',
+      multipleActionSlots: true,
+    })).toMatchObject({
+      promptInitiativeOnNext: false,
+      multipleActionMode: multipleActionModes.MANUAL,
+      multipleActionSlots: true,
+    });
   });
 });

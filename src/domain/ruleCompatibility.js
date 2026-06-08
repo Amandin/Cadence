@@ -1,48 +1,56 @@
 import {
   defaultPhaseActionMode,
+  initiativeOrders,
+  multipleActionModes,
   phaseActionModes,
   temporalityLabels,
   temporalityModes,
 } from '../constants.js';
+import { t } from '../i18n/index.js';
 import { normalizeInitiativeTextOrder } from './initiativeTextOrder.js';
+import { isInitiativeCostMode, isManualMultipleActionMode, multipleActionModeFromRules } from './initiativeCost.js';
 
 const blocked = (disabled, reason) => ({ disabled: !!disabled, reason: disabled ? reason : '' });
 
 export const usesTextInitiative = (rules = {}) => normalizeInitiativeTextOrder(rules.initiativeTextOrder).enabled;
-export const usesMultipleActionSlots = (rules = {}) => rules.multipleActionSlots !== false;
-export const usesActionAdjustment = (rules = {}) => !!rules.promptInitiativeOnNext;
+export const usesMultipleActionSlots = (rules = {}) => multipleActionModeFromRules(rules) !== multipleActionModes.NONE;
+export const usesManualMultipleActionSlots = (rules = {}) => isManualMultipleActionMode(rules);
+export const usesInitiativeCost = (rules = {}) => isInitiativeCostMode(rules);
+export const usesActionAdjustment = () => false;
 export const usesDeclaration = (rules = {}) => !!rules.declarationMode;
 export const usesAutomaticPhases = (rules = {}) => rules.temporalite === temporalityModes.PHASES && (rules.phaseActionMode || defaultPhaseActionMode) === phaseActionModes.AUTOMATIC;
 export const usesFlexibleInitiative = (rules = {}) => rules.temporalite !== temporalityModes.FLEXIBLE || rules.flexibleUseInitiative !== false;
 
 export function temporalityPatch(rules = {}, temporalite) {
   if (temporalite === temporalityModes.PHASES && (usesTextInitiative(rules) || rules.temporalite === temporalityModes.FLEXIBLE)) return { temporalite, phaseActionMode: phaseActionModes.CHECKED };
-  if (temporalite === temporalityModes.FLEXIBLE) return { temporalite, phaseActionMode: '' };
+  if (temporalite === temporalityModes.FLEXIBLE) return { temporalite, phaseActionMode: '', surpriseAdvanceOn: 'round' };
   return { temporalite };
 }
 
 export function ruleCompatibilityIssues(rules = {}) {
   const issues = [];
-  const adjustment = usesActionAdjustment(rules);
-  const multipleSlots = usesMultipleActionSlots(rules);
+  const multipleSlots = usesManualMultipleActionSlots(rules);
+  const initiativeCost = usesInitiativeCost(rules);
   const textInitiative = usesTextInitiative(rules);
   const declaration = usesDeclaration(rules);
   const phases = rules.temporalite === temporalityModes.PHASES;
+  const flexible = rules.temporalite === temporalityModes.FLEXIBLE;
 
-  if (adjustment && rules.temporalite === temporalityModes.FLEXIBLE) issues.push({ id: 'adjustment-flexible', message: "L'ajustement avant Suivant est incompatible avec le mode souple." });
-  if (adjustment && phases) issues.push({ id: 'adjustment-phases', message: "L'ajustement avant Suivant est incompatible avec les phases." });
-  if (adjustment && textInitiative) issues.push({ id: 'adjustment-text-initiative', message: "L'ajustement avant Suivant exige une initiative numerique." });
-  if (adjustment && multipleSlots) issues.push({ id: 'adjustment-multiple-slots', message: "L'ajustement avant Suivant ne peut pas etre combine avec les actions multiples manuelles." });
-  if (adjustment && declaration) issues.push({ id: 'adjustment-declaration', message: "L'ajustement avant Suivant est incompatible avec declaration puis resolution." });
   if (phases && multipleSlots) issues.push({ id: 'phases-multiple-slots', message: 'Les phases sont incompatibles avec les actions multiples manuelles.' });
-  if (usesAutomaticPhases(rules) && textInitiative) issues.push({ id: 'automatic-phases-text-initiative', message: "Les phases par initiative exigent une initiative numerique. Les labels restent possibles avec les phases cochees." });
+  if (initiativeCost && flexible) issues.push({ id: 'initiative-cost-flexible', message: t('rules.compat.initiativeCostFlexible') });
+  if (initiativeCost && phases) issues.push({ id: 'initiative-cost-phases', message: t('rules.compat.initiativeCostPhases') });
+  if (initiativeCost && textInitiative) issues.push({ id: 'initiative-cost-labels', message: t('rules.compat.initiativeCostLabels') });
+  if (initiativeCost && declaration) issues.push({ id: 'initiative-cost-declaration', message: t('rules.compat.initiativeCostDeclaration') });
+  if (initiativeCost && rules.initiativeOrder === initiativeOrders.ASC) issues.push({ id: 'initiative-cost-ascending', message: t('rules.compat.initiativeCostAscending') });
+  if (usesAutomaticPhases(rules) && textInitiative) issues.push({ id: 'automatic-phases-text-initiative', message: t('rules.compat.automaticPhasesTextInitiative') });
+  if (flexible && rules.surpriseAdvanceOn !== 'round') issues.push({ id: 'surprise-activation-flexible', message: t('rules.compat.surpriseFlexible') });
 
   return issues;
 }
 
 export function ruleOptionAvailability(rules = {}) {
-  const adjustment = usesActionAdjustment(rules);
-  const multipleSlots = usesMultipleActionSlots(rules);
+  const multipleSlots = usesManualMultipleActionSlots(rules);
+  const initiativeCost = usesInitiativeCost(rules);
   const textInitiative = usesTextInitiative(rules);
   const declaration = usesDeclaration(rules);
   const phases = rules.temporalite === temporalityModes.PHASES;
@@ -50,29 +58,35 @@ export function ruleOptionAvailability(rules = {}) {
   const flexibleInitiative = usesFlexibleInitiative(rules);
 
   return {
-    declarationMode: blocked(adjustment, "Desactive d'abord l'ajustement avant Suivant."),
-    multipleActionSlots: blocked(phases || adjustment, phases ? "Les actions multiples manuelles ne sont pas disponibles avec les phases." : "Desactive d'abord l'ajustement avant Suivant."),
-    promptInitiativeOnNext: blocked(
-      rules.temporalite === temporalityModes.FLEXIBLE || phases || textInitiative || multipleSlots || declaration,
+    declarationMode: blocked(initiativeCost, t('rules.compat.disableInitiativeCostActionsFirst')),
+    multipleActionSlots: blocked(phases, "Les actions multiples manuelles ne sont pas disponibles avec les phases."),
+    initiativeCost: blocked(
+      rules.temporalite === temporalityModes.FLEXIBLE || phases || textInitiative || declaration || rules.initiativeOrder === initiativeOrders.ASC,
       rules.temporalite === temporalityModes.FLEXIBLE
-        ? "Indisponible en mode souple."
+        ? t('rules.compat.unavailableFlexible')
         : phases
-          ? "Indisponible avec les phases."
+          ? t('rules.compat.unavailablePhases')
           : textInitiative
-            ? "Disponible seulement avec une initiative numerique."
-            : multipleSlots
-              ? "Desactive d'abord les actions multiples manuelles."
-              : "Desactive d'abord declaration puis resolution.",
+            ? t('rules.compat.numericOnly')
+            : declaration
+              ? t('rules.compat.disableDeclarationFirst')
+              : rules.initiativeOrder === initiativeOrders.ASC
+                ? t('rules.compat.unavailableAscending')
+                : '',
     ),
-    labelInitiative: blocked(adjustment || automaticPhases || !flexibleInitiative, adjustment ? "Desactive d'abord l'ajustement avant Suivant." : automaticPhases ? "Les phases par initiative necessitent une initiative numerique. Avec l'initiative par labels, utilise les phases cochees." : "Le mode souple sans initiative classe seulement les personnages par type puis par nom. Reactive l'initiative pour utiliser des labels."),
+    surpriseAdvanceOn: {
+      activation: blocked(rules.temporalite === temporalityModes.FLEXIBLE, t('rules.compat.surpriseFlexible')),
+      round: blocked(false, ''),
+    },
+    labelInitiative: blocked(automaticPhases || !flexibleInitiative || initiativeCost, initiativeCost ? t('rules.compat.disableInitiativeCostFirst') : automaticPhases ? t('rules.compat.automaticPhasesNeedNumeric') : t('rules.compat.flexibleNoLabels')),
     temporality: {
       [temporalityModes.CLASSIC]: blocked(false, ''),
-      [temporalityModes.FLEXIBLE]: blocked(adjustment, "Desactive d'abord l'ajustement avant Suivant."),
-      [temporalityModes.PHASES]: blocked(adjustment || multipleSlots, adjustment ? "Desactive d'abord l'ajustement avant Suivant." : "Desactive d'abord les actions multiples manuelles."),
+      [temporalityModes.FLEXIBLE]: blocked(initiativeCost, t('rules.compat.disableInitiativeCostFirst')),
+      [temporalityModes.PHASES]: blocked(multipleSlots || initiativeCost, initiativeCost ? t('rules.compat.disableInitiativeCostFirst') : t('rules.compat.disableManualActionsFirst')),
     },
     phaseActionMode: {
-      [phaseActionModes.AUTOMATIC]: blocked(textInitiative || multipleSlots || adjustment, textInitiative ? "Les phases par initiative ne sont pas compatibles avec l'initiative par labels. Utilise les phases cochees ou repasse en initiative numerique." : multipleSlots ? "Desactive d'abord les actions multiples manuelles." : "Desactive d'abord l'ajustement avant Suivant."),
-      [phaseActionModes.CHECKED]: blocked(multipleSlots || adjustment, multipleSlots ? "Desactive d'abord les actions multiples manuelles." : "Desactive d'abord l'ajustement avant Suivant."),
+      [phaseActionModes.AUTOMATIC]: blocked(textInitiative || multipleSlots || initiativeCost, textInitiative ? t('rules.compat.textInitiativeAutomaticPhases') : initiativeCost ? t('rules.compat.disableInitiativeCostFirst') : t('rules.compat.disableManualActionsFirst')),
+      [phaseActionModes.CHECKED]: blocked(multipleSlots || initiativeCost, initiativeCost ? t('rules.compat.disableInitiativeCostFirst') : t('rules.compat.disableManualActionsFirst')),
     },
   };
 }
@@ -80,9 +94,8 @@ export function ruleOptionAvailability(rules = {}) {
 export function activeRuleSummary(rules = {}) {
   return [
     temporalityLabels[rules.temporalite || temporalityModes.CLASSIC],
-    usesFlexibleInitiative(rules) ? usesTextInitiative(rules) ? 'Initiative par labels' : 'Initiative numerique' : 'Sans initiative',
-    usesMultipleActionSlots(rules) ? 'Actions multiples' : 'Une action par personnage',
-    usesDeclaration(rules) ? 'Declaration puis resolution' : '',
-    usesActionAdjustment(rules) ? 'Ajustement avant Suivant' : '',
+    usesFlexibleInitiative(rules) ? usesTextInitiative(rules) ? 'Initiative par labels' : t('rules.summary.numericInitiative') : 'Sans initiative',
+    multipleActionModeFromRules(rules) === multipleActionModes.INITIATIVE_COST ? t('rules.summary.initiativeCost') : multipleActionModeFromRules(rules) === multipleActionModes.MANUAL ? t('rules.summary.manualSlots') : 'Une action par personnage',
+    usesDeclaration(rules) ? t('rules.summary.declaration') : '',
   ].filter(Boolean);
 }

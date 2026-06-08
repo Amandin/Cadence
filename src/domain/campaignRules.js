@@ -4,19 +4,26 @@ import {
   defaultEqualityRule,
   defaultFlexibleUseInitiative,
   defaultInitiativeOrder,
+  defaultInitiativeCostQuickCosts,
+  defaultInitiativeCostLimitToCurrent,
+  defaultInitiativeCostThreshold,
+  defaultMultipleActionMode,
   defaultPhaseActivateOncePerRound,
   defaultPhaseDecrement,
   defaultPhaseRerollEachRound,
   defaultStartRound,
   defaultSurpriseAdvanceOn,
+  defaultSurpriseDedicatedRound,
   defaultSurpriseImpact,
   defaultTiebreakerLabel,
   defaultTiebreakerVisible,
   defaultTemporalityMode,
   initiativeOrders,
+  multipleActionModes,
   phaseActionModes,
   temporalityModes,
 } from '../constants.js';
+import { multipleActionModeFromRules, normalizeInitiativeCostLimitToCurrent, normalizeInitiativeCostQuickCosts, normalizeInitiativeCostThreshold } from './initiativeCost.js';
 import { declarationStages, normalizeInitiativeModeOptions } from './initiativeModes.js';
 import { trierParInitiative } from './initiative.js';
 import { normalizeInitiativeTextOrder } from './initiativeTextOrder.js';
@@ -29,6 +36,20 @@ export function normalizeCampaignRules(rules = {}) {
     : Object.values(temporalityModes).includes(rules.temporalite)
       ? rules.temporalite
       : defaultTemporalityMode;
+  const surpriseAdvanceOn = temporalite === temporalityModes.FLEXIBLE ? 'round' : rules.surpriseAdvanceOn === 'round' ? 'round' : defaultSurpriseAdvanceOn;
+  const legacyPrompt = !!rules.promptInitiativeOnNext;
+  const explicitMultipleActionMode = Object.values(multipleActionModes).includes(rules.multipleActionMode) ? rules.multipleActionMode : '';
+  const legacyManualSlots = !explicitMultipleActionMode && rules.multipleActionSlots === true;
+  const promptConvertible = legacyPrompt
+    && temporalite === temporalityModes.CLASSIC
+    && rules.declarationMode !== true
+    && !(rules.initiativeTextOrder?.enabled)
+    && rules.initiativeOrder !== initiativeOrders.ASC
+    && !legacyManualSlots;
+  const multipleActionMode = promptConvertible ? multipleActionModes.INITIATIVE_COST : multipleActionModeFromRules({
+    ...rules,
+    multipleActionMode: explicitMultipleActionMode || undefined,
+  });
   return {
     temporalite,
     declarationMode: initiativeModeOptions.declarationMode ?? (legacyDeclaration ? true : defaultDeclarationMode),
@@ -43,11 +64,17 @@ export function normalizeCampaignRules(rules = {}) {
     tiebreakerVisible: rules.tiebreakerVisible ?? defaultTiebreakerVisible,
     tiebreakerLabel: typeof rules.tiebreakerLabel === 'string' && rules.tiebreakerLabel.trim() ? rules.tiebreakerLabel.trim() : defaultTiebreakerLabel,
     surpriseImpact: ['limited', 'inactive'].includes(rules.surpriseImpact) ? rules.surpriseImpact : defaultSurpriseImpact,
-    surpriseAdvanceOn: rules.surpriseAdvanceOn === 'round' ? 'round' : defaultSurpriseAdvanceOn,
+    surpriseAdvanceOn,
+    surpriseDedicatedRound: !!(rules.surpriseDedicatedRound ?? defaultSurpriseDedicatedRound),
     rounding: ['nearest', 'floor', 'ceil'].includes(rules.rounding) ? rules.rounding : 'nearest',
     initiativeTextOrder: normalizeInitiativeTextOrder(rules.initiativeTextOrder),
-    promptInitiativeOnNext: !!rules.promptInitiativeOnNext,
+    promptInitiativeOnNext: false,
     ...initiativeModeOptions,
+    multipleActionMode: multipleActionMode || defaultMultipleActionMode,
+    multipleActionSlots: multipleActionMode !== multipleActionModes.NONE,
+    initiativeCostThreshold: normalizeInitiativeCostThreshold(rules.initiativeCostThreshold ?? defaultInitiativeCostThreshold),
+    initiativeCostQuickCosts: normalizeInitiativeCostQuickCosts(rules.initiativeCostQuickCosts ?? defaultInitiativeCostQuickCosts),
+    initiativeCostLimitToCurrent: normalizeInitiativeCostLimitToCurrent(rules.initiativeCostLimitToCurrent ?? defaultInitiativeCostLimitToCurrent),
     phaseActionMode: temporalite === temporalityModes.FLEXIBLE ? '' : initiativeModeOptions.phaseActionMode,
     temporalite,
   };
@@ -139,16 +166,21 @@ export function applyInitiativeRules(scene, patch = {}) {
     tiebreakerLabel: next.tiebreakerLabel,
     surpriseImpact: next.surpriseImpact,
     surpriseAdvanceOn: next.surpriseAdvanceOn,
+    surpriseDedicatedRound: !!next.surpriseDedicatedRound,
     rounding: next.rounding,
     phaseActionMode: next.phaseActionMode,
     phaseCount: next.phaseCount,
     initiativeValueType: next.initiativeValueType,
     initiativeLabels: next.initiativeLabels,
-    multipleActionSlots: next.multipleActionSlots,
+    multipleActionMode: next.multipleActionMode,
+    multipleActionSlots: next.multipleActionMode !== multipleActionModes.NONE,
+    initiativeCostThreshold: next.initiativeCostThreshold,
+    initiativeCostQuickCosts: next.initiativeCostQuickCosts,
+    initiativeCostLimitToCurrent: next.initiativeCostLimitToCurrent,
     activationAdvancePolicy: next.activationAdvancePolicy,
     declarationRequireText: next.declarationRequireText,
     initiativeTextOrder: next.initiativeTextOrder,
-    promptInitiativeOnNext: next.promptInitiativeOnNext,
+    promptInitiativeOnNext: false,
   };
 }
 

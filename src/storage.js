@@ -6,26 +6,34 @@ import {
   defaultEqualityRule,
   defaultFlexibleUseInitiative,
   defaultInitiativeOrder,
+  defaultInitiativeCostLimitToCurrent,
+  defaultInitiativeCostQuickCosts,
+  defaultInitiativeCostThreshold,
+  defaultMultipleActionMode,
   defaultPhaseActionMode,
   defaultPhaseCount,
   defaultPhaseDecrement,
   defaultPhaseRerollEachRound,
   defaultStartRound,
   defaultSurpriseAdvanceOn,
+  defaultSurpriseDedicatedRound,
   defaultSurpriseImpact,
   defaultTiebreakerLabel,
   defaultTiebreakerVisible,
   defaultTemporalityMode,
   initiativeOrders,
   legacyParticipantKinds,
+  multipleActionModes,
   phaseActionModes,
   temporalityModes,
 } from './constants.js';
 import { campaignRulesFromPayload, normalizeCampaignRules, unifyCampaignScenes } from './domain/campaignRules.js';
 import { normalizeGlobalTracker } from './domain/globalTracker.js';
 import { normaliserCreneauxAction } from './domain/initiative.js';
+import { baseInitiativeSlots, multipleActionModeFromRules, normalizeInitiativeCostLimitToCurrent, normalizeInitiativeCostQuickCosts, normalizeInitiativeCostThreshold } from './domain/initiativeCost.js';
 import { isPointsTracker, normalizeBoxTracker, normalizeThresholds, normalizeTrackerThresholds, makeDefaultCampaign, uid } from './logic.js';
 import { isTemplateStoreLike, loadTemplateStore, normalizeTemplateStore } from './templates.js';
+import { readLocalCampaignPayload, writeLocalCampaignPayload } from './localCampaignStorage.js';
 
 export const CADENCE_CAMPAIGN_FORMAT = 'cadence-campaign';
 export const CADENCE_CAMPAIGN_SCHEMA_VERSION = 2;
@@ -240,6 +248,12 @@ export function normalizeCampaignParticipant(participant, { reserve = false } = 
   if (!isPlainObject(participant)) return null;
   const initiative = reserve ? 0 : initiativeOr(participant.initiative, 0);
   const actionSlots = reserve ? [] : normaliserCreneauxAction({ ...participant, initiative });
+  const previousInitiative = participant.previousInitiative == null || participant.previousInitiative === ''
+    ? (reserve ? initiativeOr(participant.initiative, '') : '')
+    : initiativeOr(participant.previousInitiative, '');
+  const previousActionSlots = reserve && previousInitiative !== ''
+    ? baseInitiativeSlots({ ...participant, initiative: previousInitiative, actionSlots: participant.previousActionSlots || participant.actionSlots })
+    : [];
   const rawPhaseActions = Array.isArray(participant.phaseActions) ? participant.phaseActions : Array.isArray(participant.phases) ? participant.phases : Array.isArray(participant.checkedPhases) ? participant.checkedPhases : null;
   return {
     ...participant,
@@ -250,6 +264,8 @@ export function normalizeCampaignParticipant(participant, { reserve = false } = 
     color: stringOr(participant.color, 'slate'),
     initiative,
     actionSlots,
+    previousInitiative,
+    previousActionSlots,
     phaseActions: rawPhaseActions ? [...new Set(rawPhaseActions.map((phase) => String(phase ?? '').trim()).filter(Boolean))] : participant.phaseActions,
     departage: participant.departage === '' || participant.departage == null ? '' : numberOr(participant.departage, 0),
     description: stringOr(participant.description),
@@ -280,6 +296,8 @@ export function normalizeCampaignScene(scene) {
     preparationSurprise: booleanOr(scene.preparationSurprise),
     surpriseImpact: ['limited', 'inactive'].includes(scene.surpriseImpact) ? scene.surpriseImpact : defaultSurpriseImpact,
     surpriseAdvanceOn: scene.surpriseAdvanceOn === 'round' ? 'round' : defaultSurpriseAdvanceOn,
+    surpriseDedicatedRound: booleanOr(scene.surpriseDedicatedRound, defaultSurpriseDedicatedRound),
+    surpriseRoundActive: booleanOr(scene.surpriseRoundActive),
     statuses: normalizeArray(scene.statuses).map(normalizeStatus).filter(Boolean),
     temporalite: legacyDeclaration ? defaultTemporalityMode : stringOr(scene.temporalite, defaultTemporalityMode),
     declarationMode: booleanOr(scene.declarationMode, legacyDeclaration ? true : defaultDeclarationMode),
@@ -287,7 +305,11 @@ export function normalizeCampaignScene(scene) {
     declarations: isPlainObject(scene.declarations) ? scene.declarations : {},
     resolutionOrder: normalizeArray(scene.resolutionOrder).map((id) => String(id)),
     declarationPlayedIds: normalizeArray(scene.declarationPlayedIds).map((id) => String(id)),
-    multipleActionSlots: scene.multipleActionSlots !== false,
+    multipleActionMode: Object.values(multipleActionModes).includes(scene.multipleActionMode) ? scene.multipleActionMode : multipleActionModeFromRules(scene) || defaultMultipleActionMode,
+    multipleActionSlots: multipleActionModeFromRules(scene) !== multipleActionModes.NONE,
+    initiativeCostThreshold: normalizeInitiativeCostThreshold(scene.initiativeCostThreshold ?? defaultInitiativeCostThreshold),
+    initiativeCostQuickCosts: normalizeInitiativeCostQuickCosts(scene.initiativeCostQuickCosts ?? defaultInitiativeCostQuickCosts),
+    initiativeCostLimitToCurrent: normalizeInitiativeCostLimitToCurrent(scene.initiativeCostLimitToCurrent ?? defaultInitiativeCostLimitToCurrent),
     jouesSouples: normalizeArray(scene.jouesSouples).map((id) => String(id)),
     historiqueSouple: normalizeArray(scene.historiqueSouple).map((id) => String(id)),
     equalityRule: stringOr(scene.equalityRule, defaultEqualityRule),
@@ -327,7 +349,6 @@ export function createCampaignPayload(scenes, dark, campaignName = DEFAULT_CAMPA
     initiativeRules: rules,
     scenes: unifyCampaignScenes(safeScenes, rules),
     templates: normalizeTemplateStore(templates),
-    settings: { dark: !!dark },
   };
 }
 
@@ -355,11 +376,12 @@ export function normalizeCampaignPayload(data) {
   const fallback = makeDefaultCampaign();
   const sourceScenes = scenes.length ? scenes : normalizeCampaignScenes(fallback.scenes);
   const initiativeRules = campaignRulesFromPayload({ ...(isPlainObject(data) ? data : {}), scenes: sourceScenes });
-  const settings = isPlainObject(data?.settings) ? data.settings : {};
   const campaign = campaignMetaFromPayload(data);
+  const source = isPlainObject(data) ? { ...data } : {};
+  delete source.settings;
 
   return {
-    ...(isPlainObject(data) ? data : {}),
+    ...source,
     format: CADENCE_CAMPAIGN_FORMAT,
     schemaVersion: CADENCE_CAMPAIGN_SCHEMA_VERSION,
     campaign,
@@ -369,16 +391,12 @@ export function normalizeCampaignPayload(data) {
     initiativeRules,
     scenes: unifyCampaignScenes(sourceScenes, initiativeRules),
     templates: campaignTemplatesFromPayload(data),
-    settings: {
-      ...settings,
-      dark: !!settings.dark,
-    },
   };
 }
 
 export function loadCampaign() {
   try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    const saved = readLocalCampaignPayload(STORAGE_KEY);
     if (isValidCampaign(saved)) return normalizeCampaignPayload(saved);
   } catch (error) {
     console.warn('Impossible de charger la campagne sauvegardée.', error);
@@ -388,7 +406,7 @@ export function loadCampaign() {
 }
 
 export function saveCampaign(scenes, dark, campaignName, templates, initiativeRules, campaignMeta = {}) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(createCampaignPayload(scenes, dark, campaignName, templates, initiativeRules, campaignMeta)));
+  writeLocalCampaignPayload(STORAGE_KEY, createCampaignPayload(scenes, dark, campaignName, templates, initiativeRules, campaignMeta));
 }
 
 export function serializeCampaign(scenes, dark, campaignName, templates, initiativeRules, campaignMeta = {}) {

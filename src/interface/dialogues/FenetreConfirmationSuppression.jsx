@@ -8,7 +8,7 @@ export function FenetreConfirmationSuppression({ nom, onAnnuler, onConfirmer }) 
           Tu es sur le point de supprimer <strong>{nom}</strong> de la scène.
         </p>
         <p className="muted" style={{ margin: 0 }}>
-          Cette action retire la fiche et ses suivis. Elle ne peut pas être annulée depuis cette fenêtre.
+          Cette action retire la fiche et ses indicateurs. Elle ne peut pas être annulée depuis cette fenêtre.
         </p>
         <div className="grid2" style={{ marginTop: 12 }}>
           <button className="small-btn" onClick={onAnnuler}>Annuler</button>

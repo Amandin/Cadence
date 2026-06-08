@@ -1,22 +1,46 @@
-import { phaseActionModes, TEMPLATE_STORAGE_KEY, temporalityModes } from './constants.js';
+import { TEMPLATE_STORAGE_KEY } from './constants.js';
 import { normalizeCampaignRules } from './domain/campaignRules.js';
 import { normalizeGlobalTracker } from './domain/globalTracker.js';
-import { clone, newTracker, uid } from './logic.js';
+import { clone, colors, newTracker, symbols, uid } from './logic.js';
 
 export const defaultTemplateCategories = ['PJ', 'PNJ', 'Créature', 'Horloge', 'Autre'];
 const TEMPLATE_STORE_VERSION = 3;
 
+function pvTemplate(id, current, max = current) {
+  const mid = Math.ceil(max / 2);
+  const low = Math.ceil(max / 4);
+  return {
+    id,
+    type: 'bar',
+    name: 'PV',
+    visible: true,
+    current,
+    initial: max,
+    min: 0,
+    max,
+    step: Math.max(1, Math.ceil(max / 6)),
+    direction: 'countdown',
+    minAbsolute: true,
+    maxAbsolute: false,
+    thresholds: [
+      { value: mid, label: 'blesse', color: 'amber', operator: 'lte' },
+      { value: low, label: 'critique', color: 'red', operator: 'lte' },
+      { value: 0, label: 'hors combat', color: 'red', operator: 'lte' },
+    ],
+  };
+}
+
 export const defaultTemplates = [
   {
     id: 'tpl-demo-eclaireur',
-    name: 'Éclaireur prudent',
+    name: '?claireur prudent',
     category: 'PJ',
     createdAt: 'demo',
     participant: {
       id: 'template-participant',
-      name: 'Éclaireur prudent',
+      name: '?claireur prudent',
       kind: 'PJ',
-      symbol: '🏹',
+      symbol: '??',
       color: 'emerald',
       initiative: 12,
       departage: 2,
@@ -38,12 +62,12 @@ export const defaultTemplates = [
       id: 'template-participant',
       name: 'Garde nerveux',
       kind: 'Opposant',
-      symbol: '⚔',
+      symbol: '?',
       color: 'red',
       initiative: 8,
       departage: 1,
-      description: 'Opposant simple, utile pour remplir vite une scène.',
-      stats: ['Défense 1'],
+      description: 'Opposant simple, utile pour remplir vite une sc?ne.',
+      stats: ['D?fense 1'],
       statuses: [],
       trackers: [
         { id: 'tpl-garde-pv', type: 'bar', name: 'PV', visible: true, current: 12, min: 0, max: 18, step: 3, minAbsolute: true, maxAbsolute: false },
@@ -59,11 +83,11 @@ export const defaultTemplates = [
       id: 'template-participant',
       name: 'Brute intimidante',
       kind: 'Opposant',
-      symbol: '🪓',
+      symbol: '??',
       color: 'orange',
       initiative: 6,
       departage: 3,
-      description: 'Adversaire lent mais solide, volontairement très générique.',
+      description: 'Adversaire lent mais solide, volontairement tr?s g?n?rique.',
       stats: ['Solide', 'Impressionnant'],
       statuses: [],
       trackers: [
@@ -74,18 +98,18 @@ export const defaultTemplates = [
   },
   {
     id: 'tpl-demo-allie',
-    name: 'Allié fragile',
+    name: 'Alli? fragile',
     category: 'PNJ',
     createdAt: 'demo',
     participant: {
       id: 'template-participant',
-      name: 'Allié fragile',
-      kind: 'Allié',
-      symbol: '🕯',
+      name: 'Alli? fragile',
+      kind: 'Alli?',
+      symbol: '??',
       color: 'pink',
       initiative: 7,
       departage: '',
-      description: 'Allié à protéger ou à faire intervenir ponctuellement.',
+      description: 'Alli? ? prot?ger ou ? faire intervenir ponctuellement.',
       stats: ['Fragile'],
       statuses: [],
       trackers: [
@@ -102,32 +126,32 @@ export const defaultTemplates = [
       id: 'template-participant',
       name: 'Danger imminent',
       kind: 'Environnement',
-      symbol: '⏳',
+      symbol: '?',
       color: 'amber',
       initiative: 0,
       departage: '',
-      description: 'Horloge environnementale prête à rejoindre une scène.',
+      description: 'Horloge environnementale pr?te ? rejoindre une sc?ne.',
       stats: [],
       statuses: [],
       trackers: [
-        { id: 'tpl-danger-clock', type: 'clock', name: 'Compte à rebours', visible: true, current: 0, max: 6, auto: true, frozen: false },
+        { id: 'tpl-danger-clock', type: 'clock', name: 'Compte ? rebours', visible: true, current: 0, max: 6, auto: true, frozen: false },
       ],
     },
   },
   {
     id: 'tpl-demo-meute',
-    name: 'Petite créature vive',
-    category: 'Créature',
+    name: 'Petite cr?ature vive',
+    category: 'Cr?ature',
     createdAt: 'demo',
     participant: {
       id: 'template-participant',
-      name: 'Petite créature vive',
+      name: 'Petite cr?ature vive',
       kind: 'Opposant',
-      symbol: '🐺',
+      symbol: '??',
       color: 'violet',
       initiative: 13,
       departage: 1,
-      description: 'Créature rapide, légère, facile à multiplier.',
+      description: 'Cr?ature rapide, l?g?re, facile ? multiplier.',
       stats: ['Rapide'],
       statuses: [],
       trackers: [
@@ -137,20 +161,154 @@ export const defaultTemplates = [
   },
 ];
 
+const genericDefaultTemplates = [
+  {
+    id: 'tpl-generic-pj',
+    name: 'PJ standard',
+    category: 'PJ',
+    createdAt: 'demo',
+    participant: {
+      id: 'template-participant',
+      name: 'PJ standard',
+      kind: 'PJ',
+      symbol: '?',
+      color: 'emerald',
+      initiative: 12,
+      departage: '',
+      description: '',
+      stats: ['D?fense 12', 'Perception 10'],
+      statuses: [],
+      trackers: [
+        pvTemplate('tpl-pj-pv', 20),
+        { id: 'tpl-pj-focus', type: 'points', name: 'Focus', visible: true, current: 2, initial: 2, min: 0, max: 5, step: 1, direction: 'progression', limitMode: 'clamp', thresholds: [{ value: 4, label: 'pr?t', color: 'green', operator: 'gte' }] },
+      ],
+    },
+  },
+  {
+    id: 'tpl-generic-pnj',
+    name: 'PNJ arme',
+    category: 'PNJ',
+    createdAt: 'demo',
+    participant: {
+      id: 'template-participant',
+      name: 'PNJ arme',
+      kind: 'Opposant',
+      symbol: '?',
+      color: 'red',
+      initiative: 10,
+      departage: '',
+      description: '',
+      stats: ['D?fense 11', 'Attaque +3'],
+      statuses: [],
+      trackers: [
+        pvTemplate('tpl-pnj-pv', 16),
+        { id: 'tpl-pnj-moral', type: 'points', name: 'Moral', visible: true, current: 3, initial: 3, min: 0, max: 5, step: 1, direction: 'countdown', limitMode: 'clamp', thresholds: [{ value: 1, label: 'fragile', color: 'amber', operator: 'lte' }] },
+      ],
+    },
+  },
+  {
+    id: 'tpl-generic-elite',
+    name: 'Adversaire robuste',
+    category: 'PNJ',
+    createdAt: 'demo',
+    participant: {
+      id: 'template-participant',
+      name: 'Adversaire robuste',
+      kind: 'Opposant',
+      symbol: '?',
+      color: 'orange',
+      initiative: 6,
+      departage: '',
+      description: '',
+      stats: ['Armure', 'Impact'],
+      statuses: [],
+      trackers: [
+        pvTemplate('tpl-elite-pv', 32),
+        { id: 'tpl-elite-garde', type: 'points', name: 'Garde', visible: true, current: 2, initial: 2, min: 0, max: 4, step: 1, direction: 'countdown', limitMode: 'clamp' },
+      ],
+    },
+  },
+  {
+    id: 'tpl-generic-allie',
+    name: 'Alli? utile',
+    category: 'PNJ',
+    createdAt: 'demo',
+    participant: {
+      id: 'template-participant',
+      name: 'Alli? utile',
+      kind: 'Alli?',
+      symbol: '?',
+      color: 'blue',
+      initiative: 9,
+      departage: '',
+      description: '',
+      stats: ['Soutien', 'Competent'],
+      statuses: [],
+      trackers: [
+        pvTemplate('tpl-allie-pv', 12),
+        { id: 'tpl-allie-aide', type: 'points', name: 'Aide', visible: true, current: 1, initial: 1, min: 0, max: 3, step: 1, direction: 'progression', limitMode: 'clamp' },
+      ],
+    },
+  },
+  {
+    id: 'tpl-generic-creature',
+    name: 'Creature vive',
+    category: 'Cr?ature',
+    createdAt: 'demo',
+    participant: {
+      id: 'template-participant',
+      name: 'Creature vive',
+      kind: 'Opposant',
+      symbol: '?',
+      color: 'violet',
+      initiative: 14,
+      departage: '',
+      description: '',
+      stats: ['Rapide', 'Instinct'],
+      statuses: [],
+      trackers: [
+        pvTemplate('tpl-creature-pv', 14),
+        { id: 'tpl-creature-instinct', type: 'points', name: 'Instinct', visible: true, current: 2, initial: 2, min: 0, max: 4, step: 1, direction: 'progression', limitMode: 'clamp' },
+      ],
+    },
+  },
+  {
+    id: 'tpl-generic-clock',
+    name: 'Danger simple',
+    category: 'Horloge',
+    createdAt: 'demo',
+    participant: {
+      id: 'template-participant',
+      name: 'Danger simple',
+      kind: 'Environnement',
+      symbol: '?',
+      color: 'amber',
+      initiative: 0,
+      departage: '',
+      description: '',
+      stats: ['Scene'],
+      statuses: [],
+      trackers: [
+        { id: 'tpl-danger-clock', type: 'clock', name: 'Danger', visible: true, current: 0, initial: 0, min: 0, max: 6, step: 1, direction: 'progression', limitMode: 'manual', auto: true, frozen: false, currentThresholds: [{ value: 3, label: 'pression', color: 'amber', operator: 'gte' }, { value: 6, label: 'd?clenche', color: 'red', operator: 'gte' }] },
+      ],
+    },
+  },
+];
+
 export const defaultTrackerTemplates = [
   { id: 'tracker-template-pv', name: 'PV simple', createdAt: 'demo', tracker: { ...newTracker('bar'), id: 'template-tracker', name: 'PV' } },
   { id: 'tracker-template-horloge', name: 'Horloge 6 segments', createdAt: 'demo', tracker: { ...newTracker('clock'), id: 'template-tracker', name: 'Horloge', max: 6 } },
-  { id: 'tracker-template-puces', name: 'Reserve a puces', createdAt: 'demo', tracker: { ...newTracker('points'), id: 'template-tracker', name: 'Reserve', max: 5 } },
+  { id: 'tracker-template-puces', name: 'R?serve ? puces', createdAt: 'demo', tracker: { ...newTracker('points'), id: 'template-tracker', name: 'R?serve', max: 5 } },
   { id: 'tracker-template-puces-loop', name: 'Puces bouclantes', createdAt: 'demo', tracker: { ...newTracker('points'), id: 'template-tracker', name: 'Charges', max: 5, limitMode: 'loop', cycles: 0, cyclesInitial: 0, currentThresholds: [{ value: 5, label: 'plein', color: 'green', operator: 'gte' }], totalThresholds: [{ value: 1, label: 'cycle 1', color: 'blue', operator: 'gte' }] } },
-  { id: 'tracker-template-cases', name: 'Cases structurees', createdAt: 'demo', tracker: { ...newTracker('boxes'), id: 'template-tracker', name: 'Blessures', fillLevels: 3, levelLabels: ['Leger', 'Serieux', 'Critique'] } },
-  { id: 'tracker-template-compteur', name: 'Compteur simple', createdAt: 'demo', tracker: { ...newTracker('number'), id: 'template-tracker', name: 'Ressources', current: 0, initial: 0, max: 9, thresholds: [{ value: 5, label: 'pret', color: 'green', operator: 'gte' }] } },
+  { id: 'tracker-template-cases', name: 'Cases structur?es', createdAt: 'demo', tracker: { ...newTracker('boxes'), id: 'template-tracker', name: 'Blessures', fillLevels: 3, levelLabels: ['L?ger', 'S?rieux', 'Critique'] } },
+  { id: 'tracker-template-compteur', name: 'Compteur simple', createdAt: 'demo', tracker: { ...newTracker('number'), id: 'template-tracker', name: 'Ressources', current: 0, initial: 0, max: 9, thresholds: [{ value: 5, label: 'pr?t', color: 'green', operator: 'gte' }] } },
 ];
 
 export const defaultStatusTemplates = [
   { id: 'status-template-surpris', name: 'Surpris', createdAt: 'demo', status: { id: 'template-status', name: 'Surpris', duration: 1, remaining: 1, loop: false, inactive: false, limited: true, advanceOn: 'activation', expired: false } },
-  { id: 'status-template-blesse', name: 'Blesse', createdAt: 'demo', status: { id: 'template-status', name: 'Blesse', duration: null, remaining: null, loop: false, inactive: false, advanceOn: 'activation', expired: false } },
-  { id: 'status-template-sonne', name: 'Sonne 1 activation', createdAt: 'demo', status: { id: 'template-status', name: 'Sonne', duration: 1, remaining: 1, loop: false, inactive: true, advanceOn: 'activation', expired: false } },
-  { id: 'status-template-enflamme', name: 'Enflamme', createdAt: 'demo', status: { id: 'template-status', name: 'Enflamme', duration: 3, remaining: 3, loop: false, inactive: false, advanceOn: 'round', expired: false } },
+  { id: 'status-template-blesse', name: 'Bless?', createdAt: 'demo', status: { id: 'template-status', name: 'Bless?', duration: null, remaining: null, loop: false, inactive: false, advanceOn: 'activation', expired: false } },
+  { id: 'status-template-sonne', name: 'Sonné 1 activation', createdAt: 'demo', status: { id: 'template-status', name: 'Sonné', duration: 1, remaining: 1, loop: false, inactive: true, advanceOn: 'activation', expired: false } },
+  { id: 'status-template-enflamme', name: 'Enflamm?', createdAt: 'demo', status: { id: 'template-status', name: 'Enflamm?', duration: 3, remaining: 3, loop: false, inactive: false, advanceOn: 'round', expired: false } },
 ];
 
 export const defaultSceneStatusTemplates = [
@@ -159,21 +317,14 @@ export const defaultSceneStatusTemplates = [
 ];
 
 export const defaultSceneCounterTemplates = [
-  { id: 'scene-counter-template-alerte', name: 'Alerte - compteur', createdAt: 'demo', counter: { enabled: true, name: 'Alerte', mode: 'counter', current: 0, max: 6, trigger: 'manual', limitMode: 'clamp', total: 0, loops: 0, thresholds: [{ value: 2, label: 'Mefiance', color: 'amber', operator: 'gte', basis: 'fixed', scope: 'current' }, { value: 4, label: 'Alarme', color: 'red', operator: 'gte', basis: 'fixed', scope: 'current' }, { value: 6, label: 'Renforts', color: 'violet', operator: 'gte', basis: 'fixed', scope: 'current' }] } },
+  { id: 'scene-counter-template-alerte', name: 'Alerte - compteur', createdAt: 'demo', counter: { enabled: true, name: 'Alerte', mode: 'counter', current: 0, max: 6, trigger: 'manual', limitMode: 'clamp', total: 0, loops: 0, thresholds: [{ value: 2, label: 'M?fiance', color: 'amber', operator: 'gte', basis: 'fixed', scope: 'current' }, { value: 4, label: 'Alarme', color: 'red', operator: 'gte', basis: 'fixed', scope: 'current' }, { value: 6, label: 'Renforts', color: 'violet', operator: 'gte', basis: 'fixed', scope: 'current' }] } },
   { id: 'scene-counter-template-rituel-loop', name: 'Rituel - horloge bouclante', createdAt: 'demo', counter: { enabled: true, name: 'Rituel', mode: 'clock', current: 0, max: 6, direction: 'progression', trigger: 'round', limitMode: 'loop', total: 0, loops: 0, auto: true, thresholds: [{ value: 6, label: 'Cycle complet', color: 'amber', operator: 'gte', basis: 'fixed', scope: 'current' }, { value: 2, label: 'Renforts', color: 'red', operator: 'gte', basis: 'fixed', scope: 'loops' }] } },
-  { id: 'scene-counter-template-etapes', name: 'Piste d etapes', createdAt: 'demo', counter: { enabled: true, name: 'Rituel', mode: 'clock', current: 0, max: 1, direction: 'progression', trigger: 'manual', limitMode: 'overflow', total: 0, loops: 0, thresholds: [{ value: 1, label: 'Invocation ouverte', color: 'blue', operator: 'gte', basis: 'fixed', scope: 'current' }, { value: 3, label: 'Verrouillage', color: 'red', operator: 'gte', basis: 'fixed', scope: 'current' }] } },
+  { id: 'scene-counter-template-etapes', name: 'Piste d??tapes', createdAt: 'demo', counter: { enabled: true, name: 'Rituel', mode: 'clock', current: 0, max: 1, direction: 'progression', trigger: 'manual', limitMode: 'overflow', total: 0, loops: 0, thresholds: [{ value: 1, label: 'Invocation ouverte', color: 'blue', operator: 'gte', basis: 'fixed', scope: 'current' }, { value: 3, label: 'Verrouillage', color: 'red', operator: 'gte', basis: 'fixed', scope: 'current' }] } },
   { id: 'scene-counter-template-minuteur', name: 'Minuteur 3 min 05', createdAt: 'demo', counter: { enabled: true, name: 'Minuteur', mode: 'timer', current: 0, max: 185, direction: 'countdown', trigger: 'realtime', limitMode: 'overflow', total: 0, loops: 0, running: false, startedAt: null, elapsedMs: 0, soundOnComplete: true, completeSoundId: 'chime', completeSoundUrl: '', thresholds: [{ value: 60, label: 'Pression forte', color: 'amber', operator: 'lte', basis: 'fixed', scope: 'current', sound: true, soundId: 'beep' }, { value: 25, label: 'Urgence', color: 'red', operator: 'lte', basis: 'percent', scope: 'current', sound: true, soundId: 'alarm' }] } },
-  { id: 'scene-counter-template-chrono', name: 'Chronometre simple', createdAt: 'demo', counter: { enabled: true, name: 'Chrono', mode: 'stopwatch', current: 0, max: 600, direction: 'progression', trigger: 'realtime', limitMode: 'overflow', running: false, startedAt: null, elapsedMs: 0, thresholds: [{ value: 120, label: 'Deux minutes', color: 'blue', operator: 'gte', basis: 'fixed', scope: 'current', sound: true, soundId: 'chime' }, { value: 300, label: 'Long', color: 'violet', operator: 'gte', basis: 'fixed', scope: 'current', sound: true, soundId: 'alarm' }] } },
+  { id: 'scene-counter-template-chrono', name: 'Chronom?tre simple', createdAt: 'demo', counter: { enabled: true, name: 'Chrono', mode: 'stopwatch', current: 0, max: 600, direction: 'progression', trigger: 'realtime', limitMode: 'overflow', running: false, startedAt: null, elapsedMs: 0, thresholds: [{ value: 120, label: 'Deux minutes', color: 'blue', operator: 'gte', basis: 'fixed', scope: 'current', sound: true, soundId: 'chime' }, { value: 300, label: 'Long', color: 'violet', operator: 'gte', basis: 'fixed', scope: 'current', sound: true, soundId: 'alarm' }] } },
 ];
 
-export const defaultRuleTemplates = [
-  { id: 'rules-template-classique', name: 'Classique numerique', createdAt: 'demo', rules: { temporalite: temporalityModes.CLASSIC, startRound: 1, declarationMode: false, multipleActionSlots: false, phaseActionMode: phaseActionModes.AUTOMATIC } },
-  { id: 'rules-template-phases-auto', name: 'Phases automatiques', createdAt: 'demo', rules: { temporalite: temporalityModes.PHASES, phaseActionMode: phaseActionModes.AUTOMATIC, phaseDecrement: 10, declarationMode: false, multipleActionSlots: false } },
-  { id: 'rules-template-phases-cochees', name: 'Phases cochees', createdAt: 'demo', rules: { temporalite: temporalityModes.PHASES, phaseActionMode: phaseActionModes.CHECKED, phaseCount: 3, declarationMode: false, multipleActionSlots: false } },
-  { id: 'rules-template-cartes', name: 'Initiative par cartes', createdAt: 'demo', rules: { temporalite: temporalityModes.CLASSIC, declarationMode: false, multipleActionSlots: false, initiativeTextOrder: { enabled: true, separator: ' de ', parts: [{ label: 'Valeur', values: ['As', 'Roi', 'Dame', 'Valet', '10', '9'] }, { label: 'Couleur', values: ['Pique', 'Coeur', 'Carreau', 'Trefle'] }] } } },
-  { id: 'rules-template-declaration', name: 'Declaration puis resolution', createdAt: 'demo', rules: { temporalite: temporalityModes.CLASSIC, declarationMode: true, multipleActionSlots: true, phaseActionMode: phaseActionModes.AUTOMATIC } },
-  { id: 'rules-template-souple', name: 'Ordre souple', createdAt: 'demo', rules: { temporalite: temporalityModes.FLEXIBLE, declarationMode: false, multipleActionSlots: false } },
-];
+export const defaultRuleTemplates = [];
 
 function ajouterTemplateSurprisSiAncien(statusTemplates, version) {
   if (Number(version || 0) >= TEMPLATE_STORE_VERSION) return statusTemplates;
@@ -183,18 +334,20 @@ function ajouterTemplateSurprisSiAncien(statusTemplates, version) {
 }
 
 export function createBlankParticipant() {
+  const symbol = symbols[Math.floor(Math.random() * symbols.length)] || '●';
+  const color = colors[Math.floor(Math.random() * colors.length)] || 'red';
   return {
     id: uid('p'),
     name: 'Nouveau personnage',
-    kind: 'Allié',
-    symbol: '🛡',
-    color: 'emerald',
+    kind: 'Opposant',
+    symbol,
+    color,
     initiative: 1,
     actionSlots: [{ id: 'slot-1', initiative: 1, order: 0 }],
     description: '',
     stats: [],
     statuses: [],
-    trackers: [newTracker('bar')],
+    trackers: [],
   };
 }
 
@@ -202,7 +355,7 @@ function normalizeCategoryName(value) {
   return value?.trim();
 }
 
-function normalizeTemplateName(value, fallback = 'Template sans nom') {
+function normalizeTemplateName(value, fallback = 'Mod?le sans nom') {
   return normalizeCategoryName(value) || fallback;
 }
 
@@ -226,7 +379,7 @@ function normalizeTrackerTemplate(template) {
   const tracker = clone(template.tracker);
   return {
     id: template.id || uid('ttpl'),
-    name: normalizeTemplateName(template.name, tracker.name || 'Suivi'),
+    name: normalizeTemplateName(template.name, tracker.name || 'Indicateur'),
     createdAt: template.createdAt || new Date().toISOString(),
     updatedAt: template.updatedAt,
     tracker: { ...tracker, id: 'template-tracker' },
@@ -278,7 +431,7 @@ function normalizeSceneCounterTemplate(template) {
   const counter = normalizeGlobalTracker(source);
   return {
     id: template.id || uid('sctpl'),
-    name: normalizeTemplateName(template.name, counter.name || 'Suivi global'),
+    name: normalizeTemplateName(template.name, counter.name || 'Indicateur de sc?ne'),
     createdAt: template.createdAt || new Date().toISOString(),
     updatedAt: template.updatedAt,
     counter: { ...counter, running: false, startedAt: null, elapsedMs: 0 },
@@ -290,7 +443,7 @@ function normalizeRuleTemplate(template) {
   const rules = normalizeCampaignRules(template.rules || template);
   return {
     id: template.id || uid('rtpl'),
-    name: normalizeTemplateName(template.name, 'Regles'),
+    name: normalizeTemplateName(template.name, 'R?gles'),
     createdAt: template.createdAt || new Date().toISOString(),
     updatedAt: template.updatedAt,
     rules,
@@ -312,7 +465,7 @@ export function normalizeTemplateStore(value) {
     };
   }
 
-  const sourceTemplates = Array.isArray(value?.templates) ? value.templates : defaultTemplates;
+  const sourceTemplates = Array.isArray(value?.templates) ? value.templates : genericDefaultTemplates;
   const templates = sourceTemplates.map(normalizeTemplate).filter(Boolean);
   const categories = Array.isArray(value?.categories) && value.categories.length ? value.categories : defaultTemplateCategories;
   const sourceTrackerTemplates = Array.isArray(value?.trackerTemplates) ? value.trackerTemplates : defaultTrackerTemplates;
@@ -342,7 +495,7 @@ export function loadTemplateStore() {
   try {
     return normalizeTemplateStore(JSON.parse(localStorage.getItem(TEMPLATE_STORAGE_KEY)));
   } catch (error) {
-    console.warn('Impossible de charger les templates Cadence.', error);
+    console.warn('Impossible de charger les mod?les Cadence.', error);
     return normalizeTemplateStore(null);
   }
 }
@@ -469,7 +622,7 @@ export function templateNameExists(templates, category, name) {
 }
 
 export function makeTemplateFromParticipant(participant, { name, category }) {
-  const cleanName = normalizeCategoryName(name) || participant.name || 'Template sans nom';
+  const cleanName = normalizeCategoryName(name) || participant.name || 'Mod?le sans nom';
   const cleanCategory = normalizeCategoryName(category) || 'PNJ';
 
   return {
@@ -487,7 +640,7 @@ export function makeTemplateFromParticipant(participant, { name, category }) {
 export function makeTrackerTemplateFromTracker(tracker, { name }) {
   return normalizeTrackerTemplate({
     id: uid('ttpl'),
-    name: normalizeTemplateName(name, tracker?.name || 'Suivi'),
+    name: normalizeTemplateName(name, tracker?.name || 'Indicateur'),
     createdAt: new Date().toISOString(),
     tracker: { ...clone(tracker), id: 'template-tracker' },
   });
@@ -496,7 +649,7 @@ export function makeTrackerTemplateFromTracker(tracker, { name }) {
 export function makeStatusTemplateFromStatus(status, { name }) {
   return normalizeStatusTemplate({
     id: uid('stpl'),
-    name: normalizeTemplateName(name, status?.name || 'Etat'),
+    name: normalizeTemplateName(name, status?.name || '?tat'),
     createdAt: new Date().toISOString(),
     status: { ...clone(status), id: 'template-status' },
   });
@@ -505,7 +658,7 @@ export function makeStatusTemplateFromStatus(status, { name }) {
 export function makeSceneStatusTemplateFromStatus(status, { name }) {
   return normalizeSceneStatusTemplate({
     id: uid('sstpl'),
-    name: normalizeTemplateName(name, status?.name || 'Etat de scene'),
+    name: normalizeTemplateName(name, status?.name || '?tat de sc?ne'),
     createdAt: new Date().toISOString(),
     status: { ...clone(status), id: 'template-status', inactive: false, advanceOn: 'round' },
   });
@@ -514,7 +667,7 @@ export function makeSceneStatusTemplateFromStatus(status, { name }) {
 export function makeSceneCounterTemplateFromCounter(counter, { name }) {
   return normalizeSceneCounterTemplate({
     id: uid('sctpl'),
-    name: normalizeTemplateName(name, counter?.name || 'Suivi global'),
+    name: normalizeTemplateName(name, counter?.name || 'Indicateur de sc?ne'),
     createdAt: new Date().toISOString(),
     counter,
   });
@@ -523,7 +676,7 @@ export function makeSceneCounterTemplateFromCounter(counter, { name }) {
 export function makeRuleTemplateFromRules(rules, { name }) {
   return normalizeRuleTemplate({
     id: uid('rtpl'),
-    name: normalizeTemplateName(name, 'Regles'),
+    name: normalizeTemplateName(name, 'R?gles'),
     createdAt: new Date().toISOString(),
     rules,
   });

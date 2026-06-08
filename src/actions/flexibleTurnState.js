@@ -49,7 +49,11 @@ export function retirerJoueSouple(scene, participantId) {
 }
 
 export function retirerHistoriqueSouple(scene, participantId) {
-  return (scene.historiqueSouple || []).filter((id) => participantIdFromSlotId(id) !== participantId && id !== participantId);
+  const actuel = scene.historiqueSouple || [];
+  const index = [...actuel].reverse().findIndex((id) => participantIdFromSlotId(id) === participantId || id === participantId);
+  if (index < 0) return actuel;
+  const position = actuel.length - 1 - index;
+  return actuel.filter((_, currentIndex) => currentIndex !== position);
 }
 
 export function annulerDernierJoueSouple(scene) {

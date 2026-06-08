@@ -1,6 +1,7 @@
 import { defaultCategoryOrder, defaultEqualityRule, defaultInitiativeOrder } from '../../constants.js';
-import { actionsRestantesSouples } from '../../actions/flexibleTurnState.js';
+import { actionsRestantesSouples, creneauxJouesSouples } from '../../actions/flexibleTurnState.js';
 import { grouperAffichageParticipants, grouperParInitiative, ordreCreneauxClassique, trierParInitiative } from '../../domain/initiative.js';
+import { rulesAllowMultipleSlots } from '../../domain/initiativeCost.js';
 import { declarationStage, declarationStages, isCheckedPhaseMode, normalizeDeclarations, participantsHorsPhaseAvancee, participantsPourPhaseAvancee } from '../../domain/initiativeModes.js';
 import { initiativeTextOrderEnabled } from '../../domain/initiativeTextOrder.js';
 import { FichetteInitiative } from '../fiches/FichetteInitiative.jsx';
@@ -13,7 +14,7 @@ function optionsEgalite(scene) {
     initiativeTextOrder: scene?.initiativeTextOrder,
     initiativeEnabled: scene?.temporalite !== 'souple' || scene?.flexibleUseInitiative !== false,
     tiebreakerVisible: scene?.tiebreakerVisible !== false,
-    multipleActionSlots: scene?.multipleActionSlots !== false,
+    multipleActionSlots: rulesAllowMultipleSlots(scene),
   };
 }
 
@@ -50,14 +51,17 @@ function GroupeSimultane({ groupe, actifId, interactions }) {
 
 function FichetteLibre({ scene, participant, actifId, activeSlotId, interactions, temporaliteSouple, onMarquerAJoue, onAnnulerAJoue, dejaJoue }) {
   const actionsRestantes = temporaliteSouple ? actionsRestantesSouples(scene, participant.id) : 0;
+  const actionsJouees = temporaliteSouple ? creneauxJouesSouples(scene, participant.id).length : 0;
   return (
     <FichetteInitiative
       participant={participant}
       actif={participant.actionSlotId ? participant.actionSlotId === activeSlotId || (!activeSlotId && participant.id === actifId) : participant.id === actifId}
       temporaliteSouple={temporaliteSouple}
       montrerInitiative={!temporaliteSouple || scene.flexibleUseInitiative !== false}
+      afficherActionsSouples={scene.round >= 0}
       dejaJoue={dejaJoue}
       actionsRestantes={actionsRestantes}
+      actionsJouees={actionsJouees}
       onMarquerAJoue={() => onMarquerAJoue?.(participant.id)}
       onAnnulerAJoue={() => onAnnulerAJoue?.(participant.id)}
       onOuvrir={() => interactions.openCharacter(participant.id)}
@@ -145,7 +149,7 @@ function ListeDeclaration({ scene, participants, interactions }) {
           {ordreDeclaration.map((participant) => (
             <div className="declaration-entry" key={participant.id}>
               <FichetteLibre scene={scene} participant={participant} actifId="" activeSlotId="" interactions={interactions} />
-              <span className={`chip declaration-action-chip ${declarations[participant.id] ? 'ready' : ''}`}>{declarations[participant.id] || 'A choisir'}</span>
+              <span className={`chip declaration-action-chip ${declarations[participant.id] ? 'ready' : ''}`}>{declarations[participant.id] || 'À choisir'}</span>
             </div>
           ))}
         </div>
@@ -155,7 +159,7 @@ function ListeDeclaration({ scene, participants, interactions }) {
 }
 
 export function ListeInitiative({ scene, participants, actifId, interactions, temporaliteSouple, temporalitePhases, temporaliteDeclaration, phaseAttendRelanceInitiative, onMarquerAJoue, onAnnulerAJoue }) {
-  if (temporaliteDeclaration && declarationStage(scene) === declarationStages.DECLARATION) return <ListeDeclaration scene={scene} participants={participants} interactions={interactions} />;
+  if (scene.round >= 0 && temporaliteDeclaration && declarationStage(scene) === declarationStages.DECLARATION) return <ListeDeclaration scene={scene} participants={participants} interactions={interactions} />;
 
   if (temporalitePhases) {
     const sceneAvecParticipants = { ...scene, participants };

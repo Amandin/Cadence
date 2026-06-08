@@ -1,5 +1,5 @@
 function valeurSembleVariable(valeur = '') {
-  return /[0-9]|[+\-–]|\bd\d+/i.test(String(valeur));
+  return /^[+\-−]?\d+(?:[.,]\d+)?$/.test(String(valeur).trim());
 }
 
 function decomposerTexteInfoRapide(stat = '') {

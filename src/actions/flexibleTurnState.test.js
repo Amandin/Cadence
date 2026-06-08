@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { actionsRestantesSouples, ajouterJoueSouple, toutLeMondeAJoueSouple } from './flexibleTurnState.js';
+import { actionsRestantesSouples, ajouterJoueSouple, retirerJoueSouple, toutLeMondeAJoueSouple } from './flexibleTurnState.js';
 
 function scene() {
   return {
@@ -19,5 +19,12 @@ describe('flexible action slots', () => {
     expect(actionsRestantesSouples(first, 'boss')).toBe(2);
     expect(actionsRestantesSouples(second, 'boss')).toBe(1);
     expect(toutLeMondeAJoueSouple(second)).toBe(false);
+  });
+
+  it('removes only the latest flexible action for one participant', () => {
+    const first = ajouterJoueSouple(scene(), 'boss').scene;
+    const second = ajouterJoueSouple(first, 'boss').scene;
+
+    expect(retirerJoueSouple(second, 'boss')).toEqual(['boss:slot-1']);
   });
 });

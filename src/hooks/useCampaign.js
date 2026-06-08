@@ -6,10 +6,13 @@ import { defaultCategoryOrder, defaultEqualityRule, defaultInitiativeOrder } fro
 import { applyInitiativeRules, campaignRulesFromPayload, normalizeCampaignRules, unifyCampaignScenes } from '../domain/campaignRules.js';
 import { normalizeGlobalTracker, stepGlobalTracker } from '../domain/globalTracker.js';
 import { normaliserCreneauxAction, trierParInitiative } from '../domain/initiative.js';
-import { hasTriggeredClock, makeDemoCampaigns, nextTurnInfo } from '../logic.js';
-import { campaignMetaFromPayload, campaignNameFromPayload, campaignTemplatesFromPayload, isValidCampaign, loadCampaign, normalizeCampaignPayload, normalizeCampaignScene, normalizeCampaignScenes, saveCampaign, serializeCampaign } from '../storage.js';
+import { isManualMultipleActionMode, rulesAllowMultipleSlots } from '../domain/initiativeCost.js';
+import { hasTriggeredClock, nextTurnInfo } from '../logic.js';
+import { campaignNameFromPayload, campaignTemplatesFromPayload, loadCampaign, normalizeCampaignPayload, normalizeCampaignScene, normalizeCampaignScenes, saveCampaign, serializeCampaign } from '../storage.js';
+import { campaignEntryFromPayload, copiedCampaignNames, demoCampaignEntries, readCadenceFile, scanCampaignDirectory, writeCadenceFile } from './campaignFilePersistence.js';
 
 const SCENE_INDEX_STORAGE_KEY = 'cadence:interface:scene-index:v1';
+const THEME_STORAGE_KEY = 'cadence:interface:dark:v1';
 
 function initialSceneIndex() {
   try {
@@ -36,74 +39,15 @@ function devicePrefersDark() {
   return typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches;
 }
 
-function slugifyCampaignPart(value) {
-  return String(value || 'campagne-cadence')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '') || 'campagne-cadence';
-}
-
-function campaignEntryFromPayload(payload, options = {}) {
-  const campaign = normalizeCampaignPayload(payload);
-  const meta = campaignMetaFromPayload(campaign);
-  return {
-    id: options.id || meta.id,
-    name: options.name || meta.name,
-    fileName: options.fileName || meta.fileName,
-    folderName: options.folderName || meta.folderName,
-    source: options.source || 'memoire',
-    autosave: !!options.autosave,
-    updatedAt: new Date().toISOString(),
-    snapshot: campaign,
-  };
-}
-
-function demoCampaignEntries() {
-  return makeDemoCampaigns().map((campaign) => campaignEntryFromPayload(campaign, { source: 'demo' }));
-}
-
-async function readCadenceFile(file) {
-  const raw = await file.text();
-  const data = JSON.parse(raw.replace(/^\uFEFF/, '').trim());
-  if (!isValidCampaign(data)) {
-    return { ok: false, message: `Le fichier choisi n'est pas une campagne Cadence v2 valide. Fichier : ${file?.name || 'sans nom'}.` };
+function storedThemePreference() {
+  try {
+    const value = window.localStorage.getItem(THEME_STORAGE_KEY);
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+  } catch {
+    // La preference visuelle reste locale et optionnelle.
   }
-  return { ok: true, campaign: normalizeCampaignPayload(data) };
-}
-
-async function ensureWritePermission(handle) {
-  if (!handle?.queryPermission || !handle?.requestPermission) return true;
-  const current = await handle.queryPermission({ mode: 'readwrite' });
-  if (current === 'granted') return true;
-  return await handle.requestPermission({ mode: 'readwrite' }) === 'granted';
-}
-
-async function writeCadenceFile(handle, content) {
-  if (!handle) return false;
-  if (!await ensureWritePermission(handle)) return false;
-  const writable = await handle.createWritable();
-  await writable.write(new Blob([content], { type: 'application/json;charset=utf-8' }));
-  await writable.close();
-  return true;
-}
-
-async function scanCampaignDirectory(directoryHandle) {
-  const found = [];
-  for await (const [name, handle] of directoryHandle.entries()) {
-    if (handle.kind === 'directory') {
-      for await (const [fileName, fileHandle] of handle.entries()) {
-        if (fileHandle.kind === 'file' && fileName.toLowerCase().endsWith('.cad')) {
-          found.push({ folderName: name, fileName, handle: fileHandle });
-          break;
-        }
-      }
-    } else if (handle.kind === 'file' && name.toLowerCase().endsWith('.cad')) {
-      found.push({ folderName: name.replace(/\.cad$/i, ''), fileName: name, handle });
-    }
-  }
-  return found;
+  return null;
 }
 
 function initiativeOptions(scene = {}) {
@@ -114,7 +58,7 @@ function initiativeOptions(scene = {}) {
     initiativeTextOrder: scene.initiativeTextOrder,
     initiativeEnabled: scene.temporalite !== 'souple' || scene.flexibleUseInitiative !== false,
     tiebreakerVisible: scene.tiebreakerVisible !== false,
-    multipleActionSlots: scene.multipleActionSlots !== false,
+    multipleActionSlots: rulesAllowMultipleSlots(scene),
   };
 }
 
@@ -136,7 +80,7 @@ export function useCampaign() {
   const [campaignName, setCampaignName] = useState(() => campaignNameFromPayload(initialCampaign));
   const [sceneIndex, setSceneIndex] = useState(initialSceneIndex);
   const [restorePoints, setRestorePoints] = useState(() => initialRestorePoints(initialCampaign.scenes));
-  const [dark, setDark] = useState(() => initialCampaign.settings?.dark ?? devicePrefersDark());
+  const [dark, setDark] = useState(() => storedThemePreference() ?? devicePrefersDark());
   const [roundEffect, setRoundEffect] = useState(null);
   const [campaignEntries, setCampaignEntries] = useState(() => {
     const demos = demoCampaignEntries();
@@ -157,7 +101,7 @@ export function useCampaign() {
   const syncedScenes = normalizeScenesWithCampaignRules(scenes, campaignRules);
   const participants = scene.participants;
   const active = participants.find((p) => p.id === scene.activeId);
-  const blocked = [...participants, ...(scene.reserve || [])].filter(hasTriggeredClock);
+  const blocked = participants.filter(hasTriggeredClock);
   const { nextStartsRound } = nextTurnInfo(scene, blocked.length > 0);
   const nextClass = blocked.length ? 'blocked' : nextStartsRound ? 'next-round' : '';
 
@@ -172,7 +116,7 @@ export function useCampaign() {
   }, [sceneIndex]);
 
   useEffect(() => {
-    const signature = JSON.stringify({ scenes: syncedScenes, dark, campaignName, templateStore, campaignRules, activeCampaignEntryId });
+    const signature = JSON.stringify({ scenes: syncedScenes, campaignName, templateStore, campaignRules, activeCampaignEntryId });
     if (signature === lastPersistenceSignatureRef.current) return undefined;
     lastPersistenceSignatureRef.current = signature;
 
@@ -198,7 +142,15 @@ export function useCampaign() {
       }
     }, 650);
     return () => window.clearTimeout(timer);
-  }, [syncedScenes, dark, campaignName, templateStore, campaignRules, activeCampaignEntryId]);
+  }, [syncedScenes, campaignName, templateStore, campaignRules, activeCampaignEntryId]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(THEME_STORAGE_KEY, String(!!dark));
+    } catch {
+      // Le theme reste utilisable meme sans stockage local.
+    }
+  }, [dark]);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.matchMedia) return undefined;
@@ -217,7 +169,6 @@ export function useCampaign() {
     setScenes(campaign.scenes);
     setCampaignName(campaignNameFromPayload(campaign));
     setTemplateStore(campaignTemplatesFromPayload(campaign));
-    setDark(!!campaign.settings?.dark);
     setSceneIndex(0);
     setRestorePoints(initialRestorePoints(campaign.scenes));
     lastPersistenceSignatureRef.current = '';
@@ -328,10 +279,7 @@ export function useCampaign() {
       }
     },
     async saveLoadedCampaignAsCopy() {
-      const base = slugifyCampaignPart(`${campaignName}-copie`);
-      const copyName = `${campaignName} - copie`;
-      const folderName = `${base}-${Date.now().toString(36)}`;
-      const fileName = `${base}.cad`;
+      const { copyName, folderName, fileName } = copiedCampaignNames(campaignName);
       try {
         let handle = null;
         if (campaignDirectoryHandleRef.current) {
@@ -387,7 +335,7 @@ export function useCampaign() {
       if (!clean) return;
       setScenes((list) => list.map((s, i) => {
         if (i !== sceneIndex) return s;
-        const options = initiativeOptions(s);
+        const options = { ...initiativeOptions(s), multipleActionSlots: isManualMultipleActionMode(s) || rulesAllowMultipleSlots(s) };
         const participantsAjustes = (s.participants || []).map((participant) => participant.id === participantId ? participantAvecInitiativeAjustee(participant, clean, slotId, options) : participant);
         return { ...s, participants: trierParInitiative(participantsAjustes, options) };
       }));

@@ -1,0 +1,71 @@
+key,fr
+common.add,Ajouter
+common.cancel,Annuler
+common.name,Nom
+common.use,Utiliser
+common.apply,Appliquer
+common.close,Fermer
+common.confirm,Confirmer
+common.save,Enregistrer
+common.edit,Modifier
+common.delete,Supprimer
+common.duplicate,Dupliquer
+status.add.title,Ajouter un état · {name}
+status.defaultName,Nouveau
+status.templateFallback,État
+status.impact.field,Impact sur le personnage
+status.impact.normal,Normal
+status.impact.limited,Limité
+status.impact.inactive,Inactif
+status.duration,Durée
+status.duration.custom,Perso
+status.duration.customField,Durée personnalisée
+status.advance.field,Évolution
+status.advance.activation,Activation
+status.advance.roundStart,Début du round
+status.loop,renouveler en boucle
+status.surprised.warning,Cet état s’appelle Surpris. Cadence utilise ce nom pour la surprise automatique ; vérifie que ses options correspondent bien à ce que tu veux.
+initiativeCost.title,Coût d’initiative
+initiativeCost.current,Initiative actuelle
+initiativeCost.help,Choisis le coût payé après l’action de {name}. Si l’initiative après coût est inférieure ou égale à {threshold}, aucun nouveau créneau n’est créé ce round.
+initiativeCost.maxRule,Règle active : coût maximum {max} pour ce créneau.
+initiativeCost.custom,Coût personnalisé
+initiativeCost.preview,Nouveau créneau possible : {initiative} - {cost} = {next}.
+initiativeCost.apply,Appliquer le coût
+initiativeCost.endCharacterRound,Terminer son round
+reserve.title,Réserve
+reserve.advance,Appliquer le début de round à la réserve
+reserve.notes,Notes de réserve
+reserve.notes.placeholder,Renforts, événements en attente, éléments hors scène immédiate...
+fileChoice.title,Fichier de campagne
+fileChoice.help,Cette campagne vient de {fileName}. Tu peux travailler directement sur ce fichier, ou créer une copie séparée.
+fileChoice.workOnFile,Travailler sur ce fichier
+fileChoice.createCopy,Créer une copie
+fileChoice.copySafer,Le fichier original n’est pas accessible en écriture depuis ce mode d’import. La copie est le choix sûr.
+timerDone.title,Minuteur terminé
+timerDone.help,Le minuteur est arrivé à zéro.
+timerDone.restart,Relancer
+timerDone.reset,Remettre à zéro
+timerDone.openMenu,Ouvrir le menu
+rules.compat.initiativeCostFlexible,Les actions multiples avec coût d’initiative sont incompatibles avec le mode souple.
+rules.compat.initiativeCostPhases,Les actions multiples avec coût d’initiative sont incompatibles avec les phases.
+rules.compat.initiativeCostLabels,Les actions multiples avec coût d’initiative exigent une initiative numérique.
+rules.compat.initiativeCostDeclaration,Les actions multiples avec coût d’initiative sont incompatibles avec déclaration puis résolution.
+rules.compat.initiativeCostAscending,Les actions multiples avec coût d’initiative exigent un ordre décroissant.
+rules.compat.automaticPhasesTextInitiative,Les phases par initiative exigent une initiative numérique. Les libellés restent possibles avec les phases cochées.
+rules.compat.surpriseFlexible,En mode souple, la surprise doit prendre fin au début du round.
+rules.compat.disableInitiativeCostFirst,Désactive d’abord le coût d’initiative.
+rules.compat.disableInitiativeCostActionsFirst,Désactive d’abord les actions multiples avec coût d’initiative.
+rules.compat.disableManualActionsFirst,Désactive d’abord les actions multiples manuelles.
+rules.compat.unavailableFlexible,Indisponible en mode souple.
+rules.compat.unavailablePhases,Indisponible avec les phases.
+rules.compat.numericOnly,Disponible seulement avec une initiative numérique.
+rules.compat.disableDeclarationFirst,Désactive d’abord déclaration puis résolution.
+rules.compat.unavailableAscending,Indisponible en ordre ascendant.
+rules.compat.flexibleNoLabels,Le mode souple sans initiative classe seulement les personnages par type puis par nom. Réactive l’initiative pour utiliser des libellés.
+rules.compat.automaticPhasesNeedNumeric,Les phases par initiative nécessitent une initiative numérique. Avec l’initiative par libellés, utilise les phases cochées.
+rules.compat.textInitiativeAutomaticPhases,Les phases par initiative ne sont pas compatibles avec l’initiative par libellés. Utilise les phases cochées ou repasse en initiative numérique.
+rules.summary.numericInitiative,Initiative numérique
+rules.summary.manualSlots,Créneaux manuels
+rules.summary.initiativeCost,Actions multiples avec coût d’initiative
+rules.summary.declaration,Déclaration puis résolution

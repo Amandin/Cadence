@@ -75,22 +75,22 @@ export function FicheParticipant({ participant, enInitiative, initiativeTextOrde
   const basculerVisibilite = (suivi) => onSuivi(suivi.id, { ...suivi, visible: suivi.visible === false });
   const boutonOeil = (suivi) => {
     const visible = suivi.visible !== false;
-    return <button className={`eye-toggle ${visible ? 'active' : 'inactive'}`} onClick={(event) => { event.stopPropagation(); basculerVisibilite(suivi); }} aria-label={visible ? 'Masquer sur la fichette' : 'Afficher sur la fichette'} title={visible ? 'Visible sur la fichette' : 'Masque sur la fichette'} type="button">{visible ? <IconeOeilMystiqueOuvert /> : <IconeOeilMystiqueFerme />}</button>;
+    return <button className={`eye-toggle ${visible ? 'active' : 'inactive'}`} onClick={(event) => { event.stopPropagation(); basculerVisibilite(suivi); }} aria-label={visible ? 'Masquer sur la fichette' : 'Afficher sur la fichette'} title={visible ? 'Visible sur la fichette' : 'Masqué sur la fichette'} type="button">{visible ? <IconeOeilMystiqueOuvert /> : <IconeOeilMystiqueFerme />}</button>;
   };
 
   return (
-    <Fenetre title={participant.name} onClose={onFermer}>
+    <Fenetre title={participant.name} onClose={onFermer} className="character-sheet">
       <p>{participant.description}</p>
       <div className={`sheet-action-row ${enInitiative && utiliserInitiative ? '' : 'without-init-counter'}`}>
         <button className="primary" onClick={onModifier}>Modifier</button>
         {enInitiative && utiliserInitiative && <MiniCompteurInitiative participant={participant} departage={participant.departage} initiativeTextOrder={initiativeTextOrder} phaseActionMode={phaseActionMode} phaseCount={phaseCount} multipleActionSlots={multipleActionSlots} tiebreakerVisible={tiebreakerVisible} onChangerInitiatives={onChangerInitiatives} />}
-        {enInitiative ? <button className="small-btn" onClick={onQuitterInitiative}>Quitter l'init</button> : <button className="small-btn join-init-wide" onClick={onRejoindreInitiative}>Rejoindre init</button>}
+        {enInitiative ? <button className="small-btn" onClick={onQuitterInitiative}>Quitter l’initiative</button> : <button className="small-btn join-init-wide" onClick={onRejoindreInitiative}>Rejoindre l’initiative</button>}
       </div>
       <InfosRapides stats={participant.stats || []} editable onChanger={onInfoRapide} />
-      <h3>Suivis</h3>
+      <h3>Indicateurs</h3>
       <div className="stack sheet-trackers">{participant.trackers.map((suivi) => <Suivi key={suivi.id} suivi={suivi} avantTitre={boutonOeil(suivi)} couleur={participant.color} onModifier={(suivant) => onSuivi(suivi.id, suivant)} onSupprimer={() => onSupprimerSuivi(suivi.id)} />)}</div>
-      <h3>Etats</h3>
-      <div className="statuses">{participant.statuses?.map((etat) => <EtiquetteEtat key={etat.id} etat={etat} onRetirer={() => onRetirerEtat(etat.id)} />)}<button className="small-btn" onClick={onAjouterEtat}>+ etat</button></div>
+      <h3>États</h3>
+      <div className="statuses">{participant.statuses?.map((etat) => <EtiquetteEtat key={etat.id} etat={etat} onRetirer={() => onRetirerEtat(etat.id)} />)}<button className="small-btn" onClick={onAjouterEtat}>+ état</button></div>
       <label className="field">Note<textarea value={participant.note || ''} onChange={(event) => onNote(event.target.value)} /></label>
     </Fenetre>
   );

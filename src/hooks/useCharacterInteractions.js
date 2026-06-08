@@ -131,12 +131,14 @@ export function useCharacterInteractions(scene, actions) {
     if (pending?.participantId) actions.activateParticipantNow(pending.participantId);
   };
 
-  const saveInitiativeEdit = (initiative) => {
+  const saveInitiativeEdit = (initiative, phaseActions) => {
     if (!initiativeEditId) return;
     const participant = allCharacters.find((item) => item.id === initiativeEditId);
-    const nextKind = participant ? classerAjoutDynamique(scene, participant, initiative) : null;
+    const participantReclasse = participant && Array.isArray(phaseActions) ? { ...participant, phaseActions } : participant;
+    const nextKind = participantReclasse ? classerAjoutDynamique(scene, participantReclasse, initiative) : null;
     const origin = initiativeEditOrigin;
     actions.adjustParticipantInitiative(initiativeEditId, initiative, '');
+    if (Array.isArray(phaseActions)) updateCharacter(initiativeEditId, (item) => ({ ...item, phaseActions }));
     setInitiativeEditId(null);
     setInitiativeEditOrigin(null);
     if (nextKind) setLateInitiativeAddition({ ...(origin || {}), participantId: initiativeEditId, kind: nextKind });

@@ -1,5 +1,6 @@
 import { defaultCategoryOrder, defaultEqualityRule, defaultInitiativeOrder } from '../constants.js';
 import { clone, newTracker, uid } from '../logic.js';
+import { rememberBaseInitiative, rulesAllowMultipleSlots } from '../domain/initiativeCost.js';
 
 export function createBlankParticipant() {
   return {
@@ -14,12 +15,13 @@ export function createBlankParticipant() {
     description: '',
     stats: [],
     statuses: [],
-    trackers: [newTracker('bar')],
+    trackers: [],
   };
 }
 
 export function placerEnReserve(participant) {
-  return { ...participant, initiative: 0, actionSlots: [] };
+  const memo = rememberBaseInitiative(participant);
+  return { ...participant, ...memo, initiative: 0, actionSlots: [] };
 }
 
 export function createRestorePoint(scene) {
@@ -76,7 +78,7 @@ export function optionsTri(scene) {
     initiativeTextOrder: scene.initiativeTextOrder,
     initiativeEnabled: scene.temporalite !== 'souple' || scene.flexibleUseInitiative !== false,
     tiebreakerVisible: scene.tiebreakerVisible !== false,
-    multipleActionSlots: scene.multipleActionSlots !== false,
+    multipleActionSlots: rulesAllowMultipleSlots(scene),
   };
 }
 

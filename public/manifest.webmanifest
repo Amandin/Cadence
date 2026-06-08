@@ -1,7 +1,7 @@
 {
   "name": "Cadence",
   "short_name": "Cadence",
-  "description": "Gestion d’initiative, scènes et suivis pour jeu de rôle.",
+  "description": "Gestion d’initiative, scènes et indicateurs pour jeu de rôle.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

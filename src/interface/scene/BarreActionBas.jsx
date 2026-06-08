@@ -10,7 +10,7 @@ export function BarreActionBas({ classeSuivant, prochainRound, round, horlogeBlo
       {enPreparation
         ? <button className="primary bottom-add-participant" type="button" onClick={onAjouterParticipant}>Ajouter</button>
         : onRetourPreparation
-          ? <button className="turn-btn compact prep-return-btn bottom-prep-return" onClick={onRetourPreparation} aria-label="Retour en preparation" title="Retour en preparation">↤</button>
+          ? <button className="turn-btn compact prep-return-btn bottom-prep-return" onClick={onRetourPreparation} aria-label="Retour en préparation" title="Retour en préparation">↤</button>
           : <BoutonTourPrecedent compact disabled={retourDesactive} onClick={onTourPrecedent} />}
       <button className={`primary ${classeSuivant}`} style={{ minWidth: 0, padding: '10px 11px', fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} onClick={onTourSuivant} disabled={suivantDesactive}>{texteSuivant}</button>
       <button className="small-btn" onClick={onOuvrirMenu}>☰</button>
