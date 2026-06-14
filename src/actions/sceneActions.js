@@ -114,6 +114,23 @@ function reculerTousLesAutomatismes(scene) {
   };
 }
 
+function terminerEffetsTemporairesDansListe(statuses = []) {
+  return statuses.map((status) => status?.duration == null ? status : { ...status, remaining: 0, expired: true });
+}
+
+function terminerEffetsTemporairesParticipant(participant) {
+  return { ...participant, statuses: terminerEffetsTemporairesDansListe(participant.statuses || []) };
+}
+
+function terminerEffetsTemporairesScene(scene) {
+  return {
+    ...scene,
+    statuses: terminerEffetsTemporairesDansListe(scene.statuses || []),
+    participants: (scene.participants || []).map(terminerEffetsTemporairesParticipant),
+    reserve: (scene.reserve || []).map(terminerEffetsTemporairesParticipant).map(placerEnReserve),
+  };
+}
+
 function demarrerScene(scene) {
   const sceneInitiale = appliquerDebutRoundInitial(scene);
   if (estModeDeclaration(scene)) {
@@ -373,6 +390,21 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
       setRoundEffect(null);
       updateScene((s) => restaurerDepuisHistorique(s, remettreEnPreparation));
     },
+    returnToPreparationWithOptions(options = {}) {
+      setRoundEffect(null);
+      updateScene((s) => {
+        const base = options.endTemporaryEffects ? terminerEffetsTemporairesScene(s) : s;
+        const withTrackers = options.resetTrackers
+          ? {
+              ...base,
+              globalTracker: base.globalTracker ? { ...base.globalTracker, current: 0, total: 0, loops: 0, running: false, startedAt: null, elapsedMs: 0 } : base.globalTracker,
+              participants: (base.participants || []).map(resetSuivisParticipant),
+              reserve: (base.reserve || []).map(resetSuivisParticipant).map(placerEnReserve),
+            }
+          : base;
+        return restaurerDepuisHistorique(withTrackers, remettreEnPreparation);
+      });
+    },
     advanceRound() {
       setRoundEffect('next');
       updateScene((s) => {
@@ -404,6 +436,23 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
         return empilerRetourTour(s, { ...s, round });
       });
     },
+    changeRoundNumberWithAutomations(delta = 1, options = {}) {
+      const valeur = Number(delta || 0);
+      if (!valeur) return;
+      setRoundEffect(null);
+      updateScene((s) => {
+        if (s.round < 0) return s;
+        const round = Math.max(0, Number(s.round || 0) + valeur);
+        if (round === s.round) return s;
+        const sceneAvecRound = { ...s, round };
+        const nextScene = options.applyAutomations
+          ? valeur > 0
+            ? avancerTousLesAutomatismes(sceneAvecRound)
+            : reculerTousLesAutomatismes(sceneAvecRound)
+          : sceneAvecRound;
+        return empilerRetourTour(s, nextScene);
+      });
+    },
     advanceAllAutomations() {
       setRoundEffect(null);
       updateScene((s) => empilerRetourTour(s, avancerTousLesAutomatismes(s)));
@@ -433,6 +482,9 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
         participants: (s.participants || []).map(effacerEtatsParticipant),
         reserve: (s.reserve || []).map(effacerEtatsParticipant).map(placerEnReserve),
       }));
+    },
+    endTemporaryEffects() {
+      updateScene((s) => terminerEffetsTemporairesScene(s));
     },
     deleteParticipant(id) {
       updateScene((s) => recalerActifPhaseSiBesoin({

@@ -12,7 +12,36 @@
   dedie, puis laisser --ui-* alimenter les composants autant que possible.
 */
 
+@font-face {
+  font-family: 'Lato';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/lato/lato-latin-400-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Lato';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/lato/lato-latin-700-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Comfortaa';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/comfortaa/comfortaa-latin-700-normal.woff2') format('woff2');
+}
+
 :root {
+  --font-ui: 'Lato', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-title: 'Comfortaa', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-number: var(--font-ui);
+  font-family: var(--font-ui);
+
   /* Layout */
   --layout-reference-width: 390px;
   --layout-min-width: 320px;
@@ -110,6 +139,119 @@ body {
   min-width: var(--layout-min-width);
   background: var(--ui-bg);
   color: var(--ui-text);
+  font-family: var(--font-ui);
+  font-size: 15.5px;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: var(--font-ui);
+}
+
+.menu-brand strong,
+.campaign-brand-capsule strong,
+.loading-view strong {
+  font-family: var(--font-title);
+}
+
+.menu-brand .brand-title,
+.campaign-brand-capsule .brand-title {
+  display: block;
+  font-family: var(--font-title);
+  font-size: clamp(20px, 5.4vw, 28px);
+  font-weight: 700;
+  line-height: .98;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.menu-brand .brand-meta,
+.campaign-brand-capsule .brand-meta {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.sheet > h1,
+.sheet > .row h2,
+.edit-sheet-header h2,
+.hub-section-head h3,
+.rules-panel > div > h3,
+.rule-group-head h3,
+.compact-option-title h3,
+.menu-scene-notes summary,
+.reserve h3 {
+  font-family: var(--font-title);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.08;
+  text-transform: none;
+}
+
+.round small,
+.round.phase-aware span,
+.turn-active-line > .active-name > .muted,
+.initiative-tier-label span,
+.flexible-section-title > span {
+  font-family: var(--font-title);
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.round small,
+.round.phase-aware span,
+.initiative-tier-label span {
+  font-size: 12px;
+}
+
+.turn-active-line > .active-name > .muted,
+.flexible-section-title > span {
+  font-size: 13px;
+}
+
+.initiative-tier-label strong,
+.flexible-section-title > strong {
+  font-family: var(--font-number);
+  font-variant-numeric: tabular-nums;
+}
+
+.status {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.round,
+.chip,
+.status,
+.global-mini,
+.global-summary,
+.quick-stat-chip,
+.initiative-cost-current,
+.timer-control-panel,
+.clock-face,
+.global-clock,
+.tracker-top,
+.tracker-value,
+.bar-bg,
+.box-count-row,
+.line-count-row,
+.initiative-roll-slot,
+input[type="number"] {
+  font-family: var(--font-number);
+  font-variant-numeric: tabular-nums;
+}
+
+html:has(.app.dark),
+body:has(.app.dark),
+#root:has(> .app.dark) {
+  background: var(--theme-dark-bg-deep);
+  color: var(--theme-dark-text);
 }
 
 .template-switch-notice {
@@ -272,6 +414,230 @@ body {
   background: var(--ui-surface-strong);
   border-color: var(--ui-border-strong);
   color: var(--ui-primary-strong);
+}
+
+.primary,
+.turn-btn,
+.small-btn,
+.icon-btn,
+.danger-btn,
+.choice,
+.initiative-choice-action,
+.controls > button,
+.clock-inline button:not(.clock-face),
+.global-mini > button {
+  border-style: solid;
+  border-width: 1px;
+  font-weight: 900;
+}
+
+.small-btn,
+.icon-btn,
+.choice,
+.initiative-choice-action,
+.controls > button,
+.clock-inline button:not(.clock-face),
+.global-mini > button {
+  box-shadow: 0 2px 9px rgba(49, 18, 54, .09);
+}
+
+.dark .small-btn,
+.dark .icon-btn,
+.dark .choice,
+.dark .initiative-choice-action,
+.dark .controls > button,
+.dark .clock-inline button:not(.clock-face),
+.dark .global-mini > button {
+  background: color-mix(in srgb, var(--ui-surface-strong) 78%, #100713);
+  border-color: color-mix(in srgb, var(--ui-border-strong) 72%, var(--theme-gold));
+  color: var(--ui-primary-contrast);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .30);
+}
+
+.choice.selected,
+.selected-toggle,
+.initiative-choice-action.primary-choice,
+.dark .choice.selected,
+.dark .selected-toggle,
+.dark .initiative-choice-action.primary-choice {
+  background: var(--ui-primary);
+  border-color: var(--ui-accent);
+  color: var(--ui-primary-contrast);
+  box-shadow: var(--ui-shadow-action);
+}
+
+.dark .choice.selected,
+.dark .selected-toggle,
+.dark .initiative-choice-action.primary-choice {
+  background: color-mix(in srgb, var(--ui-primary) 86%, var(--theme-purple-glow));
+  border-color: var(--theme-gold);
+  color: #fff7ed;
+}
+
+.initiative-choice-action small,
+.dark .initiative-choice-action small,
+.dark .initiative-choice-action.primary-choice small {
+  color: currentColor;
+  opacity: .78;
+}
+
+.danger-btn,
+.subtle-danger {
+  background: var(--ui-danger-soft);
+  border-color: color-mix(in srgb, var(--ui-danger) 36%, transparent);
+  color: var(--ui-danger);
+}
+
+.dark .danger-btn,
+.dark .subtle-danger {
+  background: color-mix(in srgb, var(--ui-danger) 50%, #100713);
+  border-color: color-mix(in srgb, #fda4af 58%, var(--ui-border-strong));
+  color: #fff1f2;
+}
+
+.bottom .small-btn,
+.bottom .turn-btn,
+.bottom .primary {
+  border-color: var(--ui-border-strong);
+}
+
+.bottom .small-btn {
+  background: var(--ui-surface-strong);
+  color: var(--ui-primary-strong);
+  box-shadow: 0 2px 9px rgba(49, 18, 54, .10);
+}
+
+.bottom .turn-btn,
+.bottom .primary {
+  background: var(--ui-primary);
+  color: var(--ui-primary-contrast);
+  box-shadow: var(--ui-shadow-action);
+}
+
+.bottom .primary.next-round,
+.bottom .turn-btn.next-round {
+  background: var(--ui-accent);
+}
+
+.bottom .primary.blocked,
+.bottom .turn-btn.blocked {
+  background: var(--ui-primary-strong);
+}
+
+.dark .bottom .small-btn,
+.dark .bottom .turn-btn,
+.dark .bottom .primary {
+  border-color: var(--ui-border-strong);
+}
+
+.dark .bottom .small-btn {
+  background: color-mix(in srgb, var(--ui-surface-strong) 78%, #100713);
+  color: var(--ui-primary-contrast);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .30);
+}
+
+.dark .bottom .turn-btn,
+.dark .bottom .primary {
+  background: var(--ui-primary);
+  color: var(--ui-primary-contrast);
+  box-shadow: var(--ui-shadow-action);
+}
+
+.dark .bottom .primary.next-round,
+.dark .bottom .turn-btn.next-round {
+  background: var(--ui-accent);
+}
+
+.dark .bottom .primary.blocked,
+.dark .bottom .turn-btn.blocked {
+  background: var(--ui-primary-strong);
+}
+
+.hub-return-logo,
+.hub-bottom-logo {
+  overflow: visible;
+}
+
+.hub-return-logo img,
+.hub-bottom-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.scene-head .hub-return-logo {
+  padding: 5px;
+}
+
+.app.dark .small-btn,
+.app.dark .icon-btn,
+.app.dark .choice,
+.app.dark .initiative-choice-action,
+.app.dark .controls > button,
+.app.dark .clock-inline button:not(.clock-face),
+.app.dark .global-mini > button,
+.app.dark .hub-section-head .small-btn,
+.app.dark .hub-scene-actions .small-btn,
+.app.dark .template-row-actions .small-btn,
+.app.dark .template-category-actions .small-btn,
+.app.dark .scene-management-grid .small-btn,
+.app.dark .dynamic-insertion-secondary-actions .small-btn,
+.app.dark .initiative-roll-slot .small-btn,
+.app.dark .compact-arrows .small-btn,
+.app.dark .fiche-card .small-btn,
+.app.dark .reserve-card .small-btn,
+.app.dark .initiative-card .small-btn {
+  background: color-mix(in srgb, var(--theme-dark-surface-soft) 78%, var(--theme-dark-bg-deep)) !important;
+  border-color: color-mix(in srgb, var(--theme-gold) 62%, transparent) !important;
+  color: var(--theme-dark-text) !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .32);
+}
+
+.app.dark .choice.selected,
+.app.dark .selected-toggle,
+.app.dark .initiative-choice-action.primary-choice,
+.app.dark .hub-tabs .choice.selected {
+  background: color-mix(in srgb, var(--theme-purple) 86%, var(--theme-purple-glow)) !important;
+  border-color: var(--theme-gold) !important;
+  color: #fff7ed !important;
+}
+
+.app.dark .danger-btn,
+.app.dark .subtle-danger,
+.app.dark .template-row-actions .danger-btn,
+.app.dark .template-category-actions .danger-btn {
+  background: color-mix(in srgb, var(--theme-danger) 52%, var(--theme-dark-bg-deep)) !important;
+  border-color: color-mix(in srgb, #fda4af 58%, var(--theme-dark-border)) !important;
+  color: #fff1f2 !important;
+}
+
+.app.dark .primary,
+.app.dark .turn-btn,
+.app.dark .delta button,
+.app.dark .delta-pop button {
+  background: var(--ui-primary);
+  border-color: color-mix(in srgb, var(--theme-gold) 45%, var(--ui-border-strong));
+  color: var(--ui-primary-contrast);
+}
+
+.app.dark .hub-scene-card,
+.app.dark .hub-row,
+.app.dark .rule-save-choices,
+.app.dark .rule-group-body,
+.app.dark .edit-sheet-header {
+  background: color-mix(in srgb, var(--theme-dark-surface-soft) 70%, var(--theme-dark-bg-deep)) !important;
+  border-color: color-mix(in srgb, var(--theme-dark-border) 75%, transparent) !important;
+  color: var(--theme-dark-text);
+}
+
+.app.dark .campaign-hub-page > .hub-section.panel,
+.app.dark .campaign-hub-header.panel,
+.app.dark .panel,
+.app.dark .sheet,
+.app.dark .card,
+.app.dark .bottom {
+  background: var(--ui-surface);
+  border-color: var(--ui-border);
 }
 
 .field,
@@ -704,6 +1070,16 @@ body {
   }
 
   .menu-brand span {
+    font-size: 10px;
+  }
+
+  .menu-brand .brand-title,
+  .campaign-brand-capsule .brand-title {
+    font-size: 20px;
+  }
+
+  .menu-brand .brand-meta,
+  .campaign-brand-capsule .brand-meta {
     font-size: 10px;
   }
 
@@ -1313,4 +1689,368 @@ body {
   .campaign-hub-page {
     align-items: start;
   }
+}
+
+/*
+  Sombre final.
+  Les anciennes feuilles contiennent encore plusieurs fonds clairs très
+  spécifiques. Ce bloc est volontairement placé en fin de fichier pour que le
+  thème sombre reste cohérent sur le hub, les règles, les modèles et la scène.
+*/
+html:has(.app.dark),
+body:has(.app.dark),
+#root:has(> .app.dark),
+.app.dark {
+  background: var(--theme-dark-bg-deep) !important;
+  color: var(--theme-dark-text);
+}
+
+.app.dark {
+  background-image:
+    radial-gradient(ellipse at 12% 0%, rgba(164, 90, 177, .36) 0, rgba(81, 22, 90, .20) 28%, transparent 58%),
+    radial-gradient(ellipse at 88% 8%, rgba(210, 164, 86, .18) 0, rgba(199, 94, 25, .10) 26%, transparent 56%),
+    linear-gradient(145deg, rgba(33, 16, 37, .98) 0, rgba(24, 10, 28, .99) 48%, var(--theme-dark-bg-deep) 100%) !important;
+}
+
+.app.dark .brand,
+.app.dark .card,
+.app.dark .panel,
+.app.dark .sheet,
+.app.dark .bottom,
+.app.dark .campaign-hub-header.panel,
+.app.dark .campaign-hub-page > .hub-section.panel,
+.app.dark .rules-panel,
+.app.dark .campaign-files-panel,
+.app.dark .hub-scene-card,
+.app.dark .hub-row,
+.app.dark .rule-group,
+.app.dark .rule-group-body,
+.app.dark .rule-group .advanced-rule-block,
+.app.dark .rule-save-choices,
+.app.dark .edit-sheet-header,
+.app.dark .template-switch-notice,
+.app.dark .tracker,
+.app.dark .box-editor,
+.app.dark .restore-row,
+.app.dark .global-mini-main,
+.app.dark .hub-scene-open {
+  background:
+    linear-gradient(145deg, rgba(60, 27, 67, .92) 0, rgba(35, 15, 40, .96) 58%, rgba(18, 8, 22, .96) 100%) !important;
+  border-color: color-mix(in srgb, var(--theme-dark-border) 78%, rgba(164, 90, 177, .32)) !important;
+  color: var(--theme-dark-text);
+  box-shadow:
+    0 18px 42px rgba(0, 0, 0, .46),
+    0 0 0 1px rgba(164, 90, 177, .10),
+    inset 0 1px 0 rgba(255, 247, 237, .055),
+    inset 0 -1px 0 rgba(0, 0, 0, .24);
+}
+
+.app.dark .campaign-hub-header.panel {
+  background:
+    radial-gradient(ellipse at 14% 0%, rgba(210, 164, 86, .14) 0, transparent 48%),
+    linear-gradient(160deg, rgba(50, 23, 57, .99), rgba(29, 12, 33, .99) 60%, rgba(18, 8, 22, .99)) !important;
+  box-shadow:
+    0 18px 38px rgba(0, 0, 0, .42),
+    0 0 0 1px rgba(210, 164, 86, .14),
+    inset 0 1px 0 rgba(255, 247, 237, .08);
+}
+
+.app.dark .rule-group,
+.app.dark .rule-group-body,
+.app.dark .rule-group .advanced-rule-block {
+  background:
+    linear-gradient(155deg, rgba(65, 30, 72, .84) 0, rgba(38, 16, 43, .94) 54%, rgba(20, 8, 24, .96) 100%) !important;
+  border-color: color-mix(in srgb, var(--theme-dark-border) 70%, rgba(199, 94, 25, .22)) !important;
+}
+
+.app.dark .rule-group-body {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 247, 237, .045),
+    inset 0 0 24px rgba(164, 90, 177, .08);
+}
+
+.app.dark .muted,
+.app.dark .field,
+.app.dark .compact-help,
+.app.dark .rule-option-note,
+.app.dark .rule-group .compact-help,
+.app.dark .rule-group .advanced-radio small:not(.rule-option-warning),
+.app.dark .hub-row small,
+.app.dark .hub-row em,
+.app.dark .hub-scene-open small,
+.app.dark .hub-scene-open em,
+.app.dark .campaign-save-status,
+.app.dark .box-label,
+.app.dark .line-count-row label,
+.app.dark .box-count-row span,
+.app.dark .box-level-row span,
+.app.dark .box-line-name label {
+  color: color-mix(in srgb, var(--theme-dark-muted) 88%, #fff7ed) !important;
+}
+
+.app.dark input,
+.app.dark textarea,
+.app.dark select,
+.app.dark .field input,
+.app.dark .field textarea,
+.app.dark .field select,
+.app.dark .tracker-edit-head input,
+.app.dark .tracker-edit-head select,
+.app.dark .delta-pop input,
+.app.dark .box-line-name input,
+.app.dark .restore-row select {
+  background: linear-gradient(180deg, rgba(28, 13, 32, .98), var(--theme-dark-bg-deep)) !important;
+  border-color: var(--theme-dark-border) !important;
+  color: var(--theme-dark-text) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 247, 237, .04);
+}
+
+.app.dark .small-btn,
+.app.dark .icon-btn,
+.app.dark .choice,
+.app.dark .initiative-choice-action,
+.app.dark .controls > button,
+.app.dark .clock-inline button:not(.clock-face),
+.app.dark .global-mini > button,
+.app.dark .hub-section-head .small-btn,
+.app.dark .hub-scene-actions .small-btn,
+.app.dark .template-row-actions .small-btn,
+.app.dark .template-category-actions .small-btn,
+.app.dark .scene-management-grid .small-btn,
+.app.dark .dynamic-insertion-secondary-actions .small-btn,
+.app.dark .initiative-roll-slot .small-btn,
+.app.dark .compact-arrows .small-btn,
+.app.dark .fiche-card .small-btn,
+.app.dark .reserve-card .small-btn,
+.app.dark .initiative-card .small-btn {
+  background:
+    linear-gradient(180deg, rgba(64, 29, 72, .92), rgba(35, 15, 40, .96)) !important;
+  border-color: color-mix(in srgb, var(--theme-gold) 58%, rgba(164, 90, 177, .18)) !important;
+  color: var(--theme-dark-text) !important;
+  box-shadow:
+    0 2px 10px rgba(0, 0, 0, .34),
+    inset 0 1px 0 rgba(255, 247, 237, .05);
+}
+
+.app.dark .primary,
+.app.dark .turn-btn,
+.app.dark .delta button,
+.app.dark .delta-pop button {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-purple-glow) 42%, var(--theme-purple)) 0%, var(--theme-purple) 55%, var(--theme-purple-deep) 100%) !important;
+  border-color: color-mix(in srgb, var(--theme-gold) 52%, transparent) !important;
+  color: #fff7ed !important;
+  box-shadow:
+    0 8px 20px rgba(0, 0, 0, .38),
+    0 0 18px rgba(164, 90, 177, .22),
+    inset 0 1px 0 rgba(255, 247, 237, .10);
+}
+
+.app.dark .choice.selected,
+.app.dark .selected-toggle,
+.app.dark .initiative-choice-action.primary-choice,
+.app.dark .hub-tabs .choice.selected {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-purple-glow) 52%, var(--theme-purple)) 0%, var(--theme-purple) 100%) !important;
+  border-color: var(--theme-gold) !important;
+  color: #fff7ed !important;
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, .34),
+    0 0 16px rgba(164, 90, 177, .20);
+}
+
+.app.dark .danger-btn,
+.app.dark .subtle-danger,
+.app.dark .template-row-actions .danger-btn,
+.app.dark .template-category-actions .danger-btn {
+  background: color-mix(in srgb, var(--theme-danger) 52%, var(--theme-dark-bg-deep)) !important;
+  border-color: color-mix(in srgb, #fda4af 58%, var(--theme-dark-border)) !important;
+  color: #fff1f2 !important;
+}
+
+.app.dark .hub-scene-type,
+.app.dark .chip {
+  background: rgba(81, 22, 90, .48) !important;
+  border-color: rgba(210, 164, 86, .26) !important;
+  color: var(--theme-dark-text) !important;
+}
+
+.sheet.main-menu.menu-dark,
+.main-menu-overlay .sheet.menu-dark {
+  background:
+    linear-gradient(145deg, rgba(60, 27, 67, .96) 0, rgba(35, 15, 40, .98) 58%, rgba(18, 8, 22, .98) 100%) !important;
+  border-color: color-mix(in srgb, var(--theme-dark-border) 78%, rgba(164, 90, 177, .32)) !important;
+  color: var(--theme-dark-text);
+  box-shadow:
+    0 22px 52px rgba(0, 0, 0, .52),
+    0 0 0 1px rgba(164, 90, 177, .12),
+    inset 0 1px 0 rgba(255, 247, 237, .055),
+    inset 0 -1px 0 rgba(0, 0, 0, .24);
+}
+
+.sheet.main-menu.menu-dark .scene-options,
+.sheet.main-menu.menu-dark .compact-options,
+.sheet.main-menu.menu-dark .menu-scene-notes,
+.sheet.main-menu.menu-dark .menu-scene-elements,
+.sheet.main-menu.menu-dark .menu-flow-section,
+.sheet.main-menu.menu-dark .restore-row,
+.sheet.main-menu.menu-dark .global-mini-main {
+  background:
+    linear-gradient(155deg, rgba(65, 30, 72, .78) 0, rgba(38, 16, 43, .92) 54%, rgba(20, 8, 24, .94) 100%) !important;
+  border-color: color-mix(in srgb, var(--theme-dark-border) 70%, rgba(199, 94, 25, .18)) !important;
+  color: var(--theme-dark-text);
+}
+
+.sheet.main-menu.menu-dark .muted,
+.sheet.main-menu.menu-dark .compact-help,
+.sheet.main-menu.menu-dark .field {
+  color: color-mix(in srgb, var(--theme-dark-muted) 88%, #fff7ed) !important;
+}
+
+.sheet.main-menu.menu-dark .small-btn,
+.sheet.main-menu.menu-dark .icon-btn,
+.sheet.main-menu.menu-dark .choice,
+.sheet.main-menu.menu-dark .controls > button,
+.sheet.main-menu.menu-dark .clock-inline button:not(.clock-face),
+.sheet.main-menu.menu-dark .global-mini > button,
+.sheet.main-menu.menu-dark .scene-management-grid .small-btn {
+  background:
+    linear-gradient(180deg, rgba(64, 29, 72, .92), rgba(35, 15, 40, .96)) !important;
+  border-color: color-mix(in srgb, var(--theme-gold) 58%, rgba(164, 90, 177, .18)) !important;
+  color: var(--theme-dark-text) !important;
+  box-shadow:
+    0 2px 10px rgba(0, 0, 0, .34),
+    inset 0 1px 0 rgba(255, 247, 237, .05);
+}
+
+.sheet.main-menu.menu-dark .primary,
+.sheet.main-menu.menu-dark .turn-btn,
+.sheet.main-menu.menu-dark .delta button,
+.sheet.main-menu.menu-dark .delta-pop button {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-purple-glow) 42%, var(--theme-purple)) 0%, var(--theme-purple) 55%, var(--theme-purple-deep) 100%) !important;
+  border-color: color-mix(in srgb, var(--theme-gold) 52%, transparent) !important;
+  color: #fff7ed !important;
+  box-shadow:
+    0 8px 20px rgba(0, 0, 0, .38),
+    0 0 18px rgba(164, 90, 177, .22),
+    inset 0 1px 0 rgba(255, 247, 237, .10);
+}
+
+.sheet.main-menu.menu-dark .danger-btn,
+.sheet.main-menu.menu-dark .subtle-danger {
+  background: color-mix(in srgb, var(--theme-danger) 52%, var(--theme-dark-bg-deep)) !important;
+  border-color: color-mix(in srgb, #fda4af 58%, var(--theme-dark-border)) !important;
+  color: #fff1f2 !important;
+}
+
+.sheet.main-menu.menu-dark input,
+.sheet.main-menu.menu-dark textarea,
+.sheet.main-menu.menu-dark select,
+.sheet.main-menu.menu-dark .field input,
+.sheet.main-menu.menu-dark .field textarea,
+.sheet.main-menu.menu-dark .field select,
+.sheet.main-menu.menu-dark .restore-row select {
+  background: linear-gradient(180deg, rgba(28, 13, 32, .98), var(--theme-dark-bg-deep)) !important;
+  border-color: var(--theme-dark-border) !important;
+  color: var(--theme-dark-text) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 247, 237, .04);
+}
+
+.app .hub-return-logo,
+.app .hub-bottom-logo {
+  display: grid !important;
+  place-items: center !important;
+  align-items: center !important;
+  justify-items: center !important;
+  line-height: 0 !important;
+  aspect-ratio: 1 / 1 !important;
+  background:
+    radial-gradient(circle at 34% 24%, rgba(255, 250, 245, .98) 0, rgba(241, 227, 214, .94) 58%, rgba(233, 216, 201, .96) 100%) !important;
+  border: 1px solid rgba(49, 18, 54, .12) !important;
+  box-shadow:
+    0 6px 16px rgba(49, 18, 54, .12),
+    inset 0 1px 0 rgba(255, 255, 255, .55);
+  overflow: visible !important;
+}
+
+.app.dark .hub-return-logo,
+.app.dark .hub-bottom-logo {
+  background:
+    radial-gradient(circle at 34% 24%, rgba(72, 33, 81, .98) 0, rgba(38, 18, 44, .98) 58%, rgba(17, 8, 21, .98) 100%) !important;
+  border-color: rgba(210, 164, 86, .30) !important;
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, .36),
+    0 0 14px rgba(164, 90, 177, .18),
+    inset 0 1px 0 rgba(255, 247, 237, .08);
+}
+
+.app .hub-return-logo {
+  width: 54px !important;
+  height: 54px !important;
+  min-width: 54px !important;
+  padding: 0 !important;
+}
+
+.app .hub-bottom-logo {
+  width: 38px !important;
+  height: 38px !important;
+  min-width: 38px !important;
+  padding: 0 !important;
+}
+
+.app .hub-return-logo img {
+  width: 38px !important;
+  height: 38px !important;
+  object-fit: contain;
+  display: block;
+  margin: auto !important;
+  transform: none !important;
+}
+
+.app .hub-bottom-logo img {
+  width: 26px !important;
+  height: 26px !important;
+  object-fit: contain;
+  display: block;
+  margin: auto !important;
+  transform: none !important;
+}
+
+@media (max-width: 767px) {
+  .app .scene-head .hub-return-logo {
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+  }
+
+  .app .scene-head .hub-return-logo img {
+    width: 30px !important;
+    height: 30px !important;
+  }
+}
+
+.app.dark select,
+.app.dark option,
+.app.dark optgroup {
+  color-scheme: dark;
+  background-color: var(--theme-dark-bg-deep) !important;
+  color: var(--theme-dark-text) !important;
+}
+
+.app.dark select {
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--theme-dark-text) 50%),
+    linear-gradient(135deg, var(--theme-dark-text) 50%, transparent 50%),
+    linear-gradient(180deg, rgba(28, 13, 32, .98), var(--theme-dark-bg-deep)) !important;
+  background-position:
+    calc(100% - 16px) 50%,
+    calc(100% - 11px) 50%,
+    0 0 !important;
+  background-size:
+    5px 5px,
+    5px 5px,
+    100% 100% !important;
+  background-repeat: no-repeat !important;
+  padding-right: 32px !important;
 }

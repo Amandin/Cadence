@@ -24,7 +24,7 @@ export function FichetteInitiative({ participant, actif, groupeSimultane, tempor
   ].filter(Boolean);
   const afficherRetourSouple = boutonSouple && actionsJouees > 0;
   const afficherActionSouple = boutonSouple && actionsRestantes > 0;
-  const flechesRestantes = Array.from({ length: Math.max(1, actionsRestantes) }, (_, index) => <span key={index}>&rarr;</span>);
+  const flechesRestantes = Array.from({ length: Math.max(1, actionsRestantes) }, (_, index) => <span className="cadence-arrow-icon forward" key={index} aria-hidden="true" />);
 
   return (
     <FichetteParticipant
@@ -40,9 +40,9 @@ export function FichetteInitiative({ participant, actif, groupeSimultane, tempor
       onRetirerEtat={onRetirerEtat}
       primaryAction={(
         <div className="card-actions">
-          <button className={`small-btn leave-initiative-btn ${sortieConseillee ? 'suggested' : ''}`} onClick={onQuitterInitiative} title="Mettre en réserve" aria-label={`Mettre ${participant.name} en réserve`}>→ Réserve</button>
+          <button className={`small-btn leave-initiative-btn ${sortieConseillee ? 'suggested' : ''}`} onClick={onQuitterInitiative} title="Mettre en réserve" aria-label={`Mettre ${participant.name} en réserve`}><span className="cadence-arrow-icon forward" aria-hidden="true" /> <span>Réserve</span></button>
           {boutonSouple && <div className={`flexible-action-row ${afficherRetourSouple ? 'has-undo' : ''}`}>
-            {afficherRetourSouple && <button className="turn-btn compact previous-turn available flexible-play undo-played" onClick={onAnnulerAJoue} aria-label="Annuler A joué" title="Annuler A joué">&larr;</button>}
+            {afficherRetourSouple && <button className="turn-btn compact previous-turn available flexible-play undo-played" onClick={onAnnulerAJoue} aria-label="Annuler A joué" title="Annuler A joué"><span className="cadence-arrow-icon back" aria-hidden="true" /></button>}
             {afficherActionSouple && <button className="primary flexible-play play-action" onClick={onMarquerAJoue} aria-label={actionsRestantes > 1 ? `${actionsRestantes} actions restantes` : 'Marquer A joué'}>{flechesRestantes}</button>}
           </div>}
         </div>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { APP_VERSION } from '../../constants.js';
 import { activeGlobalTrackerThresholds, globalTrackerDisplayValue, globalTrackerTimerState } from '../../domain/globalTracker.js';
 import { EtiquetteEtat, Fenetre } from '../commun/ComposantsCommuns.jsx';
@@ -10,8 +10,8 @@ function MenuEntete({ sombre, onChangerTheme, onClose }) {
     <div className="menu-brand menu-brand-header">
       <img src={logo} alt="Cadence" />
       <div>
-        <strong>Menu</strong>
-        <span className="muted">Cadence · v{APP_VERSION}</span>
+        <strong className="brand-title">Cadence</strong>
+        <span className="muted brand-meta">Menu · v{APP_VERSION}</span>
       </div>
       <button className={`theme-toggle ${sombre ? 'dark-on' : 'light-on'}`} onClick={() => onChangerTheme(!sombre)} aria-label="Basculer thème clair ou sombre">
         <span>☀</span>
@@ -90,7 +90,7 @@ function ElementsSceneMenu({ scene, onIndicateurScene, onModifierIndicateurScene
       {hasDetails && (
         <div className="stack menu-scene-elements-details">
           {indicateurActif && (
-            <div className="restore-row discreet">
+            <div className="menu-scene-indicator-row">
               <span>{resume}</span>
               <label className={`global-switch ${indicateurActif ? 'active' : ''}`}>
                 <span>{indicateurActif ? 'ON' : 'OFF'}</span>
@@ -207,25 +207,118 @@ function FenetreEditionIndicateurScene({ scene, compteur, onModifier, onChanger,
   );
 }
 
-export function MenuPrincipal({ scene, restorePoints = [], onRestore, onReturnToPreparation, onAdvanceRound, onDecreaseRound, onAdvanceAutomations, onRewindAutomations, onResetTrackers, onClearStatuses, onClose, dark, setDark, onAddParticipant, onOpenInitiativeRoller, onOpenCampaignHub, onGlobalTracker, onStepGlobalTracker, onAddSceneStatus, onRemoveSceneStatus, onUpdateSceneNotes }) {
+function ajusterHauteurTextarea(element) {
+  if (!element) return;
+  element.style.height = 'auto';
+  element.style.height = `${Math.max(92, element.scrollHeight)}px`;
+}
+
+function NotesSceneMenuOuvert({ scene, onModifierNotes }) {
+  const textareaRef = useRef(null);
+  useEffect(() => ajusterHauteurTextarea(textareaRef.current), [scene?.notes]);
+
+  return (
+    <div className="scene-options compact-options menu-scene-notes">
+      <div className="compact-option-title">
+        <h3>Notes de scène</h3>
+      </div>
+      <label className="field"><textarea ref={textareaRef} rows={4} value={scene?.notes || ''} onInput={(event) => ajusterHauteurTextarea(event.currentTarget)} onChange={(event) => onModifierNotes?.(event.target.value)} placeholder="Ambiance, objectifs, éléments importants..." /></label>
+    </div>
+  );
+}
+
+function OptionsDerouleSceneMenu({ scene, points, pointActif, onChoisirPoint, onRestaurer, onDemanderRetourPreparation, onAvancerRound, onReculerRound, onChangerRoundAvecAutomatismes, onAvancerAutomatismes, onReculerAutomatismes, onResetSuivis }) {
+  const [roundAvecAutomatismes, setRoundAvecAutomatismes] = useState(false);
+  if (!scene) return null;
+  const enPreparation = scene.round < 0;
+  const pointsRestauration = points.filter((point) => point?.kind !== 'pre-initiative' && Number(point?.round) >= 0);
+  const pointActifFiltre = pointsRestauration.some((point) => point.id === pointActif) ? pointActif : pointsRestauration.at(-1)?.id || '';
+  const changerRound = (delta) => {
+    if (onChangerRoundAvecAutomatismes) {
+      onChangerRoundAvecAutomatismes(delta, { applyAutomations: roundAvecAutomatismes });
+      return;
+    }
+    if (delta > 0) onAvancerRound?.();
+    else onReculerRound?.();
+  };
+
+  return (
+    <details className="scene-options compact-options menu-flow-section">
+      <summary>Déroulé</summary>
+      <div className="menu-action-grid scene-management-grid">
+        {!enPreparation && <button className="primary prep-return-menu-btn" onClick={onDemanderRetourPreparation}>Retour à la Préparation</button>}
+        <button className="small-btn" onClick={onResetSuivis}>Réinitialiser les indicateurs</button>
+        {!enPreparation && <button className="small-btn" onClick={() => changerRound(-1)} disabled={scene.round <= 0}>Reculer d'un round</button>}
+        {!enPreparation && <button className="small-btn" onClick={() => changerRound(1)}>Avancer d'un round</button>}
+        <button className="small-btn" onClick={onReculerAutomatismes}>Reculer les automatismes</button>
+        <button className="small-btn" onClick={onAvancerAutomatismes}>Avancer les automatismes</button>
+      </div>
+      {!enPreparation && <label className={`reset-switch menu-round-automation-toggle ${roundAvecAutomatismes ? 'active' : ''}`}>
+        <span>Appliquer les automatismes quand on avance ou recule le round</span>
+        <input type="checkbox" checked={roundAvecAutomatismes} onChange={(event) => setRoundAvecAutomatismes(event.target.checked)} />
+      </label>}
+      {!enPreparation && pointsRestauration.length > 0 && <RestaurationScene points={pointsRestauration} pointActif={pointActifFiltre} onChoisirPoint={onChoisirPoint} onRestaurer={onRestaurer} />}
+      <p className="muted compact-help">Ces actions servent à corriger une scène. Pendant le jeu normal, utilise plutôt Suivant.</p>
+    </details>
+  );
+}
+
+function FenetreRetourPreparation({ onFermer, onValider }) {
+  const [resetTrackers, setResetTrackers] = useState(false);
+  const [endTemporaryEffects, setEndTemporaryEffects] = useState(false);
+
+  return (
+    <Fenetre title="Retour à la Préparation" onClose={onFermer}>
+      <div className="stack return-preparation-options">
+        <p className="muted compact-help">Choisis ce que Cadence doit nettoyer en revenant avant l'initiative.</p>
+        <label className={`reset-switch ${resetTrackers ? 'active' : ''}`}>
+          <span>Réinitialiser aussi les indicateurs</span>
+          <input type="checkbox" checked={resetTrackers} onChange={(event) => setResetTrackers(event.target.checked)} />
+        </label>
+        <label className={`reset-switch ${endTemporaryEffects ? 'active' : ''}`}>
+          <span>Mettre fin aux effets temporaires</span>
+          <input type="checkbox" checked={endTemporaryEffects} onChange={(event) => setEndTemporaryEffects(event.target.checked)} />
+        </label>
+        <p className="muted compact-help">Si rien n’est coché, Cadence revient à la préparation sans toucher aux indicateurs ni aux effets.</p>
+        <div className="grid2">
+          <button className="primary" onClick={() => onValider({ resetTrackers, endTemporaryEffects })}>Retour à la Préparation</button>
+          <button className="small-btn" onClick={onFermer}>Annuler</button>
+        </div>
+      </div>
+    </Fenetre>
+  );
+}
+
+export function MenuPrincipal({ scene, restorePoints = [], onRestore, onReturnToPreparation, onReturnToPreparationWithOptions, onAdvanceRound, onDecreaseRound, onChangeRoundWithAutomations, onAdvanceAutomations, onRewindAutomations, onResetTrackers, onClearStatuses, onEndTemporaryEffects, onClose, dark, setDark, onAddParticipant, onOpenInitiativeRoller, onOpenCampaignHub, onGlobalTracker, onStepGlobalTracker, onAddSceneStatus, onRemoveSceneStatus, onUpdateSceneNotes }) {
   const pointsRestauration = [...restorePoints].sort((a, b) => a.round - b.round);
   const [pointRestaurationId, setPointRestaurationId] = useState(pointsRestauration.at(-1)?.id || '');
   const [editionIndicateurOuverte, setEditionIndicateurOuverte] = useState(false);
+  const [retourPreparationOuvert, setRetourPreparationOuvert] = useState(false);
+  const validerRetourPreparation = (options) => {
+    if (onReturnToPreparationWithOptions) {
+      onReturnToPreparationWithOptions(options);
+      return;
+    }
+    if (options.resetTrackers) onResetTrackers?.();
+    if (options.endTemporaryEffects) onEndTemporaryEffects?.();
+    onReturnToPreparation?.();
+  };
 
   return (
-    <Fenetre title="Menu" onClose={onClose} header={<MenuEntete sombre={dark} onChangerTheme={setDark} onClose={onClose} />} className="main-menu">
+    <Fenetre title="Menu" onClose={onClose} header={<MenuEntete sombre={dark} onChangerTheme={setDark} onClose={onClose} />} className={`main-menu ${dark ? 'dark menu-dark' : ''}`}>
       <div className="main-menu-layout">
         <div className="main-menu-primary">
           <button className="primary hub-menu-main-action" onClick={onOpenCampaignHub}>Retour au hub de campagne</button>
           <ActionsScene onAjouterParticipant={onAddParticipant} onSaisirInitiatives={onOpenInitiativeRoller} />
           <ElementsSceneMenu scene={scene} onIndicateurScene={onGlobalTracker} onModifierIndicateurScene={() => setEditionIndicateurOuverte(true)} onAjouterEtatScene={onAddSceneStatus} onRetirerEtatScene={onRemoveSceneStatus} onEffacerEtats={onClearStatuses} />
-          <OptionsDerouleScene scene={scene} points={pointsRestauration} pointActif={pointRestaurationId} onChoisirPoint={setPointRestaurationId} onRestaurer={onRestore} onRetourPreparation={onReturnToPreparation} onAvancerRound={onAdvanceRound} onReculerRound={onDecreaseRound} onAvancerAutomatismes={onAdvanceAutomations} onReculerAutomatismes={onRewindAutomations} onResetSuivis={onResetTrackers} />
+          <OptionsDerouleSceneMenu scene={scene} points={pointsRestauration} pointActif={pointRestaurationId} onChoisirPoint={setPointRestaurationId} onRestaurer={onRestore} onDemanderRetourPreparation={() => setRetourPreparationOuvert(true)} onAvancerRound={onAdvanceRound} onReculerRound={onDecreaseRound} onChangerRoundAvecAutomatismes={onChangeRoundWithAutomations} onAvancerAutomatismes={onAdvanceAutomations} onReculerAutomatismes={onRewindAutomations} onResetSuivis={onResetTrackers} />
         </div>
         <div className="main-menu-secondary">
-          <NotesSceneMenu scene={scene} onModifierNotes={onUpdateSceneNotes} />
+          <NotesSceneMenuOuvert scene={scene} onModifierNotes={onUpdateSceneNotes} />
         </div>
       </div>
       {editionIndicateurOuverte && <FenetreEditionIndicateurScene scene={scene} compteur={scene?.globalTracker} onModifier={onGlobalTracker} onChanger={onStepGlobalTracker} onFermer={() => setEditionIndicateurOuverte(false)} />}
+      {retourPreparationOuvert && <FenetreRetourPreparation onFermer={() => setRetourPreparationOuvert(false)} onValider={validerRetourPreparation} />}
     </Fenetre>
   );
 }

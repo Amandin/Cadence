@@ -685,6 +685,83 @@ describe('turn rollback', () => {
     });
   });
 
+  it('changes the round number with optional automation correction', () => {
+    const harness = createHarness({
+      id: 'scene',
+      temporalite: temporalityModes.CLASSIC,
+      startRound: 1,
+      round: 3,
+      activeId: 'solo',
+      activeSlotId: '',
+      globalTracker: { enabled: true, name: 'Menace', mode: 'counter', current: 1, max: 6, total: 1, auto: true, trigger: 'round' },
+      statuses: [{ id: 'scene-status', name: 'Scene', duration: 3, remaining: 2, advanceOn: 'round', expired: false }],
+      participants: [{
+        ...participant('solo', 12),
+        statuses: [
+          { id: 'round-status', name: 'Round', duration: 3, remaining: 2, advanceOn: 'round', expired: false },
+          { id: 'activation-status', name: 'Activation', duration: 3, remaining: 2, advanceOn: 'activation', expired: false },
+        ],
+        trackers: [
+          { id: 'round-clock', type: 'clock', current: 1, min: 0, max: 6, step: 1, autoReset: 'round' },
+          { id: 'activation-clock', type: 'clock', current: 1, min: 0, max: 6, step: 1, autoReset: 'activation' },
+        ],
+      }],
+      reserve: [],
+    });
+
+    harness.actions().changeRoundNumberWithAutomations(1, { applyAutomations: false });
+    expect(harness.current().round).toBe(4);
+    expect(harness.current().participants[0].statuses[0]).toMatchObject({ id: 'round-status', remaining: 2 });
+
+    harness.actions().changeRoundNumberWithAutomations(1, { applyAutomations: true });
+    expect(harness.current().round).toBe(5);
+    expect(harness.current().globalTracker.current).toBe(2);
+    expect(harness.current().statuses[0]).toMatchObject({ id: 'scene-status', remaining: 1 });
+    expect(harness.current().participants[0].statuses).toEqual([
+      expect.objectContaining({ id: 'round-status', remaining: 1 }),
+      expect.objectContaining({ id: 'activation-status', remaining: 1 }),
+    ]);
+    expect(harness.current().participants[0].trackers).toEqual([
+      expect.objectContaining({ id: 'round-clock', current: 2 }),
+      expect.objectContaining({ id: 'activation-clock', current: 2 }),
+    ]);
+  });
+
+  it('returns to preparation with optional tracker reset and temporary effects ended', () => {
+    const harness = createHarness({
+      id: 'scene',
+      temporalite: temporalityModes.CLASSIC,
+      startRound: 1,
+      round: 2,
+      activeId: 'solo',
+      activeSlotId: '',
+      globalTracker: { enabled: true, name: 'Menace', mode: 'counter', current: 4, max: 6, total: 4, auto: true, trigger: 'round' },
+      statuses: [
+        { id: 'scene-temp', name: 'Scene temporaire', duration: 2, remaining: 1, advanceOn: 'round', expired: false },
+        { id: 'scene-perm', name: 'Scene permanente', duration: null, remaining: null, advanceOn: 'round', expired: false },
+      ],
+      participants: [{
+        ...participant('solo', 12),
+        statuses: [{ id: 'temp', name: 'Temporaire', duration: 2, remaining: 1, advanceOn: 'activation', expired: false }],
+        trackers: [{ id: 'clock', type: 'clock', current: 3, initial: 0, min: 0, max: 6, step: 1, autoReset: 'round' }],
+      }],
+      reserve: [],
+    });
+
+    harness.actions().returnToPreparationWithOptions({ resetTrackers: true, endTemporaryEffects: true });
+
+    expect(harness.current()).toMatchObject({ round: -1, activeId: '' });
+    expect(harness.current().globalTracker).toMatchObject({ current: 0, total: 0 });
+    expect(harness.current().statuses).toEqual([
+      expect.objectContaining({ id: 'scene-temp', remaining: 0, expired: true }),
+      expect.objectContaining({ id: 'scene-perm', remaining: null, expired: false }),
+    ]);
+    expect(harness.current().participants[0]).toMatchObject({
+      statuses: [expect.objectContaining({ id: 'temp', remaining: 0, expired: true })],
+      trackers: [expect.objectContaining({ id: 'clock', current: 0 })],
+    });
+  });
+
   it('creates and clears initiative-cost slots without changing base initiative', () => {
     const harness = createHarness({
       id: 'scene',
