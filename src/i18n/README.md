@@ -15,6 +15,8 @@ Convention retenue pour Cadence :
 - `export.*` pour la petite fenêtre d'export de campagne.
 - `initiativeAdjust.*` pour la petite fenêtre d'ajustement d'initiative.
 - `declarations.*` pour la petite fenêtre de déclaration des actions.
+- `scene.*` pour l'en-tête de scène et ses libellés stables visibles.
+- `initiative.*` pour l'affichage de l'initiative visible et ses états courts.
 - `hub.*` pour l'écran Hub et ses sous-zones stables, avec des sous-groupes comme `hub.tabs.*`, `hub.scenes.*` et `hub.campaigns.*`.
 - `templates.*` pour les sous-écrans de modèles, avec des sous-groupes comme `templates.hub.*`, `templates.tabs.*`, `templates.personnages.*`, `templates.sections.*` et `templates.editor.*`.
 - `sheet.*` pour la fenêtre d'édition de fiche et ses sous-zones stables, avec des sous-groupes autorisés comme `sheet.trackers.*`, `sheet.thresholds.*`, `sheet.actions.*`, `sheet.clock.*` ou `sheet.boxes.*` quand cela évite de mélanger des clés sans ouvrir un nouveau namespace top-level.

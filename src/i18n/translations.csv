@@ -15,6 +15,9 @@ common.on,ON
 common.off,OFF
 common.loading,Chargement
 common.create,Créer
+common.remove,Retirer
+common.expand,Dérouler
+common.collapse,Enrouler
 app.loading.preparing,Cadence se prépare...
 app.loading.hub,Chargement du hub...
 app.loading.scene,Chargement de la scène...
@@ -64,7 +67,7 @@ menu.advancedActions.decreaseRoundHint,Baisse seulement le numéro du round.
 menu.advancedActions.advanceRoundNow,Passer au round suivant maintenant
 menu.advancedActions.advanceRoundHint,Passe au round suivant et applique les automatismes de début de round.
 menu.advancedActions.advanceAutomations,Avancer les automatismes
-menu.advancedActions.advanceAutomationsHint,Applique les automatismes de début de round et d’activation'aux personnages en initiative.
+menu.advancedActions.advanceAutomationsHint,Applique les automatismes de début de round et d’activation aux personnages en initiative.
 menu.advancedActions.rewindAutomations,Reculer les automatismes
 menu.advancedActions.rewindAutomationsHint,Recule les automatismes de round et d’activation quand Cadence sait les inverser.
 menu.advancedActions.help,Ces actions servent à corriger une scène. Pendant le jeu normal, utilise plutôt “Suivant”.
@@ -75,7 +78,7 @@ menu.flow.decreaseRound,Reculer d'un round
 menu.flow.advanceRound,Avancer d'un round
 menu.flow.rewindAutomations,Reculer les automatismes
 menu.flow.advanceAutomations,Avancer les automatismes
-menu.flow.roundAutomations,Appliquer les automatismes quand on'avance ou recule le round
+menu.flow.roundAutomations,Appliquer les automatismes quand on avance ou recule le round
 menu.flow.help,Ces actions servent à corriger une scène. Pendant le jeu normal, utilise plutôt “Suivant”.
 menu.restore.title,Restaurer
 menu.indicator.defaultTimer,Minuteur
@@ -106,10 +109,15 @@ dialogs.sceneIndicator.reset,Remettre à zéro
 dialogs.returnPreparation.title,Retour à la Préparation
 dialogs.returnPreparation.help1,Choisis ce que Cadence doit nettoyer en revenant avant l'initiative.
 dialogs.returnPreparation.resetTrackers,Réinitialiser aussi les indicateurs
-dialogs.returnPreparation.endTemporaryEffects,Mettre fin'aux effets temporaires
+dialogs.returnPreparation.endTemporaryEffects,Mettre fin aux effets temporaires
 dialogs.returnPreparation.help2,Si rien n’est coché, Cadence revient à la préparation sans toucher aux indicateurs ni aux effets.
 dialogs.returnPreparation.confirm,Retour à la Préparation
 dialogs.returnPreparation.cancel,Annuler
+dialogs.templateSwitch.title,Un modèle est déjà ouvert.
+dialogs.templateSwitch.help,Que faire des modifications en cours avant d’ouvrir l’autre modèle ?
+dialogs.templateSwitch.stay,Rester ici
+dialogs.templateSwitch.confirm,Valider et ouvrir
+dialogs.templateSwitch.discard,Ouvrir sans enregistrer
 export.title,Exporter la campagne
 export.help,Vérifie le nom avant d'enregistrer. Si le navigateur le permet, Cadence ouvrira une fenêtre système pour choisir l'emplacement du fichier.
 export.campaignName,Nom de campagne
@@ -140,7 +148,7 @@ trackers.global.segments,Segments
 trackers.global.direction,Sens
 trackers.global.direction.progression,Progression
 trackers.global.direction.countdown,Countdown
-trackers.global.advanceWhen,Quand'avancer
+trackers.global.advanceWhen,Quand avancer
 trackers.global.trigger.manual,Manuel
 trackers.global.trigger.round,Nouveau round
 trackers.global.trigger.legacyPhase,Ancien réglage : nouvelle phase
@@ -236,6 +244,7 @@ initiativeCost.custom,Coût personnalisé
 initiativeCost.preview,Nouveau créneau possible : {initiative} - {cost} = {next}.
 initiativeCost.apply,Appliquer le coût
 initiativeCost.endCharacterRound,Terminer son round
+initiativeCost.defaultParticipant,ce personnage
 initiativeAdjust.title,Ajuster l'initiative
 initiativeAdjust.help,Modifie seulement l'initiative de {name} avant d'avancer. Les ticks du bouton Suivant se produisent normalement ; l'activation du même personnage reste bornée par la règle du round.
 initiativeAdjust.defaultParticipant,ce participant
@@ -255,6 +264,43 @@ declarations.actions.other,Autre
 declarations.back,Retour
 declarations.launchResolution,Lancer la résolution
 declarations.saveAction,Enregistrer l'action
+scene.header.preparing,Préparer la scène
+scene.header.declareActions,Déclarer les actions
+scene.header.noParticipant,Aucun participant
+scene.header.flexible,souple
+scene.header.phases,phases
+scene.header.declaration,déclaration
+scene.header.preparation,Préparation
+scene.header.clockToManage,Horloge à gérer
+scene.header.simultaneousParticipants,Participants simultanés
+scene.header.returnHubAria,Retour au Hub de campagne
+scene.header.participantsInInitiative,{count} en initiative
+scene.header.surprise,Surprise
+scene.header.flexibleMode,Mode souple
+scene.header.resolvedActions,Marquer les actions résolues
+scene.header.flexibleChip,Souple
+scene.status.inactive,Inactif
+scene.status.limited,Limité
+scene.status.active,Actif
+scene.statusMarks.inactive,Rend inactif
+scene.statusMarks.limited,Rend limité
+scene.badge.scene,Scène
+scene.badge.preparation,Préparation
+scene.badge.round,Round
+scene.badge.surprise,Surprise
+scene.badge.newRound,Nouveau round
+scene.badge.phase,Phase {phase}
+initiative.groupAria,Initiative {initiative}
+initiative.groupShort,Init
+initiative.choose,À choisir
+initiative.phase,Phase {phase}
+initiative.phaseRethink,Initiatives à ressaisir pour ce nouveau round.
+initiative.phaseEmpty,Aucun participant ne peut agir dans cette phase.
+initiative.waitingInitiative,En attente d’initiative
+initiative.outOfPhase,Hors phase
+initiative.waitingNextRound,En attente du prochain round
+initiative.actionsToResolve,Actions à résoudre
+initiative.actionsResolved,Actions résolues
 sheet.type,Type
 sheet.description,Description
 sheet.category,Catégorie
@@ -286,7 +332,7 @@ sheet.tracker.secret,secret
 sheet.tracker.nameAria,Nom du suivi
 sheet.tracker.typeAria,Type du suivi
 sheet.tracker.resetTitle,Réinitialiser ce suivi
-sheet.tracker.reset,Reset
+sheet.tracker.reset,Réinitialiser
 sheet.counters.title,Compteurs
 sheet.counters.add,+ compteur
 sheet.counters.current,Valeur actuelle
@@ -335,7 +381,7 @@ hub.tabs.scenes,Scènes
 reserve.title,Réserve
 reserve.advance,Appliquer le début de round à la réserve
 reserve.notes,Notes de réserve
-reserve.notes.placeholder,Renforts, événements en'attente, éléments hors scène immédiate...
+reserve.notes.placeholder,Renforts, événements en attente, éléments hors scène immédiate...
 fileChoice.title,Fichier de campagne
 fileChoice.help,Cette campagne vient de {fileName}. Tu peux travailler directement sur ce fichier, ou créer une copie séparée.
 fileChoice.workOnFile,Travailler sur ce fichier
@@ -352,7 +398,7 @@ rules.compat.initiativeCostLabels,Les actions multiples avec coût d’initiativ
 rules.compat.initiativeCostDeclaration,Les actions multiples avec coût d’initiative sont incompatibles avec déclaration puis résolution.
 rules.compat.initiativeCostAscending,Les actions multiples avec coût d’initiative exigent un ordre décroissant.
 rules.compat.automaticPhasesTextInitiative,Les phases par initiative exigent une initiative numérique. Les libellés restent possibles avec les phases cochées.
-rules.compat.surpriseFlexible,En mode souple, la surprise doit prendre fin'au début du round.
+rules.compat.surpriseFlexible,En mode souple, la surprise doit prendre fin au début du round.
 rules.compat.disableInitiativeCostFirst,Désactive d’abord le coût d’initiative.
 rules.compat.disableInitiativeCostActionsFirst,Désactive d’abord les actions multiples avec coût d’initiative.
 rules.compat.disableManualActionsFirst,Désactive d’abord les actions multiples manuelles.
