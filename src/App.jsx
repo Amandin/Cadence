@@ -1,23 +1,28 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { phasesAttendRelanceInitiative } from './actions/tempoState.js';
 import { temporalityModes } from './constants.js';
 import { isInitiativeCostMode, rulesAllowMultipleSlots } from './domain/initiativeCost.js';
 import { initiativeMatchesMode } from './domain/initiativeTextOrder.js';
 import { globalTrackerTimerState } from './domain/globalTracker.js';
+import { FirstRunOnboarding } from './interface/app/FirstRunOnboarding.jsx';
 import { buildSceneUiState } from './interface/app/sceneUiState.js';
 import { useCampaign } from './hooks/useCampaign.js';
 import { useCharacterInteractions } from './hooks/useCharacterInteractions.js';
+import { rulePresetCatalog, rulePresetFamilies } from './rulePresets.js';
 import { useTemplates } from './hooks/useTemplates.js';
 import { createBlankParticipant } from './templates.js';
+import { activateWaitingServiceWorker, primePwaShellCache, registerCadencePwa } from './pwa.js';
+import { t } from './i18n/index.js';
 
 const AppOverlays = lazy(() => import('./interface/app/AppOverlays.jsx').then((module) => ({ default: module.AppOverlays })));
 const HubCampagne = lazy(() => import('./interface/campaign/HubCampagne.jsx').then((module) => ({ default: module.HubCampagne })));
 const SceneView = lazy(() => import('./interface/scene/SceneView.jsx').then((module) => ({ default: module.SceneView })));
 
 const VIEW_STORAGE_KEY = 'cadence:interface:view:v1';
+const HUB_TAB_STORAGE_KEY = 'cadence:interface:hub-tab:v1';
 const INITIAL_LOADING_MIN_MS = 650;
 
-function PanneauChargement({ dark, texte = 'Chargement...' }) {
+function PanneauChargement({ dark, texte = t('common.loading') }) {
   const logo = dark ? '/branding/logo-cadence-dark.svg' : '/branding/logo-cadence-light.svg';
   return (
     <div className="loading-view">
@@ -30,7 +35,7 @@ function PanneauChargement({ dark, texte = 'Chargement...' }) {
 }
 
 function ChargementVue({ dark, texte = 'Chargement...' }) {
-  return <div className={`app ${dark ? 'dark' : ''}`}><PanneauChargement dark={dark} texte={texte} /></div>;
+  return <div className={`app ${dark ? 'dark' : ''}`} data-theme="default"><PanneauChargement dark={dark} texte={texte} /></div>;
 }
 
 function initialView() {
@@ -55,9 +60,11 @@ function participantsInitiativeIncompatible(scene = {}) {
 
 export default function App() {
   const campaign = useCampaign();
-  const { scenes, templateStore, setTemplateStore, campaignName, campaignEntries, activeCampaignEntryId, pendingFileChoice, fileSaveStatus, scene, restorePoints, dark, active, blocked, nextStartsRound, nextClass, roundEffect, actions } = campaign;
+  const { scenes, templateStore, setTemplateStore, campaignName, campaignEntries, activeCampaignEntryId, pendingFileChoice, fileSaveStatus, scene, restorePoints, dark, active, blocked, nextStartsRound, nextClass, roundEffect, rulePresetSnapshot, firstRunOnboardingNeeded, actions } = campaign;
   const characters = useCharacterInteractions(scene, actions);
   const templates = useTemplates(templateStore, setTemplateStore);
+  const genericRulePresets = useMemo(() => rulePresetCatalog.filter((preset) => preset.family === rulePresetFamilies.GENERIC), []);
+  const systemRulePresets = useMemo(() => rulePresetCatalog.filter((preset) => preset.family === rulePresetFamilies.SYSTEM), []);
   const [currentView, setCurrentView] = useState(initialView);
   const [openMenu, setOpenMenu] = useState(false);
   const [addSheetOpen, setAddSheetOpen] = useState(false);
@@ -81,12 +88,15 @@ export default function App() {
   const [exportOpen, setExportOpen] = useState(false);
   const [timerDoneOpen, setTimerDoneOpen] = useState(false);
   const [sceneStatusOpen, setSceneStatusOpen] = useState(false);
+  const [pwaUpdateAvailable, setPwaUpdateAvailable] = useState(false);
   const [chargementInitialVisible, setChargementInitialVisible] = useState(true);
   const previousRoundRef = useRef(scene.round);
   const declarationAutoOpenRef = useRef('');
   const timerDoneRef = useRef(false);
   const skipInitiativeAdjustPromptRef = useRef(false);
   const fileChoiceActionRef = useRef(false);
+  const pwaRegistrationRef = useRef(null);
+  const pwaReloadRequestedRef = useRef(false);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setChargementInitialVisible(false), INITIAL_LOADING_MIN_MS);
@@ -101,6 +111,35 @@ export default function App() {
     }
   }, [currentView]);
 
+  useEffect(() => {
+    if (!import.meta.env.PROD) return undefined;
+    let cancelled = false;
+    const primeShell = () => { primePwaShellCache().catch(() => {}); };
+    if (document.readyState === 'complete') primeShell();
+    else window.addEventListener('load', primeShell, { once: true });
+
+    const handleControllerChange = () => {
+      if (!pwaReloadRequestedRef.current) return;
+      pwaReloadRequestedRef.current = false;
+      window.location.reload();
+    };
+    navigator.serviceWorker?.addEventListener('controllerchange', handleControllerChange);
+
+    registerCadencePwa((registration) => {
+      if (cancelled) return;
+      pwaRegistrationRef.current = registration;
+      setPwaUpdateAvailable(true);
+    }).then((registration) => {
+      if (!cancelled && registration) pwaRegistrationRef.current = registration;
+    }).catch(() => {});
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener('load', primeShell);
+      navigator.serviceWorker?.removeEventListener('controllerchange', handleControllerChange);
+    };
+  }, []);
+
   const ui = buildSceneUiState({ scene, active, blocked, nextStartsRound, nextClass, roundEffect });
   const { temporaliteSouple, temporalitePhases, temporaliteDeclaration, coutInitiativeActif, horlogesBloquantesActives, stageDeclaration, declarationEnDeclaration, phaseAttendRelanceInitiative, optionsInitiative, utiliserInitiative, phaseParticipants, phaseActiveId, phaseActive, phaseSuivanteDisponible, phaseDemarreNouveauRound, toutLeMondeAJoueSouple, globalAutoTick, participantAjustementInitiative, retourPreparationVisible, retourPossible, activeGroup, attendRelanceInitiativeCout, nextLabel, classeSuivantEffective, suivantDesactive, libelleBas } = ui;
   const editingTemplate = editingTemplateId ? templates.getTemplate(editingTemplateId) : null;
@@ -110,6 +149,22 @@ export default function App() {
     setTemplatePanelOpen(false);
     setTemplateSwitchRequest(null);
   };
+  const rechargerMiseAJourPwa = () => {
+    const registration = pwaRegistrationRef.current;
+    if (!registration?.waiting) return;
+    pwaReloadRequestedRef.current = true;
+    setPwaUpdateAvailable(false);
+    activateWaitingServiceWorker(registration);
+  };
+  const pwaUpdateBanner = pwaUpdateAvailable ? (
+    <div className="pwa-update-banner" role="status" aria-live="polite">
+      <div>
+        <strong>Mise à jour prête</strong>
+        <p>Recharge l’application pour utiliser la nouvelle version.</p>
+      </div>
+      <button className="small-btn suggested" type="button" onClick={rechargerMiseAJourPwa}>Recharger</button>
+    </div>
+  ) : null;
 
   useEffect(() => {
     if (currentView !== 'scene' || !scene.activeId) return;
@@ -254,16 +309,16 @@ export default function App() {
     characters.closeCharacterPanels();
     setCurrentView('hub');
   };
-  const importCampaign = async (file, options = {}) => { const result = await actions.importCampaign(file, options); if (result?.ok === false) { setNotice({ title: 'Import impossible', message: result.message || 'Le fichier n’a pas pu être lu. Essaie avec un export .cad récent, et note le nom du fichier si le problème revient.' }); return; } setOpenMenu(false); characters.closeCharacterPanels(); setCurrentView('hub'); if (!result?.needsFileChoice) setNotice({ title: 'Campagne chargée', message: '' }); };
-  const importCampaignDirectory = async () => { const result = await actions.importCampaignDirectory(); if (result?.ok === false && !result.cancelled) { setNotice({ title: 'Dossier impossible', message: result.message || 'Cadence n’a pas pu ouvrir ce dossier.' }); return; } if (result?.ok) setNotice({ title: 'Campagnes chargées', message: `${result.count} campagne(s) disponible(s) dans le menu.` }); };
+  const importCampaign = async (file, options = {}) => { const result = await actions.importCampaign(file, options); if (result?.ok === false) { setNotice({ title: 'Import impossible', message: result.message || 'Le fichier nâ€™a pas pu Ãªtre lu. Essaie avec un export .cad rÃ©cent, et note le nom du fichier si le problÃ¨me revient.' }); return; } setOpenMenu(false); characters.closeCharacterPanels(); setCurrentView('hub'); if (!result?.needsFileChoice) setNotice({ title: 'Campagne chargÃ©e', message: '' }); };
+  const importCampaignDirectory = async () => { const result = await actions.importCampaignDirectory(); if (result?.ok === false && !result.cancelled) { setNotice({ title: 'Dossier impossible', message: result.message || 'Cadence nâ€™a pas pu ouvrir ce dossier.' }); return; } if (result?.ok) setNotice({ title: 'Campagnes chargÃ©es', message: `${result.count} campagne(s) disponible(s) dans le menu.` }); };
   const chooseCampaignEntry = (id) => { const result = actions.selectCampaignEntry(id); if (result?.ok === false) setNotice({ title: 'Campagne introuvable', message: result.message }); };
-  const workOnLoadedFile = async () => { const result = await actions.useLoadedCampaignFile(); if (result?.ok === false) setNotice({ title: 'Fichier non lié', message: result.message }); else setNotice({ title: 'Campagne chargée', message: '' }); };
-  const workOnCampaignCopy = async () => { if (fileChoiceActionRef.current) return; fileChoiceActionRef.current = true; const result = await actions.saveLoadedCampaignAsCopy(); fileChoiceActionRef.current = false; if (result?.ok === false && !result.cancelled) setNotice({ title: 'Copie impossible', message: result.message }); else if (result?.ok) setNotice({ title: 'Campagne chargée', message: '' }); };
-  const importTemplatesFromCampaign = async (file) => { const result = await actions.importTemplatesFromCampaign(file); if (result?.ok === false) { setNotice({ title: 'Import impossible', message: result.message }); return; } setNotice({ title: 'Modèles importés', message: `${result.added} ajouté(s), ${result.skipped} ignoré(s) car déjà présents.` }); };
+  const workOnLoadedFile = async () => { const result = await actions.useLoadedCampaignFile(); if (result?.ok === false) setNotice({ title: 'Fichier non liÃ©', message: result.message }); else setNotice({ title: 'Campagne chargÃ©e', message: '' }); };
+  const workOnCampaignCopy = async () => { if (fileChoiceActionRef.current) return; fileChoiceActionRef.current = true; const result = await actions.saveLoadedCampaignAsCopy(); fileChoiceActionRef.current = false; if (result?.ok === false && !result.cancelled) setNotice({ title: 'Copie impossible', message: result.message }); else if (result?.ok) setNotice({ title: 'Campagne chargÃ©e', message: '' }); };
+  const importTemplatesFromCampaign = async (file) => { const result = await actions.importTemplatesFromCampaign(file); if (result?.ok === false) { setNotice({ title: 'Import impossible', message: result.message }); return; } setNotice({ title: 'ModÃ¨les importÃ©s', message: `${result.added} ajoutÃ©(s), ${result.skipped} ignorÃ©(s) car dÃ©jÃ  prÃ©sents.` }); };
   const ouvrirEditionTemplatePersonnage = (templateId) => { setTemplatePanelOpen(true); setTemplateSwitchRequest(null); setEditingTemplateId(templateId); };
   const fermerEditionTemplatePersonnage = () => { setEditingTemplateId(''); setTemplateSwitchRequest(null); };
   const createTemplateInCategory = (category) => { const template = templates.createTemplateInCategory(category); if (template) ouvrirEditionTemplatePersonnage(template.id); };
-  const addTemplateCategory = (category) => { const result = templates.addCategory(category); if (result?.ok === false) setNotice({ title: 'Catégorie impossible', message: result.message }); return result; };
+  const addTemplateCategory = (category) => { const result = templates.addCategory(category); if (result?.ok === false) setNotice({ title: 'CatÃ©gorie impossible', message: result.message }); return result; };
   const renameTemplateCategory = (category, nextName) => { const result = templates.renameCategory(category, nextName); if (result?.ok === false) setNotice({ title: 'Renommage impossible', message: result.message }); return result; };
   const deleteTemplateCategory = (category) => { const result = templates.deleteCategory(category); if (result?.ok === false) setNotice({ title: 'Suppression impossible', message: result.message }); return result; };
   const duplicateTemplate = (templateId) => { const duplicate = templates.duplicateTemplate(templateId); if (duplicate) ouvrirEditionTemplatePersonnage(duplicate.id); };
@@ -282,7 +337,7 @@ export default function App() {
     setTemplateSwitchRequest(null);
     request?.execute?.();
   };
-  const resetDemo = () => { actions.resetDemo(); setOpenMenu(false); characters.closeCharacterPanels(); setCurrentView('hub'); };
+  const resetCadence = () => { actions.resetCadence(); setOpenMenu(false); characters.closeCharacterPanels(); setCurrentView('hub'); };
   const restoreScene = (pointId) => { actions.restoreScene(pointId); setOpenMenu(false); characters.closeCharacterPanels(); };
   const returnToPreparation = () => { actions.returnToPreparation(); setOpenMenu(false); characters.closeCharacterPanels(); };
   const returnToPreparationWithOptions = (options) => { actions.returnToPreparationWithOptions(options); setOpenMenu(false); characters.closeCharacterPanels(); };
@@ -298,9 +353,9 @@ export default function App() {
   const restartTimer = () => { actions.updateGlobalTracker({ running: true, startedAt: Date.now(), elapsedMs: 0 }); timerDoneRef.current = false; setTimerDoneOpen(false); };
   const resetTimer = () => { actions.updateGlobalTracker({ running: false, startedAt: null, elapsedMs: 0 }); timerDoneRef.current = false; setTimerDoneOpen(false); };
   const openTimerMenu = () => { setTimerDoneOpen(false); setOpenMenu(true); };
-  const exportCampaign = async (name) => { try { const result = await actions.exportCampaign(name); if (result?.ok) setNotice({ title: 'Export terminé', message: 'La campagne a bien été exportée.' }); if (result?.ok === false && !result.cancelled) setNotice({ title: 'Export impossible', message: result.message || 'Le navigateur a refusé l’enregistrement. Réessaie depuis Opera ou choisis un autre emplacement.' }); return result; } catch (error) { setNotice({ title: 'Export impossible', message: `Le navigateur a interrompu l’export : ${error?.message || 'erreur inconnue'}.` }); return { ok: false, message: error?.message }; } };
+  const exportCampaign = async (name) => { try { const result = await actions.exportCampaign(name); if (result?.ok) setNotice({ title: 'Export terminÃ©', message: 'La campagne a bien Ã©tÃ© exportÃ©e.' }); if (result?.ok === false && !result.cancelled) setNotice({ title: 'Export impossible', message: result.message || 'Le navigateur a refusÃ© lâ€™enregistrement. RÃ©essaie depuis Opera ou choisis un autre emplacement.' }); return result; } catch (error) { setNotice({ title: 'Export impossible', message: `Le navigateur a interrompu lâ€™export : ${error?.message || 'erreur inconnue'}.` }); return { ok: false, message: error?.message }; } };
   const openTemplateSave = (participant) => { setTemplateTarget(participant); setTemplateError(null); };
-  const saveTemplate = (data) => { if (!templateTarget) return; const result = templates.saveParticipantAsTemplate(templateTarget, data); if (!result.ok) { setTemplateError({ kind: result.kind, message: result.message }); return; } setTemplateTarget(null); setTemplateError(null); setNotice({ title: result.overwritten ? 'Modèle remplacé' : 'Modèle enregistré', message: `${result.template.name} est disponible dans la catégorie ${result.template.category}.` }); };
+  const saveTemplate = (data) => { if (!templateTarget) return; const result = templates.saveParticipantAsTemplate(templateTarget, data); if (!result.ok) { setTemplateError({ kind: result.kind, message: result.message }); return; } setTemplateTarget(null); setTemplateError(null); setNotice({ title: result.overwritten ? 'ModÃ¨le remplacÃ©' : 'ModÃ¨le enregistrÃ©', message: `${result.template.name} est disponible dans la catÃ©gorie ${result.template.category}.` }); };
   const findClock = (participantId, trackerId) => { const participant = [...scene.participants, ...(scene.reserve || [])].find((item) => item.id === participantId); return participant?.trackers.find((item) => item.id === trackerId); };
   const resetClock = (participantId, trackerId) => { const tracker = findClock(participantId, trackerId); if (!tracker) return; actions.trackerChange(participantId, trackerId, { ...tracker, current: 0 }); };
   const deleteClock = (participantId, trackerId) => actions.deleteTracker(participantId, trackerId);
@@ -449,9 +504,15 @@ export default function App() {
   ) : null;
 
 
-  if (chargementInitialVisible) return <ChargementVue dark={dark} texte="Cadence se prépare..." />;
+  if (chargementInitialVisible) return <>{pwaUpdateBanner}<ChargementVue dark={dark} texte={t('app.loading.preparing')} /></>;
+  if (firstRunOnboardingNeeded) return <>{pwaUpdateBanner}<FirstRunOnboarding data-theme="default" dark={dark} genericPresets={genericRulePresets} systemPresets={systemRulePresets} onToggleTheme={actions.setDark} onStartPreset={(preset) => { const result = actions.startFirstRunCampaign(preset); if (result?.ok) setCurrentView('scene'); }} onStartCustomRules={() => { const result = actions.startFirstRunCustomCampaign(); if (result?.ok) { try { window.sessionStorage.setItem(HUB_TAB_STORAGE_KEY, 'regles'); } catch { /* noop */ } setCurrentView('hub'); } }} /></>;
 
-  if (currentView === 'hub') return <div className={`app hub-app ${dark ? 'dark' : ''} ${templatePanelVisible ? 'has-template-panel' : ''}`}><Suspense fallback={<PanneauChargement dark={dark} texte="Chargement du hub..." />}><HubCampagne campaignName={campaignName} scene={scene} scenes={scenes} templates={templates.templates} trackerTemplates={templates.trackerTemplates} statusTemplates={templates.statusTemplates} sceneCounterTemplates={templates.sceneCounterTemplates} sceneStatusTemplates={templates.sceneStatusTemplates} ruleTemplates={templates.rulePresets} templateCategories={templates.categories} campaignEntries={campaignEntries} activeCampaignEntryId={activeCampaignEntryId} fileSaveStatus={fileSaveStatus} dark={dark} onChangerTheme={actions.setDark} onChoisirScene={chooseScene} onNouvelleScene={newScene} onModifierScene={actions.updateSceneMeta} onDupliquerScene={actions.duplicateScene} onSupprimerScene={actions.deleteScene} onModifierReglesInitiative={actions.updateCampaignInitiativeRules} onChoisirCampagne={chooseCampaignEntry} onExporter={() => setExportOpen(true)} onImporter={importCampaign} onReinitialiser={resetDemo} onAjouterTemplateCategorie={createTemplateInCategory} onAjouterCategorieTemplate={addTemplateCategory} onRenommerCategorieTemplate={renameTemplateCategory} onSupprimerCategorieTemplate={deleteTemplateCategory} onDeplacerCategorieTemplate={templates.moveCategory} onChangerCategorieTemplate={templates.setTemplateCategory} onEditerTemplate={ouvrirEditionTemplatePersonnage} onDupliquerTemplate={duplicateTemplate} onSupprimerTemplate={templates.deleteTemplate} onAjouterTemplateSuivi={templates.createTrackerTemplate} onModifierTemplateSuivi={templates.updateTrackerTemplate} onDupliquerTemplateSuivi={templates.duplicateTrackerTemplate} onSupprimerTemplateSuivi={templates.deleteTrackerTemplate} onAjouterTemplateEtat={templates.createStatusTemplate} onModifierTemplateEtat={templates.updateStatusTemplate} onDupliquerTemplateEtat={templates.duplicateStatusTemplate} onSupprimerTemplateEtat={templates.deleteStatusTemplate} onAjouterTemplateCompteurScene={templates.createSceneCounterTemplate} onModifierTemplateCompteurScene={templates.updateSceneCounterTemplate} onDupliquerTemplateCompteurScene={templates.duplicateSceneCounterTemplate} onSupprimerTemplateCompteurScene={templates.deleteSceneCounterTemplate} onAjouterTemplateEtatScene={templates.createSceneStatusTemplate} onModifierTemplateEtatScene={templates.updateSceneStatusTemplate} onDupliquerTemplateEtatScene={templates.duplicateSceneStatusTemplate} onSupprimerTemplateEtatScene={templates.deleteSceneStatusTemplate} onAppliquerTemplateRegles={actions.updateCampaignInitiativeRules} onEnregistrerTemplateRegles={templates.saveRuleTemplate} onDupliquerTemplateRegles={templates.duplicateRuleTemplate} onSupprimerTemplateRegles={templates.deleteRuleTemplate} onImporterTemplates={importTemplatesFromCampaign} onFermerEditeursTemplates={fermerEditeursTemplates} templatePersonnageId={editingTemplateId} templatePersonnageOuvert={!!editingTemplate} onFermerEditionTemplatePersonnage={fermerEditionTemplatePersonnage} onDemanderChangementDepuisTemplatePersonnage={setTemplateSwitchRequest} onTemplatePanelOpenChange={setTemplatePanelOpen} /></Suspense>{fenetresCommunes}</div>;
+  if (currentView === 'hub') return <>{pwaUpdateBanner}<div className={`app hub-app ${dark ? 'dark' : ''} ${templatePanelVisible ? 'has-template-panel' : ''}`} data-theme="default"><Suspense fallback={<PanneauChargement dark={dark} texte={t('app.loading.hub')} />}><HubCampagne campaignName={campaignName} scene={scene} scenes={scenes} templates={templates.templates} trackerTemplates={templates.trackerTemplates} statusTemplates={templates.statusTemplates} sceneCounterTemplates={templates.sceneCounterTemplates} sceneStatusTemplates={templates.sceneStatusTemplates} ruleTemplates={templates.rulePresets} rulePresetSnapshot={rulePresetSnapshot} templateCategories={templates.categories} campaignEntries={campaignEntries} activeCampaignEntryId={activeCampaignEntryId} fileSaveStatus={fileSaveStatus} dark={dark} onChangerTheme={actions.setDark} onChoisirScene={chooseScene} onNouvelleScene={newScene} onModifierScene={actions.updateSceneMeta} onDupliquerScene={actions.duplicateScene} onSupprimerScene={actions.deleteScene} onModifierReglesInitiative={actions.updateCampaignInitiativeRules} onChoisirCampagne={chooseCampaignEntry} onExporter={() => setExportOpen(true)} onImporter={importCampaign} onReinitialiser={resetCadence} onAjouterTemplateCategorie={createTemplateInCategory} onAjouterCategorieTemplate={addTemplateCategory} onRenommerCategorieTemplate={renameTemplateCategory} onSupprimerCategorieTemplate={deleteTemplateCategory} onDeplacerCategorieTemplate={templates.moveCategory} onChangerCategorieTemplate={templates.setTemplateCategory} onEditerTemplate={ouvrirEditionTemplatePersonnage} onDupliquerTemplate={duplicateTemplate} onSupprimerTemplate={templates.deleteTemplate} onAjouterTemplateSuivi={templates.createTrackerTemplate} onModifierTemplateSuivi={templates.updateTrackerTemplate} onDupliquerTemplateSuivi={templates.duplicateTrackerTemplate} onSupprimerTemplateSuivi={templates.deleteTrackerTemplate} onAjouterTemplateEtat={templates.createStatusTemplate} onModifierTemplateEtat={templates.updateStatusTemplate} onDupliquerTemplateEtat={templates.duplicateStatusTemplate} onSupprimerTemplateEtat={templates.deleteStatusTemplate} onAjouterTemplateCompteurScene={templates.createSceneCounterTemplate} onModifierTemplateCompteurScene={templates.updateSceneCounterTemplate} onDupliquerTemplateCompteurScene={templates.duplicateSceneCounterTemplate} onSupprimerTemplateCompteurScene={templates.deleteSceneCounterTemplate} onAjouterTemplateEtatScene={templates.createSceneStatusTemplate} onModifierTemplateEtatScene={templates.updateSceneStatusTemplate} onDupliquerTemplateEtatScene={templates.duplicateSceneStatusTemplate} onSupprimerTemplateEtatScene={templates.deleteSceneStatusTemplate} onAppliquerTemplateRegles={actions.applyCampaignRulePreset} onEnregistrerTemplateRegles={templates.saveRuleTemplate} onDupliquerTemplateRegles={templates.duplicateRuleTemplate} onSupprimerTemplateRegles={templates.deleteRuleTemplate} onImporterTemplates={importTemplatesFromCampaign} onFermerEditeursTemplates={fermerEditeursTemplates} templatePersonnageId={editingTemplateId} templatePersonnageOuvert={!!editingTemplate} onFermerEditionTemplatePersonnage={fermerEditionTemplatePersonnage} onDemanderChangementDepuisTemplatePersonnage={setTemplateSwitchRequest} onTemplatePanelOpenChange={setTemplatePanelOpen} /></Suspense>{fenetresCommunes}</div></>;
 
-  return <><Suspense fallback={<ChargementVue dark={dark} texte="Chargement de la scène..." />}><SceneView scene={scene} characters={characters} active={active} activeGroup={activeGroup} declarationEnDeclaration={declarationEnDeclaration} temporaliteSouple={temporaliteSouple} temporalitePhases={temporalitePhases} temporaliteDeclaration={temporaliteDeclaration} phaseActive={phaseActive} phaseActiveId={phaseActiveId} phaseAttendRelanceInitiative={phaseAttendRelanceInitiative} horlogesBloquantesActives={horlogesBloquantesActives} roundEffect={roundEffect} globalAutoTick={globalAutoTick} classeSuivantEffective={classeSuivantEffective} nextLabel={nextLabel} suivantDesactive={suivantDesactive} retourPossible={retourPossible} retourPreparationVisible={retourPreparationVisible} toutLeMondeAJoueSouple={toutLeMondeAJoueSouple} phaseDemarreNouveauRound={phaseDemarreNouveauRound} nextStartsRound={nextStartsRound} libelleBas={libelleBas} dark={dark} onRetourHub={retourHub} onTourPrecedent={() => nextTurn(-1)} onTourSuivant={() => nextTurn(1)} onRetourPreparation={returnToPreparation} onModifierCompteurGlobal={actions.stepGlobal} onToggleCompteurTemps={toggleGlobalRealtime} onToggleSurprisePreparation={(active) => actions.updateSceneField('preparationSurprise', active)} onRetirerEtatScene={actions.removeSceneStatus} onMarquerAJoue={marquerAJoue} onAnnulerAJoue={annulerAJoue} onModifierNotesReserve={(notes) => actions.updateSceneField('reserveNotes', notes)} onAjouterParticipant={openAddCharacter} onSaisirInitiatives={openInitiativeEntry} onOuvrirMenu={() => setOpenMenu(true)} /></Suspense>{fenetresCommunes}</>;
+  return <><Suspense fallback={<ChargementVue dark={dark} texte={t('app.loading.scene')} />}><div className={`app ${dark ? 'dark' : ''}`} data-theme="default"><SceneView scene={scene} characters={characters} active={active} activeGroup={activeGroup} declarationEnDeclaration={declarationEnDeclaration} temporaliteSouple={temporaliteSouple} temporalitePhases={temporalitePhases} temporaliteDeclaration={temporaliteDeclaration} phaseActive={phaseActive} phaseActiveId={phaseActiveId} phaseAttendRelanceInitiative={phaseAttendRelanceInitiative} horlogesBloquantesActives={horlogesBloquantesActives} roundEffect={roundEffect} globalAutoTick={globalAutoTick} classeSuivantEffective={classeSuivantEffective} nextLabel={nextLabel} suivantDesactive={suivantDesactive} retourPossible={retourPossible} retourPreparationVisible={retourPreparationVisible} toutLeMondeAJoueSouple={toutLeMondeAJoueSouple} phaseDemarreNouveauRound={phaseDemarreNouveauRound} nextStartsRound={nextStartsRound} libelleBas={libelleBas} dark={dark} onRetourHub={retourHub} onTourPrecedent={() => nextTurn(-1)} onTourSuivant={() => nextTurn(1)} onRetourPreparation={returnToPreparation} onModifierCompteurGlobal={actions.stepGlobal} onToggleCompteurTemps={toggleGlobalRealtime} onToggleSurprisePreparation={(active) => actions.updateSceneField('preparationSurprise', active)} onRetirerEtatScene={actions.removeSceneStatus} onMarquerAJoue={marquerAJoue} onAnnulerAJoue={annulerAJoue} onModifierNotesReserve={(notes) => actions.updateSceneField('reserveNotes', notes)} onAjouterParticipant={openAddCharacter} onSaisirInitiatives={openInitiativeEntry} onOuvrirMenu={() => setOpenMenu(true)} /></div></Suspense>{fenetresCommunes}</>;
 }
+
+
+
+
+

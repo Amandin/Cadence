@@ -26,7 +26,7 @@ describe('i18n', () => {
 
   it('remplace les paramètres dans les textes', () => {
     expect(t('status.add.title', { name: 'Mira' })).toBe('Ajouter un état · Mira');
-    expect(t('menu.brandMeta', { version: '0.8.23-work' })).toBe('Menu · v0.8.23-work');
+    expect(t('menu.brandMeta', { version: '0.8.28-work' })).toBe('Menu · v0.8.28-work');
   });
 
   it('stabilise les petites zones applicatives statiques', () => {
@@ -42,10 +42,16 @@ describe('i18n', () => {
     expect(t('rules.preset.family.generic')).toBe('Presets génériques');
     expect(t('rules.categories.delete', { category: 'Brioche' })).toBe('Supprimer Brioche');
     expect(t('common.create')).toBe('Créer');
+    expect(t('common.remove')).toBe('Retirer');
+    expect(t('common.expand')).toBe('Dérouler');
     expect(t('characterAdd.title')).toBe('Ajouter un personnage');
     expect(t('export.defaultName')).toBe('Campagne Cadence');
+    expect(t('initiativeCost.defaultParticipant')).toBe('ce personnage');
     expect(t('initiativeAdjust.defaultParticipant')).toBe('ce participant');
     expect(t('declarations.actions.attack')).toBe('Attaque');
+    expect(t('sheet.tracker.reset')).toBe('Réinitialiser');
+    expect(t('scene.status.active')).toBe('Actif');
+    expect(t('initiative.choose')).toBe('À choisir');
   });
 
   it('stabilise le namespace sheet pour la fenêtre d’édition', () => {
