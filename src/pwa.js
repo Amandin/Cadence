@@ -10,7 +10,6 @@ const PWA_CORE_URLS = [
   '/favicon-16.png',
   '/favicon-32.png',
   '/apple-touch-icon.png',
-  '/icon.svg',
   '/icon-192.png',
   '/icon-512.png',
   '/branding/logo-cadence-light.svg',

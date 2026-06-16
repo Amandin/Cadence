@@ -1,4 +1,4 @@
-const APP_VERSION = '0.8.30-work';
+const APP_VERSION = '0.8.31-work';
 const CACHE_PREFIX = 'cadence-pwa';
 const CACHE_NAME = `${CACHE_PREFIX}:${APP_VERSION}`;
 
@@ -10,7 +10,6 @@ const CORE_URLS = [
   '/favicon-16.png',
   '/favicon-32.png',
   '/apple-touch-icon.png',
-  '/icon.svg',
   '/icon-192.png',
   '/icon-512.png',
   '/branding/logo-cadence-light.svg',
