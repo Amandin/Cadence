@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
+import { t } from '../../i18n/index.js';
 import { BoutonIconeTemplate } from './TemplateRows.jsx';
 
 function grouperTemplates(templates = [], categories = []) {
   const groupes = categories.map((categorie) => ({ categorie, templates: [] }));
   const trouverOuCreerGroupe = (categorie) => {
-    const nom = categorie || 'Sans catégorie';
+    const nom = categorie || t('templates.personnages.uncategorized');
     const existant = groupes.find((item) => item.categorie === nom);
     if (existant) return existant;
     const nouveau = { categorie: nom, templates: [] };
@@ -26,8 +27,8 @@ function NouvelleCategorieTemplate({ onAjouterCategorie }) {
 
   return (
     <div className="template-new-category">
-      <input value={nom} placeholder="Nouvelle catégorie" onChange={(event) => setNom(event.target.value)} />
-      <button className="small-btn" onClick={ajouter}>Ajouter</button>
+      <input value={nom} placeholder={t('templates.personnages.newCategoryPlaceholder')} onChange={(event) => setNom(event.target.value)} />
+      <button className="small-btn" onClick={ajouter}>{t('templates.personnages.addCategory')}</button>
     </div>
   );
 }
@@ -49,8 +50,8 @@ function EnteteCategorieTemplate({ groupe, index, total, onAjouterTemplateCatego
     return (
       <div className="template-category-edit">
         <input value={nom} onChange={(event) => setNom(event.target.value)} />
-        <button className="primary" onClick={enregistrer}>OK</button>
-        <button className="small-btn" onClick={() => setRenommage(false)}>Annuler</button>
+        <button className="primary" onClick={enregistrer}>{t('common.ok')}</button>
+        <button className="small-btn" onClick={() => setRenommage(false)}>{t('common.cancel')}</button>
       </div>
     );
   }
@@ -60,13 +61,13 @@ function EnteteCategorieTemplate({ groupe, index, total, onAjouterTemplateCatego
       <strong>{groupe.templates.length}</strong>
       <span className="template-category-label template-title-with-action">
         <span>{groupe.categorie}</span>
-        <BoutonIconeTemplate className="template-edit-icon" label="Renommer la catégorie" onClick={() => setRenommage(true)}>✎</BoutonIconeTemplate>
+        <BoutonIconeTemplate className="template-edit-icon" label={t('templates.personnages.renameCategoryAria')} onClick={() => setRenommage(true)}>✎</BoutonIconeTemplate>
       </span>
       <div className="compact-arrows template-category-actions">
-        <BoutonIconeTemplate label="Ajouter un modèle" onClick={() => onAjouterTemplateCategorie(groupe.categorie)}>+</BoutonIconeTemplate>
+        <BoutonIconeTemplate label={t('templates.personnages.addTemplateAria')} onClick={() => onAjouterTemplateCategorie(groupe.categorie)}>+</BoutonIconeTemplate>
         <button className="small-btn" onClick={() => onDeplacerCategorie(groupe.categorie, -1)} disabled={index <= 0}>↑</button>
         <button className="small-btn" onClick={() => onDeplacerCategorie(groupe.categorie, 1)} disabled={index >= total - 1}>↓</button>
-        {groupe.templates.length === 0 && <button className="danger-btn mini-danger" onClick={() => onSupprimerCategorie(groupe.categorie)}>Suppr.</button>}
+        {groupe.templates.length === 0 && <button className="danger-btn mini-danger" onClick={() => onSupprimerCategorie(groupe.categorie)}>{t('common.delete')}</button>}
       </div>
     </div>
   );
@@ -80,16 +81,16 @@ function LigneTemplate({ template, onEditerTemplate, onDupliquerTemplate, onSupp
       <span className="template-row-main">
         <span className="template-title-with-action">
           <strong>{template.name}</strong>
-          <BoutonIconeTemplate className="template-edit-icon" label={`Modifier ${template.name}`} onClick={() => onEditerTemplate(template.id)}>✎</BoutonIconeTemplate>
+          <BoutonIconeTemplate className="template-edit-icon" label={t('templates.personnages.editAria', { name: template.name })} onClick={() => onEditerTemplate(template.id)}>✎</BoutonIconeTemplate>
         </span>
-        <small>{template.participant?.kind || 'Personnage'}</small>
+        <small>{template.participant?.kind || t('templates.personnages.kindFallback')}</small>
       </span>
       <div className="compact-arrows template-row-actions">
-        <BoutonIconeTemplate label={`Dupliquer ${template.name}`} onClick={() => onDupliquerTemplate(template.id)}>⧉</BoutonIconeTemplate>
+        <BoutonIconeTemplate label={t('templates.personnages.duplicateAria', { name: template.name })} onClick={() => onDupliquerTemplate(template.id)}>⧉</BoutonIconeTemplate>
         {suppressionVisible ? (
-          <button className="danger-btn mini-danger template-delete-confirm" onClick={() => onSupprimerTemplate(template.id)}>Suppr.</button>
+          <button className="danger-btn mini-danger template-delete-confirm" onClick={() => onSupprimerTemplate(template.id)}>{t('common.delete')}</button>
         ) : (
-          <button className="small-btn template-delete-reveal" onClick={() => setSuppressionVisible(true)} aria-label={`Afficher la suppression de ${template.name}`}>x</button>
+          <button className="small-btn template-delete-reveal" onClick={() => setSuppressionVisible(true)} aria-label={t('templates.personnages.deleteRevealAria', { name: template.name })}>x</button>
         )}
       </div>
     </div>
@@ -100,13 +101,13 @@ export function OngletTemplatesPersonnages({ categories, templates, onAjouterTem
   const groupes = useMemo(() => grouperTemplates(templates, categories), [categories, templates]);
   return (
     <div className="stack">
-      <p className="muted compact-help">Les modèles de personnages servent de fiches prêtes à réutiliser, avec leurs infos rapides et leurs indicateurs.</p>
+      <p className="muted compact-help">{t('templates.personnages.help')}</p>
       <NouvelleCategorieTemplate onAjouterCategorie={onAjouterCategorie} />
       {groupes.map((groupe, index) => (
         <section className="hub-template-group" key={groupe.categorie}>
           <EnteteCategorieTemplate groupe={groupe} index={index} total={groupes.length} onAjouterTemplateCategorie={onAjouterTemplateCategorie} onRenommerCategorie={onRenommerCategorie} onSupprimerCategorie={onSupprimerCategorie} onDeplacerCategorie={onDeplacerCategorie} />
           {groupe.templates.length === 0 ? (
-            <div className="empty-section panel">Aucun modèle dans cette catégorie.</div>
+            <div className="empty-section panel">{t('templates.personnages.empty')}</div>
           ) : (
             <div className="stack">
               {groupe.templates.map((template) => (

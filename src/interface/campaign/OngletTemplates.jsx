@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { t } from '../../i18n/index.js';
 import { FenetreEditionTemplateCompteurScene, FenetreEditionTemplateEtat, FenetreEditionTemplateEtatScene, FenetreEditionTemplateSuivi } from './TemplateEditors.jsx';
 import { OngletTemplatesPersonnages } from './TemplatePersonnageList.jsx';
 import { OngletTemplatesEtats, OngletTemplatesScene, OngletTemplatesSuivis } from './TemplateSections.jsx';
@@ -96,9 +97,7 @@ export function OngletTemplates({
   useEffect(() => {
     if (editeurLocalOuvert) onTemplatePanelOpenChange?.(true);
   }, [editeurLocalOuvert, onTemplatePanelOpenChange]);
-  useEffect(() => {
-    return () => onTemplatePanelOpenChange?.(false);
-  }, [onTemplatePanelOpenChange]);
+  useEffect(() => () => onTemplatePanelOpenChange?.(false), [onTemplatePanelOpenChange]);
   const choisirFichier = () => importInputRef.current?.click();
   const importerFichier = (event) => {
     const file = event.target.files?.[0];
@@ -166,10 +165,7 @@ export function OngletTemplates({
     }
     ouvrirDemande(demande);
   };
-  const validerEtOuvrir = () => {
-    const demande = changementDemande;
-    ouvrirDemande(demande);
-  };
+  const validerEtOuvrir = () => ouvrirDemande(changementDemande);
   const abandonnerEtOuvrir = () => ouvrirDemande(changementDemande);
   const annulerChangement = () => setChangementDemande(null);
   const fermerSuivi = () => { setSuiviEditeId(''); setChangementDemande(null); };
@@ -187,23 +183,23 @@ export function OngletTemplates({
   const ouvrirCompteurScene = (id) => demanderOuOuvrir({ type: 'compteurScene', id });
   const ajouterEtatScene = () => demanderOuOuvrir({ type: 'nouveauEtatScene' });
   const ouvrirEtatScene = (id) => demanderOuOuvrir({ type: 'etatScene', id });
-  const validerSuivi = (id, tracker, nom) => { onModifierTemplateSuivi(id, tracker, nom); setSuiviEditeId(''); setChangementDemande(null); };
-  const validerEtat = (id, status, nom) => { onModifierTemplateEtat(id, status, nom); setEtatEditeId(''); setChangementDemande(null); };
-  const validerCompteurScene = (id, compteur, nom) => { onModifierTemplateCompteurScene(id, compteur, nom); setCompteurSceneEditeId(''); setChangementDemande(null); };
-  const validerEtatScene = (id, status, nom) => { onModifierTemplateEtatScene(id, status, nom); setEtatSceneEditeId(''); setChangementDemande(null); };
+  const validerSuivi = (id, tracker, nom) => { onModifierTemplateSuivi(id, tracker, nom); fermerSuivi(); };
+  const validerEtat = (id, status, nom) => { onModifierTemplateEtat(id, status, nom); fermerEtat(); };
+  const validerCompteurScene = (id, compteur, nom) => { onModifierTemplateCompteurScene(id, compteur, nom); fermerCompteurScene(); };
+  const validerEtatScene = (id, status, nom) => { onModifierTemplateEtatScene(id, status, nom); fermerEtatScene(); };
 
   return (
     <div className="stack hub-section panel">
       <div className="hub-section-head">
-        <h3>Modèles</h3>
-        <button className="small-btn" onClick={choisirFichier}>Importer depuis une autre campagne</button>
+        <h3>{t('templates.hub.title')}</h3>
+        <button className="small-btn" onClick={choisirFichier}>{t('templates.hub.import')}</button>
         <input ref={importInputRef} type="file" accept=".cad,application/json" style={{ display: 'none' }} onChange={importerFichier} />
       </div>
       <div className="template-subtabs">
-        <button className={`choice ${sousPage === 'personnages' ? 'selected' : ''}`} onClick={() => changerSousPage('personnages')}>Personnages</button>
-        <button className={`choice ${sousPage === 'suivis' ? 'selected' : ''}`} onClick={() => changerSousPage('suivis')}>Indicateurs</button>
-        <button className={`choice ${sousPage === 'etats' ? 'selected' : ''}`} onClick={() => changerSousPage('etats')}>États</button>
-        <button className={`choice ${sousPage === 'scene' ? 'selected' : ''}`} onClick={() => changerSousPage('scene')}>Scène</button>
+        <button className={`choice ${sousPage === 'personnages' ? 'selected' : ''}`} onClick={() => changerSousPage('personnages')}>{t('templates.tabs.personnages')}</button>
+        <button className={`choice ${sousPage === 'suivis' ? 'selected' : ''}`} onClick={() => changerSousPage('suivis')}>{t('templates.tabs.suivis')}</button>
+        <button className={`choice ${sousPage === 'etats' ? 'selected' : ''}`} onClick={() => changerSousPage('etats')}>{t('templates.tabs.statuses')}</button>
+        <button className={`choice ${sousPage === 'scene' ? 'selected' : ''}`} onClick={() => changerSousPage('scene')}>{t('templates.tabs.scene')}</button>
       </div>
       {sousPage === 'personnages' && (
         <OngletTemplatesPersonnages

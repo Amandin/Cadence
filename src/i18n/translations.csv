@@ -10,6 +10,191 @@ common.save,Enregistrer
 common.edit,Modifier
 common.delete,Supprimer
 common.duplicate,Dupliquer
+common.ok,OK
+common.on,ON
+common.off,OFF
+common.loading,Chargement
+app.loading.preparing,Cadence se prépare...
+app.loading.hub,Chargement du hub...
+app.loading.scene,Chargement de la scène...
+errors.title,Cadence a rencontré une erreur
+errors.description,L’interface a été interrompue au lieu de continuer sur un état incohérent.
+errors.unknown,Erreur inconnue
+errors.reload,Recharger
+errors.resetLocalData,Réinitialiser les données locales
+onboarding.familySwitchLabel,Famille de presets
+onboarding.family.generic,Génériques
+onboarding.family.system,Systèmes
+onboarding.toggleTheme,Basculer thème clair ou sombre
+onboarding.title,Choisis comment commencer
+onboarding.description,"Cadence peut démarrer avec un preset générique, un preset lié à un système, ou une base vide pour régler tout à ta main."
+onboarding.presets.genericTitle,Presets génériques
+onboarding.presets.systemTitle,Presets systèmes
+onboarding.presets.systemNote,"Configurations compatibles, non officielles."
+onboarding.start,Commencer
+onboarding.customRules,Règles personnalisées
+menu.title,Menu
+menu.brandMeta,Menu · v{version}
+menu.toggleTheme,Basculer thème clair ou sombre
+menu.returnHub,Retour au hub de campagne
+menu.addCharacter,Ajouter un personnage
+menu.enterInitiatives,Saisir les initiatives
+menu.sceneElements.title,Éléments de scène
+menu.sceneElements.editIndicator,Modifier l’indicateur
+menu.sceneElements.activateIndicator,Activer un indicateur
+menu.sceneElements.addStatus,Ajouter un état
+menu.sceneElements.toggleIndicator,Activer ou désactiver l’indicateur de scène
+menu.sceneElements.clearStatuses,Effacer les états de scène
+menu.sceneNotes.title,Notes de scène
+menu.sceneNotes.placeholder,Ambiance, objectifs, éléments importants...
+menu.advancedActions.title,Actions avancées
+menu.advancedActions.decreaseRound,Reculer le numéro de round
+menu.advancedActions.decreaseRoundHint,Baisse seulement le numéro du round.
+menu.advancedActions.advanceRoundNow,Passer au round suivant maintenant
+menu.advancedActions.advanceRoundHint,Passe au round suivant et applique les automatismes de début de round.
+menu.advancedActions.advanceAutomations,Avancer les automatismes
+menu.advancedActions.advanceAutomationsHint,Applique les automatismes de début de round et d’activation aux personnages en initiative.
+menu.advancedActions.rewindAutomations,Reculer les automatismes
+menu.advancedActions.rewindAutomationsHint,Recule les automatismes de round et d’activation quand Cadence sait les inverser.
+menu.advancedActions.help,Ces actions servent à corriger une scène. Pendant le jeu normal, utilise plutôt “Suivant”.
+menu.flow.title,Déroulé
+menu.flow.returnPreparation,Retour à la préparation
+menu.flow.resetTrackers,Réinitialiser les indicateurs
+menu.flow.decreaseRound,Reculer d'un round
+menu.flow.advanceRound,Avancer d'un round
+menu.flow.rewindAutomations,Reculer les automatismes
+menu.flow.advanceAutomations,Avancer les automatismes
+menu.flow.roundAutomations,Appliquer les automatismes quand on avance ou recule le round
+menu.flow.help,Ces actions servent à corriger une scène. Pendant le jeu normal, utilise plutôt “Suivant”.
+menu.restore.title,Restaurer
+menu.indicator.defaultTimer,Minuteur
+menu.indicator.defaultStopwatch,Chrono
+menu.indicator.defaultScene,Indicateur de scène
+menu.indicator.summary.timer,{name} - {value}
+menu.indicator.summary.stopwatch,{name} - {value}
+menu.indicator.summary.counter,{name} - {value}{threshold}
+menu.indicator.summary.loop,{name} - {loops} boucle{suffix}{threshold}
+menu.indicator.summary.thresholdOnly,{name} - {threshold}
+menu.indicator.summary.ratio,{name} - {value} / {max}{threshold}
+dialogs.sceneIndicator.title,Indicateur de scène
+dialogs.sceneIndicator.name,Nom
+dialogs.sceneIndicator.type,Type
+dialogs.sceneIndicator.value,Valeur
+dialogs.sceneIndicator.maximum,Maximum
+dialogs.sceneIndicator.minutes,Minutes
+dialogs.sceneIndicator.autoRound,avancer à chaque nouveau round
+dialogs.sceneIndicator.clock,Horloge
+dialogs.sceneIndicator.counter,Compteur
+dialogs.sceneIndicator.stopwatch,Chronomètre
+dialogs.sceneIndicator.timer,Minuteur
+dialogs.sceneIndicator.placeholder,Menace
+dialogs.sceneIndicator.prepHelp,Le temps démarrera avec Commencer.
+dialogs.sceneIndicator.pause,Pause
+dialogs.sceneIndicator.start,Démarrer
+dialogs.sceneIndicator.reset,Remettre à zéro
+dialogs.returnPreparation.title,Retour à la Préparation
+dialogs.returnPreparation.help1,Choisis ce que Cadence doit nettoyer en revenant avant l'initiative.
+dialogs.returnPreparation.resetTrackers,Réinitialiser aussi les indicateurs
+dialogs.returnPreparation.endTemporaryEffects,Mettre fin aux effets temporaires
+dialogs.returnPreparation.help2,Si rien n’est coché, Cadence revient à la préparation sans toucher aux indicateurs ni aux effets.
+dialogs.returnPreparation.confirm,Retour à la Préparation
+dialogs.returnPreparation.cancel,Annuler
+trackers.global.title,Indicateur de scène
+trackers.global.templateLabel,Modèle d’indicateur de scène
+trackers.global.visibleHeader,visible dans l’en-tête
+trackers.global.defaultName,Menace
+trackers.global.defaultTimer,Minuteur
+trackers.global.defaultStopwatch,Chrono
+trackers.global.defaultScene,Indicateur de scène
+trackers.global.realtimeLabel,Indicateur de scène
+trackers.global.realtimePause,Mettre le temps en pause
+trackers.global.realtimeResume,Reprendre le temps
+trackers.global.realtimeLate,retard
+trackers.global.mode,Type
+trackers.global.mode.clock,Horloge
+trackers.global.mode.counter,Compteur
+trackers.global.mode.stopwatch,Chronomètre
+trackers.global.mode.timer,Minuteur
+trackers.global.value,Valeur
+trackers.global.valueCurrent,Valeur actuelle
+trackers.global.durationPrefix,durée 
+trackers.global.segments,Segments
+trackers.global.direction,Sens
+trackers.global.direction.progression,Progression
+trackers.global.direction.countdown,Countdown
+trackers.global.advanceWhen,Quand avancer
+trackers.global.trigger.manual,Manuel
+trackers.global.trigger.round,Nouveau round
+trackers.global.trigger.legacyPhase,Ancien réglage : nouvelle phase
+trackers.global.trigger.legacyHelp,Ce réglage historique est conservé mais inactif. Les phases ne font plus avancer les horloges.
+trackers.global.limit,Limite
+trackers.global.limit.clamp,Bloquer
+trackers.global.limit.overflow,Dépasser
+trackers.global.limit.loop,Boucler
+trackers.global.limit.restart,Redémarrer
+trackers.global.loop.total,Total
+trackers.global.loop.count,Boucles
+trackers.global.timer.label,Fin du minuteur
+trackers.global.timer.completeSound,Son à la fin
+trackers.global.timer.elapsedHelp,Temps écoulé.
+trackers.global.actions.pause,Pause
+trackers.global.actions.resume,Reprendre
+trackers.global.actions.start,Démarrer
+trackers.global.actions.reset,Remettre à zéro
+trackers.global.actions.validate,Valider
+trackers.global.thresholds.summary,Seuils
+trackers.global.thresholds.label,Seuils de l’indicateur de scène
+trackers.global.thresholds.add,+ seuil
+trackers.global.thresholds.placeholder,Texte affiché
+trackers.global.thresholds.help.timer,"Les seuils du minuteur lisent le cycle en cours ou le nombre de boucles si le minuteur boucle."
+trackers.global.thresholds.help.stopwatch,"Pour un chronomètre, les seuils lisent le temps écoulé en minutes/secondes."
+trackers.global.thresholds.help.counter,"Pour un compteur, les seuils lisent simplement la valeur courante."
+trackers.global.thresholds.help.clock,"Pour une horloge, les seuils lisent le cycle en cours ou le nombre de boucles si elle boucle."
+trackers.global.thresholds.color.neutral,Neutre
+trackers.global.thresholds.color.green,Vert calme
+trackers.global.thresholds.color.amber,Ambre
+trackers.global.thresholds.color.red,Rouge sourd
+trackers.global.thresholds.color.blue,Bleu
+trackers.global.thresholds.color.violet,Violet
+trackers.global.thresholds.basis.fixed,Temps restant
+trackers.global.thresholds.basis.percent,% restant
+trackers.global.thresholds.scope.current,Cycle en cours
+trackers.global.thresholds.scope.loops,Nombre de boucles
+trackers.global.thresholds.sound.label,Son
+trackers.global.thresholds.sound.none,Aucun son
+trackers.global.thresholds.sound.beep,Bip
+trackers.global.thresholds.sound.chime,Carillon
+trackers.global.thresholds.sound.alarm,Alerte
+trackers.global.thresholds.sound.custom,Son personnalisé
+trackers.global.thresholds.sound.test,Tester
+trackers.global.thresholds.target.loop,cible : {value} boucle{suffix}
+trackers.global.thresholds.target.percent,cible : {value}% restant ({target} s)
+trackers.global.thresholds.target.fixed,cible : {target} s restants
+trackers.global.unit.minute,minute
+trackers.global.unit.minutes,minutes
+trackers.global.unit.second,seconde
+trackers.global.unit.seconds,secondes
+trackers.step.label,Pas
+trackers.step.edit,Modifier le pas
+trackers.step.editCurrent,"Modifier le pas, actuellement {value}"
+trackers.clock.frozen,figée
+trackers.clock.freeze,Figer cette horloge
+trackers.clock.unfreeze,Dégeler cette horloge
+trackers.common.toResolve,À résoudre
+trackers.common.resetToZero,Relancer à 0
+trackers.boxes.actionGroup,Action sur les cases
+trackers.boxes.fill,Ajouter ou remplir les cases
+trackers.boxes.empty,Retirer ou vider les cases
+trackers.boxes.stepLabel,Nombre de clics par case
+trackers.bar.newValue,Nouvelle valeur
+trackers.bar.subtractValue,Valeur à soustraire
+trackers.bar.addValue,Valeur à ajouter
+trackers.bar.openValue,Saisir une nouvelle valeur pour {name}
+trackers.bar.thresholdFallback,Seuil {value}
+trackers.points.previousCycle,Reculer au cycle precedent
+trackers.points.nextCycle,Avancer au cycle suivant
+trackers.counter.defaultName,Compteur
+trackers.counter.edit,Modifier {label}
 status.add.title,Ajouter un état · {name}
 status.defaultName,Nouveau
 status.templateFallback,État
@@ -33,6 +218,83 @@ initiativeCost.custom,Coût personnalisé
 initiativeCost.preview,Nouveau créneau possible : {initiative} - {cost} = {next}.
 initiativeCost.apply,Appliquer le coût
 initiativeCost.endCharacterRound,Terminer son round
+sheet.type,Type
+sheet.description,Description
+sheet.category,Catégorie
+sheet.symbol,Symbole
+sheet.color,Couleur
+sheet.advancedOptions,Options avancées
+sheet.saveAsTemplate,Enregistrer comme modèle
+sheet.validate,Valider
+sheet.validateChanges,Valider les modifications
+sheet.initiative.primary,Initiative 1
+sheet.initiative.extra,Initiative {index}
+sheet.actions.multiple,plusieurs actions
+sheet.actions.add,+ action
+sheet.actions.removeAria,Retirer une action
+sheet.actions.addAria,Ajouter une action
+sheet.actions.count,{count} actions
+sheet.quickInfo.title,Infos rapides
+sheet.quickInfo.label,Libellé
+sheet.quickInfo.placeholder,Libellé
+sheet.quickInfo.add,+ info rapide
+sheet.trackers.title,Indicateurs
+sheet.trackers.add,Ajouter un indicateur
+sheet.trackers.custom,Personnalisé
+sheet.trackers.titleLabel,Titre
+sheet.trackers.defaultName,Indicateur
+sheet.tracker.visible,visible
+sheet.tracker.hidden,masqué
+sheet.tracker.secret,secret
+sheet.tracker.nameAria,Nom du suivi
+sheet.tracker.typeAria,Type du suivi
+sheet.tracker.resetTitle,Réinitialiser ce suivi
+sheet.tracker.reset,Reset
+sheet.counters.title,Compteurs
+sheet.counters.add,+ compteur
+sheet.counters.current,Valeur actuelle
+sheet.counters.initial,Valeur initiale
+sheet.counters.min,Minimum
+sheet.counters.max,Maximum
+sheet.counters.size,Taille
+sheet.counters.size.compact,Compact
+sheet.counters.size.normal,Normal
+sheet.counters.size.wide,Large
+sheet.thresholds.text,Seuils texte
+sheet.thresholds.points,Seuils sur les puces
+sheet.thresholds.totalCounter,Seuils sur le compteur global
+sheet.thresholds.clock,Seuils sur l’horloge
+sheet.thresholds.counter,Seuils sur le compteur
+sheet.thresholds.primaryCounter,Compteur principal
+sheet.thresholds.targetValue,valeur cible : {value}
+sheet.thresholds.outOfBounds,hors limites
+sheet.thresholds.basis.fromMax,% depuis le maximum
+sheet.reset.autoAdvance,avancer automatiquement
+sheet.reset.flexibleActivationLocked,Indisponible en mode souple : les retours d’activation restent figés.
+sheet.reset.check,Coche
+sheet.bar.clampMin,bloquer au minimum
+sheet.bar.clampMax,bloquer au maximum
+sheet.points.limit,Limite
+sheet.points.limit.clamp,Bloquer au max
+sheet.points.limit.loop,Boucler avec compteur
+sheet.points.currentCounter,Compteur actuel
+sheet.points.minCounter,Min compteur
+sheet.points.maxCounter,Max compteur
+sheet.clock.initialValue,Valeur initiale
+sheet.clock.increment,Incrément
+sheet.clock.endMode,Fin de l’horloge
+sheet.clock.endMode.manual,À résoudre manuellement
+sheet.clock.endMode.increment,Relancer et compter les cycles
+sheet.clock.endMode.overflow,Dépasser avec zone rouge
+sheet.clock.initialCounter,Compteur initial
+sheet.clock.autoAdvance,avancer automatiquement
+sheet.boxes.activeLevels,Niveaux actifs
+sheet.boxes.blocks,Blocs
+sheet.boxes.addBlock,+ bloc
+sheet.boxes.addLine,+ ligne
+sheet.boxes.blockName,Nom du bloc
+sheet.boxes.lineName,Nom de ligne
+hub.tabs.scenes,Scènes
 reserve.title,Réserve
 reserve.advance,Appliquer le début de round à la réserve
 reserve.notes,Notes de réserve
@@ -69,3 +331,163 @@ rules.summary.numericInitiative,Initiative numérique
 rules.summary.manualSlots,Créneaux manuels
 rules.summary.initiativeCost,Actions multiples avec coût d’initiative
 rules.summary.declaration,Déclaration puis résolution
+
+rules.activeTitle,Règles actives
+rules.temporality.title,Temporalité
+rules.declaration.title,Déclaration
+rules.declaration.mode,Déclaration puis résolution
+rules.surprise.title,Surprise
+rules.surprise.dedicatedRound,Utiliser un round de surprise dédié
+rules.surprise.limited,Limité
+rules.surprise.inactive,Inactif
+rules.surprise.advance.activation,Activation
+rules.surprise.advance.round,Début du round
+rules.preset.saveTitle,Enregistrer le preset
+rules.preset.name,Nom du preset
+rules.preset.overwrite,Écraser {name}
+rules.preset.create,Créer un nouveau preset
+rules.preset.overwriteCurrent,Écraser ce preset
+rules.preset.rename,Changer le nom
+rules.preset.renameCurrent,Renommer le préréglage courant
+rules.preset.saveCurrent,Enregistrer le préréglage
+rules.preset.saved,Préréglage enregistré
+rules.preset.custom,Règles personnalisées
+rules.preset.family.generic,Presets génériques
+rules.preset.family.system,Presets systèmes
+rules.preset.family.personal,Presets personnels
+rules.preset.family.genericSingle,Preset générique
+rules.preset.family.systemSingle,Preset système
+rules.preset.family.personalSingle,Preset personnel
+rules.preset.modified,modifié
+rules.preset.starting,Préréglage de départ : {name}
+rules.preset.deleteShort,Suppr.
+rules.phase.title,Phases
+rules.phase.byInitiative,Phases par initiative
+rules.phase.checked,Phases cochées
+rules.phase.max,Nombre max de phases
+rules.phase.decrement,Décrément
+rules.equality.title,Égalités d’initiative
+rules.initiativeOrder.title,Ordre d’initiative
+rules.initiativeOrder.use,Utiliser l’initiative
+rules.tiebreaker.title,Départage
+rules.tiebreaker.show,Afficher le champ
+rules.tiebreaker.label,Nom du champ
+rules.multipleActions.title,Actions multiples
+rules.multipleActions.none,Aucune
+rules.multipleActions.manual,Créneaux manuels
+rules.multipleActions.initiativeCost,Actions multiples avec coût d’initiative
+rules.multipleActions.threshold,Seuil de fin de round
+rules.multipleActions.quickCosts,Coûts rapides
+rules.multipleActions.limitCost,Interdire de dépenser plus d’initiative que le créneau actuel
+rules.initiativeFormat.title,Saisie d’initiative
+rules.initiativeFormat.numeric,Numérique
+rules.initiativeFormat.labels,Par libellés
+rules.initiativeFormat.modify,Modifier
+rules.newRound.title,Nouveau round
+rules.newRound.reroll,Relancer l’initiative au nouveau round
+rules.categories.title,Ordre des types
+rules.categories.delete,Supprimer {category}
+rules.categories.new,Nouveau type
+rules.categories.add,Ajouter
+rules.title,Règles d’initiative
+rules.group.development,Déroulement
+rules.group.initiative,Initiative
+rules.group.equalities,Égalités
+rules.group.organization,Organisation
+hub.tabs.rules,Règles
+hub.tabs.campaigns,Campagnes
+hub.tabs.templates,Modèles
+hub.brandFallback,Campagne Cadence
+hub.themeToggle,Basculer thème clair ou sombre
+hub.scene.defaultTitle,Scène
+hub.scene.defaultType,Scène
+hub.scene.name,Nom
+hub.scene.type,Type
+hub.scene.notes,Notes
+hub.scene.open,Ouvrir
+hub.scene.edit,Modifier
+hub.scene.duplicate,Dupliquer
+hub.scene.deleteRevealAria,Afficher la suppression de {title}
+hub.scenes.title,Scènes
+hub.scenes.help,Crée ou ouvre une scène pour suivre l'initiative, les rounds, les états et les indicateurs.
+hub.scenes.new,Nouvelle scène
+hub.scenes.empty,Aucune scène pour le moment. Crée une scène pour commencer.
+hub.campaigns.title,Campagnes
+hub.campaigns.help,Chaque campagne correspond à un fichier .cad. Ouvre un fichier existant ou enregistre une copie de la campagne active.
+hub.campaigns.active,Campagne active
+hub.campaigns.empty,Aucune campagne locale active pour le moment.
+hub.campaigns.status.local,Sauvegarde locale active.
+hub.campaigns.open,Ouvrir un .cad
+hub.campaigns.copy,Enregistrer une copie
+hub.campaigns.importAria,Importer une campagne
+hub.campaigns.advanced,Actions avancées
+hub.campaigns.reset,Réinitialiser Cadence
+hub.campaigns.filePickerDescription,Campagne Cadence
+hub.loading.rules,Chargement des règles...
+hub.loading.templates,Chargement des modèles...
+templates.hub.title,Modèles
+templates.hub.import,Importer depuis une autre campagne
+templates.tabs.personnages,Personnages
+templates.tabs.suivis,Indicateurs
+templates.tabs.statuses,États
+templates.tabs.scene,Scène
+templates.personnages.help,Les modèles de personnages servent de fiches prêtes à réutiliser, avec leurs infos rapides et leurs indicateurs.
+templates.personnages.empty,Aucun modèle dans cette catégorie.
+templates.personnages.uncategorized,Sans catégorie
+templates.personnages.newCategoryPlaceholder,Nouvelle catégorie
+templates.personnages.addCategory,Ajouter
+templates.personnages.renameCategoryAria,Renommer la catégorie
+templates.personnages.addTemplateAria,Ajouter un modèle
+templates.personnages.editAria,Modifier {name}
+templates.personnages.kindFallback,Personnage
+templates.personnages.duplicateAria,Dupliquer {name}
+templates.personnages.deleteRevealAria,Afficher la suppression de {name}
+templates.sections.suivis.help,Ces indicateurs pourront être ajoutés depuis l'édition d'une fiche.
+templates.sections.suivis.add,+ indicateur
+templates.sections.suivis.empty,Aucun modèle d'indicateur.
+templates.sections.suivis.detailFallback,Indicateur
+templates.sections.statuses.help,Ces états seront proposés quand tu ajoutes un état à une fiche.
+templates.sections.statuses.add,+ état
+templates.sections.statuses.empty,Aucun modèle d'état.
+templates.sections.sceneCounters.title,Indicateurs de scène
+templates.sections.sceneCounters.help,Ces modèles remplacent ou préparent l'indicateur global de la scène.
+templates.sections.sceneCounters.add,+ indicateur
+templates.sections.sceneCounters.empty,Aucun modèle d'indicateur de scène.
+templates.sections.sceneStatuses.title,États de scène
+templates.sections.sceneStatuses.help,Ces états sont proposés dans le menu d'ajout d'état de scène.
+templates.sections.sceneStatuses.add,+ état
+templates.sections.sceneStatuses.empty,Aucun modèle d'état de scène.
+templates.status.impact.inactive,[!] inactif
+templates.status.impact.limited,[~] limité
+templates.status.impact.normal,[o] normal
+templates.status.advance.round,round(s)
+templates.status.advance.activation,activation(s)
+templates.status.summary.infinite,{impact} | illimité
+templates.status.summary.duration,{impact} | {duration} {rythme}
+templates.counterScene.timer,minuteur {minutes} min
+templates.counterScene.stopwatch,chronomètre
+templates.counterScene.counter,compteur /{max}
+templates.counterScene.clock,horloge {segments} segments
+templates.editor.tracker.title,Modèle d'indicateur
+templates.editor.tracker.defaultName,Indicateur
+templates.editor.modelName,Nom du modèle
+templates.editor.status.title,Modèle d'état
+templates.editor.status.defaultName,État
+templates.editor.status.name,Nom de l'état
+templates.editor.status.duration,Durée
+templates.editor.status.durationPlaceholder,illimitée
+templates.editor.advanced,Options avancées
+templates.editor.status.advance,Évolution
+templates.editor.status.advance.activation,Activation
+templates.editor.status.advance.round,Début du round
+templates.editor.status.loop,renouveler en boucle
+templates.editor.sceneStatus.title,Modèle d'état de scène
+templates.editor.sceneStatus.defaultName,État de scène
+templates.editor.sceneCounter.title,Modèle d'indicateur de scène
+templates.editor.sceneCounter.defaultName,Indicateur de scène
+templates.editor.sceneCounter.name,Nom de l'indicateur
+templates.editor.sceneCounter.type,Type
+templates.editor.sceneCounter.value,Valeur
+templates.editor.sceneCounter.durationMinutes,Durée minutes
+templates.editor.sceneCounter.max,Maximum
+templates.editor.sceneCounter.auto,avancer automatiquement à chaque nouveau round

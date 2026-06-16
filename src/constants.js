@@ -1,4 +1,4 @@
-export const APP_VERSION = '0.8.0';
+export const APP_VERSION = '0.8.22-work';
 export const STORAGE_KEY = 'cadence:campaign:v1';
 export const TEMPLATE_STORAGE_KEY = 'cadence:templates:v1';
 
@@ -126,3 +126,4 @@ export const colorAccents = {
   pink: '#f472b6',
   default: '#94a3b8',
 };
+
