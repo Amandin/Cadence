@@ -1,9 +1,20 @@
 import { useMemo, useState } from 'react';
 import { trierParInitiative } from '../../domain/initiative.js';
 import { normalizeDeclarations } from '../../domain/initiativeModes.js';
+import { t } from '../../i18n/index.js';
 import { Fenetre } from '../commun/ComposantsCommuns.jsx';
 
-const actionTypes = ['Attaque', 'Defense', 'Mouvement', 'Soutien', 'Autre'];
+const actionTypes = [
+  { value: 'Attaque', label: 'declarations.actions.attack' },
+  { value: 'Defense', label: 'declarations.actions.defense' },
+  { value: 'Mouvement', label: 'declarations.actions.move' },
+  { value: 'Soutien', label: 'declarations.actions.support' },
+  { value: 'Autre', label: 'declarations.actions.other' },
+];
+
+function libelleAction(action) {
+  return actionTypes.find((item) => item.value === action)?.label || null;
+}
 
 export function FenetreDeclarationActions({ scene, optionsInitiative, participantIds = null, lancerResolution = true, onFermer, onValider }) {
   const ordre = useMemo(() => {
@@ -29,25 +40,25 @@ export function FenetreDeclarationActions({ scene, optionsInitiative, participan
   };
 
   return (
-    <Fenetre title="Declarer les actions" onClose={onFermer}>
+    <Fenetre title={t('declarations.title')} onClose={onFermer}>
       <div className="stack declaration-choice-window">
         <div className="declaration-choice-progress">
-          <span>{ordre.length ? `${indexActif + 1}/${ordre.length}` : '0/0'}</span>
-          <strong>{participant?.name || 'Aucun participant'}</strong>
+          <span>{t('declarations.progress', { current: ordre.length ? indexActif + 1 : 0, total: ordre.length })}</span>
+          <strong>{participant?.name || t('declarations.noParticipant')}</strong>
         </div>
         <div className="declaration-choice-actions">
           {actionTypes.map((action) => (
-            <button className={`initiative-choice-action ${choix[participant?.id] === action ? 'primary-choice' : ''}`} key={action} type="button" onClick={() => validerChoix(action)} disabled={!participant}>
-              <strong>{action}</strong>
+            <button className={`initiative-choice-action ${choix[participant?.id] === action.value ? 'primary-choice' : ''}`} key={action.value} type="button" onClick={() => validerChoix(action.value)} disabled={!participant}>
+              <strong>{t(action.label)}</strong>
             </button>
           ))}
         </div>
         <div className="declaration-choice-review">
-          {ordre.map((item, index) => <button className={index === indexActif ? 'active' : ''} key={item.id} type="button" onClick={() => setIndexActif(index)}><span>{item.name}</span><strong>{choix[item.id] || '-'}</strong></button>)}
+          {ordre.map((item, index) => <button className={index === indexActif ? 'active' : ''} key={item.id} type="button" onClick={() => setIndexActif(index)}><span>{item.name}</span><strong>{libelleAction(choix[item.id]) ? t(libelleAction(choix[item.id])) : (choix[item.id] || '-')}</strong></button>)}
         </div>
         <div className="grid2">
-          <button className="small-btn" type="button" onClick={revenir} disabled={indexActif <= 0}>Retour</button>
-          <button className="primary" type="button" onClick={validerTout} disabled={!choixComplets}>{lancerResolution ? 'Lancer la resolution' : "Enregistrer l'action"}</button>
+          <button className="small-btn" type="button" onClick={revenir} disabled={indexActif <= 0}>{t('declarations.back')}</button>
+          <button className="primary" type="button" onClick={validerTout} disabled={!choixComplets}>{lancerResolution ? t('declarations.launchResolution') : t('declarations.saveAction')}</button>
         </div>
       </div>
     </Fenetre>

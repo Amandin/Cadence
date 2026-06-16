@@ -1,9 +1,10 @@
 import { useRef, useState } from 'react';
+import { t } from '../../i18n/index.js';
 import { normalizeCampaignName } from '../../storage.js';
 import { Fenetre } from '../commun/ComposantsCommuns.jsx';
 
 export function FenetreExportCampagne({ nomInitial, onFermer, onExporter }) {
-  const [nom, setNom] = useState(nomInitial || 'Campagne Cadence');
+  const [nom, setNom] = useState(nomInitial || t('export.defaultName'));
   const [exportEnCours, setExportEnCours] = useState(false);
   const [message, setMessage] = useState('');
   const exportEnCoursRef = useRef(false);
@@ -21,23 +22,23 @@ export function FenetreExportCampagne({ nomInitial, onFermer, onExporter }) {
       return;
     }
     if (result?.cancelled) {
-      setMessage('Export annulé ou non confirmé par le navigateur.');
+      setMessage(t('export.cancelled'));
       return;
     }
-    setMessage(result?.message || 'Le navigateur n’a pas confirmé l’export.');
+    setMessage(result?.message || t('export.unconfirmed'));
   };
 
   return (
-    <Fenetre title="Exporter la campagne" onClose={onFermer}>
+    <Fenetre title={t('export.title')} onClose={onFermer}>
       <div className="stack">
-        <p className="muted compact-help">Vérifie le nom avant d’enregistrer. Si le navigateur le permet, Cadence ouvrira une fenêtre système pour choisir l’emplacement du fichier.</p>
+        <p className="muted compact-help">{t('export.help')}</p>
         <label className="field">
-          Nom de campagne
+          {t('export.campaignName')}
           <input
             type="text"
             value={nom}
             autoFocus
-            placeholder="Campagne Cadence"
+            placeholder={t('export.defaultName')}
             onChange={(event) => setNom(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === 'Enter') valider();
@@ -45,8 +46,8 @@ export function FenetreExportCampagne({ nomInitial, onFermer, onExporter }) {
           />
         </label>
         <div className="grid2">
-          <button className="primary" onClick={valider} disabled={exportEnCours}>{exportEnCours ? 'Enregistrement…' : 'Enregistrer'}</button>
-          <button className="small-btn" onClick={onFermer} disabled={exportEnCours}>Annuler</button>
+          <button className="primary" onClick={valider} disabled={exportEnCours}>{exportEnCours ? t('export.saving') : t('common.save')}</button>
+          <button className="small-btn" onClick={onFermer} disabled={exportEnCours}>{t('common.cancel')}</button>
         </div>
         {message && <p className="export-feedback">{message}</p>}
       </div>

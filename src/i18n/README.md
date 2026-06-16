@@ -1,4 +1,4 @@
-# Textes d'interface
+﻿# Textes d'interface
 
 Les textes migrés sont rangés dans `translations.csv`.
 
@@ -11,6 +11,10 @@ Convention retenue pour Cadence :
 - `common.*` pour les actions partagées et les libellés génériques.
 - `app.*` pour les textes très courts du socle applicatif, quand aucun autre namespace n'est plus précis.
 - `errors.*` et `onboarding.*` pour les petites zones applicatives fermées qui ne sont ni du métier ni un dialogue générique.
+- `characterAdd.*` pour la petite fenêtre d'ajout de personnage.
+- `export.*` pour la petite fenêtre d'export de campagne.
+- `initiativeAdjust.*` pour la petite fenêtre d'ajustement d'initiative.
+- `declarations.*` pour la petite fenêtre de déclaration des actions.
 - `hub.*` pour l'écran Hub et ses sous-zones stables, avec des sous-groupes comme `hub.tabs.*`, `hub.scenes.*` et `hub.campaigns.*`.
 - `templates.*` pour les sous-écrans de modèles, avec des sous-groupes comme `templates.hub.*`, `templates.tabs.*`, `templates.personnages.*`, `templates.sections.*` et `templates.editor.*`.
 - `sheet.*` pour la fenêtre d'édition de fiche et ses sous-zones stables, avec des sous-groupes autorisés comme `sheet.trackers.*`, `sheet.thresholds.*`, `sheet.actions.*`, `sheet.clock.*` ou `sheet.boxes.*` quand cela évite de mélanger des clés sans ouvrir un nouveau namespace top-level.

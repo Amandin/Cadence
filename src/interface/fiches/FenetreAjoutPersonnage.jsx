@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { initiativeInputIsValid, initiativeValueForMode, normalizeInitiativeTextOrder } from '../../domain/initiativeTextOrder.js';
+import { t } from '../../i18n/index.js';
 import { Fenetre } from '../commun/ComposantsCommuns.jsx';
 import { ChampInitiative } from '../initiative/ChampInitiative.jsx';
 
@@ -59,26 +60,26 @@ export function FenetreAjoutPersonnage({ templates = [], categories = [], initia
   const categorieVide = mode === 'template' && categorie && templatesCategorie.length === 0;
 
   return (
-    <Fenetre title="Ajouter un personnage" onClose={onFermer}>
+    <Fenetre title={t('characterAdd.title')} onClose={onFermer}>
       <div className="stack">
         <div className="grid2">
-          <button className={`choice ${mode === 'blank' ? 'selected' : ''}`} onClick={() => setMode('blank')}>Fiche vierge</button>
-          <button className={`choice ${mode === 'template' ? 'selected' : ''}`} disabled={templatesTries.length === 0} onClick={() => setMode('template')}>Modèle</button>
+          <button className={`choice ${mode === 'blank' ? 'selected' : ''}`} onClick={() => setMode('blank')}>{t('characterAdd.blank')}</button>
+          <button className={`choice ${mode === 'template' ? 'selected' : ''}`} disabled={templatesTries.length === 0} onClick={() => setMode('template')}>{t('characterAdd.template')}</button>
         </div>
         {mode === 'template' && <div className="grid2">
-          <label className="field">Catégorie<select value={categorie} onChange={(event) => choisirCategorie(event.target.value)}>{categoriesDisponibles.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
-          <label className="field">Modèle<select value={templateId} onChange={(event) => setTemplateId(event.target.value)} disabled={templatesCategorie.length === 0}>{templatesCategorie.map((template) => <option key={template.id} value={template.id}>{template.name}</option>)}</select></label>
+          <label className="field">{t('characterAdd.category')}<select value={categorie} onChange={(event) => choisirCategorie(event.target.value)}>{categoriesDisponibles.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
+          <label className="field">{t('characterAdd.model')}<select value={templateId} onChange={(event) => setTemplateId(event.target.value)} disabled={templatesCategorie.length === 0}>{templatesCategorie.map((template) => <option key={template.id} value={template.id}>{template.name}</option>)}</select></label>
         </div>}
-        {categorieVide && <p className="muted" style={{ margin: 0, fontSize: 12 }}>Cette catégorie existe dans le Hub, mais ne contient encore aucun modèle.</p>}
+        {categorieVide && <p className="muted" style={{ margin: 0, fontSize: 12 }}>{t('characterAdd.emptyCategory')}</p>}
         <div className="grid2">
-          <button className={`choice ${placement === 'init' ? 'selected' : ''}`} onClick={() => setPlacement('init')}>En initiative</button>
-          <button className={`choice ${placement === 'reserve' ? 'selected' : ''}`} onClick={() => setPlacement('reserve')}>En réserve</button>
+          <button className={`choice ${placement === 'init' ? 'selected' : ''}`} onClick={() => setPlacement('init')}>{t('characterAdd.placement.init')}</button>
+          <button className={`choice ${placement === 'reserve' ? 'selected' : ''}`} onClick={() => setPlacement('reserve')}>{t('characterAdd.placement.reserve')}</button>
         </div>
-        {placement === 'init' && utiliserInitiative && <ChampInitiative label="Initiative" valeur={initiative} textConfig={textConfig} onChange={setInitiative} />}
-        <p className="muted" style={{ margin: 0, fontSize: 12 }}>La fiche s’ouvrira ensuite pour ajuster les détails avant de continuer la scène.</p>
+        {placement === 'init' && utiliserInitiative && <ChampInitiative label={t('characterAdd.initiative')} valeur={initiative} textConfig={textConfig} onChange={setInitiative} />}
+        <p className="muted" style={{ margin: 0, fontSize: 12 }}>{t('characterAdd.help')}</p>
         <div className="grid2">
-          <button className="primary" onClick={creerPersonnage} disabled={(mode === 'template' && !templateId) || !initiativeValide}>Créer</button>
-          <button className="small-btn" onClick={onFermer}>Annuler</button>
+          <button className="primary" onClick={creerPersonnage} disabled={(mode === 'template' && !templateId) || !initiativeValide}>{t('common.create')}</button>
+          <button className="small-btn" onClick={onFermer}>{t('common.cancel')}</button>
         </div>
       </div>
     </Fenetre>
