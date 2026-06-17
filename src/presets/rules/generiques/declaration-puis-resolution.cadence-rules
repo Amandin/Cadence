@@ -1,0 +1,15 @@
+{
+  "id": "generiques/declaration-puis-resolution",
+  "name": "Déclaration puis résolution",
+  "family": "generic",
+  "category": "Générique",
+  "description": "Déclarer d’abord, résoudre ensuite selon l’ordre d’initiative.",
+  "rules": {
+    "temporalite": "classique",
+    "declarationMode": true,
+    "initiativeOrder": "desc",
+    "tiebreakerVisible": true,
+    "equalityRule": "strict",
+    "multipleActionMode": "none"
+  }
+}

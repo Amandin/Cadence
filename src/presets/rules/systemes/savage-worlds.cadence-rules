@@ -1,0 +1,20 @@
+{
+  "id": "systemes/savage-worlds",
+  "name": "Savage Worlds",
+  "family": "system",
+  "system": "Savage Worlds",
+  "category": "Système",
+  "description": "Initiative par cartes, Cadence représente l’ordre tiré.",
+  "rules": {
+    "temporalite": "classique",
+    "initiativeValueType": "label",
+    "initiativeOrder": "desc",
+    "tiebreakerVisible": false,
+    "equalityRule": "never",
+    "multipleActionMode": "none",
+    "initiativeTextOrder": {
+      "enabled": true,
+      "preset": "cards"
+    }
+  }
+}

@@ -1,6 +1,7 @@
 import { applyInitiativeRules, campaignRulesFromPayload, normalizeCampaignRules, unifyCampaignScenes } from '../domain/campaignRules.js';
+import { createRulePresetSnapshot, syncRulePresetSnapshot } from '../rulePresets.js';
 import { campaignNameFromPayload, campaignTemplatesFromPayload, isValidCampaign, normalizeCampaignName, normalizeCampaignPayload, serializeCampaign } from '../storage.js';
-import { boxBlocks, clone, isBoxesTracker, isNumericTracker, makeDefaultCampaign, normalizeBoxTracker, uid } from '../logic.js';
+import { boxBlocks, clone, isBoxesTracker, isNumericTracker, makeDefaultCampaign, makeTestCampaign, normalizeBoxTracker, uid } from '../logic.js';
 import { mergeTemplateStores } from '../templates.js';
 import { readJsonCadenceFile, shareOrDownloadCampaign } from '../campaignFileIO.js';
 
@@ -54,7 +55,7 @@ function remettreSceneAuDepartInitiative(scene, rules) {
   return applyInitiativeRules(resetScene, rules);
 }
 
-function createBlankScene(rules = {}) {
+export function createBlankScene(rules = {}) {
   return applyInitiativeRules({
     id: uid('scene'),
     title: 'Nouvelle scène',
@@ -73,7 +74,17 @@ function duplicateSceneData(scene, rules) {
   return remettreSceneAuDepartInitiative({ ...clone(scene), id: uid('scene'), title: `${scene?.title || 'Scène'} — copie` }, rules);
 }
 
-export function createCampaignActions({ scenes, campaignRules, setCampaignRules, sceneIndex, dark, campaignName, templateStore, setScenes, setSceneIndex, setDark, setCampaignNameState, setTemplateStore }) {
+export function createCampaignActions({ scenes, campaignRules, rulePresetSnapshot, setCampaignRules, setRulePresetSnapshot = () => {}, sceneIndex, dark, campaignName, templateStore, setScenes, setSceneIndex, setDark, setCampaignNameState, setTemplateStore }) {
+  const applyCampaign = (payload) => {
+    const fresh = normalizeCampaignPayload(payload);
+    setCampaignRules(campaignRulesFromPayload(fresh));
+    setRulePresetSnapshot(fresh.rulePresetSnapshot || null);
+    setScenes(fresh.scenes);
+    setTemplateStore(campaignTemplatesFromPayload(fresh));
+    setCampaignNameState(campaignNameFromPayload(fresh));
+    setSceneIndex(0);
+  };
+
   return {
     setSceneIndex,
     setDark,
@@ -114,13 +125,21 @@ export function createCampaignActions({ scenes, campaignRules, setCampaignRules,
     updateCampaignInitiativeRules(patch) {
       const nextRules = normalizeCampaignRules({ ...campaignRules, ...patch });
       setCampaignRules(nextRules);
+      setRulePresetSnapshot((current) => syncRulePresetSnapshot(current, nextRules));
+      setScenes((currentScenes) => unifyCampaignScenes(currentScenes, nextRules));
+    },
+    applyCampaignRulePreset(preset) {
+      if (!preset?.rules) return;
+      const nextRules = normalizeCampaignRules(preset.rules);
+      setCampaignRules(nextRules);
+      setRulePresetSnapshot(createRulePresetSnapshot(preset, nextRules));
       setScenes((currentScenes) => unifyCampaignScenes(currentScenes, nextRules));
     },
     async exportCampaign(name = campaignName) {
       const exportName = normalizeCampaignName(name);
       const rules = normalizeCampaignRules(campaignRules);
       const exportScenes = unifyCampaignScenes(scenes, rules);
-      const result = await shareOrDownloadCampaign(serializeCampaign(exportScenes, dark, exportName, templateStore, rules), exportName);
+      const result = await shareOrDownloadCampaign(serializeCampaign(exportScenes, dark, exportName, templateStore, rules, rulePresetSnapshot), exportName);
       if (result?.ok) setCampaignNameState(exportName);
       return result;
     },
@@ -130,6 +149,7 @@ export function createCampaignActions({ scenes, campaignRules, setCampaignRules,
         if (!isValidCampaign(data)) return { ok: false, message: `Le fichier choisi n’est pas une campagne Cadence valide. Fichier : ${file?.name || 'sans nom'} (${file?.type || 'type inconnu'}, ${file?.size || 0} octets).` };
         const campaign = normalizeCampaignPayload(data);
         setCampaignRules(campaign.initiativeRules);
+        setRulePresetSnapshot(campaign.rulePresetSnapshot || null);
         setScenes(campaign.scenes);
         setCampaignNameState(campaignNameFromPayload(campaign));
         setTemplateStore(campaignTemplatesFromPayload(campaign));
@@ -151,13 +171,17 @@ export function createCampaignActions({ scenes, campaignRules, setCampaignRules,
         return { ok: false, message: 'Impossible de lire les modèles de cette campagne.' };
       }
     },
+    loadTestCampaign() {
+      applyCampaign(makeTestCampaign());
+    },
     resetDemo() {
-      const fresh = normalizeCampaignPayload(makeDefaultCampaign());
-      setCampaignRules(campaignRulesFromPayload(fresh));
-      setScenes(fresh.scenes);
-      setTemplateStore(campaignTemplatesFromPayload(fresh));
-      setCampaignNameState(campaignNameFromPayload(fresh));
-      setSceneIndex(0);
+      applyCampaign(makeTestCampaign());
+    },
+    resetCampaign() {
+      applyCampaign(makeDefaultCampaign());
+    },
+    resetToDefaultCampaign() {
+      applyCampaign(makeDefaultCampaign());
     },
   };
 }

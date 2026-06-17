@@ -13,13 +13,12 @@ import { isInitiativeCostMode, isManualMultipleActionMode, multipleActionModeFro
 const blocked = (disabled, reason) => ({ disabled: !!disabled, reason: disabled ? reason : '' });
 
 export const usesTextInitiative = (rules = {}) => normalizeInitiativeTextOrder(rules.initiativeTextOrder).enabled;
-export const usesMultipleActionSlots = (rules = {}) => multipleActionModeFromRules(rules) !== multipleActionModes.NONE;
 export const usesManualMultipleActionSlots = (rules = {}) => isManualMultipleActionMode(rules);
 export const usesInitiativeCost = (rules = {}) => isInitiativeCostMode(rules);
-export const usesActionAdjustment = () => false;
 export const usesDeclaration = (rules = {}) => !!rules.declarationMode;
 export const usesAutomaticPhases = (rules = {}) => rules.temporalite === temporalityModes.PHASES && (rules.phaseActionMode || defaultPhaseActionMode) === phaseActionModes.AUTOMATIC;
 export const usesFlexibleInitiative = (rules = {}) => rules.temporalite !== temporalityModes.FLEXIBLE || rules.flexibleUseInitiative !== false;
+export const canRerollInitiativeEachRound = (rules = {}) => usesAutomaticPhases(rules) || usesInitiativeCost(rules);
 
 export function temporalityPatch(rules = {}, temporalite) {
   if (temporalite === temporalityModes.PHASES && (usesTextInitiative(rules) || rules.temporalite === temporalityModes.FLEXIBLE)) return { temporalite, phaseActionMode: phaseActionModes.CHECKED };

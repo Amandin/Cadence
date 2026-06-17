@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { APP_VERSION } from '../../constants.js';
 import { activeGlobalTrackerThresholds, globalTrackerDisplayValue, globalTrackerTimerState } from '../../domain/globalTracker.js';
+import { t } from '../../i18n/index.js';
 import { EtiquetteEtat, Fenetre } from '../commun/ComposantsCommuns.jsx';
 
 function MenuEntete({ sombre, onChangerTheme, onClose }) {
@@ -11,14 +12,14 @@ function MenuEntete({ sombre, onChangerTheme, onClose }) {
       <img src={logo} alt="Cadence" />
       <div>
         <strong className="brand-title">Cadence</strong>
-        <span className="muted brand-meta">Menu · v{APP_VERSION}</span>
+        <span className="muted brand-meta">{t('menu.brandMeta', { version: APP_VERSION })}</span>
       </div>
-      <button className={`theme-toggle ${sombre ? 'dark-on' : 'light-on'}`} onClick={() => onChangerTheme(!sombre)} aria-label="Basculer thème clair ou sombre">
+      <button className={`theme-toggle ${sombre ? 'dark-on' : 'light-on'}`} onClick={() => onChangerTheme(!sombre)} aria-label={t('menu.toggleTheme')}>
         <span>☀</span>
         <span>☾</span>
         <i />
       </button>
-      <button className="icon-btn menu-close-btn" onClick={onClose} aria-label="Fermer le menu">×</button>
+      <button className="icon-btn menu-close-btn" onClick={onClose} aria-label={t('common.close')}>×</button>
     </div>
   );
 }
@@ -40,32 +41,44 @@ function formaterTemps(ms) {
 
 function resumeIndicateurScene(compteur) {
   if (!compteur?.enabled) return '';
-  const nom = compteur.name || (compteur.mode === 'timer' ? 'Minuteur' : compteur.mode === 'stopwatch' ? 'Chrono' : 'Indicateur de scène');
+  const nom = compteur.name || (compteur.mode === 'timer' ? t('menu.indicator.defaultTimer') : compteur.mode === 'stopwatch' ? t('menu.indicator.defaultStopwatch') : t('menu.indicator.defaultScene'));
+
   if (compteur.mode === 'timer') {
     const etat = globalTrackerTimerState(compteur);
     const valeur = compteur.limitMode === 'overflow' && etat.complete ? `+${formaterSecondes(etat.overrunSeconds)}` : formaterSecondes(etat.remainingSeconds);
-    return `${nom} - ${valeur}`;
+    return t('menu.indicator.summary.timer', { name: nom, value: valeur });
   }
-  if (compteur.mode === 'stopwatch') return `${nom} - ${formaterSecondes(globalTrackerDisplayValue(compteur))}`;
+
+  if (compteur.mode === 'stopwatch') {
+    return t('menu.indicator.summary.stopwatch', { name: nom, value: formaterSecondes(globalTrackerDisplayValue(compteur)) });
+  }
 
   const max = Math.max(1, Number(compteur.max || 1));
   const valeur = Math.max(0, Number(compteur.current || 0));
-  const seuil = activeGlobalTrackerThresholds(compteur)[0]?.label;
-  if (compteur.mode === 'counter') return `${nom} - ${valeur}${seuil ? `, seuil : ${seuil}` : ''}`;
+  const seuil = activeGlobalTrackerThresholds(compteur)[0]?.label || '';
+
+  if (compteur.mode === 'counter') {
+    return t('menu.indicator.summary.counter', { name: nom, value: valeur, threshold: seuil ? `, seuil : ${seuil}` : '' });
+  }
+
   if (compteur.limitMode === 'loop') {
     const boucles = Math.max(0, Number(compteur.loops || 0));
-    return `${nom} - ${boucles} boucle${boucles > 1 ? 's' : ''}${seuil ? `, seuil : ${seuil}` : ''}`;
+    return t('menu.indicator.summary.loop', { name: nom, loops: boucles, suffix: boucles > 1 ? 's' : '', threshold: seuil ? `, seuil : ${seuil}` : '' });
   }
-  if (max === 1 && seuil) return `${nom} - ${seuil}`;
-  return `${nom} - ${valeur} / ${max}${seuil ? `, seuil : ${seuil}` : ''}`;
+
+  if (max === 1 && seuil) {
+    return t('menu.indicator.summary.thresholdOnly', { name: nom, threshold: `, seuil : ${seuil}` });
+  }
+
+  return t('menu.indicator.summary.ratio', { name: nom, value: valeur, max, threshold: seuil ? `, seuil : ${seuil}` : '' });
 }
 
 function ActionsScene({ onAjouterParticipant, onSaisirInitiatives }) {
   return (
     <div className="scene-options compact-options menu-action-section">
       <div className={`menu-action-grid ${onSaisirInitiatives ? '' : 'single-action'}`}>
-        <button className="primary" onClick={onAjouterParticipant}>Ajouter un personnage</button>
-        {onSaisirInitiatives && <button className="small-btn" onClick={onSaisirInitiatives}>Saisir les initiatives</button>}
+        <button className="primary" onClick={onAjouterParticipant}>{t('menu.addCharacter')}</button>
+        {onSaisirInitiatives && <button className="small-btn" onClick={onSaisirInitiatives}>{t('menu.enterInitiatives')}</button>}
       </div>
     </div>
   );
@@ -81,11 +94,11 @@ function ElementsSceneMenu({ scene, onIndicateurScene, onModifierIndicateurScene
   return (
     <div className="scene-options compact-options menu-scene-elements">
       <div className="compact-option-title">
-        <h3>Éléments de scène</h3>
+        <h3>{t('menu.sceneElements.title')}</h3>
       </div>
       <div className="menu-action-grid">
-        <button className="small-btn" onClick={onModifierIndicateurScene}>{indicateurActif ? 'Modifier l’indicateur' : 'Activer un indicateur'}</button>
-        <button className="small-btn" onClick={onAjouterEtatScene}>Ajouter un état</button>
+        <button className="small-btn" onClick={onModifierIndicateurScene}>{indicateurActif ? t('menu.sceneElements.editIndicator') : t('menu.sceneElements.activateIndicator')}</button>
+        <button className="small-btn" onClick={onAjouterEtatScene}>{t('menu.sceneElements.addStatus')}</button>
       </div>
       {hasDetails && (
         <div className="stack menu-scene-elements-details">
@@ -93,8 +106,8 @@ function ElementsSceneMenu({ scene, onIndicateurScene, onModifierIndicateurScene
             <div className="menu-scene-indicator-row">
               <span>{resume}</span>
               <label className={`global-switch ${indicateurActif ? 'active' : ''}`}>
-                <span>{indicateurActif ? 'ON' : 'OFF'}</span>
-                <input type="checkbox" checked={indicateurActif} onChange={(event) => onIndicateurScene({ ...compteur, enabled: event.target.checked })} aria-label="Activer ou désactiver l’indicateur de scène" />
+                <span>{indicateurActif ? t('common.on') : t('common.off')}</span>
+                <input type="checkbox" checked={indicateurActif} onChange={(event) => onIndicateurScene({ ...compteur, enabled: event.target.checked })} aria-label={t('menu.sceneElements.toggleIndicator')} />
               </label>
             </div>
           )}
@@ -103,7 +116,7 @@ function ElementsSceneMenu({ scene, onIndicateurScene, onModifierIndicateurScene
               <div className="statuses status-control-row menu-status-list">
                 {etats.map((etat) => <EtiquetteEtat key={etat.id} etat={etat} onRetirer={() => onRetirerEtatScene?.(etat.id)} />)}
               </div>
-              <button className="small-btn subtle-danger menu-clear-statuses" onClick={onEffacerEtats}>Effacer les états de scène</button>
+              <button className="small-btn subtle-danger menu-clear-statuses" onClick={onEffacerEtats}>{t('menu.sceneElements.clearStatuses')}</button>
             </>
           )}
         </div>
@@ -115,24 +128,25 @@ function ElementsSceneMenu({ scene, onIndicateurScene, onModifierIndicateurScene
 function NotesSceneMenu({ scene, onModifierNotes }) {
   return (
     <details className="scene-options compact-options menu-scene-notes">
-      <summary>Notes de scène</summary>
-      <label className="field"><textarea rows={4} value={scene?.notes || ''} onChange={(event) => onModifierNotes?.(event.target.value)} placeholder="Ambiance, objectifs, éléments importants..." /></label>
+      <summary>{t('menu.sceneNotes.title')}</summary>
+      <label className="field"><textarea rows={4} value={scene?.notes || ''} onChange={(event) => onModifierNotes?.(event.target.value)} placeholder={t('menu.sceneNotes.placeholder')} /></label>
     </details>
   );
 }
 
 function OptionsAvanceesScene({ scene, onAvancerRound, onReculerRound, onAvancerAutomatismes, onReculerAutomatismes }) {
   if (!scene || scene.round < 0) return null;
+
   return (
     <details className="advanced-options menu-advanced-scene-actions">
-      <summary>Actions avancées</summary>
+      <summary>{t('menu.advancedActions.title')}</summary>
       <div className="menu-action-grid">
-        <button className="small-btn" onClick={onReculerRound} disabled={scene.round <= 0} title="Baisse seulement le numéro du round.">Reculer le numéro de round</button>
-        <button className="small-btn" onClick={onAvancerRound} title="Passe au round suivant et applique les automatismes de début de round.">Passer au round suivant maintenant</button>
-        <button className="small-btn" onClick={onAvancerAutomatismes} title="Applique les automatismes de début de round et d’activation aux personnages en initiative.">Avancer les automatismes</button>
-        <button className="small-btn" onClick={onReculerAutomatismes} title="Recule les automatismes de round et d’activation quand Cadence sait les inverser.">Reculer les automatismes</button>
+        <button className="small-btn" onClick={onReculerRound} disabled={scene.round <= 0} title={t('menu.advancedActions.decreaseRoundHint')}>{t('menu.advancedActions.decreaseRound')}</button>
+        <button className="small-btn" onClick={onAvancerRound} title={t('menu.advancedActions.advanceRoundHint')}>{t('menu.advancedActions.advanceRoundNow')}</button>
+        <button className="small-btn" onClick={onAvancerAutomatismes} title={t('menu.advancedActions.advanceAutomationsHint')}>{t('menu.advancedActions.advanceAutomations')}</button>
+        <button className="small-btn" onClick={onReculerAutomatismes} title={t('menu.advancedActions.rewindAutomationsHint')}>{t('menu.advancedActions.rewindAutomations')}</button>
       </div>
-      <p className="muted compact-help">Ces actions servent à corriger une scène. Pendant le jeu normal, utilise plutôt “Suivant”.</p>
+      <p className="muted compact-help">{t('menu.advancedActions.help')}</p>
     </details>
   );
 }
@@ -142,10 +156,10 @@ function OptionsDerouleScene({ scene, points, pointActif, onChoisirPoint, onRest
 
   return (
     <details className="scene-options compact-options menu-flow-section">
-      <summary>Déroulé</summary>
+      <summary>{t('menu.flow.title')}</summary>
       <div className="menu-action-grid scene-management-grid">
-        {scene.round >= 0 && <button className="small-btn" onClick={onRetourPreparation}>Retour à la préparation</button>}
-        <button className="small-btn" onClick={onResetSuivis}>Réinitialiser les indicateurs</button>
+        {scene.round >= 0 && <button className="small-btn" onClick={onRetourPreparation}>{t('menu.flow.returnPreparation')}</button>}
+        <button className="small-btn" onClick={onResetSuivis}>{t('menu.flow.resetTrackers')}</button>
       </div>
       {points.length > 0 && <RestaurationScene points={points} pointActif={pointActif} onChoisirPoint={onChoisirPoint} onRestaurer={onRestaurer} />}
       <OptionsAvanceesScene scene={scene} onAvancerRound={onAvancerRound} onReculerRound={onReculerRound} onAvancerAutomatismes={onAvancerAutomatismes} onReculerAutomatismes={onReculerAutomatismes} />
@@ -158,11 +172,11 @@ function RestaurationScene({ points, pointActif, onChoisirPoint, onRestaurer }) 
 
   return (
     <div className="restore-row discreet">
-      <label>Restaurer</label>
+      <label>{t('menu.restore.title')}</label>
       <select value={pointActif} onChange={(event) => onChoisirPoint(event.target.value)}>
         {points.map((point) => <option key={point.id} value={point.id}>{point.title}</option>)}
       </select>
-      <button className="small-btn" disabled={!pointActif} onClick={() => onRestaurer(pointActif)}>OK</button>
+      <button className="small-btn" disabled={!pointActif} onClick={() => onRestaurer(pointActif)}>{t('common.ok')}</button>
     </div>
   );
 }
@@ -183,23 +197,23 @@ function FenetreEditionIndicateurScene({ scene, compteur, onModifier, onChanger,
   const resetTemps = () => modifier({ running: false, startedAt: null, elapsedMs: 0 });
 
   return (
-    <Fenetre title="Indicateur de scène" onClose={onFermer}>
+    <Fenetre title={t('dialogs.sceneIndicator.title')} onClose={onFermer}>
       <div className="stack menu-counter-config">
-        <label className="field">Nom<input value={courant.name || ''} onChange={(event) => modifier({ name: event.target.value })} placeholder="Menace" /></label>
+        <label className="field">{t('dialogs.sceneIndicator.name')}<input value={courant.name || ''} onChange={(event) => modifier({ name: event.target.value })} placeholder={t('dialogs.sceneIndicator.placeholder')} /></label>
         <div className="grid2">
-          <label className="field">Type<select value={courant.mode || 'clock'} onChange={(event) => modifier({ mode: event.target.value, enabled: true, running: false, startedAt: null })}><option value="clock">Horloge</option><option value="counter">Compteur</option><option value="stopwatch">Chronomètre</option><option value="timer">Minuteur</option></select></label>
-          {!tempsReel && <label className="field">Valeur<input type="number" inputMode="numeric" value={courant.current ?? 0} onChange={(event) => modifier({ current: event.target.value === '' ? 0 : Number(event.target.value), enabled: true })} /></label>}
-          {courant.mode === 'timer' && <label className="field">Minutes<input type="number" inputMode="numeric" min="1" value={Math.max(1, Math.round(dureeSecondes / 60))} onChange={(event) => modifier({ max: Math.max(1, Number(event.target.value) || 1) * 60, enabled: true })} /></label>}
+          <label className="field">{t('dialogs.sceneIndicator.type')}<select value={courant.mode || 'clock'} onChange={(event) => modifier({ mode: event.target.value, enabled: true, running: false, startedAt: null })}><option value="clock">{t('dialogs.sceneIndicator.clock')}</option><option value="counter">{t('dialogs.sceneIndicator.counter')}</option><option value="stopwatch">{t('dialogs.sceneIndicator.stopwatch')}</option><option value="timer">{t('dialogs.sceneIndicator.timer')}</option></select></label>
+          {!tempsReel && <label className="field">{t('dialogs.sceneIndicator.value')}<input type="number" inputMode="numeric" value={courant.current ?? 0} onChange={(event) => modifier({ current: event.target.value === '' ? 0 : Number(event.target.value), enabled: true })} /></label>}
+          {courant.mode === 'timer' && <label className="field">{t('dialogs.sceneIndicator.minutes')}<input type="number" inputMode="numeric" min="1" value={Math.max(1, Math.round(dureeSecondes / 60))} onChange={(event) => modifier({ max: Math.max(1, Number(event.target.value) || 1) * 60, enabled: true })} /></label>}
         </div>
-        {!tempsReel && <label className="field">Maximum<input type="number" inputMode="numeric" min="1" value={courant.max ?? 10} onChange={(event) => modifier({ max: Math.max(1, Number(event.target.value) || 1), enabled: true })} /></label>}
-        {!tempsReel && <label className="row counter-auto-row"><input type="checkbox" checked={!!courant.auto} onChange={(event) => modifier({ auto: event.target.checked, enabled: true })} /> avancer à chaque nouveau round</label>}
+        {!tempsReel && <label className="field">{t('dialogs.sceneIndicator.maximum')}<input type="number" inputMode="numeric" min="1" value={courant.max ?? 10} onChange={(event) => modifier({ max: Math.max(1, Number(event.target.value) || 1), enabled: true })} /></label>}
+        {!tempsReel && <label className="row counter-auto-row"><input type="checkbox" checked={!!courant.auto} onChange={(event) => modifier({ auto: event.target.checked, enabled: true })} /> {t('dialogs.sceneIndicator.autoRound')}</label>}
         {!tempsReel && <div className="grid2"><button className="small-btn" onClick={() => onChanger(-1)}>−1</button><button className="small-btn" onClick={() => onChanger(1)}>+1</button></div>}
         {tempsReel && <div className="timer-control-panel menu-timer-panel">
           <strong>{affichageTemps}</strong>
-          {enPreparation && <p className="muted compact-help">Le temps démarrera avec Commencer.</p>}
+          {enPreparation && <p className="muted compact-help">{t('dialogs.sceneIndicator.prepHelp')}</p>}
           <div className="grid2">
-            <button className="primary" onClick={courant.running ? pause : demarrer} disabled={enPreparation && !courant.running}>{courant.running ? 'Pause' : 'Démarrer'}</button>
-            <button className="small-btn" onClick={resetTemps}>Remettre à zéro</button>
+            <button className="primary" onClick={courant.running ? pause : demarrer} disabled={enPreparation && !courant.running}>{courant.running ? t('dialogs.sceneIndicator.pause') : t('dialogs.sceneIndicator.start')}</button>
+            <button className="small-btn" onClick={resetTemps}>{t('dialogs.sceneIndicator.reset')}</button>
           </div>
         </div>}
       </div>
@@ -220,9 +234,9 @@ function NotesSceneMenuOuvert({ scene, onModifierNotes }) {
   return (
     <div className="scene-options compact-options menu-scene-notes">
       <div className="compact-option-title">
-        <h3>Notes de scène</h3>
+        <h3>{t('menu.sceneNotes.title')}</h3>
       </div>
-      <label className="field"><textarea ref={textareaRef} rows={4} value={scene?.notes || ''} onInput={(event) => ajusterHauteurTextarea(event.currentTarget)} onChange={(event) => onModifierNotes?.(event.target.value)} placeholder="Ambiance, objectifs, éléments importants..." /></label>
+      <label className="field"><textarea ref={textareaRef} rows={4} value={scene?.notes || ''} onInput={(event) => ajusterHauteurTextarea(event.currentTarget)} onChange={(event) => onModifierNotes?.(event.target.value)} placeholder={t('menu.sceneNotes.placeholder')} /></label>
     </div>
   );
 }
@@ -244,21 +258,21 @@ function OptionsDerouleSceneMenu({ scene, points, pointActif, onChoisirPoint, on
 
   return (
     <details className="scene-options compact-options menu-flow-section">
-      <summary>Déroulé</summary>
+      <summary>{t('menu.flow.title')}</summary>
       <div className="menu-action-grid scene-management-grid">
-        {!enPreparation && <button className="primary prep-return-menu-btn" onClick={onDemanderRetourPreparation}>Retour à la Préparation</button>}
-        <button className="small-btn" onClick={onResetSuivis}>Réinitialiser les indicateurs</button>
-        {!enPreparation && <button className="small-btn" onClick={() => changerRound(-1)} disabled={scene.round <= 0}>Reculer d'un round</button>}
-        {!enPreparation && <button className="small-btn" onClick={() => changerRound(1)}>Avancer d'un round</button>}
-        <button className="small-btn" onClick={onReculerAutomatismes}>Reculer les automatismes</button>
-        <button className="small-btn" onClick={onAvancerAutomatismes}>Avancer les automatismes</button>
+        {!enPreparation && <button className="primary prep-return-menu-btn" onClick={onDemanderRetourPreparation}>{t('menu.flow.returnPreparation')}</button>}
+        <button className="small-btn" onClick={onResetSuivis}>{t('menu.flow.resetTrackers')}</button>
+        {!enPreparation && <button className="small-btn" onClick={() => changerRound(-1)} disabled={scene.round <= 0}>{t('menu.flow.decreaseRound')}</button>}
+        {!enPreparation && <button className="small-btn" onClick={() => changerRound(1)}>{t('menu.flow.advanceRound')}</button>}
+        <button className="small-btn" onClick={onReculerAutomatismes}>{t('menu.flow.rewindAutomations')}</button>
+        <button className="small-btn" onClick={onAvancerAutomatismes}>{t('menu.flow.advanceAutomations')}</button>
       </div>
       {!enPreparation && <label className={`reset-switch menu-round-automation-toggle ${roundAvecAutomatismes ? 'active' : ''}`}>
-        <span>Appliquer les automatismes quand on avance ou recule le round</span>
+        <span>{t('menu.flow.roundAutomations')}</span>
         <input type="checkbox" checked={roundAvecAutomatismes} onChange={(event) => setRoundAvecAutomatismes(event.target.checked)} />
       </label>}
       {!enPreparation && pointsRestauration.length > 0 && <RestaurationScene points={pointsRestauration} pointActif={pointActifFiltre} onChoisirPoint={onChoisirPoint} onRestaurer={onRestaurer} />}
-      <p className="muted compact-help">Ces actions servent à corriger une scène. Pendant le jeu normal, utilise plutôt Suivant.</p>
+      <p className="muted compact-help">{t('menu.flow.help')}</p>
     </details>
   );
 }
@@ -268,21 +282,21 @@ function FenetreRetourPreparation({ onFermer, onValider }) {
   const [endTemporaryEffects, setEndTemporaryEffects] = useState(false);
 
   return (
-    <Fenetre title="Retour à la Préparation" onClose={onFermer}>
+    <Fenetre title={t('dialogs.returnPreparation.title')} onClose={onFermer}>
       <div className="stack return-preparation-options">
-        <p className="muted compact-help">Choisis ce que Cadence doit nettoyer en revenant avant l'initiative.</p>
+        <p className="muted compact-help">{t('dialogs.returnPreparation.help1')}</p>
         <label className={`reset-switch ${resetTrackers ? 'active' : ''}`}>
-          <span>Réinitialiser aussi les indicateurs</span>
+          <span>{t('dialogs.returnPreparation.resetTrackers')}</span>
           <input type="checkbox" checked={resetTrackers} onChange={(event) => setResetTrackers(event.target.checked)} />
         </label>
         <label className={`reset-switch ${endTemporaryEffects ? 'active' : ''}`}>
-          <span>Mettre fin aux effets temporaires</span>
+          <span>{t('dialogs.returnPreparation.endTemporaryEffects')}</span>
           <input type="checkbox" checked={endTemporaryEffects} onChange={(event) => setEndTemporaryEffects(event.target.checked)} />
         </label>
-        <p className="muted compact-help">Si rien n’est coché, Cadence revient à la préparation sans toucher aux indicateurs ni aux effets.</p>
+        <p className="muted compact-help">{t('dialogs.returnPreparation.help2')}</p>
         <div className="grid2">
-          <button className="primary" onClick={() => onValider({ resetTrackers, endTemporaryEffects })}>Retour à la Préparation</button>
-          <button className="small-btn" onClick={onFermer}>Annuler</button>
+          <button className="primary" onClick={() => onValider({ resetTrackers, endTemporaryEffects })}>{t('dialogs.returnPreparation.confirm')}</button>
+          <button className="small-btn" onClick={onFermer}>{t('dialogs.returnPreparation.cancel')}</button>
         </div>
       </div>
     </Fenetre>
@@ -294,6 +308,7 @@ export function MenuPrincipal({ scene, restorePoints = [], onRestore, onReturnTo
   const [pointRestaurationId, setPointRestaurationId] = useState(pointsRestauration.at(-1)?.id || '');
   const [editionIndicateurOuverte, setEditionIndicateurOuverte] = useState(false);
   const [retourPreparationOuvert, setRetourPreparationOuvert] = useState(false);
+
   const validerRetourPreparation = (options) => {
     if (onReturnToPreparationWithOptions) {
       onReturnToPreparationWithOptions(options);
@@ -305,10 +320,10 @@ export function MenuPrincipal({ scene, restorePoints = [], onRestore, onReturnTo
   };
 
   return (
-    <Fenetre title="Menu" onClose={onClose} header={<MenuEntete sombre={dark} onChangerTheme={setDark} onClose={onClose} />} className={`main-menu ${dark ? 'dark menu-dark' : ''}`}>
+    <Fenetre title={t('menu.title')} onClose={onClose} header={<MenuEntete sombre={dark} onChangerTheme={setDark} onClose={onClose} />} className={`main-menu ${dark ? 'dark menu-dark' : ''}`}>
       <div className="main-menu-layout">
         <div className="main-menu-primary">
-          <button className="primary hub-menu-main-action" onClick={onOpenCampaignHub}>Retour au hub de campagne</button>
+          <button className="primary hub-menu-main-action" onClick={onOpenCampaignHub}>{t('menu.returnHub')}</button>
           <ActionsScene onAjouterParticipant={onAddParticipant} onSaisirInitiatives={onOpenInitiativeRoller} />
           <ElementsSceneMenu scene={scene} onIndicateurScene={onGlobalTracker} onModifierIndicateurScene={() => setEditionIndicateurOuverte(true)} onAjouterEtatScene={onAddSceneStatus} onRetirerEtatScene={onRemoveSceneStatus} onEffacerEtats={onClearStatuses} />
           <OptionsDerouleSceneMenu scene={scene} points={pointsRestauration} pointActif={pointRestaurationId} onChoisirPoint={setPointRestaurationId} onRestaurer={onRestore} onDemanderRetourPreparation={() => setRetourPreparationOuvert(true)} onAvancerRound={onAdvanceRound} onReculerRound={onDecreaseRound} onChangerRoundAvecAutomatismes={onChangeRoundWithAutomations} onAvancerAutomatismes={onAdvanceAutomations} onReculerAutomatismes={onRewindAutomations} onResetSuivis={onResetTrackers} />

@@ -1,0 +1,16 @@
+{
+  "id": "generiques/phases-par-initiative",
+  "name": "Phases par initiative",
+  "family": "generic",
+  "category": "Générique",
+  "description": "Les hautes initiatives peuvent rejouer sur des phases suivantes.",
+  "rules": {
+    "temporalite": "phases",
+    "phaseActionMode": "automatic",
+    "phaseDecrement": 10,
+    "initiativeOrder": "desc",
+    "tiebreakerVisible": true,
+    "equalityRule": "strict",
+    "multipleActionMode": "none"
+  }
+}

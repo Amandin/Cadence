@@ -86,9 +86,6 @@ function thresholdLabel(t,th){ if(th.label) return th.label; const op=thresholdO
 function thresholdMatches(t,th,value){ const op=thresholdOperator(t,th); const target=thresholdValue(t,th); if(op==='lte') return value<=target; if(op==='lt') return value<target; if(op==='eq') return value===target; if(op==='gt') return value>target; return value>=target; }
 function activeThresholdsForValue(t,thresholds=[],value,patch={}){ const active=normalizeThresholds(thresholds).filter(th=>thresholdMatches(t,th,value)); const gte=active.filter(th=>['gte','gt'].includes(thresholdOperator(t,th))).sort((a,b)=>thresholdValue(t,b)-thresholdValue(t,a))[0]; const lte=active.filter(th=>['lte','lt'].includes(thresholdOperator(t,th))).sort((a,b)=>thresholdValue(t,a)-thresholdValue(t,b))[0]; const eq=active.filter(th=>thresholdOperator(t,th)==='eq'); return [gte,lte,...eq].filter(Boolean).map(th=>({...th,effectiveValue:thresholdValue(t,th),label:thresholdLabel(t,th),...patch})); }
 export function activeThresholds(t){ if(!isNumericTracker(t)) return null; const current=numberOr(t.current,0), total=numberOr(t.cycles,0); if(t.type==='number'){ const counters=[{id:'__main',current},...(t.counters||[]).map(c=>({id:c.id,current:numberOr(c.current,0)}))]; return counters.flatMap(counter=>activeThresholdsForValue(t,normalizeThresholds(t.thresholds).filter(th=>(th.counterId||'__main')===counter.id),counter.current,{counterId:counter.id})); } if(isPointsTracker(t)||t.type==='clock') return [...activeThresholdsForValue(t,t.currentThresholds||t.thresholds,current),...activeThresholdsForValue(t,t.totalThresholds,total,{total:true})]; return activeThresholdsForValue(t,t.thresholds,current); }
-export function activeThreshold(t){ return activeThresholds(t)?.[0]||null; }
-export function sortedBoxMarks(t){ return boxBlocks(t).flatMap(block=>(block.lines||[]).flatMap(line=>(line.boxes||[]).map(box=>box.mark))).sort((a,b)=>numberOr(b,0)-numberOr(a,0)); }
-export function sortedMarksForRow(t,row){ return [...(row?.boxes||[]).map(box=>box.mark)].sort((a,b)=>numberOr(b,0)-numberOr(a,0)); }
 export function boxVisualRank(mark,max){ const value=numberOr(mark,0); const levels=clamp(numberOr(max,5),1,5); if(!value) return 0; const ranks={1:[5],2:[2,5],3:[1,2,5],4:[1,2,4,5],5:[1,2,3,4,5]}; return ranks[levels][Math.min(value,levels)-1]||5; }
 export function cycleBoxMark(mark,max){ return (numberOr(mark,0)+1)%(numberOr(max,1)+1); }
 export function applyBoxMarkAction(mark,max,action='fill'){ const current=numberOr(mark,0); const limit=Math.max(1,numberOr(max,1)); return action==='empty'?Math.max(0,current-1):Math.min(limit,current+1); }
@@ -148,4 +145,69 @@ function makeGenericTestCampaign(){ const rules={temporalite:temporalityModes.CL
   demoPerson('danger-scene','Danger de scène',3,{kind:'Environnement',color:'amber',stats:['Horloge'],trackers:[{id:'danger-clock',type:'clock',name:'Danger',visible:true,current:1,initial:0,min:0,max:6,step:1,direction:'progression',limitMode:'manual',autoReset:'round',frozen:false,currentThresholds:[{value:3,label:'pression',color:'amber',operator:'gte'},{value:6,label:'déclenche',color:'red',operator:'gte'}]}]})
 ]})]}); }
 export function makeDemoCampaigns(){ return [makeGenericTestCampaign(),makeGlobalTrackerDemoCampaign(),makeTrackersDemoCampaign(),makeInitiativeDemoCampaign(),makeClassicRulesDemoCampaign(),makePhasesRulesDemoCampaign(),makeCheckedPhasesRulesDemoCampaign(),makeTextRulesDemoCampaign(),makeDeclarationRulesDemoCampaign(),makeFlexibleRulesDemoCampaign()].map(enrichDefaultCampaign); }
-export function makeDefaultCampaign(){ return enrichDefaultCampaign(makeDemoCampaigns()[0]); }
+function findDemoScene(campaigns, sceneId){ return campaigns.flatMap((campaign)=>campaign.scenes||[]).find((scene)=>scene.id===sceneId)||null; }
+function findDemoParticipant(scene, participantId){ return scene?.participants?.find((participant)=>participant.id===participantId)||null; }
+function findDemoTracker(scene, participantId, trackerId){ return findDemoParticipant(scene, participantId)?.trackers?.find((tracker)=>tracker.id===trackerId)||null; }
+function participantTemplate(id,name,category,participant){ if(!participant) return null; return {id,name,category,createdAt:'demo',participant:clone(participant)}; }
+function trackerTemplate(id,name,tracker){ if(!tracker) return null; return {id,name,createdAt:'demo',tracker:clone(tracker)}; }
+function sceneCounterTemplate(id,name,counter){ if(!counter) return null; return {id,name,createdAt:'demo',counter:clone(counter)}; }
+export function makeTestCampaign(){
+  const campaigns = makeDemoCampaigns();
+  const sceneIds = ['scene-test-generique','global-counter','global-clock-loop','global-timer','cases-puces'];
+  const scenes = sceneIds.map((sceneId)=>clone(findDemoScene(campaigns, sceneId))).filter(Boolean);
+  const genericScene = findDemoScene(campaigns, 'scene-test-generique');
+  const trackerScene = findDemoScene(campaigns, 'cases-puces');
+  const globalCounterScene = findDemoScene(campaigns, 'global-counter');
+  const globalClockScene = findDemoScene(campaigns, 'global-clock-loop');
+  const globalTimerScene = findDemoScene(campaigns, 'global-timer');
+
+  return demoCampaign('campagne-test-cadence','Campagne de test',{
+    initiativeRules:{temporalite:temporalityModes.CLASSIC,startRound:0,declarationMode:false,multipleActionSlots:true},
+    scenes,
+    templates:{
+      categories:['PJ','PNJ','Créature','Horloge','Autre'],
+      templates:[
+        participantTemplate('tpl-pj-standard','PJ standard','PJ',findDemoParticipant(genericScene,'pj-test')),
+        participantTemplate('tpl-opposant-arme','PNJ armé','PNJ',findDemoParticipant(genericScene,'pnj-arme')),
+        participantTemplate('tpl-creature-vive','Créature vive','Créature',findDemoParticipant(genericScene,'creature-vive')),
+        participantTemplate('tpl-sentinelle','Sentinelle','PNJ',findDemoParticipant(trackerScene,'sentinelle')),
+      ].filter(Boolean),
+      trackerTemplates:[
+        trackerTemplate('ttpl-pv','PV',findDemoTracker(genericScene,'pj-test','pv-pj')),
+        trackerTemplate('ttpl-focus','Focus',findDemoTracker(genericScene,'pj-test','focus-pj')),
+        trackerTemplate('ttpl-charges','Charges',findDemoTracker(trackerScene,'artificier','charges')),
+        trackerTemplate('ttpl-cases','Blessures détaillées',findDemoTracker(trackerScene,'cartographe','blessures-detaillees-cases')),
+        trackerTemplate('ttpl-clock','Propagation',findDemoTracker(globalClockScene,'officiant','pv-officiant')||findDemoTracker(genericScene,'danger-scene','danger-clock')),
+      ].filter(Boolean),
+      statusTemplates:[
+        {id:'stpl-surpris',name:'Surpris',createdAt:'demo',status:{name:'Surpris',duration:1,remaining:1,loop:false,inactive:false,limited:true,advanceOn:'activation',expired:false}},
+        {id:'stpl-couvert',name:'À couvert',createdAt:'demo',status:{name:'À couvert',duration:2,remaining:2,loop:false,inactive:false,limited:false,advanceOn:'activation',expired:false}},
+      ],
+      sceneStatusTemplates:[
+        {id:'sstpl-brouillard',name:'Brouillard',createdAt:'demo',status:{name:'Brouillard',duration:3,remaining:3,loop:false,inactive:false,limited:false,advanceOn:'round',expired:false}},
+        {id:'sstpl-alarme',name:'Alarme active',createdAt:'demo',status:{name:'Alarme active',duration:2,remaining:2,loop:false,inactive:false,limited:false,advanceOn:'round',expired:false}},
+      ],
+      sceneCounterTemplates:[
+        sceneCounterTemplate('sctpl-alerte','Alerte',globalCounterScene?.globalTracker),
+        sceneCounterTemplate('sctpl-rituel','Rituel',globalClockScene?.globalTracker),
+        sceneCounterTemplate('sctpl-minuteur','Minuteur',globalTimerScene?.globalTracker),
+      ].filter(Boolean),
+      ruleTemplates:[],
+    },
+  });
+}
+function makeEmptyDefaultCampaign(){
+  const rules = {
+    temporalite: temporalityModes.CLASSIC,
+    startRound: 0,
+    declarationMode: false,
+    multipleActionSlots: false,
+  };
+
+  return demoCampaign('campagne-cadence', 'Campagne Cadence', {
+    initiativeRules: rules,
+    scenes: [demoScene('scene-initiale', 'Nouvelle scène', { type: 'Scène' })],
+  });
+}
+
+export function makeDefaultCampaign(){ return enrichDefaultCampaign(makeEmptyDefaultCampaign()); }

@@ -1,0 +1,16 @@
+{
+  "id": "generiques/initiative-souple-ordonnee",
+  "name": "Initiative souple ordonnée",
+  "family": "generic",
+  "category": "Générique",
+  "description": "Mode souple avec ordre d’initiative conservé pour guider la table.",
+  "rules": {
+    "temporalite": "souple",
+    "flexibleUseInitiative": true,
+    "initiativeOrder": "desc",
+    "tiebreakerVisible": false,
+    "equalityRule": "never",
+    "multipleActionMode": "none",
+    "declarationMode": false
+  }
+}

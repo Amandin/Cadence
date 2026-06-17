@@ -1,0 +1,15 @@
+{
+  "id": "systemes/d20-boss-mythique",
+  "name": "d20 boss / mythique",
+  "family": "system",
+  "system": "d20 tactique",
+  "category": "Système",
+  "description": "Boss, monstres légendaires, règles mythiques, solos renforcés.",
+  "rules": {
+    "temporalite": "classique",
+    "initiativeOrder": "desc",
+    "tiebreakerVisible": true,
+    "equalityRule": "strict",
+    "multipleActionMode": "manual"
+  }
+}

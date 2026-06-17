@@ -1,5 +1,6 @@
 import React from 'react';
 import { STORAGE_KEY } from '../constants.js';
+import { t } from '../i18n/index.js';
 
 export class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -19,6 +20,6 @@ export class ErrorBoundary extends React.Component {
   render() {
     if (!this.state.error) return this.props.children;
 
-    return <div className="app"><div className="shell"><div className="sheet" style={{ marginTop: 24 }}><h1>Cadence a rencontré une erreur</h1><p className="muted">L’interface a été interrompue au lieu de continuer sur un état incohérent.</p><pre className="error-box">{this.state.error?.message || 'Erreur inconnue'}</pre><div className="grid2"><button className="primary" onClick={() => window.location.reload()}>Recharger</button><button className="danger-btn" onClick={this.resetLocalData}>Réinitialiser les données locales</button></div></div></div></div>;
+    return <div className="app"><div className="shell"><div className="sheet" style={{ marginTop: 24 }}><h1>{t('errors.title')}</h1><p className="muted">{t('errors.description')}</p><pre className="error-box">{this.state.error?.message || t('errors.unknown')}</pre><div className="grid2"><button className="primary" onClick={() => window.location.reload()}>{t('errors.reload')}</button><button className="danger-btn" onClick={this.resetLocalData}>{t('errors.resetLocalData')}</button></div></div></div></div>;
   }
 }

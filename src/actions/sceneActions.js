@@ -10,7 +10,7 @@ import { appliquerCoutInitiative, appliquerDebutNouveauRoundCout, premierCreneau
 import { advanceReserveParticipantRound, arreterTempsReelScene, demarrerTempsReelScene, effacerEtatsParticipant, resetSuivisParticipant, tickSceneRoundStatuses, triggerActivationScene, untickSceneRoundStatuses } from './sceneAutomation.js';
 import { actionSlotsDepuisInitiatives, addPreInitiativeRestorePoint, addRestorePoint, createBlankParticipant, initiativesRenseignees, optionsTri, placerEnReserve, valeurInitiativeRenseignee } from './sceneSupport.js';
 import { appliquerSurpriseInitiale, roundDepart } from './sceneSurprise.js';
-import { depilerRetourTour, empilerRetourTour, restaurerDepuisHistorique } from './sceneTurnHistory.js';
+import { depilerRetourAction, empilerRetourAction, restaurerDepuisHistorique } from './sceneTurnHistory.js';
 import {
   appliquerDebutNouveauRound,
   appliquerNouveauRoundPhases,
@@ -23,7 +23,7 @@ import {
   phaseSuivanteDisponible,
   premierePhaseDisponible,
   premierParticipantPhase,
-  trouverTourActifParInitiative,
+  trouverActivationActiveParInitiative,
 } from './tempoState.js';
 
 function modifierParticipantDansScene(scene, participantId, updater) {
@@ -32,7 +32,7 @@ function modifierParticipantDansScene(scene, participantId, updater) {
   const activeSlot = slots.find((slot) => slot.actionSlotId === scene.activeSlotId) || slots.find((slot) => slot.id === scene.activeId);
   const { activeId, activeSlotId, nouveauRound } = estModeSouple(scene) || estModePhases(scene)
     ? { activeId: scene.activeId, activeSlotId: scene.activeSlotId || '', nouveauRound: false }
-    : trouverTourActifParInitiative(scene, participants);
+    : trouverActivationActiveParInitiative(scene, participants);
   const sceneSuivante = {
     ...scene,
     participants,
@@ -302,7 +302,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
         const sceneAvecInitiatives = appliquerInitiativesRenseignees(sceneReglesCourantes, valuesById, departagesById);
         const nextScene = demarrerScene(appliquerSurpriseInitiale(sceneAvecInitiatives, surprisedIds));
         if (nextScene.round >= 0) setRestorePoints((points) => addStartRestorePoints(points, s, nextScene));
-        return empilerRetourTour(s, nextScene);
+        return empilerRetourAction(s, nextScene);
       });
     },
     updateDeclaration(participantId, value) {
@@ -327,7 +327,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
         const activeId = estModeSouple(sceneAvecMode) ? '' : estModePhases(sceneAvecMode) ? premierParticipantPhase(sceneAvecMode) : premierCreneau?.id || '';
         const activeSlotId = estModeSouple(sceneAvecMode) || estModePhases(sceneAvecMode) ? '' : premierCreneau?.actionSlotId || '';
         const nextScene = { ...sceneAvecMode, activeId, activeSlotId };
-        return empilerRetourTour(s, {
+        return empilerRetourAction(s, {
           ...nextScene,
           participants: (nextScene.participants || []).map((participant) => triggerActivationScene(nextScene, participant, nextScene.activeId)),
         });
@@ -355,7 +355,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
       updateScene((s) => {
         const { scene: sceneAvecJoue, slotId } = ajouterJoueSouple(s, participantId);
         if (!slotId) return s;
-        return empilerRetourTour(s, {
+        return empilerRetourAction(s, {
           ...marquerDeclarationJoue(sceneAvecJoue, participantId),
           activeId: participantId,
           activeSlotId: slotId || '',
@@ -374,7 +374,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
     },
     undoFlexibleTurn() {
       updateScene((s) => {
-        const precedente = depilerRetourTour(s);
+        const precedente = depilerRetourAction(s);
         if (precedente) return precedente;
         const nextScene = annulerDernierJoueSouple(s);
         return retirerDeclarationJoue(nextScene, nextScene.activeId);
@@ -411,7 +411,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
         if (s.round < 0) {
           const nextScene = demarrerScene(s);
           if (nextScene.round >= 0) setRestorePoints((points) => addStartRestorePoints(points, s, nextScene));
-          return empilerRetourTour(s, nextScene);
+          return empilerRetourAction(s, nextScene);
         }
         const sceneDeBase = s;
         const premierCreneau = premierCreneauClassique(sceneDeBase.participants || [], optionsTri(sceneDeBase));
@@ -424,7 +424,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
               : appliquerDebutNouveauRound(sceneDeBase, premierCreneau?.id || sceneDeBase.activeId || '');
         const nextSceneAvecDeclaration = reinitialiserDeclarationRound(nextScene);
         setRestorePoints((points) => addRestorePoint(points, s.id, nextSceneAvecDeclaration));
-        return empilerRetourTour(s, nextSceneAvecDeclaration);
+        return empilerRetourAction(s, nextSceneAvecDeclaration);
       });
     },
     changeRoundNumber(delta = -1) {
@@ -433,7 +433,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
         if (s.round < 0) return s;
         const round = Math.max(0, Number(s.round || 0) + Number(delta || 0));
         if (round === s.round) return s;
-        return empilerRetourTour(s, { ...s, round });
+        return empilerRetourAction(s, { ...s, round });
       });
     },
     changeRoundNumberWithAutomations(delta = 1, options = {}) {
@@ -450,16 +450,16 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
             ? avancerTousLesAutomatismes(sceneAvecRound)
             : reculerTousLesAutomatismes(sceneAvecRound)
           : sceneAvecRound;
-        return empilerRetourTour(s, nextScene);
+        return empilerRetourAction(s, nextScene);
       });
     },
     advanceAllAutomations() {
       setRoundEffect(null);
-      updateScene((s) => empilerRetourTour(s, avancerTousLesAutomatismes(s)));
+      updateScene((s) => empilerRetourAction(s, avancerTousLesAutomatismes(s)));
     },
     rewindAllAutomations() {
       setRoundEffect(null);
-      updateScene((s) => empilerRetourTour(s, reculerTousLesAutomatismes(s)));
+      updateScene((s) => empilerRetourAction(s, reculerTousLesAutomatismes(s)));
     },
     advanceReserveRound() {
       updateScene((s) => ({
@@ -520,7 +520,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
     nextTurn(direction = 1) {
       if (direction < 0 && Array.isArray(scene._turnHistory) && scene._turnHistory.length > 0) {
         setRoundEffect(null);
-        updateScene((s) => depilerRetourTour(s) || s);
+        updateScene((s) => depilerRetourAction(s) || s);
         return;
       }
 
@@ -529,7 +529,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
         updateScene((s) => {
           const nextScene = demarrerScene(s);
           if (nextScene.round >= 0) setRestorePoints((points) => addStartRestorePoints(points, s, nextScene));
-          return empilerRetourTour(s, nextScene);
+          return empilerRetourAction(s, nextScene);
         });
         return;
       }
@@ -552,7 +552,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
           updateScene((s) => {
             const nextScene = reinitialiserDeclarationRound(appliquerNouveauRoundSouple(s));
             setRestorePoints((points) => addRestorePoint(points, s.id, nextScene));
-            return empilerRetourTour(s, nextScene);
+            return empilerRetourAction(s, nextScene);
           });
         }
         return;
@@ -572,7 +572,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
             const nextParticipants = participantsPhase({ ...s, phase });
             const activeId = nextParticipants[0]?.id || '';
             const nextScene = marquerDeclarationJoue({ ...s, phase, activeId, activeSlotId: '', participants: (s.participants || []).map((participant) => triggerActivationScene(s, participant, activeId)) }, s.activeId);
-            return empilerRetourTour(s, nextScene);
+            return empilerRetourAction(s, nextScene);
           });
         };
         if (!phaseParticipants.length) {
@@ -595,7 +595,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
         const nextIndex = effectiveCurrentIndex + 1;
         if (nextIndex < phaseParticipants.length) {
           setRoundEffect(null);
-          updateScene((s) => empilerRetourTour(s, marquerDeclarationJoue({ ...s, activeId: phaseParticipants[nextIndex].id, activeSlotId: '', participants: (s.participants || []).map((participant) => triggerActivationScene(s, participant, phaseParticipants[nextIndex].id)) }, s.activeId)));
+          updateScene((s) => empilerRetourAction(s, marquerDeclarationJoue({ ...s, activeId: phaseParticipants[nextIndex].id, activeSlotId: '', participants: (s.participants || []).map((participant) => triggerActivationScene(s, participant, phaseParticipants[nextIndex].id)) }, s.activeId)));
           return;
         }
         if (blocked.length) return;
@@ -607,7 +607,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
         updateScene((s) => {
           const nextScene = reinitialiserDeclarationRound(appliquerNouveauRoundPhases(s));
           setRestorePoints((points) => addRestorePoint(points, s.id, nextScene));
-          return empilerRetourTour(s, nextScene);
+          return empilerRetourAction(s, nextScene);
         });
         return;
       }
@@ -617,7 +617,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
         updateScene((s) => {
           const nextScene = reinitialiserDeclarationRound(appliquerDebutNouveauRoundCout(s));
           setRestorePoints((points) => addRestorePoint(points, s.id, nextScene));
-          return empilerRetourTour(s, nextScene);
+          return empilerRetourAction(s, nextScene);
         });
         return;
       }
@@ -682,7 +682,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
         const nextScene = roundDelta > 0 ? reinitialiserDeclarationRound(nextSceneBase) : marquerDeclarationJoue(nextSceneBase, slots[currentIndex].id);
 
         if (roundDelta > 0) setRestorePoints((points) => addRestorePoint(points, s.id, nextScene));
-        return empilerRetourTour(s, nextScene);
+        return empilerRetourAction(s, nextScene);
       });
     },
     applyInitiativeCost(cost = null) {
@@ -695,7 +695,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
           setRoundEffect('next');
           setRestorePoints((points) => addRestorePoint(points, s.id, sceneApresCout));
         }
-        return empilerRetourTour(s, sceneApresCout);
+        return empilerRetourAction(s, sceneApresCout);
       });
     },
     leaveInit(id) {
@@ -718,7 +718,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
         if (!participant) return s;
         const slot = ordreCreneauxClassique(s.participants || [], optionsTri(s)).find((item) => item.id === id);
         const sceneActive = { ...s, activeId: id, activeSlotId: estModePhases(s) ? '' : slot?.actionSlotId || '' };
-        return empilerRetourTour(s, {
+        return empilerRetourAction(s, {
           ...sceneActive,
           participants: sceneActive.participants.map((item) => triggerActivationScene(sceneActive, item, id)),
         });

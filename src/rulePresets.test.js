@@ -3,19 +3,65 @@ import { rulePresetCatalog } from './rulePresets.js';
 import { normalizeTemplateStore } from './templates.js';
 
 describe('rule preset catalog', () => {
-  it('loads rule presets from .cadence-rules files in nested folders', () => {
+  it('loads only the expected initiative preset catalog entries', () => {
     const ids = rulePresetCatalog.map((preset) => preset.catalogId);
 
-    expect(ids).toContain('cadence/classique-numerique');
-    expect(ids).toContain('phases/cochees');
-    expect(ids).toContain('generiques/initiative-cartes');
+    expect(ids).toEqual([
+      'generiques/classique',
+      'generiques/declaration-puis-resolution',
+      'generiques/initiative-a-cout',
+      'generiques/initiative-souple-ordonnee',
+      'generiques/initiative-souple-sans-initiative',
+      'generiques/phases-cochees',
+      'generiques/phases-par-initiative',
+      'systemes/appel-de-cthulhu-7e',
+      'systemes/cosmere-rpg',
+      'systemes/d20-tactique-dd-pathfinder',
+      'systemes/d20-boss-mythique',
+      'systemes/narratif-sans-initiative-pbta-vtm',
+      'systemes/savage-worlds',
+      'systemes/shadowrun-5',
+    ]);
+
     expect(rulePresetCatalog.every((preset) => preset.readOnly)).toBe(true);
     expect(rulePresetCatalog.every((preset) => preset.path.endsWith('.cadence-rules'))).toBe(true);
+  });
+
+  it('keeps generic and system metadata aligned with the visible catalog', () => {
+    const classic = rulePresetCatalog.find((preset) => preset.catalogId === 'generiques/classique');
+    const d20 = rulePresetCatalog.find((preset) => preset.catalogId === 'systemes/d20-tactique-dd-pathfinder');
+    const cosmere = rulePresetCatalog.find((preset) => preset.catalogId === 'systemes/cosmere-rpg');
+
+    expect(classic).toMatchObject({
+      family: 'generic',
+      category: 'Générique',
+      name: 'Classique',
+    });
+    expect(d20).toMatchObject({
+      family: 'system',
+      category: 'Système',
+      system: 'D&D / Pathfinder',
+    });
+    expect(cosmere?.rules).toMatchObject({
+      phaseRerollEachRound: true,
+      initiativeOrder: 'desc',
+      tiebreakerVisible: false,
+      equalityRule: 'never',
+    });
+    expect(cosmere?.rules.initiativeTextOrder).toMatchObject({
+      enabled: true,
+      parts: [{ label: 'Vitesse', values: ['Rapide', 'Lent'] }],
+    });
   });
 
   it('keeps built-in rule presets out of the campaign template store', () => {
     const store = normalizeTemplateStore(null);
 
     expect(store.ruleTemplates).toEqual([]);
+    expect(store.templates).toEqual([]);
+    expect(store.trackerTemplates).toEqual([]);
+    expect(store.statusTemplates).toEqual([]);
+    expect(store.sceneStatusTemplates).toEqual([]);
+    expect(store.sceneCounterTemplates).toEqual([]);
   });
 });

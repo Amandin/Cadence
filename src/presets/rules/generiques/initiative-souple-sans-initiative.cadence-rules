@@ -1,0 +1,14 @@
+{
+  "id": "generiques/initiative-souple-sans-initiative",
+  "name": "Initiative souple sans initiative",
+  "family": "generic",
+  "category": "Générique",
+  "description": "Ordre libre sans valeur d’initiative individuelle.",
+  "rules": {
+    "temporalite": "souple",
+    "flexibleUseInitiative": false,
+    "declarationMode": false,
+    "multipleActionMode": "none",
+    "categoryOrder": ["PJ", "Opposant", "Allié", "Environnement"]
+  }
+}

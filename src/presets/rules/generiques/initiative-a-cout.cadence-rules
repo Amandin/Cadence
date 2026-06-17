@@ -1,0 +1,18 @@
+{
+  "id": "generiques/initiative-a-cout",
+  "name": "Initiative à coût",
+  "family": "generic",
+  "category": "Générique",
+  "description": "Chaque action peut générer un nouveau créneau plus bas dans le round.",
+  "rules": {
+    "temporalite": "classique",
+    "initiativeOrder": "desc",
+    "tiebreakerVisible": true,
+    "equalityRule": "strict",
+    "multipleActionMode": "initiative-cost",
+    "initiativeCostThreshold": 0,
+    "initiativeCostQuickCosts": [1, 2, 3, 5],
+    "initiativeCostLimitToCurrent": false,
+    "declarationMode": false
+  }
+}

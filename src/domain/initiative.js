@@ -238,10 +238,6 @@ export function groupesEgaliteParfaite(participants = [], options = {}) {
   return [...groupes.values()].filter((groupe) => groupe.length > 1);
 }
 
-export function idsEgaliteParfaite(participants = [], options = {}) {
-  return new Set(groupesEgaliteParfaite(participants, options).flatMap((groupe) => groupe.map((participant) => participant.id)));
-}
-
 export function groupeEgalitePourParticipant(participants = [], participantId, options = {}) {
   return groupesEgaliteParfaite(participants, options).find((groupe) => groupe.some((participant) => participant.id === participantId)) || [];
 }

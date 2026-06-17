@@ -7,3 +7,7 @@ export function readLocalCampaignPayload(storageKey) {
 export function writeLocalCampaignPayload(storageKey, payload) {
   localStorage.setItem(storageKey, JSON.stringify(payload));
 }
+
+export function removeLocalCampaignPayload(storageKey) {
+  localStorage.removeItem(storageKey);
+}

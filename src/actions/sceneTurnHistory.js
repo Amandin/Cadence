@@ -7,7 +7,7 @@ function sceneSansHistorique(scene = {}) {
   return rest;
 }
 
-export function empilerRetourTour(sceneAvant, sceneApres) {
+export function empilerRetourAction(sceneAvant, sceneApres) {
   const historique = Array.isArray(sceneAvant._turnHistory) ? sceneAvant._turnHistory : [];
   return {
     ...sceneApres,
@@ -15,7 +15,7 @@ export function empilerRetourTour(sceneAvant, sceneApres) {
   };
 }
 
-export function depilerRetourTour(scene) {
+export function depilerRetourAction(scene) {
   const historique = Array.isArray(scene._turnHistory) ? scene._turnHistory : [];
   const precedente = historique.at(-1);
   if (!precedente) return null;

@@ -1,0 +1,15 @@
+{
+  "id": "generiques/classique",
+  "name": "Classique",
+  "family": "generic",
+  "category": "Générique",
+  "description": "Initiative numérique descendante, une action par personnage.",
+  "rules": {
+    "temporalite": "classique",
+    "declarationMode": false,
+    "initiativeOrder": "desc",
+    "tiebreakerVisible": true,
+    "equalityRule": "strict",
+    "multipleActionMode": "none"
+  }
+}

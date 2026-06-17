@@ -1,0 +1,24 @@
+{
+  "id": "systemes/cosmere-rpg",
+  "name": "Cosmere RPG",
+  "family": "system",
+  "system": "Cosmere RPG",
+  "category": "Système",
+  "description": "Choix rapide/lent resaisi à chaque round.",
+  "rules": {
+    "temporalite": "classique",
+    "phaseRerollEachRound": true,
+    "initiativeValueType": "label",
+    "initiativeOrder": "desc",
+    "tiebreakerVisible": false,
+    "equalityRule": "never",
+    "multipleActionMode": "none",
+    "initiativeTextOrder": {
+      "enabled": true,
+      "separator": "",
+      "parts": [
+        { "label": "Vitesse", "values": ["Rapide", "Lent"] }
+      ]
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "id": "systemes/appel-de-cthulhu-7e",
+  "name": "Appel de Cthulhu 7e",
+  "family": "system",
+  "system": "Appel de Cthulhu",
+  "category": "Système",
+  "description": "Action simple et dangereuse, sans départage détaillé.",
+  "rules": {
+    "temporalite": "classique",
+    "initiativeOrder": "desc",
+    "tiebreakerVisible": false,
+    "equalityRule": "never",
+    "multipleActionMode": "none"
+  }
+}

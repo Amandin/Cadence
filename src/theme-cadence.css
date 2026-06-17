@@ -52,8 +52,8 @@ body { background: var(--theme-light-bg); color: var(--theme-light-text); }
   box-shadow: 0 20px 42px rgba(0, 0, 0, .48), inset 0 1px 0 rgba(240, 221, 182, .05);
 }
 
-.muted,.field,.box-label,.line-count-row label,.box-count-row span,.box-level-row span,.box-line-name label { color: var(--theme-light-muted); }
-.dark .muted,.dark .field,.dark .box-label,.dark .line-count-row label,.dark .box-count-row span,.dark .box-level-row span,.dark .box-line-name label { color: var(--theme-dark-muted); }
+.muted,.field,.box-label,.line-count-row label,.box-level-row span { color: var(--theme-light-muted); }
+.dark .muted,.dark .field,.dark .box-label,.dark .line-count-row label,.dark .box-level-row span { color: var(--theme-dark-muted); }
 
 .icon-btn,.small-btn,.controls>button,.clock-inline button:not(.clock-face),.global-mini>button {
   background: var(--theme-light-surface-strong);
@@ -174,12 +174,12 @@ body { background: var(--theme-light-bg); color: var(--theme-light-text); }
 .tracker.triggered { background: rgba(199, 94, 25, .14); border-color: var(--theme-orange); }
 .dark .tracker.triggered { background: rgba(81, 22, 90, .34); border-color: var(--theme-orange); }
 
-.field input,.field textarea,.field select,.tracker-edit-head input,.tracker-edit-head select,.delta-pop input,.box-line-name input,.restore-row select {
+.field input,.field textarea,.field select,.tracker-edit-head input,.tracker-edit-head select,.delta-pop input,.restore-row select {
   background: #fffaf5;
   border-color: rgba(49, 18, 54, .18);
   color: var(--theme-light-text);
 }
-.dark .field input,.dark .field textarea,.dark .field select,.dark .tracker-edit-head input,.dark .tracker-edit-head select,.dark .delta-pop input,.dark .box-line-name input,.dark .restore-row select {
+.dark .field input,.dark .field textarea,.dark .field select,.dark .tracker-edit-head input,.dark .tracker-edit-head select,.dark .delta-pop input,.dark .restore-row select {
   background: #100713;
   border-color: rgba(210, 164, 86, .30);
   color: var(--theme-dark-text);
@@ -263,14 +263,6 @@ body { background: var(--theme-light-bg); color: var(--theme-light-text); }
 .mini-init-counter { display: grid; grid-template-columns: 34px minmax(56px,1fr) 34px; gap: 5px; align-items: center; min-width: 0; padding: 4px; border-radius: 16px; border: 1px solid rgba(49, 18, 54, .14); background: rgba(255, 250, 245, .72); }
 .mini-init-counter.compact-init-display { grid-template-columns: auto 1fr; width: 100%; min-height: 42px; justify-items: center; cursor: pointer; }
 .mini-init-counter.compact-init-display strong { font-size: 20px; }
-.mini-init-counter.multi-init-counter { grid-template-columns: repeat(auto-fit, minmax(64px, 1fr)); width: 100%; margin: 0; align-items: stretch; }
-.mini-init-slot { min-width: 0; }
-.multi-init-counter .editable-init-value { height: auto; min-height: 42px; gap: 2px; padding: 4px 6px; }
-.multi-init-counter .editable-init-value input { height: 26px; padding: 0 4px; }
-.multi-init-counter .close-init-edit { grid-column: 1 / -1; height: 28px; padding: 0 10px; }
-.mini-init-counter .small-btn { min-width: 0; padding: 0; height: 34px; border-radius: 12px; font-size: 16px; }
-.mini-init-counter .init-value,.mini-init-counter input { min-width: 0; width: 100%; height: 34px; padding: 0 4px; display: grid; place-items: center; line-height: 1; border: 0; border-radius: 12px; background: transparent; color: var(--theme-light-text); text-align: center; cursor: pointer; }
-.mini-init-counter input { border: 1px solid rgba(49, 18, 54, .22); background: #fffaf5; font-weight: 900; font-size: 18px; }
 .mini-init-counter small { font-size: 10px; font-weight: 850; color: var(--theme-light-muted); }
 .mini-init-counter strong { font-size: 20px; line-height: .95; position: relative; }
 .init-tiebreak {
@@ -284,8 +276,6 @@ body { background: var(--theme-light-bg); color: var(--theme-light-text); }
   opacity: .82;
 }
 .dark .mini-init-counter { background: rgba(16, 7, 19, .48); border-color: rgba(210, 164, 86, .22); }
-.dark .mini-init-counter .init-value,.dark .mini-init-counter input { color: var(--theme-dark-text); }
-.dark .mini-init-counter input { background: #100713; border-color: rgba(210, 164, 86, .32); }
 .dark .mini-init-counter small { color: var(--theme-dark-muted); }
 .restore-row.discreet {
   padding: 6px 8px;

@@ -22,7 +22,7 @@ export function FenetreCoutInitiative({ participant, quickCosts, threshold, limi
           <span>{t('initiativeCost.current')}</span>
           <strong>{Number.isFinite(initiative) ? participant.initiative : '-'}</strong>
         </div>
-        <p className="muted compact-help">{t('initiativeCost.help', { name: participant?.name || 'ce personnage', threshold: seuil })}</p>
+        <p className="muted compact-help">{t('initiativeCost.help', { name: participant?.name || t('initiativeCost.defaultParticipant'), threshold: seuil })}</p>
         {coutMax != null && <p className="rule-option-note">{t('initiativeCost.maxRule', { max: coutMax })}</p>}
         <div className="choice-row initiative-cost-quick-row">
           {costs.map((cost) => <button className="choice" type="button" key={cost} disabled={!coutAutorise(cost)} onClick={() => onValider(cost)}>{cost}</button>)}

@@ -118,4 +118,20 @@ describe('campaign actions export/import', () => {
     expect(calls.setScenes).not.toHaveBeenCalled();
     expect(calls.setDark).not.toHaveBeenCalled();
   });
+
+  it('loads the explicit test campaign with several scenes and templates', () => {
+    const { actions, state, calls } = createHarness();
+
+    actions.loadTestCampaign();
+
+    expect(calls.setCampaignRules).toHaveBeenCalled();
+    expect(calls.setScenes).toHaveBeenCalled();
+    expect(calls.setTemplateStore).toHaveBeenCalled();
+    expect(calls.setCampaignNameState).toHaveBeenCalledWith('Campagne de test');
+    expect(calls.setSceneIndex).toHaveBeenCalledWith(0);
+    expect(state().scenes.length).toBeGreaterThan(1);
+    expect(state().templates.templates.length).toBeGreaterThan(0);
+    expect(state().templates.trackerTemplates.length).toBeGreaterThan(0);
+    expect(state().templates.sceneCounterTemplates.length).toBeGreaterThan(0);
+  });
 });

@@ -1,0 +1,16 @@
+{
+  "id": "systemes/d20-tactique-dd-pathfinder",
+  "name": "d20 tactique — D&D / Pathfinder",
+  "family": "system",
+  "system": "D&D / Pathfinder",
+  "category": "Système",
+  "description": "D&D, Pathfinder et jeux d20 tactiques proches.",
+  "rules": {
+    "temporalite": "classique",
+    "declarationMode": false,
+    "initiativeOrder": "desc",
+    "tiebreakerVisible": true,
+    "equalityRule": "strict",
+    "multipleActionMode": "none"
+  }
+}

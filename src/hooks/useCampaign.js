@@ -1,15 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { createCampaignActions } from '../actions/campaignActions.js';
+import { createBlankScene, createCampaignActions } from '../actions/campaignActions.js';
 import { createSceneActions } from '../actions/sceneActions.js';
 import { createRestorePoint, pruneRestorePoints } from '../actions/sceneSupport.js';
-import { defaultCategoryOrder, defaultEqualityRule, defaultInitiativeOrder } from '../constants.js';
+import { STORAGE_KEY, defaultCategoryOrder, defaultEqualityRule, defaultInitiativeOrder } from '../constants.js';
 import { applyInitiativeRules, campaignRulesFromPayload, normalizeCampaignRules, unifyCampaignScenes } from '../domain/campaignRules.js';
 import { normalizeGlobalTracker, stepGlobalTracker } from '../domain/globalTracker.js';
+import { hasCompletedFirstRunOnboarding, markFirstRunOnboardingComplete, resetFirstRunOnboarding, shouldShowFirstRunOnboarding } from '../firstRunOnboarding.js';
 import { normaliserCreneauxAction, trierParInitiative } from '../domain/initiative.js';
 import { isManualMultipleActionMode, rulesAllowMultipleSlots } from '../domain/initiativeCost.js';
-import { hasTriggeredClock, nextTurnInfo } from '../logic.js';
-import { campaignNameFromPayload, campaignTemplatesFromPayload, loadCampaign, normalizeCampaignPayload, normalizeCampaignScene, normalizeCampaignScenes, saveCampaign, serializeCampaign } from '../storage.js';
-import { campaignEntryFromPayload, copiedCampaignNames, demoCampaignEntries, readCadenceFile, scanCampaignDirectory, writeCadenceFile } from './campaignFilePersistence.js';
+import { hasTriggeredClock, makeTestCampaign, nextTurnInfo } from '../logic.js';
+import { createRulePresetSnapshot } from '../rulePresets.js';
+import { DEFAULT_CAMPAIGN_NAME, campaignNameFromPayload, campaignTemplatesFromPayload, createCampaignPayload, loadCampaign, normalizeCampaignPayload, normalizeCampaignScene, normalizeCampaignScenes, rulePresetSnapshotFromPayload, saveCampaign, serializeCampaign } from '../storage.js';
+import { removeLocalCampaignPayload } from '../localCampaignStorage.js';
+import { campaignEntryFromPayload, copiedCampaignNames, readCadenceFile, scanCampaignDirectory, writeCadenceFile } from './campaignFilePersistence.js';
 
 const SCENE_INDEX_STORAGE_KEY = 'cadence:interface:scene-index:v1';
 const THEME_STORAGE_KEY = 'cadence:interface:dark:v1';
@@ -73,8 +76,11 @@ function participantAvecInitiativeAjustee(participant, valeur, slotId, options) 
 
 export function useCampaign() {
   const [initialCampaign] = useState(loadCampaign);
+  const [firstRunOnboardingNeeded, setFirstRunOnboardingNeeded] = useState(() => shouldShowFirstRunOnboarding());
+  const [persistenceEnabled, setPersistenceEnabled] = useState(() => !shouldShowFirstRunOnboarding());
   const initialEntry = campaignEntryFromPayload(initialCampaign, { source: 'locale' });
   const [campaignRules, setCampaignRules] = useState(() => normalizeCampaignRules(campaignRulesFromPayload(initialCampaign)));
+  const [rulePresetSnapshot, setRulePresetSnapshot] = useState(() => rulePresetSnapshotFromPayload(initialCampaign, campaignRulesFromPayload(initialCampaign)));
   const [scenes, setScenes] = useState(() => normalizeScenesWithCampaignRules(initialCampaign.scenes, campaignRulesFromPayload(initialCampaign)));
   const [templateStore, setTemplateStore] = useState(() => campaignTemplatesFromPayload(initialCampaign));
   const [campaignName, setCampaignName] = useState(() => campaignNameFromPayload(initialCampaign));
@@ -82,11 +88,7 @@ export function useCampaign() {
   const [restorePoints, setRestorePoints] = useState(() => initialRestorePoints(initialCampaign.scenes));
   const [dark, setDark] = useState(() => storedThemePreference() ?? devicePrefersDark());
   const [roundEffect, setRoundEffect] = useState(null);
-  const [campaignEntries, setCampaignEntries] = useState(() => {
-    const demos = demoCampaignEntries();
-    const withoutInitial = demos.filter((entry) => entry.id !== initialEntry.id);
-    return [initialEntry, ...withoutInitial];
-  });
+  const [campaignEntries, setCampaignEntries] = useState(() => [initialEntry]);
   const [activeCampaignEntryId, setActiveCampaignEntryId] = useState(initialEntry.id);
   const [pendingFileChoice, setPendingFileChoice] = useState(null);
   const [fileSaveStatus, setFileSaveStatus] = useState(() => ({ mode: 'local', message: 'Sauvegarde locale active.' }));
@@ -116,15 +118,16 @@ export function useCampaign() {
   }, [sceneIndex]);
 
   useEffect(() => {
-    const signature = JSON.stringify({ scenes: syncedScenes, campaignName, templateStore, campaignRules, activeCampaignEntryId });
+    if (!persistenceEnabled) return undefined;
+    const signature = JSON.stringify({ scenes: syncedScenes, campaignName, templateStore, campaignRules, rulePresetSnapshot, activeCampaignEntryId });
     if (signature === lastPersistenceSignatureRef.current) return undefined;
     lastPersistenceSignatureRef.current = signature;
 
     const activeEntry = campaignEntriesRef.current.find((entry) => entry.id === activeCampaignEntryIdRef.current);
     const meta = activeEntry ? { id: activeEntry.id, name: campaignName, fileName: activeEntry.fileName, folderName: activeEntry.folderName } : {};
-    const content = serializeCampaign(syncedScenes, dark, campaignName, templateStore, campaignRules, meta);
+    const content = serializeCampaign(syncedScenes, dark, campaignName, templateStore, campaignRules, rulePresetSnapshot, meta);
     const snapshot = JSON.parse(content);
-    saveCampaign(syncedScenes, dark, campaignName, templateStore, campaignRules, meta);
+    saveCampaign(syncedScenes, dark, campaignName, templateStore, campaignRules, rulePresetSnapshot, meta);
 
     setCampaignEntries((entries) => entries.map((entry) => entry.id === activeCampaignEntryIdRef.current
       ? { ...entry, name: campaignName, fileName: snapshot.campaign.fileName, folderName: snapshot.campaign.folderName, updatedAt: snapshot.savedAt, snapshot }
@@ -142,7 +145,7 @@ export function useCampaign() {
       }
     }, 650);
     return () => window.clearTimeout(timer);
-  }, [syncedScenes, campaignName, templateStore, campaignRules, activeCampaignEntryId]);
+  }, [syncedScenes, campaignName, templateStore, campaignRules, rulePresetSnapshot, activeCampaignEntryId, persistenceEnabled]);
 
   useEffect(() => {
     try {
@@ -161,11 +164,12 @@ export function useCampaign() {
   }, []);
 
   const sceneActions = useMemo(() => createSceneActions({ scene, sceneIndex, blocked, restorePoints, setScenes, setRestorePoints, setRoundEffect }), [blocked, scene, restorePoints, sceneIndex]);
-  const campaignActions = useMemo(() => createCampaignActions({ scenes: syncedScenes, campaignRules, setCampaignRules, sceneIndex, dark, campaignName, templateStore, setScenes, setSceneIndex, setDark, setCampaignNameState: setCampaignName, setTemplateStore }), [campaignName, campaignRules, dark, sceneIndex, syncedScenes, templateStore]);
+  const campaignActions = useMemo(() => createCampaignActions({ scenes: syncedScenes, campaignRules, rulePresetSnapshot, setCampaignRules, setRulePresetSnapshot, sceneIndex, dark, campaignName, templateStore, setScenes, setSceneIndex, setDark, setCampaignNameState: setCampaignName, setTemplateStore }), [campaignName, campaignRules, rulePresetSnapshot, dark, sceneIndex, syncedScenes, templateStore]);
 
   const loadCampaignIntoState = (payload) => {
     const campaign = normalizeCampaignPayload(payload);
     setCampaignRules(campaign.initiativeRules);
+    setRulePresetSnapshot(campaign.rulePresetSnapshot || null);
     setScenes(campaign.scenes);
     setCampaignName(campaignNameFromPayload(campaign));
     setTemplateStore(campaignTemplatesFromPayload(campaign));
@@ -181,6 +185,7 @@ export function useCampaign() {
     name,
     templateStore,
     campaignRules,
+    rulePresetSnapshot,
     entry ? { id: entry.id, name, fileName: entry.fileName, folderName: entry.folderName } : {},
   );
 
@@ -308,15 +313,77 @@ export function useCampaign() {
       setPendingFileChoice(null);
       setFileSaveStatus({ mode: 'local', message: 'Campagne chargee sans fichier lie.' });
     },
-    resetDemo() {
-      const entries = demoCampaignEntries();
+    startFirstRunCampaign(preset) {
+      if (!preset?.rules) return { ok: false, message: 'Preset introuvable.' };
+      const nextRules = normalizeCampaignRules(preset.rules);
+      const blankScene = createBlankScene(nextRules);
+      const snapshot = createCampaignPayload([blankScene], dark, DEFAULT_CAMPAIGN_NAME, templateStore, nextRules, createRulePresetSnapshot(preset, nextRules));
+      const entry = campaignEntryFromPayload(snapshot, { source: 'local' });
+      setCampaignRules(nextRules);
+      setRulePresetSnapshot(snapshot.rulePresetSnapshot || null);
+      setScenes([blankScene]);
+      setCampaignName(DEFAULT_CAMPAIGN_NAME);
+      setSceneIndex(0);
+      setRestorePoints(initialRestorePoints([blankScene]));
+      setCampaignEntries([entry]);
+      setActiveCampaignEntryId(entry.id);
+      setPendingFileChoice(null);
+      setFileSaveStatus({ mode: 'local', message: 'Sauvegarde locale active.' });
+      setRoundEffect(null);
+      lastPersistenceSignatureRef.current = '';
+      if (!hasCompletedFirstRunOnboarding()) markFirstRunOnboardingComplete();
+      setFirstRunOnboardingNeeded(false);
+      setPersistenceEnabled(true);
+      return { ok: true };
+    },
+    startFirstRunCustomCampaign() {
+      const nextRules = normalizeCampaignRules(campaignRules);
+      const blankScene = createBlankScene(nextRules);
+      const snapshot = createCampaignPayload([blankScene], dark, DEFAULT_CAMPAIGN_NAME, templateStore, nextRules, null);
+      const entry = campaignEntryFromPayload(snapshot, { source: 'local' });
+      setCampaignRules(nextRules);
+      setRulePresetSnapshot(null);
+      setScenes([blankScene]);
+      setCampaignName(DEFAULT_CAMPAIGN_NAME);
+      setSceneIndex(0);
+      setRestorePoints(initialRestorePoints([blankScene]));
+      setCampaignEntries([entry]);
+      setActiveCampaignEntryId(entry.id);
+      setPendingFileChoice(null);
+      setFileSaveStatus({ mode: 'local', message: 'Sauvegarde locale active.' });
+      setRoundEffect(null);
+      lastPersistenceSignatureRef.current = '';
+      if (!hasCompletedFirstRunOnboarding()) markFirstRunOnboardingComplete();
+      setFirstRunOnboardingNeeded(false);
+      setPersistenceEnabled(true);
+      return { ok: true };
+    },
+    loadTestCampaign() {
+      const snapshot = normalizeCampaignPayload(makeTestCampaign());
+      const entry = campaignEntryFromPayload(snapshot, { source: 'local' });
+      setCampaignEntries((entries) => [entry, ...entries.filter((item) => item.id !== entry.id)]);
+      setActiveCampaignEntryId(entry.id);
+      loadCampaignIntoState(snapshot);
+      setPendingFileChoice(null);
+      setFileSaveStatus({ mode: 'local', message: 'Campagne de test chargée en sauvegarde locale.' });
+      setRoundEffect(null);
+      lastPersistenceSignatureRef.current = '';
+      setFirstRunOnboardingNeeded(false);
+      setPersistenceEnabled(true);
+      return { ok: true, campaign: snapshot };
+    },
+    resetCadence() {
       fileHandlesRef.current.clear();
       campaignDirectoryHandleRef.current = null;
-      setCampaignEntries(entries);
-      setActiveCampaignEntryId(entries[0].id);
-      loadCampaignIntoState(entries[0].snapshot);
+      removeLocalCampaignPayload(STORAGE_KEY);
+      resetFirstRunOnboarding();
+      setCampaignEntries([]);
+      setActiveCampaignEntryId('');
       setPendingFileChoice(null);
-      setFileSaveStatus({ mode: 'local', message: 'Campagnes de demo rechargees.' });
+      setFileSaveStatus({ mode: 'local', message: 'Cadence a été réinitialisé.' });
+      setFirstRunOnboardingNeeded(true);
+      setPersistenceEnabled(false);
+      lastPersistenceSignatureRef.current = '';
     },
   }), [campaignName, campaignRules, dark, pendingFileChoice, syncedScenes, templateStore]);
 
@@ -345,6 +412,7 @@ export function useCampaign() {
   return {
     scenes: syncedScenes,
     campaignRules,
+    rulePresetSnapshot,
     templateStore,
     setTemplateStore,
     campaignName,
@@ -361,6 +429,7 @@ export function useCampaign() {
     nextStartsRound,
     nextClass,
     roundEffect,
+    firstRunOnboardingNeeded,
     actions: {
       ...sceneActions,
       ...campaignActions,

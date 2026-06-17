@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { defaultTiebreakerLabel, multipleActionModes } from '../constants.js';
 import { applyInitiativeRules, normalizeCampaignRules } from './campaignRules.js';
+import { rulePresetCatalog } from '../rulePresets.js';
 
 describe('campaign rules', () => {
   it('keeps tiebreaker display settings and custom priority types', () => {
@@ -135,5 +136,78 @@ describe('campaign rules', () => {
       multipleActionMode: multipleActionModes.MANUAL,
       multipleActionSlots: true,
     });
+  });
+
+  it('keeps initiative cost preset options through normalization', () => {
+    const preset = rulePresetCatalog.find((item) => item.catalogId === 'generiques/initiative-a-cout');
+
+    expect(normalizeCampaignRules(preset?.rules)).toMatchObject({
+      temporalite: 'classique',
+      initiativeOrder: 'desc',
+      tiebreakerVisible: true,
+      equalityRule: 'strict',
+      multipleActionMode: multipleActionModes.INITIATIVE_COST,
+      multipleActionSlots: true,
+      initiativeCostThreshold: 0,
+      initiativeCostQuickCosts: [1, 2, 3, 5],
+      initiativeCostLimitToCurrent: false,
+      declarationMode: false,
+    });
+  });
+
+  it('keeps initiative text presets through normalization', () => {
+    const savage = rulePresetCatalog.find((item) => item.catalogId === 'systemes/savage-worlds');
+    const cosmere = rulePresetCatalog.find((item) => item.catalogId === 'systemes/cosmere-rpg');
+
+    expect(normalizeCampaignRules(savage?.rules)).toMatchObject({
+      initiativeOrder: 'desc',
+      tiebreakerVisible: false,
+      equalityRule: 'never',
+      initiativeValueType: 'label',
+    });
+    expect(normalizeCampaignRules(savage?.rules).initiativeTextOrder).toMatchObject({
+      enabled: true,
+      preset: 'cards',
+      parts: [
+        { label: 'Valeur' },
+        { label: 'Couleur' },
+      ],
+    });
+
+    expect(normalizeCampaignRules(cosmere?.rules)).toMatchObject({
+      phaseRerollEachRound: true,
+      initiativeValueType: 'label',
+      tiebreakerVisible: false,
+      equalityRule: 'never',
+    });
+    expect(normalizeCampaignRules(cosmere?.rules).initiativeTextOrder).toMatchObject({
+      enabled: true,
+      parts: [{ label: 'Vitesse', values: ['Rapide', 'Lent'] }],
+    });
+  });
+
+  it('applies a preset without breaking an existing scene', () => {
+    const preset = rulePresetCatalog.find((item) => item.catalogId === 'generiques/phases-par-initiative');
+    const scene = applyInitiativeRules({
+      round: 2,
+      phase: 1,
+      participants: [{ id: 'pj-1', name: 'Ariane', initiative: 18, statuses: [], trackers: [] }],
+      reserve: [{ id: 'r-1', name: 'Renfort', initiative: 0, statuses: [], trackers: [] }],
+    }, preset?.rules);
+
+    expect(scene).toMatchObject({
+      temporalite: 'phases',
+      phaseActionMode: 'automatic',
+      phaseDecrement: 10,
+      initiativeOrder: 'desc',
+      tiebreakerVisible: true,
+      equalityRule: 'strict',
+      multipleActionMode: multipleActionModes.NONE,
+      multipleActionSlots: false,
+      round: 2,
+    });
+    expect(scene.participants).toHaveLength(1);
+    expect(scene.reserve).toHaveLength(1);
+    expect(scene.participants[0]).toMatchObject({ id: 'pj-1', initiative: 18 });
   });
 });

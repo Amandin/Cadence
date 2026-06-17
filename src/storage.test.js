@@ -69,7 +69,7 @@ describe('campaign storage', () => {
           kind: 'Opposition',
           initiative: '12',
           departage: '2',
-          trackers: [{ id: 'pv', type: 'bar', current: '7', max: '10' }],
+          trackers: [{ id: 'pv', type: 'bar', current: '7', max: '10', step: 5 }],
           statuses: [{ id: 's1', name: 'Sonnée', duration: '2', remaining: '1' }],
         }],
       }],
@@ -91,7 +91,7 @@ describe('campaign storage', () => {
       departage: 2,
       stats: [],
     });
-    expect(campaign.scenes[0].participants[0].trackers[0]).toMatchObject({ type: 'bar', current: 7, max: 10, visible: true, thresholds: [{ value: 0, label: '< 0', color: 'red', operator: 'lt' }] });
+    expect(campaign.scenes[0].participants[0].trackers[0]).toMatchObject({ type: 'bar', current: 7, max: 10, step: 1, visible: true, thresholds: [{ value: 0, label: '< 0', color: 'red', operator: 'lt' }] });
     expect(campaign.scenes[0].participants[0].statuses[0]).toMatchObject({ duration: 2, remaining: 1, expired: false });
   });
 
@@ -112,7 +112,7 @@ describe('campaign storage', () => {
     expect(serialized.scenes[0].statuses[0]).toMatchObject({ name: 'Brouillard', duration: 3, remaining: 2, advanceOn: 'round' });
   });
 
-  it('serializes tracker, status and rule templates in campaign files', () => {
+  it('serializes shared templates but keeps personal rule presets local', () => {
     const templates = normalizeTemplateStore({
       categories: ['PJ'],
       templates: [],
@@ -128,7 +128,7 @@ describe('campaign storage', () => {
     expect(serialized.templates.statusTemplates[0]).toMatchObject({ name: 'Sonne', status: { duration: 1, inactive: true } });
     expect(serialized.templates.sceneStatusTemplates[0]).toMatchObject({ name: 'Brouillard', status: { duration: 3, inactive: false, advanceOn: 'round' } });
     expect(serialized.templates.sceneCounterTemplates[0]).toMatchObject({ name: 'Menace maison', counter: { mode: 'clock', max: 6 } });
-    expect(serialized.templates.ruleTemplates[0]).toMatchObject({ name: 'D&D maison', rules: { temporalite: 'classique', multipleActionSlots: false } });
+    expect(serialized.templates.ruleTemplates).toEqual([]);
 
     const imported = normalizeCampaignPayload(serialized);
     expect(imported.templates.trackerTemplates[0].tracker.type).toBe('points');
@@ -136,7 +136,57 @@ describe('campaign storage', () => {
     expect(imported.templates.sceneStatusTemplates[0].status.inactive).toBe(false);
     expect(imported.templates.sceneStatusTemplates[0].status.advanceOn).toBe('round');
     expect(imported.templates.sceneCounterTemplates[0].counter.thresholds[0]).toMatchObject({ basis: 'percent', label: 'moitie' });
-    expect(imported.templates.ruleTemplates[0].rules.multipleActionSlots).toBe(false);
+    expect(imported.templates.ruleTemplates).toEqual(normalizeTemplateStore(null).ruleTemplates);
+  });
+
+  it('stores only the applied preset snapshot next to active initiative rules', () => {
+    const snapshot = {
+      presetId: 'catalog:systemes/shadowrun-compatible',
+      catalogId: 'systemes/shadowrun-compatible',
+      name: 'Shadowrun compatible',
+      family: 'system',
+      system: 'Shadowrun',
+      description: 'Configuration compatible non officielle.',
+      source: 'catalog',
+      rules: { temporalite: 'phases', phaseActionMode: 'automatic', phaseDecrement: 10, phaseRerollEachRound: true },
+      modified: false,
+    };
+
+    const serialized = JSON.parse(serializeCampaign([scene], false, 'Presets', null, { temporalite: 'phases', phaseActionMode: 'automatic', phaseDecrement: 10, phaseRerollEachRound: true }, snapshot));
+
+    expect(serialized.initiativeRules).toMatchObject({ temporalite: 'phases', phaseActionMode: 'automatic', phaseDecrement: 10, phaseRerollEachRound: true });
+    expect(serialized.rulePresetSnapshot).toMatchObject({
+      catalogId: 'systemes/shadowrun-compatible',
+      name: 'Shadowrun compatible',
+      family: 'system',
+      system: 'Shadowrun',
+      modified: false,
+    });
+    expect(serialized.templates.ruleTemplates).toEqual([]);
+  });
+
+  it('ignores legacy campaign rule templates when opening old .cad files', () => {
+    const localRuleTemplate = normalizeTemplateStore({
+      ruleTemplates: [{ name: 'Local maison', rules: { temporalite: 'classique', multipleActionSlots: false } }],
+    }).ruleTemplates[0];
+    const fakeLocalStorage = {
+      store: new Map(),
+      getItem(key) { return this.store.has(key) ? this.store.get(key) : null; },
+      setItem(key, value) { this.store.set(key, String(value)); },
+      removeItem(key) { this.store.delete(key); },
+    };
+    Object.defineProperty(globalThis, 'localStorage', { value: fakeLocalStorage, configurable: true });
+    globalThis.localStorage.setItem('cadence:templates:v1', JSON.stringify({ version: 3, ruleTemplates: [localRuleTemplate] }));
+
+    const imported = normalizeCampaignPayload(campaignPayload({
+      templates: {
+        ruleTemplates: [{ name: 'Ancien preset embarque', rules: { temporalite: 'phases', phaseDecrement: 10 } }],
+      },
+    }));
+
+    expect(imported.templates.ruleTemplates).toHaveLength(1);
+    expect(imported.templates.ruleTemplates[0].name).toBe('Local maison');
+    delete globalThis.localStorage;
   });
 
   it('keeps reserve participants safe and out of initiative after hand edits', () => {
@@ -334,6 +384,22 @@ describe('campaign storage', () => {
 
     const serialized = JSON.parse(serializeCampaign(campaign.scenes, false, 'Suivis', null, campaign.initiativeRules));
     expect(serialized.scenes[0].participants[0].trackers[0].resetRule).toMatchObject({ excessReductionPercent: 50, underflowRecoveryPercent: 25, rounding: 'floor' });
+  });
+
+  it('normalizes obsolete bar steps when serializing current scenes', () => {
+    const sourceScene = {
+      id: 'scene-bar-step',
+      title: 'Barres',
+      participants: [{
+        id: 'pj-bar-step',
+        name: 'Gardienne',
+        trackers: [{ id: 'pv', type: 'bar', current: 8, max: 10, step: 5 }],
+      }],
+    };
+
+    const serialized = JSON.parse(serializeCampaign([sourceScene], false, 'Barres'));
+
+    expect(serialized.scenes[0].participants[0].trackers[0]).toMatchObject({ type: 'bar', step: 1 });
   });
 
   it('keeps more than two thresholds through normalization and serialization', () => {

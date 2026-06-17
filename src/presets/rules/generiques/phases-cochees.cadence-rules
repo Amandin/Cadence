@@ -1,0 +1,16 @@
+{
+  "id": "generiques/phases-cochees",
+  "name": "Phases cochées",
+  "family": "generic",
+  "category": "Générique",
+  "description": "Chaque personnage coche les phases où il agit.",
+  "rules": {
+    "temporalite": "phases",
+    "phaseActionMode": "checked",
+    "phaseCount": 3,
+    "initiativeOrder": "desc",
+    "tiebreakerVisible": true,
+    "equalityRule": "strict",
+    "multipleActionMode": "none"
+  }
+}

@@ -821,7 +821,7 @@ describe('turn rollback', () => {
     expect(harness.current().participants.find((item) => item.id === 'alix').actionSlots).toBeUndefined();
   });
 
-  it('steps back over Terminer son round in initiative-cost mode', () => {
+  it('steps back over an ended action sequence in initiative-cost mode', () => {
     const harness = createHarness({
       id: 'scene',
       temporalite: temporalityModes.CLASSIC,
@@ -885,6 +885,28 @@ describe('turn rollback', () => {
 
     harness.actions().nextTurn(1);
     expect(harness.current()).toMatchObject({ round: 1, activeId: '', activeSlotId: '' });
+  });
+
+  it('leaves initiative empty for reroll at the next initiative-cost round', () => {
+    const harness = createHarness({
+      id: 'scene',
+      temporalite: temporalityModes.CLASSIC,
+      multipleActionMode: 'initiative-cost',
+      multipleActionSlots: true,
+      phaseRerollEachRound: true,
+      initiativeCostThreshold: 0,
+      startRound: 1,
+      round: 1,
+      activeId: 'alix',
+      activeSlotId: 'alix:slot-1',
+      participants: [participant('alix', 12)],
+      reserve: [],
+      statuses: [],
+    });
+
+    harness.actions().applyInitiativeCost(null);
+
+    expect(harness.current()).toMatchObject({ round: 2, activeId: '', activeSlotId: '' });
   });
 
   it('limits initiative cost to the current slot when the rule is active', () => {

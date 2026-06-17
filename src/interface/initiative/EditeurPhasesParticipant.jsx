@@ -20,7 +20,7 @@ export function EditeurPhasesParticipant({ phaseActions = [], phaseCount = defau
 
   return (
     <div className="phase-actions-editor">
-      <div className="line-count-row"><label>Phases jouees</label><strong>{valeurs.size}</strong></div>
+      <div className="line-count-row"><label>Phases actives</label><strong>{valeurs.size}</strong></div>
       <div className="phase-check-grid">
         {clesPhases(phaseCount).map((phase) => <label className={`phase-check ${valeurs.has(phase) ? 'selected' : ''}`} key={phase}><input type="checkbox" checked={valeurs.has(phase)} onChange={(event) => basculer(phase, event.target.checked)} /><span>P{phase}</span></label>)}
       </div>

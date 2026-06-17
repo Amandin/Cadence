@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { initiativeOrders, multipleActionModes, phaseActionModes, temporalityModes } from '../constants.js';
-import { activeRuleSummary, ruleCompatibilityIssues, ruleOptionAvailability, temporalityPatch } from './ruleCompatibility.js';
+import { activeRuleSummary, canRerollInitiativeEachRound, ruleCompatibilityIssues, ruleOptionAvailability, temporalityPatch } from './ruleCompatibility.js';
 
 const labels = { enabled: true, parts: [{ label: 'Vitesse', values: ['Rapide', 'Lent'] }] };
 
@@ -122,5 +122,24 @@ describe('rule compatibility', () => {
       'initiative-cost-ascending',
     ]);
     expect(ruleOptionAvailability({ ...rules, declarationMode: false }).initiativeCost.disabled).toBe(true);
+  });
+
+  it('only exposes initiative reroll when a mode can consume it', () => {
+    expect(canRerollInitiativeEachRound({
+      temporalite: temporalityModes.PHASES,
+      phaseActionMode: phaseActionModes.AUTOMATIC,
+    })).toBe(true);
+    expect(canRerollInitiativeEachRound({
+      temporalite: temporalityModes.PHASES,
+      phaseActionMode: phaseActionModes.CHECKED,
+    })).toBe(false);
+    expect(canRerollInitiativeEachRound({
+      temporalite: temporalityModes.CLASSIC,
+      multipleActionMode: multipleActionModes.INITIATIVE_COST,
+    })).toBe(true);
+    expect(canRerollInitiativeEachRound({
+      temporalite: temporalityModes.CLASSIC,
+      multipleActionMode: multipleActionModes.NONE,
+    })).toBe(false);
   });
 });

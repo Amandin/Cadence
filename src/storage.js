@@ -32,6 +32,7 @@ import { normalizeGlobalTracker } from './domain/globalTracker.js';
 import { normaliserCreneauxAction } from './domain/initiative.js';
 import { baseInitiativeSlots, multipleActionModeFromRules, normalizeInitiativeCostLimitToCurrent, normalizeInitiativeCostQuickCosts, normalizeInitiativeCostThreshold } from './domain/initiativeCost.js';
 import { isPointsTracker, normalizeBoxTracker, normalizeThresholds, normalizeTrackerThresholds, makeDefaultCampaign, uid } from './logic.js';
+import { normalizeRulePresetSnapshot } from './rulePresets.js';
 import { isTemplateStoreLike, loadTemplateStore, normalizeTemplateStore } from './templates.js';
 import { readLocalCampaignPayload, writeLocalCampaignPayload } from './localCampaignStorage.js';
 
@@ -215,7 +216,7 @@ function normalizeTracker(tracker) {
     initial: numberOr(tracker.initial, type === 'bar' ? tracker.max ?? tracker.current ?? 10 : tracker.current ?? 0),
     min: tracker.min == null || tracker.min === '' ? null : numberOr(tracker.min, 0),
     max: tracker.max == null || tracker.max === '' ? null : numberOr(tracker.max, type === 'bar' ? 20 : 0),
-    step: Math.max(1, numberOr(tracker.step, type === 'bar' ? 5 : 1)),
+    step: type === 'bar' ? 1 : Math.max(1, numberOr(tracker.step, 1)),
     direction: type === 'bar' && tracker.direction === 'progression' ? 'progression' : 'countdown',
     thresholds: normalizeTrackerThresholds(type, tracker.thresholds),
     secret: booleanOr(tracker.secret),
@@ -328,7 +329,19 @@ export function normalizeCampaignScenes(scenes) {
   return normalizeArray(scenes).map(normalizeCampaignScene).filter(Boolean);
 }
 
-export function createCampaignPayload(scenes, dark, campaignName = DEFAULT_CAMPAIGN_NAME, templates, initiativeRules, campaignMeta = {}) {
+function exportedTemplateStore(templates) {
+  const normalized = normalizeTemplateStore(templates);
+  return {
+    ...normalized,
+    ruleTemplates: [],
+  };
+}
+
+export function rulePresetSnapshotFromPayload(data, activeRules = null) {
+  return normalizeRulePresetSnapshot(data?.rulePresetSnapshot, activeRules);
+}
+
+export function createCampaignPayload(scenes, dark, campaignName = DEFAULT_CAMPAIGN_NAME, templates, initiativeRules, rulePresetSnapshot = null, campaignMeta = {}) {
   const safeScenes = normalizeCampaignScenes(scenes);
   const rules = normalizeCampaignRules(initiativeRules || campaignRulesFromPayload({ scenes: safeScenes }));
   const name = normalizeCampaignName(campaignMeta.name || campaignName);
@@ -347,8 +360,9 @@ export function createCampaignPayload(scenes, dark, campaignName = DEFAULT_CAMPA
     version: APP_VERSION,
     savedAt: new Date().toISOString(),
     initiativeRules: rules,
+    rulePresetSnapshot: rulePresetSnapshotFromPayload({ rulePresetSnapshot }, rules),
     scenes: unifyCampaignScenes(safeScenes, rules),
-    templates: normalizeTemplateStore(templates),
+    templates: exportedTemplateStore(templates),
   };
 }
 
@@ -368,7 +382,12 @@ export function campaignMetaFromPayload(data) {
 }
 
 export function campaignTemplatesFromPayload(data) {
-  return normalizeTemplateStore(data?.templates || loadTemplateStore());
+  const localStore = typeof localStorage === 'undefined' ? normalizeTemplateStore(null) : loadTemplateStore();
+  const importedStore = normalizeTemplateStore(data?.templates || localStore);
+  return normalizeTemplateStore({
+    ...importedStore,
+    ruleTemplates: localStore.ruleTemplates,
+  });
 }
 
 export function normalizeCampaignPayload(data) {
@@ -389,6 +408,7 @@ export function normalizeCampaignPayload(data) {
     version: APP_VERSION,
     savedAt: typeof data?.savedAt === 'string' ? data.savedAt : new Date().toISOString(),
     initiativeRules,
+    rulePresetSnapshot: rulePresetSnapshotFromPayload(data, initiativeRules),
     scenes: unifyCampaignScenes(sourceScenes, initiativeRules),
     templates: campaignTemplatesFromPayload(data),
   };
@@ -405,12 +425,12 @@ export function loadCampaign() {
   return normalizeCampaignPayload(makeDefaultCampaign());
 }
 
-export function saveCampaign(scenes, dark, campaignName, templates, initiativeRules, campaignMeta = {}) {
-  writeLocalCampaignPayload(STORAGE_KEY, createCampaignPayload(scenes, dark, campaignName, templates, initiativeRules, campaignMeta));
+export function saveCampaign(scenes, dark, campaignName, templates, initiativeRules, rulePresetSnapshot = null, campaignMeta = {}) {
+  writeLocalCampaignPayload(STORAGE_KEY, createCampaignPayload(scenes, dark, campaignName, templates, initiativeRules, rulePresetSnapshot, campaignMeta));
 }
 
-export function serializeCampaign(scenes, dark, campaignName, templates, initiativeRules, campaignMeta = {}) {
-  return JSON.stringify(createCampaignPayload(scenes, dark, campaignName, templates, initiativeRules, campaignMeta), null, 2);
+export function serializeCampaign(scenes, dark, campaignName, templates, initiativeRules, rulePresetSnapshot = null, campaignMeta = {}) {
+  return JSON.stringify(createCampaignPayload(scenes, dark, campaignName, templates, initiativeRules, rulePresetSnapshot, campaignMeta), null, 2);
 }
 
 function hasScenes(data) {
@@ -437,6 +457,7 @@ export function isValidCampaign(data) {
   if (data.settings != null && !isPlainObject(data.settings)) return false;
   if (data.name != null && typeof data.name !== 'string') return false;
   if (data.initiativeRules != null && !isPlainObject(data.initiativeRules)) return false;
+  if (data.rulePresetSnapshot != null && !isPlainObject(data.rulePresetSnapshot)) return false;
   if (!isTemplateStoreLike(data.templates)) return false;
   return hasCurrentSignature(data) && hasCampaignBlock(data);
 }

@@ -81,7 +81,6 @@ export function compareInitiativeValues(a, b, rules = {}) {
 
 export const normalizeParticipantPhaseActions = (participant) => uniq(participant?.phaseActions || participant?.phases || participant?.checkedPhases);
 export const participantActsInCheckedPhase = (participant, phase = 1) => normalizeParticipantPhaseActions(participant).some((item) => key(item) === key(phase));
-export const checkedPhaseKeys = (participants = [], fallback = []) => uniq([...fallback, ...arr(participants).flatMap(normalizeParticipantPhaseActions)]);
 
 export function participantsPourPhaseAvancee(scene = {}, phase = scene.phase || 1) {
   return isCheckedPhaseMode(scene)
@@ -126,7 +125,6 @@ export function setDeclaration(scene = {}, participantId, value) {
   return { ...scene, declarations };
 }
 
-export const clearDeclarations = (scene) => ({ ...scene, declarations: {}, resolutionOrder: [], declarationStage: declarationStages.DECLARATION, activeId: '', activeSlotId: '' });
 export const declarationStage = (scene) => scene?.declarationStage === declarationStages.RESOLUTION ? declarationStages.RESOLUTION : declarationStages.DECLARATION;
 
 function declarants(scene = {}) {
@@ -137,25 +135,11 @@ function declarants(scene = {}) {
 
 export const declarationResolutionSlots = (scene = {}, rules = scene) => ordreCreneauxClassique(declarants(scene), { ...opt(scene), ...opt(rules) });
 
-export function orderedDeclarationResolutionSlots(scene = {}, rules = scene) {
-  const slots = declarationResolutionSlots(scene, rules);
-  const order = arr(scene.resolutionOrder);
-  if (!order.length) return slots;
-  const byId = new Map(slots.map((slot) => [slot.actionSlotId || slot.id, slot]));
-  const ordered = order.map((id) => byId.get(id)).filter(Boolean);
-  const used = new Set(ordered.map((slot) => slot.actionSlotId || slot.id));
-  return [...ordered, ...slots.filter((slot) => !used.has(slot.actionSlotId || slot.id))];
-}
-
 export function enterDeclarationResolution(scene = {}, rules = scene) {
   const slots = declarationResolutionSlots(scene, rules);
   const first = slots[0];
   return { ...scene, declarationStage: declarationStages.RESOLUTION, resolutionOrder: slots.map((slot) => slot.actionSlotId || slot.id), activeId: first?.id || '', activeSlotId: first?.actionSlotId || '' };
 }
-
-export const shouldAdvanceActivationForAction = (scene = {}, participantId) => scene.activationAdvancePolicy === activationAdvancePolicies.EVERY_ACTION ? true : !!participantId && !arr(scene.activatedThisRound).includes(String(participantId));
-export const markActivationAdvanced = (scene = {}, participantId) => !participantId || scene.activationAdvancePolicy === activationAdvancePolicies.EVERY_ACTION ? scene : { ...scene, activatedThisRound: [...new Set([...arr(scene.activatedThisRound), String(participantId)])] };
-export const resetRoundActivationMarks = (scene) => ({ ...scene, activatedThisRound: [] });
 
 export function applyManualActionCost(participant = {}, cost = 0) {
   const cleanCost = Math.max(0, num(cost, 0));

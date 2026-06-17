@@ -71,7 +71,7 @@ describe('phase tempo state', () => {
       phase: 3,
       statuses: [{ id: 'rain', name: 'Pluie', duration: 2, remaining: 2, advanceOn: 'round', expired: false }],
       participants: [
-        participant('a', 23, { statuses: [{ id: 'round', name: 'Tour', duration: 2, remaining: 2, advanceOn: 'round', expired: false }, { id: 'activation', name: 'Activation', duration: 2, remaining: 2, advanceOn: 'activation', expired: false }] }),
+        participant('a', 23, { statuses: [{ id: 'round', name: 'Round', duration: 2, remaining: 2, advanceOn: 'round', expired: false }, { id: 'activation', name: 'Activation', duration: 2, remaining: 2, advanceOn: 'activation', expired: false }] }),
         participant('b', 14),
       ],
     }));

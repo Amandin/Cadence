@@ -504,6 +504,7 @@ hub.campaigns.open,Ouvrir un .cad
 hub.campaigns.copy,Enregistrer une copie
 hub.campaigns.importAria,Importer une campagne
 hub.campaigns.advanced,Actions avancées
+hub.campaigns.loadTest,Charger la campagne de test
 hub.campaigns.reset,Réinitialiser Cadence
 hub.campaigns.filePickerDescription,Campagne Cadence
 hub.loading.rules,Chargement des règles...

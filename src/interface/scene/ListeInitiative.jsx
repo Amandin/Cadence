@@ -4,6 +4,7 @@ import { grouperAffichageParticipants, grouperParInitiative, ordreCreneauxClassi
 import { rulesAllowMultipleSlots } from '../../domain/initiativeCost.js';
 import { declarationStage, declarationStages, isCheckedPhaseMode, normalizeDeclarations, participantsHorsPhaseAvancee, participantsPourPhaseAvancee } from '../../domain/initiativeModes.js';
 import { initiativeTextOrderEnabled } from '../../domain/initiativeTextOrder.js';
+import { t } from '../../i18n/index.js';
 import { FichetteInitiative } from '../fiches/FichetteInitiative.jsx';
 
 function optionsEgalite(scene) {
@@ -107,8 +108,8 @@ function ListeParPaliers({ scene, participants, actifId, activeSlotId, interacti
 
   return groupes.map((groupe) => (
     <section className="initiative-tier" key={groupe.initiative}>
-      <div className="initiative-tier-label" aria-label={`Initiative ${groupe.initiative}`}>
-        <span>Init</span>
+      <div className="initiative-tier-label" aria-label={t('initiative.groupAria', { initiative: groupe.initiative })}>
+        <span>{t('initiative.groupShort')}</span>
         <strong>{groupe.initiative}</strong>
       </div>
       <div className="initiative-tier-cards">
@@ -144,12 +145,12 @@ function ListeDeclaration({ scene, participants, interactions }) {
   return (
     <div className="initiative-list flexible-list declaration-list">
       <section className="flexible-section declaration-section">
-        <EnteteSectionSouple titre="Déclarations" compteur={participants.length} />
+        <EnteteSectionSouple titre={t('declarations.title')} compteur={participants.length} />
         <div className="initiative-tier-cards flexible-cards">
           {ordreDeclaration.map((participant) => (
             <div className="declaration-entry" key={participant.id}>
               <FichetteLibre scene={scene} participant={participant} actifId="" activeSlotId="" interactions={interactions} />
-              <span className={`chip declaration-action-chip ${declarations[participant.id] ? 'ready' : ''}`}>{declarations[participant.id] || 'À choisir'}</span>
+              <span className={`chip declaration-action-chip ${declarations[participant.id] ? 'ready' : ''}`}>{declarations[participant.id] || t('initiative.choose')}</span>
             </div>
           ))}
         </div>
@@ -170,15 +171,15 @@ export function ListeInitiative({ scene, participants, actifId, interactions, te
     return (
       <div className="initiative-list flexible-list phase-list">
         <section className="flexible-section phase-section">
-          <EnteteSectionSouple titre={`Phase ${scene.phase || 1}`} compteur={actifs.length} />
+          <EnteteSectionSouple titre={t('initiative.phase', { phase: scene.phase || 1 })} compteur={actifs.length} />
           {phaseAttendRelanceInitiative
-            ? <div className="empty-section panel">Initiatives à ressaisir pour ce nouveau round.</div>
+            ? <div className="empty-section panel">{t('initiative.phaseRethink')}</div>
             : actifs.length > 0
-          ? <ListeParPaliers scene={scene} participants={actifs} actifId={actifId} activeSlotId={scene.activeSlotId || ''} interactions={interactions} />
-              : <div className="empty-section panel">Aucun participant ne peut agir dans cette phase.</div>}
+              ? <ListeParPaliers scene={scene} participants={actifs} actifId={actifId} activeSlotId={scene.activeSlotId || ''} interactions={interactions} />
+              : <div className="empty-section panel">{t('initiative.phaseEmpty')}</div>}
         </section>
         {attente.length > 0 && <section className="flexible-section already-played-section phase-waiting-section">
-          <EnteteSectionSouple titre={phaseAttendRelanceInitiative ? 'En attente d’initiative' : phasesCochees ? 'Hors phase' : 'En attente du prochain round'} compteur={attente.length} variant="played" />
+          <EnteteSectionSouple titre={phaseAttendRelanceInitiative ? t('initiative.waitingInitiative') : phasesCochees ? t('initiative.outOfPhase') : t('initiative.waitingNextRound')} compteur={attente.length} variant="played" />
           <ListeParPaliers scene={scene} participants={attente} actifId="" activeSlotId="" interactions={interactions} />
         </section>}
       </div>
@@ -200,11 +201,11 @@ export function ListeInitiative({ scene, participants, actifId, interactions, te
   return (
     <div className="initiative-list flexible-list">
       <section className="flexible-section">
-        <EnteteSectionSouple titre="Doit jouer" compteur={doitJouer.length} />
+        <EnteteSectionSouple titre={t('initiative.actionsToResolve')} compteur={doitJouer.length} />
         <ListeParPaliers scene={scene} participants={doitJouer} actifId={actifId} activeSlotId={scene.activeSlotId || ''} interactions={interactions} temporaliteSouple onMarquerAJoue={onMarquerAJoue} onAnnulerAJoue={onAnnulerAJoue} />
       </section>
       {dejaJoues.length > 0 && <section className="flexible-section already-played-section">
-        <EnteteSectionSouple titre="Déjà joués" compteur={dejaJoues.length} variant="played" />
+        <EnteteSectionSouple titre={t('initiative.actionsResolved')} compteur={dejaJoues.length} variant="played" />
         <ListeParPaliers scene={scene} participants={dejaJoues} actifId={actifId} activeSlotId={scene.activeSlotId || ''} interactions={interactions} temporaliteSouple onMarquerAJoue={onMarquerAJoue} onAnnulerAJoue={onAnnulerAJoue} dejaJoue />
       </section>}
     </div>

@@ -1,0 +1,15 @@
+{
+  "id": "systemes/narratif-sans-initiative-pbta-vtm",
+  "name": "Narratif sans initiative — PbtA / Vampire-WoD",
+  "family": "system",
+  "system": "PbtA / Vampire-WoD",
+  "category": "Système",
+  "description": "PbtA, Vampire, Monde des Ténèbres, scènes narratives.",
+  "rules": {
+    "temporalite": "souple",
+    "flexibleUseInitiative": false,
+    "declarationMode": false,
+    "multipleActionMode": "none",
+    "categoryOrder": ["PJ", "Opposant", "Allié", "Environnement"]
+  }
+}

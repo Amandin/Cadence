@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { activeThresholds, applyBoxMarkAction, applyDelta, boxBlocks, newTracker, nextTurnInfo, resetAutoTrackers, sortBoxBlocks, tickStatuses, triggerActivation, untickStatuses } from './logic.js';
+import { activeThresholds, applyBoxMarkAction, applyDelta, boxBlocks, makeDefaultCampaign, newTracker, nextTurnInfo, resetAutoTrackers, sortBoxBlocks, tickStatuses, triggerActivation, untickStatuses } from './logic.js';
 
 describe('trackers updated behavior', () => {
   it('uses block based boxes by default', () => {
@@ -15,10 +15,24 @@ describe('trackers updated behavior', () => {
     expect(activeThresholds({ ...tracker, current: -1 }).map((threshold) => threshold.label)).toEqual(['< 0']);
   });
 
+  it('starts from a neutral default campaign instead of a seeded test scene', () => {
+    const campaign = makeDefaultCampaign();
+
+    expect(campaign.name).toBe('Campagne Cadence');
+    expect(campaign.scenes).toHaveLength(1);
+    expect(campaign.scenes[0]).toMatchObject({
+      title: 'Nouvelle scène',
+      type: 'Scène',
+      reserve: [],
+      participants: [],
+      statuses: [],
+    });
+  });
+
   it('advances statuses only on their configured event', () => {
     const statuses = [
       { id: 'activation', name: 'Activation', duration: 2, remaining: 2, advanceOn: 'activation', expired: false },
-      { id: 'round', name: 'Tour', duration: 2, remaining: 2, advanceOn: 'round', expired: false },
+      { id: 'round', name: 'Round', duration: 2, remaining: 2, advanceOn: 'round', expired: false },
     ];
 
     expect(tickStatuses(statuses, 'activation').map((status) => status.remaining)).toEqual([1, 2]);

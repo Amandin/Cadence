@@ -1,0 +1,17 @@
+{
+  "id": "systemes/shadowrun-5",
+  "name": "Shadowrun 5",
+  "family": "system",
+  "system": "Shadowrun",
+  "category": "Système",
+  "description": "Passes d’initiative SR5. Pour SR6, partir plutôt de Classique et gérer majeures/mineures hors Cadence.",
+  "rules": {
+    "temporalite": "phases",
+    "phaseActionMode": "automatic",
+    "phaseDecrement": 10,
+    "initiativeOrder": "desc",
+    "tiebreakerVisible": true,
+    "equalityRule": "strict",
+    "multipleActionMode": "none"
+  }
+}

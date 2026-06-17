@@ -1,5 +1,5 @@
 import { activationAdvancePolicies, temporalityModes } from '../constants.js';
-import { indexCreneauActif, ordreCreneauxClassique, premierCreneauClassique, valeurInitiative } from '../domain/initiative.js';
+import { ordreCreneauxClassique, premierCreneauClassique, valeurInitiative } from '../domain/initiative.js';
 import { stepAutoGlobalTracker } from '../domain/globalTracker.js';
 import { isCheckedPhaseMode, isDeclarationMode, participantsPourPhaseAvancee, phaseSuivanteAvancee, phaseSuivanteAvanceeExiste, premierePhaseAvancee } from '../domain/initiativeModes.js';
 import { resetAutoTrackers, tickParticipant, tickStatuses, triggerActivation } from '../logic.js';
@@ -22,7 +22,7 @@ export function phasesAttendRelanceInitiative(scene) {
   return estModePhases(scene) && !isCheckedPhaseMode(scene) && !!scene.phaseRerollEachRound && !scene.activeId;
 }
 
-export function trouverTourActifParInitiative(scene, participantsTries) {
+export function trouverActivationActiveParInitiative(scene, participantsTries) {
   const actifAvant = scene.participants.find((participant) => participant.id === scene.activeId);
   if (!actifAvant) return { activeId: scene.activeId, activeSlotId: scene.activeSlotId || '', nouveauRound: false };
 
@@ -155,9 +155,4 @@ export function appliquerNouveauRoundPhases(scene) {
 
 export function creneauxClassiques(scene) {
   return ordreCreneauxClassique(scene.participants || [], optionsTri(scene));
-}
-
-export function creneauActifClassique(scene) {
-  const slots = creneauxClassiques(scene);
-  return slots[indexCreneauActif(scene, slots)] || null;
 }

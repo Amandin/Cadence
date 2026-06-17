@@ -1,23 +1,24 @@
 import { useEffect, useState } from 'react';
 import { colorNames, defaultPhaseCount, participantKinds, phaseActionModes, trackerTypeLabels } from '../../constants.js';
-import { normaliserCreneauxAction } from '../../domain/initiative.js';
-import { initiativeValueForMode, normalizeInitiativeTextOrder } from '../../domain/initiativeTextOrder.js';
-import { boxBlocks, boxVisualRank, clone, colors, cycleBoxMark, isBoxesTracker, isNumericTracker, isPointsTracker, isVisible, newTracker, normalizeBoxTracker, normalizeThresholds, normalizeTrackerThresholds, resetTracker, sortBoxBlocks, symbols, thresholdValue, uid } from '../../logic.js';
+import { normalizeInitiativeTextOrder } from '../../domain/initiativeTextOrder.js';
+import { t } from '../../i18n/index.js';
+import { boxBlocks, boxVisualRank, clone, colors, cycleBoxMark, isBoxesTracker, isNumericTracker, isPointsTracker, isVisible, newTracker, normalizeBoxTracker, resetTracker, sortBoxBlocks, symbols, thresholdValue, uid } from '../../logic.js';
 import { instantiateTrackerTemplate } from '../../templates.js';
 import { Fenetre, MessageChangementTemplate } from '../commun/ComposantsCommuns.jsx';
 import { FenetreConfirmationSuppression } from '../dialogues/FenetreConfirmationSuppression.jsx';
 import { IconeOeilMystiqueFerme, IconeOeilMystiqueOuvert } from '../icones/IconesOeilMystique.jsx';
 import { ChampInitiative } from '../initiative/ChampInitiative.jsx';
-import { EditeurPhasesParticipant, normaliserPhaseActions } from '../initiative/EditeurPhasesParticipant.jsx';
-import { normaliserInfoRapide, normaliserInfosRapides, serialiserInfosRapides } from './InfosRapides.jsx';
+import { EditeurPhasesParticipant } from '../initiative/EditeurPhasesParticipant.jsx';
+import { normaliserInfoRapide, normaliserInfosRapides } from './InfosRapides.jsx';
+import { brouillonCreneauxAction, entierPositif, nombreOuDefaut, normaliserFiche, texteCreneauxAction } from './ficheEditionModel.js';
 
 const thresholdColors = [
-  ['neutral', 'Neutre'],
-  ['green', 'Vert calme'],
-  ['amber', 'Ambre'],
-  ['red', 'Rouge sourd'],
-  ['blue', 'Bleu'],
-  ['violet', 'Violet'],
+  ['neutral', t('trackers.global.thresholds.color.neutral')],
+  ['green', t('trackers.global.thresholds.color.green')],
+  ['amber', t('trackers.global.thresholds.color.amber')],
+  ['red', t('trackers.global.thresholds.color.red')],
+  ['blue', t('trackers.global.thresholds.color.blue')],
+  ['violet', t('trackers.global.thresholds.color.violet')],
 ];
 
 const thresholdOperators = [
@@ -29,9 +30,9 @@ const thresholdOperators = [
 ];
 
 const thresholdBases = [
-  ['fixed', 'Fixe'],
-  ['percent', '%'],
-  ['fromMax', 'Max -'],
+  ['fixed', t('trackers.global.thresholds.basis.fixed')],
+  ['percent', t('trackers.global.thresholds.basis.percent')],
+  ['fromMax', t('sheet.thresholds.basis.fromMax')],
 ];
 
 const thresholdOptionStyles = {
@@ -42,149 +43,6 @@ const thresholdOptionStyles = {
   blue: { backgroundColor: '#dbeafe', color: '#1e40af' },
   violet: { backgroundColor: '#ede9fe', color: '#5b21b6' },
 };
-
-function entierPositif(valeur, defaut = 1) {
-  if (valeur === '') return defaut;
-  const nombre = Number(valeur);
-  return Number.isFinite(nombre) ? Math.max(1, nombre) : defaut;
-}
-
-function nombreOuDefaut(valeur, defaut = 0) {
-  if (valeur === '') return defaut;
-  const nombre = Number(valeur);
-  return Number.isFinite(nombre) ? nombre : defaut;
-}
-
-function texteCreneauxAction(participant) {
-  const slots = Array.isArray(participant.actionSlots) && participant.actionSlots.length ? participant.actionSlots : [{ initiative: participant.initiative ?? 0 }];
-  return slots.map((slot) => slot.initiative ?? 0).join(' / ');
-}
-
-function brouillonCreneauxAction(participant) {
-  const slots = Array.isArray(participant.actionSlots) && participant.actionSlots.length ? participant.actionSlots : [{ initiative: participant.initiative ?? 0 }];
-  return slots.map((slot, index) => ({
-    id: slot.id || `slot-${index + 1}`,
-    initiative: slot.initiative ?? participant.initiative ?? 0,
-  }));
-}
-
-function lireCreneauxAction(texte, fallback = 0) {
-  const valeurs = String(texte || '').match(/-?\d+(?:[.,]\d+)?/g)?.map((valeur) => Number(valeur.replace(',', '.'))).filter(Number.isFinite) || [];
-  const initiatives = valeurs.length ? valeurs : [nombreOuDefaut(fallback, 0)];
-  return initiatives
-    .sort((a, b) => b - a)
-    .map((initiative, index) => ({ id: `slot-${index + 1}`, initiative, order: index }));
-}
-
-function normaliserCreneauxDepuisBrouillon(brouillon, initiativeTextOrder, multipleActionSlots = true) {
-  const textConfig = normalizeInitiativeTextOrder(initiativeTextOrder);
-  const slotsSource = Array.isArray(brouillon._actionSlotsDraft) && brouillon._actionSlotsDraft.length
-    ? brouillon._actionSlotsDraft
-    : lireCreneauxAction(brouillon._actionSlotsInput, brouillon.initiative);
-  const slots = multipleActionSlots ? slotsSource : slotsSource.slice(0, 1);
-  const fallback = brouillon.initiative ?? slots[0]?.initiative ?? 0;
-  return normaliserCreneauxAction({
-    ...brouillon,
-    initiative: initiativeValueForMode(fallback, textConfig),
-    actionSlots: slots.map((slot, index) => ({
-      id: slot.id || `slot-${index + 1}`,
-      initiative: initiativeValueForMode(slot.initiative, textConfig, fallback),
-      order: index,
-    })),
-  }, { initiativeTextOrder: textConfig, multipleActionSlots }).map((slot, index) => ({ id: `slot-${index + 1}`, initiative: slot.initiative, order: index }));
-}
-
-function normaliserFiche(brouillon, initiativeTextOrder, phaseOptions = {}) {
-  const { _actionSlotsInput, _actionSlotsDraft, ...fiche } = brouillon;
-  const actionSlots = normaliserCreneauxDepuisBrouillon(brouillon, initiativeTextOrder, phaseOptions.multipleActionSlots !== false);
-  const phasePatch = phaseOptions.phaseActionMode === phaseActionModes.CHECKED
-    ? { phaseActions: normaliserPhaseActions(fiche.phaseActions, phaseOptions.phaseCount) }
-    : {};
-  return {
-    ...fiche,
-    ...phasePatch,
-    stats: serialiserInfosRapides(fiche.stats),
-    initiative: actionSlots[0]?.initiative ?? nombreOuDefaut(fiche.initiative, 0),
-    actionSlots,
-    departage: fiche.departage === '' ? '' : nombreOuDefaut(fiche.departage, 0),
-    trackers: fiche.trackers.map((suivi) => {
-      if (isBoxesTracker(suivi)) {
-        return normalizeBoxTracker({
-          ...suivi,
-          fillLevels: entierPositif(suivi.fillLevels, 1),
-          resetRule: normaliserResetRule(suivi),
-        });
-      }
-      if (suivi.type === 'number') {
-        return {
-          ...suivi,
-          current: nombreOuDefaut(suivi.current, 0),
-          initial: nombreOuDefaut(suivi.initial, suivi.current ?? 0),
-          step: entierPositif(suivi.step, 1),
-          counterSize: ['compact', 'normal', 'wide'].includes(suivi.counterSize) ? suivi.counterSize : 'compact',
-          thresholds: normalizeTrackerThresholds(suivi.type, suivi.thresholds),
-          resetRule: normaliserResetRule(suivi),
-          counters: (suivi.counters || []).map((compteur) => ({
-            ...compteur,
-            id: compteur.id || uid('counter'),
-            label: compteur.label || 'Compteur',
-            current: nombreOuDefaut(compteur.current, 0),
-            initial: nombreOuDefaut(compteur.initial, compteur.current ?? 0),
-            min: compteur.min === '' ? '' : compteur.min ?? '',
-            max: compteur.max === '' ? '' : compteur.max ?? '',
-            step: entierPositif(compteur.step, 1),
-            size: ['compact', 'normal', 'wide'].includes(compteur.size) ? compteur.size : 'normal',
-          })),
-        };
-      }
-      const seuilsPuces = isPointsTracker(suivi) ? {
-        currentThresholds: normalizeThresholds(suivi.currentThresholds || suivi.thresholds),
-        totalThresholds: normalizeThresholds(suivi.totalThresholds),
-        cyclesInitial: nombreOuDefaut(suivi.cyclesInitial, 0),
-        cyclesMin: suivi.cyclesMin === '' ? null : suivi.cyclesMin,
-        cyclesMax: suivi.cyclesMax === '' ? null : suivi.cyclesMax,
-      } : {};
-      const seuilsHorloge = suivi.type === 'clock' ? {
-        currentThresholds: normalizeThresholds(suivi.currentThresholds || suivi.thresholds),
-        totalThresholds: normalizeThresholds(suivi.totalThresholds),
-      } : {};
-      return {
-        ...suivi,
-        ...seuilsPuces,
-        ...seuilsHorloge,
-        current: nombreOuDefaut(suivi.current, 0),
-        initial: nombreOuDefaut(suivi.initial, suivi.type === 'bar' ? suivi.max ?? suivi.current ?? 0 : 0),
-        max: suivi.max === null ? null : entierPositif(suivi.max, 1),
-        min: suivi.min === null ? null : nombreOuDefaut(suivi.min, 0),
-        step: entierPositif(suivi.step, 1),
-        thresholds: normalizeTrackerThresholds(suivi.type, suivi.thresholds),
-        resetRule: normaliserResetRule(suivi),
-      };
-    }),
-  };
-}
-
-function normaliserResetRule(suivi) {
-  const rule = suivi.resetRule || {};
-  return {
-    mode: ['initial', 'zero', 'max', 'checked', 'delta', 'boxDelta', 'towardDefault'].includes(rule.mode) ? rule.mode : 'towardDefault',
-    delta: nombreOuDefaut(rule.delta, isBoxesTracker(suivi) ? -1 : 1),
-    step: nombreOuDefaut(rule.step, isBoxesTracker(suivi) ? -1 : 1),
-    stepMode: rule.stepMode === 'percent' ? 'percent' : 'flat',
-    pointsAutoMode: ['increase', 'decrease', 'default'].includes(rule.pointsAutoMode) ? rule.pointsAutoMode : 'default',
-    counterRules: rule.counterRules && typeof rule.counterRules === 'object' ? rule.counterRules : {},
-    boxBlocks: rule.boxBlocks && typeof rule.boxBlocks === 'object' ? rule.boxBlocks : {},
-    minCap: rule.minCap === '' ? '' : rule.minCap ?? '',
-    maxCap: rule.maxCap === '' ? '' : rule.maxCap ?? '',
-    overflowTrimPercent: nombreOuDefaut(rule.overflowTrimPercent, 0),
-    excessReductionPercent: rule.excessReductionPercent === '' ? '' : rule.excessReductionPercent ?? '',
-    underflowRecoveryPercent: rule.underflowRecoveryPercent === '' ? '' : rule.underflowRecoveryPercent ?? '',
-    rounding: ['nearest', 'floor', 'ceil'].includes(rule.rounding) ? rule.rounding : 'floor',
-    amount: entierPositif(rule.amount, 1),
-    skipLevels: Array.isArray(rule.skipLevels) ? rule.skipLevels.map(Number).filter((level) => Number.isFinite(level) && level > 0) : [],
-    after: ['none', 'zero', 'max', 'initial'].includes(rule.after) ? rule.after : 'none',
-  };
-}
 
 function ApercuNiveaux({ niveaux }) {
   const maximum = entierPositif(niveaux, 5);
@@ -235,24 +93,24 @@ function EditeurCases({ suivi, onChange, resetOptions = null }) {
   return (
     <div className="box-editor">
       <div className="box-level-row">
-        <span>Niveaux actifs</span>
+        <span>{t('sheet.boxes.activeLevels')}</span>
         <button className="small-btn" onClick={() => changerNiveaux(-1)} disabled={niveaux <= 1}>-</button>
         <ApercuNiveaux niveaux={niveaux} />
         <button className="small-btn" onClick={() => changerNiveaux(1)} disabled={niveaux >= 5}>+</button>
       </div>
-      <div className="line-count-row"><label>Blocs</label><strong>{blocs.length}</strong><button className="small-btn" onClick={ajouterBloc}>+ bloc</button></div>
+      <div className="line-count-row"><label>{t('sheet.boxes.blocks')}</label><strong>{blocs.length}</strong><button className="small-btn" onClick={ajouterBloc}>{t('sheet.boxes.addBlock')}</button></div>
       <div className="stack">
         {blocs.map((bloc) => (
           <div className="box-block-edit" key={bloc.id}>
             <div className="box-block-edit-head">
-              <input value={bloc.label || ''} placeholder="Nom du bloc" onChange={(e) => modifierBloc(bloc.id, (courant) => ({ ...courant, label: e.target.value || 'Bloc' }))} />
-              <button className="small-btn" onClick={() => ajouterLigne(bloc.id)}>+ ligne</button>
+              <input value={bloc.label || ''} placeholder={t('sheet.boxes.blockName')} onChange={(e) => modifierBloc(bloc.id, (courant) => ({ ...courant, label: e.target.value || 'Bloc' }))} />
+              <button className="small-btn" onClick={() => ajouterLigne(bloc.id)}>{t('sheet.boxes.addLine')}</button>
               <button className="small-btn subtle-danger" onClick={() => retirerBloc(bloc.id)} disabled={blocs.length <= 1}>x</button>
             </div>
             <div className="stack">
               {bloc.lines.map((ligne) => (
                 <div className="free-box-edit-line box-line-edit" key={ligne.id}>
-                  <input value={ligne.label || ''} placeholder="Nom de ligne" onChange={(e) => modifierLigne(bloc.id, ligne.id, (courante) => ({ ...courante, label: e.target.value || 'Ligne' }))} />
+                  <input value={ligne.label || ''} placeholder={t('sheet.boxes.lineName')} onChange={(e) => modifierLigne(bloc.id, ligne.id, (courante) => ({ ...courante, label: e.target.value || 'Ligne' }))} />
                   <input type="number" inputMode="numeric" min="1" value={(ligne.boxes || []).length || 1} onChange={(e) => modifierLigne(bloc.id, ligne.id, (courante) => ({ ...courante, boxes: creerCasesDepuis(courante.boxes, entierPositif(e.target.value, 1)) }))} />
                   <button className="small-btn subtle-danger" onClick={() => retirerLigne(bloc.id, ligne.id)} disabled={bloc.lines.length <= 1}>x</button>
                 </div>
@@ -262,7 +120,7 @@ function EditeurCases({ suivi, onChange, resetOptions = null }) {
         ))}
       </div>
       <details className="advanced-options">
-        <summary>Options avancées</summary>
+        <summary>{t('sheet.advancedOptions')}</summary>
         <div className="stack">
           {libellesNiveaux.map((label, index) => <div className="level-visual-row" key={index}><input value={label} onChange={(e) => changerLibelleNiveau(index, e.target.value)} /><span className={`box preview mark-${boxVisualRank(index + 1, niveaux)} ${boxVisualRank(index + 1, niveaux) >= 5 ? 'full' : ''}`} /></div>)}
         </div>
@@ -292,7 +150,7 @@ function EditeurInfosRapides({ stats = [], onChange }) {
     if (normalisee.editable) modifier(index, normalisee);
   };
 
-  return <div className="stack quick-stats-editor">{lignes.map((info, index) => <div className={`quick-stat-row ${info.editable ? 'editable' : ''}`} key={index}>{info.editable ? <><input className="quick-stat-label-input" value={info.label} placeholder="Libellé" onChange={(e) => modifier(index, { label: e.target.value })} /><input className="quick-stat-value-input" value={info.value} placeholder="Valeur" onChange={(e) => modifier(index, { value: e.target.value })} /></> : <input value={info.label} placeholder="CA 21, Attaque +6, Armure lourde..." onChange={(e) => changerTexte(index, e.target.value)} onBlur={() => separerValeurFinale(index)} />}<button className="small-btn subtle-danger" onClick={() => supprimer(index)} disabled={lignes.length <= 1 && !info.label && !info.value}>x</button></div>)}<button className="small-btn" onClick={ajouter}>+ info rapide</button></div>;
+  return <div className="stack quick-stats-editor">{lignes.map((info, index) => <div className={`quick-stat-row ${info.editable ? 'editable' : ''}`} key={index}>{info.editable ? <><input className="quick-stat-label-input" value={info.label} placeholder={t('sheet.quickInfo.label')} onChange={(e) => modifier(index, { label: e.target.value })} /><input className="quick-stat-value-input" value={info.value} placeholder={t('dialogs.sceneIndicator.value')} onChange={(e) => modifier(index, { value: e.target.value })} /></> : <input value={info.label} placeholder={t('sheet.quickInfo.placeholder')} onChange={(e) => changerTexte(index, e.target.value)} onBlur={() => separerValeurFinale(index)} />}<button className="small-btn subtle-danger" onClick={() => supprimer(index)} disabled={lignes.length <= 1 && !info.label && !info.value}>x</button></div>)}<button className="small-btn" onClick={ajouter}>{t('sheet.quickInfo.add')}</button></div>;
 }
 
 function thresholdOutOfBounds(seuil, suivi, bounds = {}) {
@@ -302,31 +160,32 @@ function thresholdOutOfBounds(seuil, suivi, bounds = {}) {
   return false;
 }
 
-function EditeurSeuils({ suivi, onChange, field = 'thresholds', title = 'Seuils texte', bounds = {} }) {
+function EditeurSeuils({ suivi, onChange, field = 'thresholds', title, bounds = {} }) {
   const seuils = suivi[field]?.length ? suivi[field] : [];
-  const choixCompteurs = suivi.type === 'number' ? [{ id: '__main', label: suivi.name || 'Compteur principal' }, ...(suivi.counters || []).map((compteur) => ({ id: compteur.id, label: compteur.label || 'Compteur' }))] : [];
+  const choixCompteurs = suivi.type === 'number' ? [{ id: '__main', label: suivi.name || t('sheet.thresholds.primaryCounter') }, ...(suivi.counters || []).map((compteur) => ({ id: compteur.id, label: compteur.label || t('dialogs.sceneIndicator.counter') }))] : [];
   const seuilsBarre = suivi.type === 'bar' && field === 'thresholds';
+  const titre = title || t('sheet.thresholds.text');
   const modifier = (index, patch) => onChange({ [field]: seuils.map((seuil, position) => position === index ? { ...seuil, ...patch } : seuil) });
   const ajouter = () => onChange({ [field]: [...seuils, { value: 0, label: '', color: 'neutral', operator: 'gte', counterId: choixCompteurs[0]?.id || '', basis: seuilsBarre ? 'fixed' : undefined }] });
   const supprimer = (index) => onChange({ [field]: seuils.filter((_, position) => position !== index) });
 
-  return <div className="threshold-editor"><div className="line-count-row"><label>{title}</label><button className="small-btn" onClick={ajouter}>+ seuil</button></div>{seuils.map((seuil, index) => <div className={`threshold-edit-row ${choixCompteurs.length ? 'has-target' : ''} ${seuilsBarre ? 'has-basis' : ''} ${thresholdOutOfBounds(seuil, suivi, bounds) ? 'out-of-bounds' : ''}`} key={index}>{choixCompteurs.length > 0 && <select className="threshold-target-select" value={seuil.counterId || '__main'} onChange={(e) => modifier(index, { counterId: e.target.value })}>{choixCompteurs.map((compteur) => <option key={compteur.id} value={compteur.id}>{compteur.label}</option>)}</select>}<select className="threshold-operator-select" value={seuil.operator || 'gte'} onChange={(e) => modifier(index, { operator: e.target.value })}>{thresholdOperators.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>{seuilsBarre && <select className="threshold-basis-select" value={seuil.basis || 'fixed'} onChange={(e) => modifier(index, { basis: e.target.value })}>{thresholdBases.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>}<input className="threshold-value-input" type="number" inputMode="numeric" value={seuil.value ?? 0} onChange={(e) => modifier(index, { value: Number(e.target.value) })} /><select className={`threshold-color-select threshold-${seuil.color || 'neutral'}`} value={seuil.color || 'neutral'} onChange={(e) => modifier(index, { color: e.target.value })}>{thresholdColors.map(([value, label]) => <option key={value} value={value} style={thresholdOptionStyles[value]}>{label}</option>)}</select><button className="small-btn subtle-danger threshold-delete" onClick={() => supprimer(index)}>x</button><input className="threshold-label-input" value={seuil.label || ''} placeholder="Texte affiché" onChange={(e) => modifier(index, { label: e.target.value })} />{seuilsBarre && <span className="threshold-warning">valeur cible : {thresholdValue(suivi, seuil)}</span>}{thresholdOutOfBounds(seuil, suivi, bounds) && <span className="threshold-warning">hors limites</span>}</div>)}</div>;
+  return <div className="threshold-editor"><div className="line-count-row"><label>{titre}</label><button className="small-btn" onClick={ajouter}>{t('trackers.global.thresholds.add')}</button></div>{seuils.map((seuil, index) => <div className={`threshold-edit-row ${choixCompteurs.length ? 'has-target' : ''} ${seuilsBarre ? 'has-basis' : ''} ${thresholdOutOfBounds(seuil, suivi, bounds) ? 'out-of-bounds' : ''}`} key={index}>{choixCompteurs.length > 0 && <select className="threshold-target-select" value={seuil.counterId || '__main'} onChange={(e) => modifier(index, { counterId: e.target.value })}>{choixCompteurs.map((compteur) => <option key={compteur.id} value={compteur.id}>{compteur.label}</option>)}</select>}<select className="threshold-operator-select" value={seuil.operator || 'gte'} onChange={(e) => modifier(index, { operator: e.target.value })}>{thresholdOperators.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>{seuilsBarre && <select className="threshold-basis-select" value={seuil.basis || 'fixed'} onChange={(e) => modifier(index, { basis: e.target.value })}>{thresholdBases.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>}<input className="threshold-value-input" type="number" inputMode="numeric" value={seuil.value ?? 0} onChange={(e) => modifier(index, { value: Number(e.target.value) })} /><select className={`threshold-color-select threshold-${seuil.color || 'neutral'}`} value={seuil.color || 'neutral'} onChange={(e) => modifier(index, { color: e.target.value })}>{thresholdColors.map(([value, label]) => <option key={value} value={value} style={thresholdOptionStyles[value]}>{label}</option>)}</select><button className="small-btn subtle-danger threshold-delete" onClick={() => supprimer(index)}>x</button><input className="threshold-label-input" value={seuil.label || ''} placeholder={t('trackers.global.thresholds.placeholder')} onChange={(e) => modifier(index, { label: e.target.value })} />{seuilsBarre && <span className="threshold-warning">{t('sheet.thresholds.targetValue', { value: thresholdValue(suivi, seuil) })}</span>}{thresholdOutOfBounds(seuil, suivi, bounds) && <span className="threshold-warning">{t('sheet.thresholds.outOfBounds')}</span>}</div>)}</div>;
 }
 
 function EditeurCompteursMultiples({ suivi, onChange }) {
   const secondaires = suivi.counters || [];
-  const compteurs = [{ id: '__main', label: suivi.name || 'Compteur', current: suivi.current ?? 0, initial: suivi.initial ?? 0, min: suivi.min ?? '', max: suivi.max ?? '', size: suivi.counterSize || 'compact' }, ...secondaires];
+  const compteurs = [{ id: '__main', label: suivi.name || t('dialogs.sceneIndicator.counter'), current: suivi.current ?? 0, initial: suivi.initial ?? 0, min: suivi.min ?? '', max: suivi.max ?? '', size: suivi.counterSize || 'compact' }, ...secondaires];
   const modifier = (id, patch) => id === '__main'
     ? onChange({ ...('label' in patch ? { name: patch.label } : {}), ...('current' in patch ? { current: patch.current } : {}), ...('initial' in patch ? { initial: patch.initial } : {}), ...('min' in patch ? { min: patch.min } : {}), ...('max' in patch ? { max: patch.max } : {}), ...('size' in patch ? { counterSize: patch.size } : {}) })
     : onChange({ counters: secondaires.map((compteur) => compteur.id === id ? { ...compteur, ...patch } : compteur) });
-  const ajouter = () => onChange({ counters: [...secondaires, { id: uid('counter'), label: `Compteur ${secondaires.length + 2}`, current: 0, initial: 0 }] });
+  const ajouter = () => onChange({ counters: [...secondaires, { id: uid('counter'), label: `${t('dialogs.sceneIndicator.counter')} ${secondaires.length + 2}`, current: 0, initial: 0 }] });
   const supprimer = (id) => onChange({ counters: secondaires.filter((compteur) => compteur.id !== id) });
 
-  return <div className="threshold-editor"><div className="line-count-row"><label>Compteurs dans cet indicateur</label><button className="small-btn" onClick={ajouter}>+ compteur</button></div><div className="counter-edit-grid">{compteurs.map((compteur) => <div className="counter-edit-tile" key={compteur.id}><input value={compteur.label || ''} placeholder="Nom" onChange={(e) => modifier(compteur.id, { label: e.target.value })} /><div className="grid2"><ChampNombre label="Actuel" valeur={compteur.current ?? 0} onChange={(valeur) => modifier(compteur.id, { current: valeur })} /><ChampNombre label="Initial" valeur={compteur.initial ?? 0} onChange={(valeur) => modifier(compteur.id, { initial: valeur })} /></div><div className="grid2"><ChampNombre label="Min" valeur={compteur.min ?? ''} placeholder="-" onChange={(valeur) => modifier(compteur.id, { min: valeur })} /><ChampNombre label="Max" valeur={compteur.max ?? ''} placeholder="+" onChange={(valeur) => modifier(compteur.id, { max: valeur })} /></div><label className="field">Taille<select value={compteur.size || 'compact'} onChange={(e) => modifier(compteur.id, { size: e.target.value })}><option value="compact">Compact</option><option value="normal">Normal</option><option value="wide">Large</option></select></label>{compteur.id !== '__main' && <button className="small-btn subtle-danger" onClick={() => supprimer(compteur.id)}>x</button>}</div>)}</div></div>;
+  return <div className="threshold-editor"><div className="line-count-row"><label>{t('sheet.counters.title')}</label><button className="small-btn" onClick={ajouter}>{t('sheet.counters.add')}</button></div><div className="counter-edit-grid">{compteurs.map((compteur) => <div className="counter-edit-tile" key={compteur.id}><input value={compteur.label || ''} placeholder={t('common.name')} onChange={(e) => modifier(compteur.id, { label: e.target.value })} /><div className="grid2"><ChampNombre label={t('sheet.counters.current')} valeur={compteur.current ?? 0} onChange={(valeur) => modifier(compteur.id, { current: valeur })} /><ChampNombre label={t('sheet.counters.initial')} valeur={compteur.initial ?? 0} onChange={(valeur) => modifier(compteur.id, { initial: valeur })} /></div><div className="grid2"><ChampNombre label={t('sheet.counters.min')} valeur={compteur.min ?? ''} placeholder="-" onChange={(valeur) => modifier(compteur.id, { min: valeur })} /><ChampNombre label={t('sheet.counters.max')} valeur={compteur.max ?? ''} placeholder="+" onChange={(valeur) => modifier(compteur.id, { max: valeur })} /></div><label className="field">{t('sheet.counters.size')}<select value={compteur.size || 'compact'} onChange={(e) => modifier(compteur.id, { size: e.target.value })}><option value="compact">{t('sheet.counters.size.compact')}</option><option value="normal">{t('sheet.counters.size.normal')}</option><option value="wide">{t('sheet.counters.size.wide')}</option></select></label>{compteur.id !== '__main' && <button className="small-btn subtle-danger" onClick={() => supprimer(compteur.id)}>x</button>}</div>)}</div></div>;
 }
 
 function ToggleIconeSuivi({ suivi, onChange }) {
-  return <div className="tracker-option-icons"><button className={`eye-toggle ${isVisible(suivi) ? 'active' : 'inactive'}`} onClick={() => onChange({ visible: suivi.visible === false })} title={isVisible(suivi) ? 'Visible sur la fichette' : 'Masqué sur la fichette'} type="button">{isVisible(suivi) ? <IconeOeilMystiqueOuvert /> : <IconeOeilMystiqueFerme />}</button><button className={`spy-toggle ${suivi.secret ? 'active' : ''}`} onClick={() => onChange({ secret: !suivi.secret })} title="Secret MJ" type="button"><span>{'🥷'}</span><b>Secret</b></button></div>;
+  return <div className="tracker-option-icons"><button className={`eye-toggle ${isVisible(suivi) ? 'active' : 'inactive'}`} onClick={() => onChange({ visible: suivi.visible === false })} title={isVisible(suivi) ? t('sheet.tracker.visible') : t('sheet.tracker.hidden')} type="button">{isVisible(suivi) ? <IconeOeilMystiqueOuvert /> : <IconeOeilMystiqueFerme />}</button><button className={`spy-toggle ${suivi.secret ? 'active' : ''}`} onClick={() => onChange({ secret: !suivi.secret })} title={t('sheet.tracker.secret')} type="button"><span>{'🥷'}</span><b>{t('sheet.tracker.secret')}</b></button></div>;
 }
 
 function OptionsReset({ suivi, onChange, allowActivationAutomation = true }) {
@@ -366,8 +225,8 @@ function OptionsReset({ suivi, onChange, allowActivationAutomation = true }) {
   const modifierRegle = (patch) => onChange({ resetRule: { ...rule, ...patch } });
   const modifierRegleCompteur = (id, patch) => modifierRegle({ counterRules: { ...(rule.counterRules || {}), [id]: { ...((rule.counterRules || {})[id] || {}), ...patch } } });
   const modifierRegleBloc = (id, patch) => modifierRegle({ boxBlocks: { ...(rule.boxBlocks || {}), [id]: { ...((rule.boxBlocks || {})[id] || {}), ...patch } } });
-  const switchAuto = <><label className={`reset-switch ${autoActif ? 'active' : ''} ${activationVerrouillee ? 'disabled' : ''}`}><span>Avancer automatiquement</span><input type="checkbox" checked={autoActif} disabled={activationVerrouillee} onChange={(e) => onChange({ autoReset: e.target.checked ? 'activation' : 'never', resetRule: { ...rule, mode: 'towardDefault' } })} /></label>{activationVerrouillee && <p className="rule-option-note">Mode souple : pas de nouvel automatisme à l’activation.</p>}</>;
-  const optionsNiveaux = Array.from({ length: Number(suivi.fillLevels || 1) }, (_, index) => ({ value: index + 1, label: suivi.levelLabels?.[index] || ['Léger', 'Normal', 'Grave', 'Critique', 'Fatal'][index] || `Coche ${index + 1}` }));
+  const switchAuto = <><label className={`reset-switch ${autoActif ? 'active' : ''} ${activationVerrouillee ? 'disabled' : ''}`}><span>{t('sheet.reset.autoAdvance')}</span><input type="checkbox" checked={autoActif} disabled={activationVerrouillee} onChange={(e) => onChange({ autoReset: e.target.checked ? 'activation' : 'never', resetRule: { ...rule, mode: 'towardDefault' } })} /></label>{activationVerrouillee && <p className="rule-option-note">{t('sheet.reset.flexibleActivationLocked')}</p>}</>;
+  const optionsNiveaux = Array.from({ length: Number(suivi.fillLevels || 1) }, (_, index) => ({ value: index + 1, label: suivi.levelLabels?.[index] || ['Léger', 'Normal', 'Grave', 'Critique', 'Fatal'][index] || `${t('sheet.reset.check')} ${index + 1}` }));
 
   if (estCompteur) return (
     <div className="reset-options">
@@ -471,10 +330,10 @@ function OptionsReset({ suivi, onChange, allowActivationAutomation = true }) {
 }
 
 function OptionsParType({ suivi, onChange, allowActivationAutomation = true }) {
-  if (suivi.type === 'number') return <><EditeurCompteursMultiples suivi={suivi} onChange={onChange} /><details className="advanced-options"><summary>Options avancées</summary><OptionsReset suivi={suivi} onChange={onChange} allowActivationAutomation={allowActivationAutomation} /><EditeurSeuils suivi={suivi} onChange={onChange} /></details></>;
-  if (suivi.type === 'bar') return <><div className="grid2"><ChampNombre label="Pas" valeur={suivi.step ?? 1} onChange={(valeur) => onChange({ step: valeur })} /><div /></div><details className="advanced-options"><summary>Options avancées</summary><div className="grid2"><label className="row"><input type="checkbox" checked={suivi.minAbsolute !== false} onChange={(e) => onChange({ minAbsolute: e.target.checked })} /> bloquer au minimum</label><label className="row"><input type="checkbox" checked={suivi.maxAbsolute !== false} onChange={(e) => onChange({ maxAbsolute: e.target.checked })} /> bloquer au maximum</label></div><EditeurSeuils suivi={suivi} onChange={onChange} bounds={{ min: suivi.min ?? 0, max: suivi.max }} /><OptionsReset suivi={suivi} onChange={onChange} allowActivationAutomation={allowActivationAutomation} /></details></>;
-  if (isPointsTracker(suivi)) return <><label className="field">Limite<select value={suivi.limitMode || 'clamp'} onChange={(e) => onChange({ limitMode: e.target.value })}><option value="clamp">Bloquer au max</option><option value="loop">Boucler avec compteur</option></select></label>{suivi.limitMode === 'loop' && <p className="muted tracker-help">Le compteur indique combien de fois les puces ont dépassé leur limite.</p>}<details className="advanced-options"><summary>Options avancées</summary>{suivi.limitMode === 'loop' && <><div className="grid2"><ChampNombre label="Compteur actuel" valeur={suivi.cycles ?? 0} onChange={(valeur) => onChange({ cycles: valeur })} /><div /></div><div className="grid2"><ChampNombre label="Min compteur" valeur={suivi.cyclesMin ?? ''} placeholder="∞" onChange={(valeur) => onChange({ cyclesMin: valeur })} /><ChampNombre label="Max compteur" valeur={suivi.cyclesMax ?? ''} placeholder="∞" onChange={(valeur) => onChange({ cyclesMax: valeur })} /></div></>}<OptionsReset suivi={suivi} onChange={onChange} allowActivationAutomation={allowActivationAutomation} /><EditeurSeuils suivi={suivi} onChange={onChange} field="currentThresholds" title="Seuils sur les puces" bounds={{ min: suivi.min ?? 0, max: suivi.max }} />{suivi.limitMode === 'loop' && <EditeurSeuils suivi={suivi} onChange={onChange} field="totalThresholds" title="Seuils sur le compteur global" bounds={{ min: suivi.cyclesMin, max: suivi.cyclesMax }} />}</details></>;
-  if (suivi.type === 'clock') return <><div className="grid2"><ChampNombre label="Valeur initiale" valeur={suivi.initial ?? suivi.current ?? 0} onChange={(valeur) => onChange({ initial: valeur })} /><ChampNombre label="Incrément" valeur={suivi.step ?? 1} onChange={(valeur) => onChange({ step: valeur })} /></div><details className="advanced-options"><summary>Options avancées</summary><label className="field">Fin de l’horloge<select value={suivi.limitMode || 'manual'} onChange={(e) => onChange({ limitMode: e.target.value })}><option value="manual">À résoudre manuellement</option><option value="increment">Relancer et compter les cycles</option><option value="overflow">Dépasser avec zone rouge</option></select></label>{suivi.limitMode !== 'manual' && <div className="grid2"><ChampNombre label="Compteur initial" valeur={suivi.cyclesInitial ?? 0} onChange={(valeur) => onChange({ cyclesInitial: valeur, cycles: suivi.cycles ?? valeur })} /><ChampNombre label="Compteur actuel" valeur={suivi.cycles ?? 0} onChange={(valeur) => onChange({ cycles: valeur })} /></div>}<div className="grid2"><label className="row"><input type="checkbox" checked={!!suivi.auto} onChange={(e) => onChange({ auto: e.target.checked })} /> avancer automatiquement</label><label className="row"><input type="checkbox" checked={!!suivi.frozen} onChange={(e) => onChange({ frozen: e.target.checked })} /> figée</label></div><EditeurSeuils suivi={suivi} onChange={onChange} field="currentThresholds" title="Seuils sur l’horloge" bounds={{ min: suivi.min ?? 0, max: suivi.max }} />{suivi.limitMode !== 'manual' && <EditeurSeuils suivi={suivi} onChange={onChange} field="totalThresholds" title="Seuils sur le compteur" />}</details></>;
+  if (suivi.type === 'number') return <><EditeurCompteursMultiples suivi={suivi} onChange={onChange} /><details className="advanced-options"><summary>{t('sheet.advancedOptions')}</summary><OptionsReset suivi={suivi} onChange={onChange} allowActivationAutomation={allowActivationAutomation} /><EditeurSeuils suivi={suivi} onChange={onChange} /></details></>;
+  if (suivi.type === 'bar') return <details className="advanced-options"><summary>{t('sheet.advancedOptions')}</summary><div className="grid2"><label className="row"><input type="checkbox" checked={suivi.minAbsolute !== false} onChange={(e) => onChange({ minAbsolute: e.target.checked })} /> {t('sheet.bar.clampMin')}</label><label className="row"><input type="checkbox" checked={suivi.maxAbsolute !== false} onChange={(e) => onChange({ maxAbsolute: e.target.checked })} /> {t('sheet.bar.clampMax')}</label></div><EditeurSeuils suivi={suivi} onChange={onChange} bounds={{ min: suivi.min ?? 0, max: suivi.max }} /><OptionsReset suivi={suivi} onChange={onChange} allowActivationAutomation={allowActivationAutomation} /></details>;
+  if (isPointsTracker(suivi)) return <><label className="field">{t('sheet.points.limit')}<select value={suivi.limitMode || 'clamp'} onChange={(e) => onChange({ limitMode: e.target.value })}><option value="clamp">{t('sheet.points.limit.clamp')}</option><option value="loop">{t('sheet.points.limit.loop')}</option></select></label>{suivi.limitMode === 'loop' && <p className="muted tracker-help">Le compteur indique combien de fois les puces ont dépassé leur limite.</p>}<details className="advanced-options"><summary>{t('sheet.advancedOptions')}</summary>{suivi.limitMode === 'loop' && <><div className="grid2"><ChampNombre label={t('sheet.points.currentCounter')} valeur={suivi.cycles ?? 0} onChange={(valeur) => onChange({ cycles: valeur })} /><div /></div><div className="grid2"><ChampNombre label={t('sheet.points.minCounter')} valeur={suivi.cyclesMin ?? ''} placeholder="∞" onChange={(valeur) => onChange({ cyclesMin: valeur })} /><ChampNombre label={t('sheet.points.maxCounter')} valeur={suivi.cyclesMax ?? ''} placeholder="∞" onChange={(valeur) => onChange({ cyclesMax: valeur })} /></div></>}<OptionsReset suivi={suivi} onChange={onChange} allowActivationAutomation={allowActivationAutomation} /><EditeurSeuils suivi={suivi} onChange={onChange} field="currentThresholds" title={t('sheet.thresholds.points')} bounds={{ min: suivi.min ?? 0, max: suivi.max }} />{suivi.limitMode === 'loop' && <EditeurSeuils suivi={suivi} onChange={onChange} field="totalThresholds" title={t('sheet.thresholds.totalCounter')} bounds={{ min: suivi.cyclesMin, max: suivi.cyclesMax }} />}</details></>;
+  if (suivi.type === 'clock') return <><div className="grid2"><ChampNombre label={t('sheet.clock.initialValue')} valeur={suivi.initial ?? suivi.current ?? 0} onChange={(valeur) => onChange({ initial: valeur })} /><ChampNombre label={t('sheet.clock.increment')} valeur={suivi.step ?? 1} onChange={(valeur) => onChange({ step: valeur })} /></div><details className="advanced-options"><summary>{t('sheet.advancedOptions')}</summary><label className="field">{t('sheet.clock.endMode')}<select value={suivi.limitMode || 'manual'} onChange={(e) => onChange({ limitMode: e.target.value })}><option value="manual">{t('sheet.clock.endMode.manual')}</option><option value="increment">{t('sheet.clock.endMode.increment')}</option><option value="overflow">{t('sheet.clock.endMode.overflow')}</option></select></label>{suivi.limitMode !== 'manual' && <div className="grid2"><ChampNombre label={t('sheet.clock.initialCounter')} valeur={suivi.cyclesInitial ?? 0} onChange={(valeur) => onChange({ cyclesInitial: valeur, cycles: suivi.cycles ?? valeur })} /><ChampNombre label={t('sheet.points.currentCounter')} valeur={suivi.cycles ?? 0} onChange={(valeur) => onChange({ cycles: valeur })} /></div>}<div className="grid2"><label className="row"><input type="checkbox" checked={!!suivi.auto} onChange={(e) => onChange({ auto: e.target.checked })} /> {t('sheet.clock.autoAdvance')}</label><label className="row"><input type="checkbox" checked={!!suivi.frozen} onChange={(e) => onChange({ frozen: e.target.checked })} /> {t('trackers.clock.frozen')}</label></div><EditeurSeuils suivi={suivi} onChange={onChange} field="currentThresholds" title={t('sheet.thresholds.clock')} bounds={{ min: suivi.min ?? 0, max: suivi.max }} />{suivi.limitMode !== 'manual' && <EditeurSeuils suivi={suivi} onChange={onChange} field="totalThresholds" title={t('sheet.thresholds.counter')} />}</details></>;
   return null;
 }
 
@@ -487,20 +346,20 @@ export function EditeurSuivi({ suivi, onChange, onDelete, allowActivationAutomat
     <div className="tracker">
       <div className="tracker-edit-head">
         <ToggleIconeSuivi suivi={suivi} onChange={modifierSuivi} />
-        <input value={suivi.name} onChange={(e) => modifierSuivi({ name: e.target.value })} aria-label="Nom de l’indicateur" />
-        <select value={suivi.type} aria-label="Type d’indicateur" onChange={(e) => onChange({ ...nouveauSuiviPourMode(e.target.value, allowActivationAutomation), id: suivi.id, name: suivi.name })}>
+        <input value={suivi.name} onChange={(e) => modifierSuivi({ name: e.target.value })} aria-label={t('sheet.tracker.nameAria')} />
+        <select value={suivi.type} aria-label={t('sheet.tracker.typeAria')} onChange={(e) => onChange({ ...nouveauSuiviPourMode(e.target.value, allowActivationAutomation), id: suivi.id, name: suivi.name })}>
           {Object.entries(trackerTypeLabels).map(([valeur, label]) => <option value={valeur} key={valeur}>{label}</option>)}
         </select>
         <button className="danger-btn compact-danger" onClick={onDelete}>x</button>
       </div>
       <div className="sub-options-row">
-        <button className="quick-reset-btn text" onClick={() => onChange(resetTracker(suivi, 'initial'))} title="Réinitialiser à la valeur de départ">Réinitialiser</button>
-        {suivi.type === 'number' && <ChampNombre className="compact-step-field" label="Pas" valeur={suivi.step ?? 1} onChange={(valeur) => modifierSuivi({ step: valeur })} />}
+        <button className="quick-reset-btn text" onClick={() => onChange(resetTracker(suivi, 'initial'))} title={t('sheet.tracker.resetTitle')}>{t('sheet.tracker.reset')}</button>
+        {suivi.type === 'number' && <ChampNombre className="compact-step-field" label={t('trackers.step.label')} valeur={suivi.step ?? 1} onChange={(valeur) => modifierSuivi({ step: valeur })} />}
       </div>
       <div className="grid2">
-        {estNumerique && suivi.type !== 'number' && <ChampNombre label="Valeur actuelle" valeur={suivi.current ?? 0} onChange={(valeur) => modifierSuivi({ current: valeur })} />}
-        {estNumerique && suivi.type !== 'number' && <ChampNombre label="Maximum" valeur={suivi.max ?? 1} onChange={(valeur) => modifierSuivi({ max: valeur })} />}
-        {suivi.type === 'bar' && <ChampNombre label="Minimum" valeur={suivi.min ?? 0} onChange={(valeur) => modifierSuivi({ min: valeur })} />}
+        {estNumerique && suivi.type !== 'number' && <ChampNombre label={t('trackers.global.valueCurrent')} valeur={suivi.current ?? 0} onChange={(valeur) => modifierSuivi({ current: valeur })} />}
+        {estNumerique && suivi.type !== 'number' && <ChampNombre label={t('dialogs.sceneIndicator.maximum')} valeur={suivi.max ?? 1} onChange={(valeur) => modifierSuivi({ max: valeur })} />}
+        {suivi.type === 'bar' && <ChampNombre label={t('sheet.counters.min')} valeur={suivi.min ?? 0} onChange={(valeur) => modifierSuivi({ min: valeur })} />}
       </div>
       <OptionsParType suivi={suivi} onChange={modifierSuivi} allowActivationAutomation={allowActivationAutomation} />
       {estCases && <EditeurCases suivi={suivi} onChange={onChange} resetOptions={<OptionsReset suivi={suivi} onChange={modifierSuivi} allowActivationAutomation={allowActivationAutomation} />} />}
@@ -567,61 +426,61 @@ export function FenetreEditionFiche({ participant, initiativeTextOrder, phaseAct
       <Fenetre title={title} onClose={onClose} header={entete} className={className}>
         {templateSwitchRequest && <MessageChangementTemplate onAnnuler={onAnnulerChangementTemplate} onValider={() => onValiderChangementTemplate?.(normaliserFiche(brouillon, textConfig, { phaseActionMode: modePhasesCochees ? phaseActionModes.CHECKED : '', phaseCount, multipleActionSlots }), categorieTemplate)} onAbandonner={onAbandonnerChangementTemplate} />}
         <div className="grid2">
-          <label className="field">Nom<input value={brouillon.name} onChange={(e) => modifierChamp('name', e.target.value)} /></label>
-          <label className="field">Type<select value={brouillon.kind} onChange={(e) => modifierChamp('kind', e.target.value)}>{typesDisponibles.map((type) => <option key={type}>{type}</option>)}</select></label>
+          <label className="field">{t('common.name')}<input value={brouillon.name} onChange={(e) => modifierChamp('name', e.target.value)} /></label>
+          <label className="field">{t('sheet.type')}<select value={brouillon.kind} onChange={(e) => modifierChamp('kind', e.target.value)}>{typesDisponibles.map((type) => <option key={type}>{type}</option>)}</select></label>
         </div>
-        <label className="field">Description<textarea value={brouillon.description || ''} onChange={(e) => modifierChamp('description', e.target.value)} /></label>
+        <label className="field">{t('sheet.description')}<textarea value={brouillon.description || ''} onChange={(e) => modifierChamp('description', e.target.value)} /></label>
         {utiliserInitiative && <div className="grid2">
-          <ChampInitiative label="Initiative 1" valeur={creneauxAction[0]?.initiative ?? brouillon.initiative ?? 0} textConfig={textConfig} onChange={(valeur) => modifierCreneauAction(0, valeur)} />
+          <ChampInitiative label={t('sheet.initiative.primary')} valeur={creneauxAction[0]?.initiative ?? brouillon.initiative ?? 0} textConfig={textConfig} onChange={(valeur) => modifierCreneauAction(0, valeur)} />
           {tiebreakerVisible ? <ChampNombre label={tiebreakerLabel} valeur={brouillon.departage} onChange={(valeur) => modifierChamp('departage', valeur)} /> : <div />}
         </div>}
         {multipleActionSlots && <div className="action-slots-editor">
-          <label className="row"><input type="checkbox" checked={creneauxAction.length > 1} onChange={(e) => basculerActionsMultiples(e.target.checked)} /> plusieurs actions</label>
+          <label className="row"><input type="checkbox" checked={creneauxAction.length > 1} onChange={(e) => basculerActionsMultiples(e.target.checked)} /> {t('sheet.actions.multiple')}</label>
           {utiliserInitiative && creneauxAction.length > 1 && <div className="stack action-slot-list">
             {creneauxAction.slice(1).map((slot, index) => (
               <div className="initiative-action-row" key={slot.id || index}>
-                <ChampInitiative label={`Initiative ${index + 2}`} valeur={slot.initiative} textConfig={textConfig} onChange={(valeur) => modifierCreneauAction(index + 1, valeur)} />
+                <ChampInitiative label={t('sheet.initiative.extra', { index: index + 2 })} valeur={slot.initiative} textConfig={textConfig} onChange={(valeur) => modifierCreneauAction(index + 1, valeur)} />
                 <button className="small-btn subtle-danger" onClick={() => retirerCreneauAction(index + 1)}>x</button>
               </div>
             ))}
-            <button className="small-btn" onClick={ajouterCreneauAction}>+ action</button>
+            <button className="small-btn" onClick={ajouterCreneauAction}>{t('sheet.actions.add')}</button>
           </div>}
           {!utiliserInitiative && creneauxAction.length > 1 && <div className="action-count-editor">
-            <button className="small-btn" type="button" onClick={() => retirerCreneauAction(creneauxAction.length - 1)} aria-label="Retirer une action">-</button>
-            <strong>{creneauxAction.length} actions</strong>
-            <button className="small-btn" type="button" onClick={ajouterCreneauAction} aria-label="Ajouter une action">+</button>
+            <button className="small-btn" type="button" onClick={() => retirerCreneauAction(creneauxAction.length - 1)} aria-label={t('sheet.actions.removeAria')}>-</button>
+            <strong>{t('sheet.actions.count', { count: creneauxAction.length })}</strong>
+            <button className="small-btn" type="button" onClick={ajouterCreneauAction} aria-label={t('sheet.actions.addAria')}>+</button>
           </div>}
         </div>}
         {modePhasesCochees && <EditeurPhasesParticipant phaseActions={brouillon.phaseActions} phaseCount={phaseCount} onChange={(phaseActions) => modifierChamp('phaseActions', phaseActions)} />}
         <details className="advanced-options">
-          <summary>Options avancées</summary>
-          <div className="grid2"><label className="field">Symbole<select value={brouillon.symbol || symbols[0]} onChange={(e) => modifierChamp('symbol', e.target.value)}>{symbols.map((symbole) => <option key={symbole} value={symbole}>{symbole}</option>)}</select></label><label className="field">Couleur<select value={brouillon.color || colors[0]} onChange={(e) => modifierChamp('color', e.target.value)}>{colors.map((couleur) => <option key={couleur} value={couleur}>{colorNames[couleur] || couleur}</option>)}</select></label></div>
-          {saveTemplateVisible && <button className="small-btn" style={{ width: '100%', marginTop: 12 }} onClick={enregistrerCommeTemplate}>Enregistrer comme modèle</button>}
+          <summary>{t('sheet.advancedOptions')}</summary>
+          <div className="grid2"><label className="field">{t('sheet.symbol')}<select value={brouillon.symbol || symbols[0]} onChange={(e) => modifierChamp('symbol', e.target.value)}>{symbols.map((symbole) => <option key={symbole} value={symbole}>{symbole}</option>)}</select></label><label className="field">{t('sheet.color')}<select value={brouillon.color || colors[0]} onChange={(e) => modifierChamp('color', e.target.value)}>{colors.map((couleur) => <option key={couleur} value={couleur}>{colorNames[couleur] || couleur}</option>)}</select></label></div>
+          {saveTemplateVisible && <button className="small-btn" style={{ width: '100%', marginTop: 12 }} onClick={enregistrerCommeTemplate}>{t('sheet.saveAsTemplate')}</button>}
         </details>
-        <h3>Infos rapides</h3>
+        <h3>{t('sheet.quickInfo.title')}</h3>
         <EditeurInfosRapides stats={brouillon.stats || []} onChange={(stats) => modifierChamp('stats', stats)} />
-        <h3>Indicateurs</h3>
+        <h3>{t('sheet.trackers.title')}</h3>
         <div className="stack tracker-list">
           {(brouillon.trackers || []).map((suivi) => <EditeurSuivi key={suivi.id} suivi={suivi} onChange={(suivant) => modifierSuivi(suivi.id, suivant)} onDelete={() => setBrouillon((courant) => ({ ...courant, trackers: (courant.trackers || []).filter((item) => item.id !== suivi.id) }))} allowActivationAutomation={allowActivationAutomation} />)}
-          {!ajoutIndicateurOuvert && <button className="primary add-tracker-btn" onClick={() => setAjoutIndicateurOuvert(true)}>Ajouter un indicateur</button>}
+          {!ajoutIndicateurOuvert && <button className="primary add-tracker-btn" onClick={() => setAjoutIndicateurOuvert(true)}>{t('sheet.trackers.add')}</button>}
           {ajoutIndicateurOuvert && <div className="stack tracker-add-panel">
             <div className="template-picker-row">
               <select value={selectionAjoutIndicateur} onChange={(event) => setTrackerTemplateId(event.target.value)}>
                 {trackerTemplates.map((template) => <option key={template.id} value={template.id}>{template.name}</option>)}
-                <option value="custom">Personnalisé</option>
+                <option value="custom">{t('sheet.trackers.custom')}</option>
               </select>
             </div>
             {ajoutIndicateurPersonnalise && <div className="grid2">
-              <label className="field">Type<select value={trackerPersonnaliseType} onChange={(event) => setTrackerPersonnaliseType(event.target.value)}>{Object.entries(trackerTypeLabels).map(([type, label]) => <option key={type} value={type}>{label}</option>)}</select></label>
-              <label className="field">Titre<input value={trackerPersonnaliseNom} placeholder={trackerTypeLabels[trackerPersonnaliseType] || 'Indicateur'} onChange={(event) => setTrackerPersonnaliseNom(event.target.value)} /></label>
+              <label className="field">{t('sheet.type')}<select value={trackerPersonnaliseType} onChange={(event) => setTrackerPersonnaliseType(event.target.value)}>{Object.entries(trackerTypeLabels).map(([type, label]) => <option key={type} value={type}>{label}</option>)}</select></label>
+              <label className="field">{t('sheet.trackers.titleLabel')}<input value={trackerPersonnaliseNom} placeholder={trackerTypeLabels[trackerPersonnaliseType] || t('sheet.trackers.defaultName')} onChange={(event) => setTrackerPersonnaliseNom(event.target.value)} /></label>
             </div>}
             <div className="grid2">
-              <button className="small-btn" type="button" onClick={ajoutIndicateurPersonnalise ? ajouterSuiviPersonnalise : ajouterSuiviDepuisTemplate}>Ajouter</button>
-              <button className="small-btn" type="button" onClick={() => setAjoutIndicateurOuvert(false)}>Annuler</button>
+              <button className="small-btn" type="button" onClick={ajoutIndicateurPersonnalise ? ajouterSuiviPersonnalise : ajouterSuiviDepuisTemplate}>{t('common.add')}</button>
+              <button className="small-btn" type="button" onClick={() => setAjoutIndicateurOuvert(false)}>{t('common.cancel')}</button>
             </div>
           </div>}
         </div>
-        <div className="edit-actions-row" style={{ marginTop: 12 }}><button className="small-btn" onClick={onClose}>Annuler</button><button className="primary" onClick={valider}>Valider</button><button className="danger-btn" onClick={() => setConfirmationSuppression(true)}>{deleteLabel}</button></div>
+        <div className="edit-actions-row" style={{ marginTop: 12 }}><button className="small-btn" onClick={onClose}>{t('common.cancel')}</button><button className="primary" onClick={valider}>{t('sheet.validate')}</button><button className="danger-btn" onClick={() => setConfirmationSuppression(true)}>{deleteLabel}</button></div>
       </Fenetre>
       {confirmationSuppression && <FenetreConfirmationSuppression nom={brouillon.name} onAnnuler={() => setConfirmationSuppression(false)} onConfirmer={onDelete} />}
     </>
@@ -630,6 +489,6 @@ export function FenetreEditionFiche({ participant, initiativeTextOrder, phaseAct
   const modifierSuivi = (id, suivant) => setBrouillon((courant) => ({ ...courant, trackers: courant.trackers.map((suivi) => suivi.id === id ? suivant : suivi) }));
   const valider = () => onSave(normaliserFiche(brouillon, textConfig, { phaseActionMode: modePhasesCochees ? phaseActionModes.CHECKED : '', phaseCount, multipleActionSlots }), categorieTemplate);
   const enregistrerCommeTemplate = () => onSaveTemplate?.(normaliserFiche(brouillon, textConfig, { phaseActionMode: modePhasesCochees ? phaseActionModes.CHECKED : '', phaseCount, multipleActionSlots }));
-  const enteteMultiple = <div className="edit-sheet-header"><div className="template-edit-header-title"><h2>{title}</h2>{categoriesTemplateDisponibles.length > 0 && <label className="template-category-header-field"><span>Catégorie</span><select value={categorieTemplate} onChange={(event) => setCategorieTemplate(event.target.value)}>{categoriesTemplateDisponibles.map((categorie) => <option key={categorie} value={categorie}>{categorie}</option>)}</select></label>}</div><button className="icon-btn validate-edit-btn" onClick={valider} aria-label="Valider les modifications">{'✓'}</button></div>;
+  const enteteMultiple = <div className="edit-sheet-header"><div className="template-edit-header-title"><h2>{title}</h2>{categoriesTemplateDisponibles.length > 0 && <label className="template-category-header-field"><span>{t('sheet.category')}</span><select value={categorieTemplate} onChange={(event) => setCategorieTemplate(event.target.value)}>{categoriesTemplateDisponibles.map((categorie) => <option key={categorie} value={categorie}>{categorie}</option>)}</select></label>}</div><button className="icon-btn validate-edit-btn" onClick={valider} aria-label={t('sheet.validateChanges')}>{'✓'}</button></div>;
   return renduEditionMultiple(enteteMultiple, valider, enregistrerCommeTemplate);
 }

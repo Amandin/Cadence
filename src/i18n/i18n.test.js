@@ -26,7 +26,7 @@ describe('i18n', () => {
 
   it('remplace les paramètres dans les textes', () => {
     expect(t('status.add.title', { name: 'Mira' })).toBe('Ajouter un état · Mira');
-    expect(t('menu.brandMeta', { version: '0.8.32-work' })).toBe('Menu · v0.8.32-work');
+    expect(t('menu.brandMeta', { version: '0.9' })).toBe('Menu · v0.9');
   });
 
   it('stabilise les petites zones applicatives statiques', () => {
@@ -68,6 +68,7 @@ describe('i18n', () => {
   it('stabilise les namespaces hub et templates', () => {
     expect(t('hub.tabs.scenes')).toBe('Scènes');
     expect(t('hub.campaigns.status.local')).toBe('Sauvegarde locale active.');
+    expect(t('hub.campaigns.loadTest')).toBe('Charger la campagne de test');
     expect(t('templates.hub.title')).toBe('Modèles');
     expect(t('templates.personnages.uncategorized')).toBe('Sans catégorie');
     expect(t('templates.sections.sceneCounters.title')).toBe('Indicateurs de scène');

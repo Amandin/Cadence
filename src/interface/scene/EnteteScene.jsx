@@ -1,5 +1,6 @@
-import { BadgeRound, EtiquetteEtat } from '../commun/ComposantsCommuns.jsx';
+import { t } from '../../i18n/index.js';
 import { participantEstInactif, participantEstLimite } from '../../domain/statuses.js';
+import { BadgeRound, EtiquetteEtat } from '../commun/ComposantsCommuns.jsx';
 import { CompteurGlobal } from '../suivis/CompteurGlobal.jsx';
 
 export function EnteteScene(props) {
@@ -26,44 +27,44 @@ export function EnteteScene(props) {
   } = props;
   const horlogeABloquee = horlogesBloquantes.length > 0;
   const enPreparation = scene.round < 0;
-  const tourSimultane = !temporaliteSouple && !horlogeABloquee && groupeActif.length > 1;
-  const nomTourActif = enPreparation
-    ? 'Préparer la scène'
+  const activationSimultanee = !temporaliteSouple && !horlogeABloquee && groupeActif.length > 1;
+  const nomActivationActive = enPreparation
+    ? t('scene.header.preparing')
     : horlogeABloquee
       ? horlogesBloquantes.map((participant) => participant.name).join(', ')
-      : tourSimultane
+      : activationSimultanee
         ? groupeActif.map((participant) => participant.name).join(' + ')
-        : temporaliteDeclaration && !actif ? 'Déclarer les actions' : actif?.name || 'Aucun participant';
-  const suffixeTemporalite = `${temporaliteSouple ? ' · souple' : temporalitePhases ? ' · phases' : ''}${temporaliteDeclaration ? ' · déclaration' : ''}`;
+        : temporaliteDeclaration && !actif ? t('scene.header.declareActions') : actif?.name || t('scene.header.noParticipant');
+  const suffixeTemporalite = `${temporaliteSouple ? ` · ${t('scene.header.flexible')}` : temporalitePhases ? ` · ${t('scene.header.phases')}` : ''}${temporaliteDeclaration ? ` · ${t('scene.header.declaration')}` : ''}`;
   const actionDeclaree = temporaliteDeclaration && actif && scene.declarationStage === 'resolution' && !(scene.declarationPlayedIds || []).includes(actif.id) ? scene.declarations?.[actif.id] : '';
-  const statutActif = participantEstInactif(actif) ? 'Inactif' : participantEstLimite(actif) ? 'Limité' : 'Actif';
-  const libelleTour = enPreparation
-    ? 'Préparation'
+  const statutActif = participantEstInactif(actif) ? t('scene.status.inactive') : participantEstLimite(actif) ? t('scene.status.limited') : t('scene.status.active');
+  const libelleActivation = enPreparation
+    ? t('scene.header.preparation')
     : horlogeABloquee
-      ? 'Horloge à gérer'
-      : tourSimultane
-        ? 'Participants simultanés'
-        : temporaliteDeclaration && !actif ? 'Déclaration' : statutActif;
+      ? t('scene.header.clockToManage')
+      : activationSimultanee
+        ? t('scene.header.simultaneousParticipants')
+        : temporaliteDeclaration && !actif ? t('scene.header.declaration') : statutActif;
   const logo = dark ? '/branding/logo-cadence-dark.svg' : '/branding/logo-cadence-light.svg';
 
   return (
     <header className="top compact">
       <div className="scene-head scene-head-with-logo" style={{ display: 'grid', gridTemplateColumns: 'auto minmax(0, 1fr) auto', alignItems: 'center', gap: 8 }}>
-        <button className="hub-return-logo" onClick={onRetourHub} aria-label="Retour au Hub de campagne"><img src={logo} alt="" /></button>
+        <button className="hub-return-logo" onClick={onRetourHub} aria-label={t('scene.header.returnHubAria')}><img src={logo} alt="" /></button>
         <div className="scene-title-block" style={{ minWidth: 0 }}>
           <h1>{scene.title}</h1>
-          <div className="muted">{scene.type} · {scene.participants.length} en initiative{suffixeTemporalite}</div>
+          <div className="muted">{scene.type} · {t('scene.header.participantsInInitiative', { count: scene.participants.length })}{suffixeTemporalite}</div>
         </div>
         <BadgeRound round={scene.round} effect={effetRound} phase={temporalitePhases ? scene.phase || 1 : null} surpriseRound={!!scene.surpriseRoundActive} />
       </div>
-      {enPreparation && <label className={`reset-switch preparation-surprise-toggle ${scene.preparationSurprise ? 'active' : ''}`}><span>Surprise</span><input type="checkbox" checked={!!scene.preparationSurprise} onChange={(event) => onToggleSurprisePreparation?.(event.target.checked)} /></label>}
+      {enPreparation && <label className={`reset-switch preparation-surprise-toggle ${scene.preparationSurprise ? 'active' : ''}`}><span>{t('scene.header.surprise')}</span><input type="checkbox" checked={!!scene.preparationSurprise} onChange={(event) => onToggleSurprisePreparation?.(event.target.checked)} /></label>}
       <div className="turn-row header-turn-row">
-        <div className={`active-box panel ${tourSimultane ? 'simultaneous-turn' : ''} ${temporaliteSouple ? 'flexible-turn' : ''} ${temporalitePhases ? 'phase-turn' : ''} ${temporaliteDeclaration ? 'declaration-turn' : ''}`}>
+        <div className={`active-box panel ${activationSimultanee ? 'simultaneous-turn' : ''} ${temporaliteSouple ? 'flexible-turn' : ''} ${temporalitePhases ? 'phase-turn' : ''} ${temporaliteDeclaration ? 'declaration-turn' : ''}`}>
           <div className="turn-active-line">
             <div className="active-name">
-              {temporaliteSouple && !horlogeABloquee && !enPreparation ? <><div className="muted">Mode souple</div><strong>Marquer les personnages ayant joué</strong></> : <><div className="muted">{libelleTour}</div><strong>{nomTourActif}</strong>{actionDeclaree && <strong className="declaration-header-action">({actionDeclaree})</strong>}</>}
+              {temporaliteSouple && !horlogeABloquee && !enPreparation ? <><div className="muted">{t('scene.header.flexibleMode')}</div><strong>{t('scene.header.resolvedActions')}</strong></> : <><div className="muted">{libelleActivation}</div><strong>{nomActivationActive}</strong>{actionDeclaree && <strong className="declaration-header-action">({actionDeclaree})</strong>}</>}
             </div>
-            {temporaliteSouple && !horlogeABloquee && !enPreparation && <span className="chip flexible-chip">Souple</span>}
+            {temporaliteSouple && !horlogeABloquee && !enPreparation && <span className="chip flexible-chip">{t('scene.header.flexibleChip')}</span>}
             <CompteurGlobal compteur={scene.globalTracker} onChanger={onModifierCompteurGlobal} onToggleTemps={onToggleCompteurTemps} animationTick={compteurGlobalAuto} />
           </div>
         </div>
