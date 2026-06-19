@@ -28,7 +28,7 @@ describe('i18n', () => {
 
   it('remplace les paramètres dans les textes', () => {
     expect(t('status.add.title', { name: 'Mira' })).toBe('Ajouter un état · Mira');
-    expect(t('menu.brandMeta', { version: '0.9.46-work' })).toBe('Menu · v0.9.46-work');
+    expect(t('menu.brandMeta', { version: '0.10.0-work' })).toBe('Menu · v0.10.0-work');
   });
 
   it('stabilise les petites zones applicatives statiques', () => {
