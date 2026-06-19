@@ -48,6 +48,16 @@ const thresholdOperators = [
   ['lt', '<'],
   ['eq', '='],
 ];
+const thresholdOperatorsByMode = {
+  timer: [
+    ['lte', '<='],
+    ['lt', '<'],
+  ],
+  stopwatch: [
+    ['gte', '>='],
+    ['gt', '>'],
+  ],
+};
 const thresholdBases = {
   timer: [
     ['fixed', 'trackers.global.thresholds.basis.fixed'],
@@ -190,6 +200,16 @@ function cleSeuil(seuil) {
   return `${seuil.scope || 'current'}:${seuil.basis || 'fixed'}:${seuil.operator || ''}:${seuil.value}:${seuil.label || ''}`;
 }
 
+function operateursSeuil(mode, scope = 'current') {
+  if (scope === 'loops') return thresholdOperatorsByMode.stopwatch;
+  return thresholdOperatorsByMode[mode] || thresholdOperators;
+}
+
+function operateurSeuilValide(mode, scope, operator) {
+  const operateurs = operateursSeuil(mode, scope);
+  return operateurs.some(([value]) => value === operator) ? operator : operateurs[0][0];
+}
+
 function libelleCibleSeuil(compteur, seuil) {
   if (compteur.mode !== 'timer') return '';
   if (seuil.scope === 'loops') {
@@ -233,7 +253,7 @@ function SelecteurSon({ soundId = 'beep', soundUrl = '', onChanger }) {
 }
 
 export function EditeurSeuilsCompteurScene({ compteur, onModifier }) {
-  const seuils = normalizeGlobalThresholds(compteur.thresholds);
+  const seuils = normalizeGlobalThresholds(compteur.thresholds).map((seuil) => ({ ...seuil, operator: operateurSeuilValide(compteur.mode || 'clock', seuil.scope || 'current', seuil.operator) }));
   const mode = compteur.mode || 'clock';
   const bases = thresholdBases[mode] || [];
   const afficherBase = bases.length > 0;
@@ -248,24 +268,31 @@ export function EditeurSeuilsCompteurScene({ compteur, onModifier }) {
         ? t('trackers.global.thresholds.help.counter')
         : t('trackers.global.thresholds.help.clock');
   const modifier = (index, patch) => onModifier({ thresholds: seuils.map((seuil, position) => position === index ? { ...seuil, ...patch } : seuil) });
-  const ajouter = () => onModifier({ thresholds: [...seuils, { value: 0, label: '', color: 'neutral', operator: mode === 'timer' ? 'lte' : 'gte', basis: 'fixed', scope: 'current', sound: false, soundId: 'beep', soundUrl: '' }] });
+  const ajouter = () => onModifier({ thresholds: [...seuils, { value: 0, label: '', color: 'neutral', operator: operateurSeuilValide(mode, 'current', ''), basis: 'fixed', scope: 'current', sound: false, soundId: 'beep', soundUrl: '' }] });
   const supprimer = (index) => onModifier({ thresholds: seuils.filter((_, position) => position !== index) });
 
   return (
     <div className="threshold-editor global-threshold-editor">
-      <div className="line-count-row"><label>{t('trackers.global.thresholds.label')}</label><button className="small-btn" onClick={ajouter}>{t('trackers.global.thresholds.add')}</button></div>
+      <div className="line-count-row"><label>{t('trackers.global.thresholds.label')}</label></div>
       <p className="muted compact-help">{aide}</p>
       {seuils.map((seuil, index) => (
         <div className={`threshold-edit-row ${afficherScope ? 'has-target' : ''} ${afficherBase && (seuil.scope || 'current') !== 'loops' ? 'has-basis' : ''}`} key={index}>
-          <select className="threshold-operator-select" value={seuil.operator || (mode === 'timer' ? 'lte' : 'gte')} onChange={(event) => modifier(index, { operator: event.target.value })}>{thresholdOperators.map(([value]) => <option key={value} value={value}>{value === 'gte' ? '>=' : value === 'lte' ? '<=' : value === 'gt' ? '>' : value === 'lt' ? '<' : '='}</option>)}</select>
-          {afficherScope && <select className="threshold-target-select" value={seuil.scope || 'current'} onChange={(event) => modifier(index, { scope: event.target.value, basis: event.target.value === 'loops' ? 'fixed' : seuil.basis, operator: event.target.value === 'loops' && ['lte', 'lt'].includes(seuil.operator) ? 'gte' : seuil.operator })}>{thresholdScopes.map(([value, labelKey]) => <option key={value} value={value}>{t(labelKey)}</option>)}</select>}
-          {afficherBase && (seuil.scope || 'current') !== 'loops' && <select className="threshold-basis-select" value={seuil.basis || 'fixed'} onChange={(event) => modifier(index, { basis: event.target.value })}>{bases.map(([value, labelKey]) => <option key={value} value={value}>{t(labelKey)}</option>)}</select>}
-          {(mode === 'timer' || mode === 'stopwatch') && (seuil.basis || 'fixed') === 'fixed' && (seuil.scope || 'current') !== 'loops'
-            ? <ChampsTemps totalSecondes={seuil.value ?? 0} onChanger={(value) => modifier(index, { value })} />
-            : <input className="threshold-value-input" type="number" inputMode="numeric" value={seuil.value ?? 0} onChange={(event) => modifier(index, { value: Number(event.target.value) })} />}
-          <select className={`threshold-color-select threshold-${seuil.color || 'neutral'}`} value={seuil.color || 'neutral'} onChange={(event) => modifier(index, { color: event.target.value })}>{thresholdColors.map(([value, labelKey]) => <option key={value} value={value} style={thresholdOptionStyles[value]}>{t(labelKey)}</option>)}</select>
           <button className="small-btn subtle-danger threshold-delete" onClick={() => supprimer(index)}>x</button>
-          <input className="threshold-label-input" value={seuil.label || ''} placeholder={t('trackers.global.thresholds.placeholder')} onChange={(event) => modifier(index, { label: event.target.value })} />
+          <div className="threshold-numeric-row">
+            {afficherScope && <select className="threshold-target-select" value={seuil.scope || 'current'} onChange={(event) => modifier(index, { scope: event.target.value, basis: event.target.value === 'loops' ? 'fixed' : seuil.basis, operator: operateurSeuilValide(mode, event.target.value, seuil.operator) })}>{thresholdScopes.map(([value, labelKey]) => <option key={value} value={value}>{t(labelKey)}</option>)}</select>}
+            <select className="threshold-operator-select" value={operateurSeuilValide(mode, seuil.scope || 'current', seuil.operator)} onChange={(event) => modifier(index, { operator: event.target.value })}>{operateursSeuil(mode, seuil.scope || 'current').map(([value]) => <option key={value} value={value}>{value === 'gte' ? '>=' : value === 'lte' ? '<=' : value === 'gt' ? '>' : value === 'lt' ? '<' : '='}</option>)}</select>
+            {afficherBase && (seuil.scope || 'current') !== 'loops' && <select className="threshold-basis-select" value={seuil.basis || 'fixed'} onChange={(event) => modifier(index, { basis: event.target.value })}>{bases.map(([value, labelKey]) => <option key={value} value={value}>{t(labelKey)}</option>)}</select>}
+            {(mode === 'timer' || mode === 'stopwatch') && (seuil.basis || 'fixed') === 'fixed' && (seuil.scope || 'current') !== 'loops'
+              ? <ChampsTemps totalSecondes={seuil.value ?? 0} onChanger={(value) => modifier(index, { value })} />
+              : <input className="threshold-value-input" type="number" inputMode="numeric" value={seuil.value ?? 0} onChange={(event) => modifier(index, { value: Number(event.target.value) })} />}
+          </div>
+          <div className="threshold-label-row">
+            <div className="threshold-label-stack">
+              <input className="threshold-label-input" value={seuil.label || ''} placeholder={t('trackers.global.thresholds.placeholder')} onChange={(event) => modifier(index, { label: event.target.value })} />
+              {afficherCible && <span className="threshold-warning">{libelleCibleSeuil(compteur, seuil)}</span>}
+            </div>
+            <select className={`threshold-color-select threshold-${seuil.color || 'neutral'}`} value={seuil.color || 'neutral'} onChange={(event) => modifier(index, { color: event.target.value })}>{thresholdColors.map(([value, labelKey]) => <option key={value} value={value} style={thresholdOptionStyles[value]}>{t(labelKey)}</option>)}</select>
+          </div>
           {afficherSon && <div className="threshold-sound-toggle">
             <span>{t('trackers.global.thresholds.sound.label')}</span>
             <SelecteurSon
@@ -274,9 +301,9 @@ export function EditeurSeuilsCompteurScene({ compteur, onModifier }) {
               onChanger={(patch) => modifier(index, { ...patch, sound: patch.soundId !== 'none', soundId: patch.soundId === 'none' ? 'beep' : patch.soundId })}
             />
           </div>}
-          {afficherCible && <span className="threshold-warning">{libelleCibleSeuil(compteur, seuil)}</span>}
         </div>
       ))}
+      <div className="threshold-add-row"><button className="small-btn" onClick={ajouter}>{t('trackers.global.thresholds.add')}</button></div>
     </div>
   );
 }
@@ -406,8 +433,9 @@ export function CompteurGlobal({ compteur, onChanger, onToggleTemps, animationTi
   );
 }
 
-export function FenetreCompteurGlobal({ compteur, sceneCounterTemplates = [], onModifier, onChanger, onFermer }) {
+export function FenetreCompteurGlobal({ compteur, sceneCounterTemplates = [], onModifier, onChanger, onFermer, onSaveTemplate }) {
   const [templateId, setTemplateId] = useState(sceneCounterTemplates[0]?.id || '');
+  const [templateMessage, setTemplateMessage] = useState('');
   const courant = { ...COMPTEUR_GLOBAL_PAR_DEFAUT, ...(compteur || {}) };
   const modifier = (valeur) => onModifier({ ...courant, ...valeur });
   const mode = courant.mode || 'clock';
@@ -424,6 +452,14 @@ export function FenetreCompteurGlobal({ compteur, sceneCounterTemplates = [], on
   const appliquerTemplate = () => {
     if (!templateChoisi?.counter) return;
     onModifier({ ...templateChoisi.counter, running: false, startedAt: null, elapsedMs: 0 });
+    setTemplateMessage('');
+  };
+  const enregistrerTemplate = () => {
+    const template = onSaveTemplate?.(courant);
+    if (template) {
+      setTemplateId(template.id);
+      setTemplateMessage(t('templates.editor.saved', { name: template.name }));
+    }
   };
   useEffect(() => {
     if (!templateId && sceneCounterTemplates[0]?.id) setTemplateId(sceneCounterTemplates[0].id);
@@ -478,6 +514,8 @@ export function FenetreCompteurGlobal({ compteur, sceneCounterTemplates = [], on
           <summary>{t('trackers.global.thresholds.summary')}</summary>
           <EditeurSeuilsCompteurScene compteur={courant} onModifier={modifier} />
         </details>
+        {onSaveTemplate && <button className="small-btn" onClick={enregistrerTemplate}>{t('templates.editor.sceneCounter.saveCurrent')}</button>}
+        {templateMessage && <p className="export-feedback">{templateMessage}</p>}
         <button className="primary" onClick={onFermer}>{t('trackers.global.actions.validate')}</button>
       </div>
     </Fenetre>

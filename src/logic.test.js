@@ -1,11 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { activeThresholds, applyBoxMarkAction, applyDelta, boxBlocks, makeDefaultCampaign, newTracker, nextTurnInfo, resetAutoTrackers, sortBoxBlocks, tickStatuses, triggerActivation, untickStatuses } from './logic.js';
+import { activeThresholds, applyBoxMarkAction, applyDelta, boxBlocks, boxVisualRank, makeDefaultCampaign, newTracker, nextTurnInfo, normalizeBoxTracker, resetAutoTrackers, sortBoxBlocks, tickStatuses, triggerActivation, untickStatuses } from './logic.js';
 
 describe('trackers updated behavior', () => {
   it('uses block based boxes by default', () => {
     const tracker = newTracker('boxes');
-    expect(tracker).toMatchObject({ type: 'boxes', blocks: [{ label: 'Bloc 1', lines: [{ label: 'Ligne 1' }] }] });
+    expect(tracker).toMatchObject({ type: 'boxes', levelVisuals: [2], blocks: [{ label: 'Bloc 1', lines: [{ label: 'Ligne 1' }] }] });
     expect(boxBlocks(tracker)[0].lines[0].boxes.map((box) => box.mark)).toEqual([0, 0, 0, 0]);
+  });
+
+  it('can decouple box logical levels from their visual marks', () => {
+    const tracker = normalizeBoxTracker({ type: 'boxes', fillLevels: 1, levelVisuals: [2], blocks: [{ label: 'Bloc', lines: [{ label: 'Ligne', boxes: [{ position: 0, mark: 1 }] }] }] });
+
+    expect(tracker.fillLevels).toBe(1);
+    expect(boxVisualRank(1, tracker)).toBe(2);
+    expect(boxVisualRank(1, { ...tracker, levelVisuals: [5] })).toBe(5);
   });
 
   it('creates bars with a default threshold below zero', () => {
@@ -100,10 +108,22 @@ describe('trackers updated behavior', () => {
     expect(second.trackers[0].current).toBe(1);
   });
 
+  it('does not run a frozen non-clock automation', () => {
+    const participant = { trackers: [{ type: 'bar', current: 10, initial: 10, min: 0, max: 20, step: 3, autoReset: 'activation', frozen: true, resetRule: { step: -2, percent: 100, barAutoMode: 'always' } }] };
+    const next = resetAutoTrackers(participant, 'activation');
+    expect(next.trackers[0].current).toBe(10);
+  });
+
   it('runs round clocks only on the round trigger', () => {
     const participant = { trackers: [{ type: 'clock', current: 0, min: 0, max: 6, step: 1, autoReset: 'round' }] };
     expect(resetAutoTrackers(participant, 'activation').trackers[0].current).toBe(0);
     expect(resetAutoTrackers(participant, 'round').trackers[0].current).toBe(1);
+  });
+
+  it('runs non-clock automation on the configured round trigger', () => {
+    const participant = { trackers: [{ type: 'bar', current: 10, initial: 10, min: 0, max: 20, autoReset: 'round', resetRule: { step: -2, percent: 100, barAutoMode: 'always' } }] };
+    expect(resetAutoTrackers(participant, 'activation').trackers[0].current).toBe(10);
+    expect(resetAutoTrackers(participant, 'round').trackers[0].current).toBe(8);
   });
 
   it('keeps point cycles driven by actual looping', () => {
@@ -143,6 +163,97 @@ describe('trackers updated behavior', () => {
     }, 'activation').trackers[0]).toMatchObject({ current: 0, cycles: 0 });
   });
 
+  it('can let point automation change loop counters when enabled', () => {
+    const participant = {
+      trackers: [{
+        type: 'points',
+        current: 5,
+        min: 0,
+        max: 5,
+        limitMode: 'loop',
+        cycles: 0,
+        autoReset: 'activation',
+        resetRule: { step: 3, pointsAutoMode: 'increase', pointsAutoCycles: true },
+      }],
+    };
+
+    expect(resetAutoTrackers(participant, 'activation').trackers[0]).toMatchObject({ current: 3, cycles: 1 });
+  });
+
+  it('advances looping point automation across the boundary as 4 -> 5 -> next cycle 1', () => {
+    const tracker = {
+      type: 'points',
+      current: 4,
+      min: 0,
+      max: 5,
+      limitMode: 'loop',
+      cycles: 1,
+      autoReset: 'activation',
+      resetRule: { step: 1, pointsAutoMode: 'increase', pointsAutoCycles: true },
+    };
+
+    const first = resetAutoTrackers({ trackers: [tracker] }, 'activation').trackers[0];
+    const second = resetAutoTrackers({ trackers: [first] }, 'activation').trackers[0];
+
+    expect(first).toMatchObject({ current: 5, cycles: 1 });
+    expect(second).toMatchObject({ current: 1, cycles: 2 });
+  });
+
+  it('rewinds looping point automation across the boundary as 1 -> 0 -> previous cycle 4', () => {
+    const tracker = {
+      type: 'points',
+      current: 1,
+      min: 0,
+      max: 5,
+      limitMode: 'loop',
+      cycles: 2,
+      autoReset: 'activation',
+      resetRule: { step: 1, pointsAutoMode: 'decrease', pointsAutoCycles: true },
+    };
+
+    const first = resetAutoTrackers({ trackers: [tracker] }, 'activation').trackers[0];
+    const second = resetAutoTrackers({ trackers: [first] }, 'activation').trackers[0];
+
+    expect(first).toMatchObject({ current: 0, cycles: 2 });
+    expect(second).toMatchObject({ current: 4, cycles: 1 });
+  });
+
+  it('can keep point automation inside the current loop when loop counter changes are disabled', () => {
+    const participant = {
+      trackers: [{
+        type: 'points',
+        current: 5,
+        min: 0,
+        max: 5,
+        limitMode: 'loop',
+        cycles: 0,
+        autoReset: 'activation',
+        resetRule: { step: 3, pointsAutoMode: 'increase', pointsAutoCycles: false },
+      }],
+    };
+
+    expect(resetAutoTrackers(participant, 'activation').trackers[0]).toMatchObject({ current: 5, cycles: 0 });
+  });
+
+  it('treats full points and empty next cycle as equivalent for default loop automation', () => {
+    const participant = {
+      trackers: [{
+        type: 'points',
+        current: 0,
+        initial: 5,
+        min: 0,
+        max: 5,
+        limitMode: 'loop',
+        cycles: 1,
+        cyclesInitial: 0,
+        autoReset: 'activation',
+        resetRule: { step: 1, pointsAutoMode: 'default', pointsAutoCycles: true },
+      }],
+    };
+
+    expect(resetAutoTrackers(participant, 'activation').trackers[0]).toMatchObject({ current: 0, cycles: 1 });
+  });
+
   it('reduces bar excess with floor rounding by default', () => {
     const participant = {
       trackers: [{
@@ -156,6 +267,99 @@ describe('trackers updated behavior', () => {
     };
 
     expect(resetAutoTrackers(participant, 'activation').trackers[0].current).toBe(12);
+  });
+
+  it('applies additive and multiplicative bar automation inside bounds', () => {
+    const participant = {
+      trackers: [{
+        type: 'bar',
+        current: 4,
+        min: 0,
+        max: 20,
+        autoReset: 'activation',
+        resetRule: { step: 2, percent: 300 },
+      }],
+    };
+
+    expect(resetAutoTrackers(participant, 'activation').trackers[0].current).toBe(14);
+  });
+
+  it('can decrease a bar down to the minimum without overshooting', () => {
+    const participant = {
+      trackers: [{
+        type: 'bar',
+        current: 6,
+        min: 0,
+        max: 10,
+        autoReset: 'activation',
+        resetRule: { step: -2, percent: 100, barAutoMode: 'limit' },
+      }],
+    };
+
+    expect(resetAutoTrackers(participant, 'activation').trackers[0].current).toBe(4);
+  });
+
+  it('can decrease a bar past the minimum when minimum clamp is disabled', () => {
+    const participant = {
+      trackers: [{
+        type: 'bar',
+        current: 1,
+        min: 0,
+        max: 10,
+        minAbsolute: false,
+        autoReset: 'activation',
+        resetRule: { step: -2, percent: 100, barAutoMode: 'always' },
+      }],
+    };
+
+    expect(resetAutoTrackers(participant, 'activation').trackers[0].current).toBe(-1);
+  });
+
+  it('can increase a bar up to the maximum without overshooting', () => {
+    const participant = {
+      trackers: [{
+        type: 'bar',
+        current: 4,
+        min: 0,
+        max: 10,
+        autoReset: 'activation',
+        resetRule: { step: 2, percent: 100, barAutoMode: 'limit' },
+      }],
+    };
+
+    expect(resetAutoTrackers(participant, 'activation').trackers[0].current).toBe(6);
+  });
+
+  it('can increase a bar past the maximum when maximum clamp is disabled', () => {
+    const participant = {
+      trackers: [{
+        type: 'bar',
+        current: 9,
+        min: 0,
+        max: 10,
+        maxAbsolute: false,
+        autoReset: 'activation',
+        resetRule: { step: 2, percent: 100, barAutoMode: 'always' },
+      }],
+    };
+
+    expect(resetAutoTrackers(participant, 'activation').trackers[0].current).toBe(11);
+  });
+
+  it('can bring a bar back toward its default value without overshooting', () => {
+    const participant = {
+      trackers: [{
+        type: 'bar',
+        current: 4,
+        initial: 10,
+        min: 0,
+        max: 20,
+        autoReset: 'activation',
+        resetRule: { step: 2, percent: 300, barAutoMode: 'default' },
+      }],
+    };
+
+    expect(resetAutoTrackers(participant, 'activation').trackers[0].current).toBe(10);
   });
 
   it('protects activation statuses and clocks from multiple action slots in the same round', () => {

@@ -10,7 +10,7 @@ import { createStatus, createSurprisedStatus } from '../domain/statuses.js';
 export function useCharacterInteractions(scene, actions) {
   const [selectedId, setSelectedId] = useState(null);
   const [editingId, setEditingId] = useState(null);
-  const [statusTargetId, setStatusTargetId] = useState(null);
+  const [statusTarget, setStatusTarget] = useState(null);
   const [joinTargetId, setJoinTargetId] = useState(null);
   const [lateInitiativeAddition, setLateInitiativeAddition] = useState(null);
   const [initiativeEditId, setInitiativeEditId] = useState(null);
@@ -19,7 +19,8 @@ export function useCharacterInteractions(scene, actions) {
   const allCharacters = [...scene.participants, ...(scene.reserve || [])];
   const selected = allCharacters.find((participant) => participant.id === selectedId);
   const editing = allCharacters.find((participant) => participant.id === editingId);
-  const statusTarget = allCharacters.find((participant) => participant.id === statusTargetId);
+  const statusTargetParticipant = allCharacters.find((participant) => participant.id === statusTarget?.participantId);
+  const statusEdited = statusTargetParticipant?.statuses?.find((status) => status.id === statusTarget?.statusId) || null;
   const joinTarget = (scene.reserve || []).find((participant) => participant.id === joinTargetId);
   const lateInitiativeParticipant = allCharacters.find((participant) => participant.id === lateInitiativeAddition?.participantId);
   const initiativeEditParticipant = allCharacters.find((participant) => participant.id === initiativeEditId);
@@ -53,6 +54,28 @@ export function useCharacterInteractions(scene, actions) {
     statuses: (participant.statuses || []).filter((status) => status.id !== statusId),
   }));
 
+  const updateCharacterStatus = (participantId, statusId, data) => {
+    const status = createStatus(data);
+    if (!status) return;
+    updateCharacter(participantId, (participant) => ({
+      ...participant,
+      statuses: (participant.statuses || []).map((current) => {
+        if (current.id !== statusId) return current;
+        const sameDuration = current.duration === status.duration;
+        return {
+          ...status,
+          id: statusId,
+          remaining: sameDuration ? current.remaining : status.remaining,
+          expired: sameDuration ? current.expired : false,
+          skipNextActivation: sameDuration ? current.skipNextActivation : status.skipNextActivation,
+          activationSkipConsumed: sameDuration ? current.activationSkipConsumed : status.activationSkipConsumed,
+          skipNextAdvance: sameDuration ? current.skipNextAdvance : status.skipNextAdvance,
+          advanceSkipConsumed: sameDuration ? current.advanceSkipConsumed : status.advanceSkipConsumed,
+        };
+      }),
+    }));
+  };
+
   const addCharacterStatus = (participantId, data) => {
     const status = createStatus(data);
     if (status) updateCharacter(participantId, (participant) => ({ ...participant, statuses: [...(participant.statuses || []), status] }));
@@ -78,10 +101,13 @@ export function useCharacterInteractions(scene, actions) {
   };
 
   const saveStatus = (data) => {
-    if (!statusTargetId) return;
-    addCharacterStatus(statusTargetId, data);
-    setStatusTargetId(null);
+    if (!statusTarget?.participantId) return;
+    if (statusTarget.statusId) updateCharacterStatus(statusTarget.participantId, statusTarget.statusId, data);
+    else addCharacterStatus(statusTarget.participantId, data);
+    setStatusTarget(null);
   };
+
+  const requestStatus = (participantId, statusId = '') => setStatusTarget(participantId ? { participantId, statusId } : null);
 
   const joinCharacter = (participantId, initiative) => {
     if (!participantId) return;
@@ -169,7 +195,8 @@ export function useCharacterInteractions(scene, actions) {
   return {
     selected,
     editing,
-    statusTarget,
+    statusTarget: statusTargetParticipant,
+    statusEdited,
     joinTarget,
     lateInitiativeParticipant,
     lateInitiativeAdditionKind: lateInitiativeAddition?.kind || '',
@@ -179,8 +206,8 @@ export function useCharacterInteractions(scene, actions) {
     closeCharacter: () => setSelectedId(null),
     editCharacter: setEditingId,
     closeEditor: () => setEditingId(null),
-    requestStatus: setStatusTargetId,
-    cancelStatus: () => setStatusTargetId(null),
+    requestStatus,
+    cancelStatus: () => setStatusTarget(null),
     requestJoin,
     cancelJoin: () => setJoinTargetId(null),
     confirmLateInitiativeAddition,

@@ -115,6 +115,8 @@ function normalizeStatusTemplate(template) {
       inactive: !!source.inactive,
       limited: !source.inactive && !!source.limited,
       advanceOn: source.advanceOn === 'round' ? 'round' : 'activation',
+      color: source.color || '',
+      tintParticipant: !!source.tintParticipant,
       expired: false,
     },
   };

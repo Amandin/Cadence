@@ -373,17 +373,17 @@ describe('campaign storage', () => {
           current: 15,
           min: 0,
           max: 10,
-          resetRule: { excessReductionPercent: 50, underflowRecoveryPercent: 25 },
+          resetRule: { excessReductionPercent: 50, underflowRecoveryPercent: 25, multiplier: 2, barAutoMode: 'decrease' },
         }],
       }],
     };
 
     const campaign = normalizeCampaignPayload({ version: '0.2.8.5', scenes: [sourceScene] });
     const tracker = campaign.scenes[0].participants[0].trackers[0];
-    expect(tracker.resetRule).toMatchObject({ excessReductionPercent: 50, underflowRecoveryPercent: 25, rounding: 'floor' });
+    expect(tracker.resetRule).toMatchObject({ excessReductionPercent: 50, underflowRecoveryPercent: 25, percent: 200, barAutoMode: 'limit', rounding: 'floor' });
 
     const serialized = JSON.parse(serializeCampaign(campaign.scenes, false, 'Suivis', null, campaign.initiativeRules));
-    expect(serialized.scenes[0].participants[0].trackers[0].resetRule).toMatchObject({ excessReductionPercent: 50, underflowRecoveryPercent: 25, rounding: 'floor' });
+    expect(serialized.scenes[0].participants[0].trackers[0].resetRule).toMatchObject({ excessReductionPercent: 50, underflowRecoveryPercent: 25, percent: 200, barAutoMode: 'limit', rounding: 'floor' });
   });
 
   it('normalizes obsolete bar steps when serializing current scenes', () => {

@@ -141,6 +141,7 @@ export function normaliserResetRule(suivi) {
     step: nombreOuDefaut(rule.step, isBoxesTracker(suivi) ? -1 : 1),
     stepMode: rule.stepMode === 'percent' ? 'percent' : 'flat',
     pointsAutoMode: ['increase', 'decrease', 'default'].includes(rule.pointsAutoMode) ? rule.pointsAutoMode : 'default',
+    pointsAutoCycles: typeof rule.pointsAutoCycles === 'boolean' ? rule.pointsAutoCycles : rule.pointsAutoMode === 'default',
     counterRules: rule.counterRules && typeof rule.counterRules === 'object' ? rule.counterRules : {},
     boxBlocks: rule.boxBlocks && typeof rule.boxBlocks === 'object' ? rule.boxBlocks : {},
     minCap: rule.minCap === '' ? '' : rule.minCap ?? '',

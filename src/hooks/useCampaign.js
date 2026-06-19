@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { createBlankScene, createCampaignActions } from '../actions/campaignActions.js';
 import { createSceneActions } from '../actions/sceneActions.js';
 import { createRestorePoint, pruneRestorePoints } from '../actions/sceneSupport.js';
-import { STORAGE_KEY, defaultCategoryOrder, defaultEqualityRule, defaultInitiativeOrder } from '../constants.js';
+import { STORAGE_KEY, TEMPLATE_STORAGE_KEY, defaultCategoryOrder, defaultEqualityRule, defaultInitiativeOrder } from '../constants.js';
 import { applyInitiativeRules, campaignRulesFromPayload, normalizeCampaignRules, unifyCampaignScenes } from '../domain/campaignRules.js';
 import { normalizeGlobalTracker, stepGlobalTracker } from '../domain/globalTracker.js';
 import { hasCompletedFirstRunOnboarding, markFirstRunOnboardingComplete, resetFirstRunOnboarding, shouldShowFirstRunOnboarding } from '../firstRunOnboarding.js';
@@ -13,6 +13,7 @@ import { createRulePresetSnapshot } from '../rulePresets.js';
 import { DEFAULT_CAMPAIGN_NAME, campaignNameFromPayload, campaignTemplatesFromPayload, createCampaignPayload, loadCampaign, normalizeCampaignPayload, normalizeCampaignScene, normalizeCampaignScenes, rulePresetSnapshotFromPayload, saveCampaign, serializeCampaign } from '../storage.js';
 import { removeLocalCampaignPayload } from '../localCampaignStorage.js';
 import { campaignEntryFromPayload, copiedCampaignNames, readCadenceFile, scanCampaignDirectory, writeCadenceFile } from './campaignFilePersistence.js';
+import { normalizeTemplateStore } from '../templates.js';
 
 const SCENE_INDEX_STORAGE_KEY = 'cadence:interface:scene-index:v1';
 const THEME_STORAGE_KEY = 'cadence:interface:dark:v1';
@@ -98,7 +99,7 @@ export function useCampaign() {
   const campaignDirectoryHandleRef = useRef(null);
   const lastPersistenceSignatureRef = useRef('');
 
-  const rawScene = scenes[sceneIndex] || scenes[0];
+  const rawScene = scenes[sceneIndex] || scenes[0] || createBlankScene(campaignRules);
   const scene = normalizeCampaignScene(applyInitiativeRules(rawScene, campaignRules));
   const syncedScenes = normalizeScenesWithCampaignRules(scenes, campaignRules);
   const participants = scene.participants;
@@ -376,7 +377,19 @@ export function useCampaign() {
       fileHandlesRef.current.clear();
       campaignDirectoryHandleRef.current = null;
       removeLocalCampaignPayload(STORAGE_KEY);
+      try {
+        window.localStorage.removeItem(TEMPLATE_STORAGE_KEY);
+      } catch {
+        // La reinitialisation reste possible si le stockage local est indisponible.
+      }
       resetFirstRunOnboarding();
+      setCampaignRules(normalizeCampaignRules({}));
+      setRulePresetSnapshot(null);
+      setScenes([]);
+      setSceneIndex(0);
+      setRestorePoints({});
+      setTemplateStore(normalizeTemplateStore(null));
+      setCampaignName(DEFAULT_CAMPAIGN_NAME);
       setCampaignEntries([]);
       setActiveCampaignEntryId('');
       setPendingFileChoice(null);

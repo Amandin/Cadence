@@ -239,6 +239,12 @@ export function useTemplates(store, setStore) {
   };
   const deleteTrackerTemplate = (templateId) => updateStore((currentStore) => ({ ...currentStore, trackerTemplates: currentStore.trackerTemplates.filter((template) => template.id !== templateId) }));
   const createTrackerFromTemplate = (templateId) => instantiateTrackerTemplate(getTrackerTemplate(templateId));
+  const saveTrackerAsTemplate = (tracker, name) => {
+    const cleanName = templateCategoryFromName(name || tracker?.name) || 'Indicateur';
+    const template = makeTrackerTemplateFromTracker(tracker, { name: uniqueFlatTemplateName(templateStore.trackerTemplates, cleanName) });
+    updateStore((currentStore) => ({ ...currentStore, trackerTemplates: [...currentStore.trackerTemplates, template] }));
+    return template;
+  };
 
   const getStatusTemplate = (templateId) => templateStore.statusTemplates.find((template) => template.id === templateId) || null;
   const createStatusTemplate = () => {
@@ -266,6 +272,12 @@ export function useTemplates(store, setStore) {
   };
   const deleteStatusTemplate = (templateId) => updateStore((currentStore) => ({ ...currentStore, statusTemplates: currentStore.statusTemplates.filter((template) => template.id !== templateId) }));
   const createStatusFromTemplate = (templateId) => instantiateStatusTemplate(getStatusTemplate(templateId));
+  const saveStatusAsTemplate = (status, name) => {
+    const cleanName = templateCategoryFromName(name || status?.name) || 'État';
+    const template = makeStatusTemplateFromStatus(status, { name: uniqueFlatTemplateName(templateStore.statusTemplates, cleanName) });
+    updateStore((currentStore) => ({ ...currentStore, statusTemplates: [...currentStore.statusTemplates, template] }));
+    return template;
+  };
 
   const getSceneStatusTemplate = (templateId) => templateStore.sceneStatusTemplates.find((template) => template.id === templateId) || null;
   const createSceneStatusTemplate = () => {
@@ -293,6 +305,12 @@ export function useTemplates(store, setStore) {
   };
   const deleteSceneStatusTemplate = (templateId) => updateStore((currentStore) => ({ ...currentStore, sceneStatusTemplates: currentStore.sceneStatusTemplates.filter((template) => template.id !== templateId) }));
   const createSceneStatusFromTemplate = (templateId) => instantiateSceneStatusTemplate(getSceneStatusTemplate(templateId));
+  const saveSceneStatusAsTemplate = (status, name) => {
+    const cleanName = templateCategoryFromName(name || status?.name) || 'État de scène';
+    const template = makeSceneStatusTemplateFromStatus(status, { name: uniqueFlatTemplateName(templateStore.sceneStatusTemplates, cleanName) });
+    updateStore((currentStore) => ({ ...currentStore, sceneStatusTemplates: [...currentStore.sceneStatusTemplates, template] }));
+    return template;
+  };
 
   const getSceneCounterTemplate = (templateId) => templateStore.sceneCounterTemplates.find((template) => template.id === templateId) || null;
   const createSceneCounterTemplate = () => {
@@ -319,6 +337,12 @@ export function useTemplates(store, setStore) {
   };
   const deleteSceneCounterTemplate = (templateId) => updateStore((currentStore) => ({ ...currentStore, sceneCounterTemplates: currentStore.sceneCounterTemplates.filter((template) => template.id !== templateId) }));
   const createSceneCounterFromTemplate = (templateId) => instantiateSceneCounterTemplate(getSceneCounterTemplate(templateId));
+  const saveSceneCounterAsTemplate = (counter, name) => {
+    const cleanName = templateCategoryFromName(name || counter?.name) || 'Indicateur de scène';
+    const template = makeSceneCounterTemplateFromCounter(counter, { name: uniqueFlatTemplateName(templateStore.sceneCounterTemplates, cleanName) });
+    updateStore((currentStore) => ({ ...currentStore, sceneCounterTemplates: [...currentStore.sceneCounterTemplates, template] }));
+    return template;
+  };
 
   const getRuleTemplate = (templateId) => templateStore.ruleTemplates.find((template) => template.id === templateId) || null;
   const saveRuleTemplate = (rules, options) => {
@@ -393,24 +417,28 @@ export function useTemplates(store, setStore) {
     duplicateTrackerTemplate,
     deleteTrackerTemplate,
     createTrackerFromTemplate,
+    saveTrackerAsTemplate,
     getStatusTemplate,
     createStatusTemplate,
     updateStatusTemplate,
     duplicateStatusTemplate,
     deleteStatusTemplate,
     createStatusFromTemplate,
+    saveStatusAsTemplate,
     getSceneStatusTemplate,
     createSceneStatusTemplate,
     updateSceneStatusTemplate,
     duplicateSceneStatusTemplate,
     deleteSceneStatusTemplate,
     createSceneStatusFromTemplate,
+    saveSceneStatusAsTemplate,
     getSceneCounterTemplate,
     createSceneCounterTemplate,
     updateSceneCounterTemplate,
     duplicateSceneCounterTemplate,
     deleteSceneCounterTemplate,
     createSceneCounterFromTemplate,
+    saveSceneCounterAsTemplate,
     getRuleTemplate,
     saveRuleTemplate,
     duplicateRuleTemplate,

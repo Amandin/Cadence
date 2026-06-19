@@ -2200,3 +2200,103 @@ body:has(.app.dark),
   background-repeat: no-repeat !important;
   padding-right: 32px !important;
 }
+
+.fiche-card.status-tinted-character,
+.character-sheet.status-tinted-character {
+  background: var(--status-tint-gradient, var(--ui-surface)) !important;
+}
+
+.app.dark .fiche-card.status-tinted-character,
+.dark .character-sheet.status-tinted-character {
+  background: var(--status-tint-gradient, var(--ui-surface)) !important;
+}
+
+.character-sheet-header {
+  display: grid;
+  gap: 5px;
+  margin-bottom: 10px;
+}
+
+.character-sheet-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.character-sheet-title-row h2 {
+  margin: 0;
+  min-width: 0;
+}
+
+.conceal-character-btn.discreet {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 26px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ui-surface-soft) 74%, transparent);
+  border: 1px solid var(--ui-border);
+  color: var(--ui-muted);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.conceal-character-btn.discreet.active {
+  background: #fef3c7;
+  border-color: #f59e0b;
+  color: #92400e;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, .16);
+}
+
+.dark .conceal-character-btn.discreet.active {
+  background: rgba(245, 158, 11, .16);
+  border-color: rgba(245, 158, 11, .48);
+  color: #fde68a;
+}
+
+.character-secret-edit {
+  margin-top: 8px;
+}
+
+.sheet-add-status-btn {
+  min-height: 26px;
+  padding: 3px 9px;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.fiche-card.secret-character-sheet,
+.character-sheet.secret-character-sheet {
+  background:
+    repeating-linear-gradient(135deg, rgba(71, 85, 105, .06) 0 6px, rgba(71, 85, 105, .11) 6px 12px),
+    var(--ui-surface) !important;
+}
+
+.fiche-card.secret-character-sheet.status-tinted-character,
+.character-sheet.secret-character-sheet.status-tinted-character {
+  background:
+    repeating-linear-gradient(135deg, rgba(71, 85, 105, .025) 0 6px, rgba(71, 85, 105, .055) 6px 12px),
+    var(--status-tint-gradient, var(--ui-surface)) !important;
+}
+
+.dark .fiche-card.secret-character-sheet,
+.dark .character-sheet.secret-character-sheet {
+  background:
+    repeating-linear-gradient(135deg, rgba(203, 213, 225, .05) 0 6px, rgba(203, 213, 225, .095) 6px 12px),
+    var(--ui-surface) !important;
+}
+
+.dark .fiche-card.secret-character-sheet.status-tinted-character,
+.dark .character-sheet.secret-character-sheet.status-tinted-character {
+  background:
+    repeating-linear-gradient(135deg, rgba(203, 213, 225, .025) 0 6px, rgba(203, 213, 225, .055) 6px 12px),
+    var(--status-tint-gradient, var(--ui-surface)) !important;
+}
+
+.app.scene-status-tinted,
+.app.scene-status-tinted .scene-app {
+  background: var(--scene-status-tint-gradient, transparent), var(--ui-app-bg) !important;
+}

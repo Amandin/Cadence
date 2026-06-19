@@ -5,7 +5,7 @@ function aDuContenuOperationnel(participant, indicateursVisibles) {
   return indicateursVisibles.length > 0 || (participant.statuses || []).length > 0;
 }
 
-export function FichetteInitiative({ participant, actif, groupeSimultane, temporaliteSouple, montrerInitiative = true, afficherActionsSouples = true, dejaJoue, actionsRestantes = 0, actionsJouees = 0, onMarquerAJoue, onAnnulerAJoue, onOuvrir, onSuivi, onSupprimerSuivi, onAjouterEtat, onRetirerEtat, onQuitterInitiative }) {
+export function FichetteInitiative({ participant, actif, groupeSimultane, temporaliteSouple, montrerInitiative = true, afficherActionsSouples = true, dejaJoue, actionsRestantes = 0, actionsJouees = 0, onMarquerAJoue, onAnnulerAJoue, onOuvrir, onSuivi, onSupprimerSuivi, onAjouterEtat, onModifierEtat, onRetirerEtat, onQuitterInitiative }) {
   const declenchee = hasTriggeredClock(participant);
   const estPJ = participant.kind === 'PJ';
   const indicateursVisibles = participant.trackers.filter(isVisible);
@@ -37,6 +37,7 @@ export function FichetteInitiative({ participant, actif, groupeSimultane, tempor
       onSuivi={onSuivi}
       onSupprimerSuivi={onSupprimerSuivi}
       onAjouterEtat={onAjouterEtat}
+      onModifierEtat={onModifierEtat}
       onRetirerEtat={onRetirerEtat}
       primaryAction={(
         <div className="card-actions">

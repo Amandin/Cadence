@@ -3,6 +3,7 @@ import { APP_VERSION } from '../../constants.js';
 import { activeGlobalTrackerThresholds, globalTrackerDisplayValue, globalTrackerTimerState } from '../../domain/globalTracker.js';
 import { t } from '../../i18n/index.js';
 import { EtiquetteEtat, Fenetre } from '../commun/ComposantsCommuns.jsx';
+import { EditeurSeuilsCompteurScene } from '../suivis/CompteurGlobal.jsx';
 
 function MenuEntete({ sombre, onChangerTheme, onClose }) {
   const logo = sombre ? '/branding/logo-cadence-dark.svg' : '/branding/logo-cadence-light.svg';
@@ -84,7 +85,7 @@ function ActionsScene({ onAjouterParticipant, onSaisirInitiatives }) {
   );
 }
 
-function ElementsSceneMenu({ scene, onIndicateurScene, onModifierIndicateurScene, onAjouterEtatScene, onRetirerEtatScene, onEffacerEtats }) {
+function ElementsSceneMenu({ scene, onIndicateurScene, onModifierIndicateurScene, onAjouterEtatScene, onModifierEtatScene, onRetirerEtatScene, onEffacerEtats }) {
   const compteur = scene?.globalTracker || {};
   const etats = scene?.statuses || [];
   const indicateurActif = !!compteur.enabled;
@@ -114,7 +115,7 @@ function ElementsSceneMenu({ scene, onIndicateurScene, onModifierIndicateurScene
           {etats.length > 0 && (
             <>
               <div className="statuses status-control-row menu-status-list">
-                {etats.map((etat) => <EtiquetteEtat key={etat.id} etat={etat} onRetirer={() => onRetirerEtatScene?.(etat.id)} />)}
+                {etats.map((etat) => <EtiquetteEtat key={etat.id} etat={etat} onModifier={() => onModifierEtatScene?.(etat.id)} onRetirer={() => onRetirerEtatScene?.(etat.id)} />)}
               </div>
               <button className="small-btn subtle-danger menu-clear-statuses" onClick={onEffacerEtats}>{t('menu.sceneElements.clearStatuses')}</button>
             </>
@@ -182,9 +183,10 @@ function RestaurationScene({ points, pointActif, onChoisirPoint, onRestaurer }) 
 }
 
 function FenetreEditionIndicateurScene({ scene, compteur, onModifier, onChanger, onFermer }) {
-  const courant = compteur || { enabled: false, name: 'Menace', mode: 'clock', current: 0, max: 10, auto: false, running: false, startedAt: null, elapsedMs: 0 };
+  const courant = compteur || { enabled: false, name: 'Menace', mode: 'clock', current: 0, max: 10, auto: false, trigger: 'manual', thresholds: [], running: false, startedAt: null, elapsedMs: 0 };
   const tempsReel = ['stopwatch', 'timer'].includes(courant.mode);
   const enPreparation = scene?.round < 0;
+  const avanceAuRound = (courant.trigger || (courant.auto ? 'round' : 'manual')) === 'round';
   const temps = tempsEcoule(courant);
   const dureeSecondes = Math.max(1, Number(courant.max || 60));
   const affichageTemps = courant.mode === 'timer' ? formaterTemps(Math.max(0, dureeSecondes * 1000 - temps)) : formaterTemps(temps);
@@ -206,7 +208,10 @@ function FenetreEditionIndicateurScene({ scene, compteur, onModifier, onChanger,
           {courant.mode === 'timer' && <label className="field">{t('dialogs.sceneIndicator.minutes')}<input type="number" inputMode="numeric" min="1" value={Math.max(1, Math.round(dureeSecondes / 60))} onChange={(event) => modifier({ max: Math.max(1, Number(event.target.value) || 1) * 60, enabled: true })} /></label>}
         </div>
         {!tempsReel && <label className="field">{t('dialogs.sceneIndicator.maximum')}<input type="number" inputMode="numeric" min="1" value={courant.max ?? 10} onChange={(event) => modifier({ max: Math.max(1, Number(event.target.value) || 1), enabled: true })} /></label>}
-        {!tempsReel && <label className="row counter-auto-row"><input type="checkbox" checked={!!courant.auto} onChange={(event) => modifier({ auto: event.target.checked, enabled: true })} /> {t('dialogs.sceneIndicator.autoRound')}</label>}
+        {!tempsReel && <label className={`reset-switch counter-auto-row ${avanceAuRound ? 'active' : ''}`}>
+          <span>{t('dialogs.sceneIndicator.autoRound')}</span>
+          <input type="checkbox" checked={avanceAuRound} onChange={(event) => modifier({ auto: event.target.checked, trigger: event.target.checked ? 'round' : 'manual', enabled: true })} />
+        </label>}
         {!tempsReel && <div className="grid2"><button className="small-btn" onClick={() => onChanger(-1)}>−1</button><button className="small-btn" onClick={() => onChanger(1)}>+1</button></div>}
         {tempsReel && <div className="timer-control-panel menu-timer-panel">
           <strong>{affichageTemps}</strong>
@@ -216,6 +221,10 @@ function FenetreEditionIndicateurScene({ scene, compteur, onModifier, onChanger,
             <button className="small-btn" onClick={resetTemps}>{t('dialogs.sceneIndicator.reset')}</button>
           </div>
         </div>}
+        <details className="advanced-options" open>
+          <summary>{t('trackers.global.thresholds.summary')}</summary>
+          <EditeurSeuilsCompteurScene compteur={courant} onModifier={(patch) => modifier({ ...patch, enabled: true })} />
+        </details>
       </div>
     </Fenetre>
   );
@@ -303,7 +312,7 @@ function FenetreRetourPreparation({ onFermer, onValider }) {
   );
 }
 
-export function MenuPrincipal({ scene, restorePoints = [], onRestore, onReturnToPreparation, onReturnToPreparationWithOptions, onAdvanceRound, onDecreaseRound, onChangeRoundWithAutomations, onAdvanceAutomations, onRewindAutomations, onResetTrackers, onClearStatuses, onEndTemporaryEffects, onClose, dark, setDark, onAddParticipant, onOpenInitiativeRoller, onOpenCampaignHub, onGlobalTracker, onStepGlobalTracker, onAddSceneStatus, onRemoveSceneStatus, onUpdateSceneNotes }) {
+export function MenuPrincipal({ scene, restorePoints = [], onRestore, onReturnToPreparation, onReturnToPreparationWithOptions, onAdvanceRound, onDecreaseRound, onChangeRoundWithAutomations, onAdvanceAutomations, onRewindAutomations, onResetTrackers, onClearStatuses, onEndTemporaryEffects, onClose, dark, setDark, onAddParticipant, onOpenInitiativeRoller, onOpenCampaignHub, onGlobalTracker, onStepGlobalTracker, onAddSceneStatus, onEditSceneStatus, onRemoveSceneStatus, onUpdateSceneNotes }) {
   const pointsRestauration = [...restorePoints].sort((a, b) => a.round - b.round);
   const [pointRestaurationId, setPointRestaurationId] = useState(pointsRestauration.at(-1)?.id || '');
   const [editionIndicateurOuverte, setEditionIndicateurOuverte] = useState(false);
@@ -325,7 +334,7 @@ export function MenuPrincipal({ scene, restorePoints = [], onRestore, onReturnTo
         <div className="main-menu-primary">
           <button className="primary hub-menu-main-action" onClick={onOpenCampaignHub}>{t('menu.returnHub')}</button>
           <ActionsScene onAjouterParticipant={onAddParticipant} onSaisirInitiatives={onOpenInitiativeRoller} />
-          <ElementsSceneMenu scene={scene} onIndicateurScene={onGlobalTracker} onModifierIndicateurScene={() => setEditionIndicateurOuverte(true)} onAjouterEtatScene={onAddSceneStatus} onRetirerEtatScene={onRemoveSceneStatus} onEffacerEtats={onClearStatuses} />
+          <ElementsSceneMenu scene={scene} onIndicateurScene={onGlobalTracker} onModifierIndicateurScene={() => setEditionIndicateurOuverte(true)} onAjouterEtatScene={onAddSceneStatus} onModifierEtatScene={onEditSceneStatus} onRetirerEtatScene={onRemoveSceneStatus} onEffacerEtats={onClearStatuses} />
           <OptionsDerouleSceneMenu scene={scene} points={pointsRestauration} pointActif={pointRestaurationId} onChoisirPoint={setPointRestaurationId} onRestaurer={onRestore} onDemanderRetourPreparation={() => setRetourPreparationOuvert(true)} onAvancerRound={onAdvanceRound} onReculerRound={onDecreaseRound} onChangerRoundAvecAutomatismes={onChangeRoundWithAutomations} onAvancerAutomatismes={onAdvanceAutomations} onReculerAutomatismes={onRewindAutomations} onResetSuivis={onResetTrackers} />
         </div>
         <div className="main-menu-secondary">

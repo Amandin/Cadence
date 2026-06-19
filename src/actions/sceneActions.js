@@ -514,6 +514,27 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
       const status = createStatus({ ...data, advanceOn: data.advanceOn || 'round' });
       if (status) updateScene((s) => ({ ...s, statuses: [...(s.statuses || []), status] }));
     },
+    updateSceneStatus(sid, data) {
+      const status = createStatus({ ...data, advanceOn: data.advanceOn || 'round' });
+      if (!status) return;
+      updateScene((s) => ({
+        ...s,
+        statuses: (s.statuses || []).map((current) => {
+          if (current.id !== sid) return current;
+          const sameDuration = current.duration === status.duration;
+          return {
+            ...status,
+            id: sid,
+            remaining: sameDuration ? current.remaining : status.remaining,
+            expired: sameDuration ? current.expired : false,
+            skipNextActivation: sameDuration ? current.skipNextActivation : status.skipNextActivation,
+            activationSkipConsumed: sameDuration ? current.activationSkipConsumed : status.activationSkipConsumed,
+            skipNextAdvance: sameDuration ? current.skipNextAdvance : status.skipNextAdvance,
+            advanceSkipConsumed: sameDuration ? current.advanceSkipConsumed : status.advanceSkipConsumed,
+          };
+        }),
+      }));
+    },
     removeSceneStatus(sid) {
       updateScene((s) => ({ ...s, statuses: (s.statuses || []).filter((status) => status.id !== sid) }));
     },

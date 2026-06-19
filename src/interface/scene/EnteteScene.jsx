@@ -23,6 +23,8 @@ export function EnteteScene(props) {
     onModifierCompteurGlobal,
     onToggleCompteurTemps,
     onToggleSurprisePreparation,
+    onAjouterEtatScene,
+    onModifierEtatScene,
     onRetirerEtatScene,
   } = props;
   const horlogeABloquee = horlogesBloquantes.length > 0;
@@ -71,7 +73,8 @@ export function EnteteScene(props) {
         <button className={`turn-btn next ${classeSuivant}`} onClick={onTourSuivant} disabled={suivantDesactive} aria-label={libelleSuivant}>{horlogeABloquee ? '⏸' : '➜'}</button>
       </div>
       <div className="statuses status-control-row scene-status-row">
-        {(scene.statuses || []).map((etat) => <EtiquetteEtat key={etat.id} etat={etat} onRetirer={() => onRetirerEtatScene?.(etat.id)} />)}
+        {(scene.statuses || []).map((etat) => <EtiquetteEtat key={etat.id} etat={etat} onModifier={() => onModifierEtatScene?.(etat.id)} onRetirer={() => onRetirerEtatScene?.(etat.id)} />)}
+        <button className="small-btn scene-add-status-btn" type="button" onClick={() => onAjouterEtatScene?.()}>{t('scene.status.add')}</button>
       </div>
     </header>
   );

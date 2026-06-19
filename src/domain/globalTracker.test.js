@@ -56,6 +56,25 @@ describe('global tracker', () => {
     expect(activeGlobalTrackerThresholds(tracker).map((threshold) => threshold.label)).toEqual(['Urgence']);
   });
 
+  it('keeps realtime thresholds aligned with timer and stopwatch direction', () => {
+    const timer = {
+      enabled: true,
+      mode: 'timer',
+      max: 60,
+      elapsedMs: 40000,
+      thresholds: [{ value: 30, label: 'Plus que trente', operator: 'gte' }],
+    };
+    const stopwatch = {
+      enabled: true,
+      mode: 'stopwatch',
+      elapsedMs: 20000,
+      thresholds: [{ value: 10, label: 'Dix secondes', operator: 'lte' }],
+    };
+
+    expect(activeGlobalTrackerThresholds(timer).map((threshold) => threshold.label)).toEqual(['Plus que trente']);
+    expect(activeGlobalTrackerThresholds(stopwatch).map((threshold) => threshold.label)).toEqual(['Dix secondes']);
+  });
+
   it('keeps overrun timers eligible for remaining-time thresholds', () => {
     const tracker = {
       enabled: true,

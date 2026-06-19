@@ -1,4 +1,4 @@
-export const APP_VERSION = '0.9';
+export const APP_VERSION = '0.9.46-work';
 export const STORAGE_KEY = 'cadence:campaign:v1';
 export const TEMPLATE_STORAGE_KEY = 'cadence:templates:v1';
 
@@ -118,12 +118,18 @@ export const colorNames = {
 };
 
 export const colorAccents = {
-  red: '#f87171',
-  amber: '#fbbf24',
-  emerald: '#34d399',
-  blue: '#38bdf8',
-  violet: '#a78bfa',
-  pink: '#f472b6',
+  neutral: '#94a3b8',
+  green: '#22c55e',
+  slate: '#64748b',
+  red: '#ef4444',
+  orange: '#f97316',
+  amber: '#f59e0b',
+  emerald: '#10b981',
+  cyan: '#06b6d4',
+  blue: '#3b82f6',
+  violet: '#8b5cf6',
+  pink: '#ec4899',
+  rose: '#f43f5e',
   default: '#94a3b8',
 };
 

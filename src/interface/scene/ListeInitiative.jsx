@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { defaultCategoryOrder, defaultEqualityRule, defaultInitiativeOrder } from '../../constants.js';
 import { actionsRestantesSouples, creneauxJouesSouples } from '../../actions/flexibleTurnState.js';
 import { grouperAffichageParticipants, grouperParInitiative, ordreCreneauxClassique, trierParInitiative } from '../../domain/initiative.js';
@@ -42,6 +43,7 @@ function GroupeSimultane({ groupe, actifId, interactions }) {
           onSuivi={(trackerId, next) => interactions.updateCharacterTracker(participant.id, trackerId, next)}
           onSupprimerSuivi={(trackerId) => interactions.deleteCharacterTracker(participant.id, trackerId)}
           onAjouterEtat={() => interactions.requestStatus(participant.id)}
+          onModifierEtat={(statusId) => interactions.requestStatus(participant.id, statusId)}
           onRetirerEtat={(statusId) => interactions.removeCharacterStatus(participant.id, statusId)}
           onQuitterInitiative={() => interactions.leaveInit(participant.id)}
         />
@@ -70,6 +72,7 @@ function FichetteLibre({ scene, participant, actifId, activeSlotId, interactions
       onSuivi={(trackerId, next) => interactions.updateCharacterTracker(participant.id, trackerId, next)}
       onSupprimerSuivi={(trackerId) => interactions.deleteCharacterTracker(participant.id, trackerId)}
       onAjouterEtat={() => interactions.requestStatus(participant.id)}
+      onModifierEtat={(statusId) => interactions.requestStatus(participant.id, statusId)}
       onRetirerEtat={(statusId) => interactions.removeCharacterStatus(participant.id, statusId)}
       onQuitterInitiative={() => interactions.leaveInit(participant.id)}
     />
@@ -160,6 +163,26 @@ function ListeDeclaration({ scene, participants, interactions }) {
 }
 
 export function ListeInitiative({ scene, participants, actifId, interactions, temporaliteSouple, temporalitePhases, temporaliteDeclaration, phaseAttendRelanceInitiative, onMarquerAJoue, onAnnulerAJoue }) {
+  const containerRef = useRef(null);
+  const previousFocusKeyRef = useRef(null);
+  const focusKey = [
+    scene.round,
+    scene.phase || '',
+    scene.activeSlotId || '',
+    temporalitePhases ? (phaseAttendRelanceInitiative ? '' : actifId || '') : actifId || '',
+    temporaliteDeclaration ? declarationStage(scene) : '',
+  ].join(':');
+
+  useEffect(() => {
+    if (!focusKey || focusKey === previousFocusKeyRef.current) return;
+    previousFocusKeyRef.current = focusKey;
+    const frame = requestAnimationFrame(() => {
+      const activeCard = containerRef.current?.querySelector('.active-turn');
+      activeCard?.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [focusKey]);
+
   if (scene.round >= 0 && temporaliteDeclaration && declarationStage(scene) === declarationStages.DECLARATION) return <ListeDeclaration scene={scene} participants={participants} interactions={interactions} />;
 
   if (temporalitePhases) {
@@ -169,7 +192,7 @@ export function ListeInitiative({ scene, participants, actifId, interactions, te
     const attente = phaseAttendRelanceInitiative ? participants : participantsHorsPhaseAvancee(sceneAvecParticipants, scene.phase);
 
     return (
-      <div className="initiative-list flexible-list phase-list">
+      <div className="initiative-list flexible-list phase-list" ref={containerRef}>
         <section className="flexible-section phase-section">
           <EnteteSectionSouple titre={t('initiative.phase', { phase: scene.phase || 1 })} compteur={actifs.length} />
           {phaseAttendRelanceInitiative
@@ -188,7 +211,7 @@ export function ListeInitiative({ scene, participants, actifId, interactions, te
 
   if (!temporaliteSouple) {
     return (
-      <div className="initiative-list">
+      <div className="initiative-list" ref={containerRef}>
         <ListeParPaliers scene={scene} participants={ordreCreneauxClassique(participants, optionsEgalite(scene))} actifId={actifId} activeSlotId={scene.activeSlotId || ''} interactions={interactions} />
       </div>
     );
@@ -199,7 +222,7 @@ export function ListeInitiative({ scene, participants, actifId, interactions, te
   const dejaJoues = participantsTries.filter((participant) => actionsRestantesSouples(scene, participant.id) === 0);
 
   return (
-    <div className="initiative-list flexible-list">
+    <div className="initiative-list flexible-list" ref={containerRef}>
       <section className="flexible-section">
         <EnteteSectionSouple titre={t('initiative.actionsToResolve')} compteur={doitJouer.length} />
         <ListeParPaliers scene={scene} participants={doitJouer} actifId={actifId} activeSlotId={scene.activeSlotId || ''} interactions={interactions} temporaliteSouple onMarquerAJoue={onMarquerAJoue} onAnnulerAJoue={onAnnulerAJoue} />

@@ -120,6 +120,14 @@ function defaultThresholdOperator(tracker) {
   return 'gte';
 }
 
+function effectiveThresholdOperator(tracker, threshold) {
+  const operator = threshold.operator || defaultThresholdOperator(tracker);
+  if (threshold.scope === 'loops') return operator;
+  if (tracker?.mode === 'timer' && !['lte', 'lt'].includes(operator)) return 'lte';
+  if (tracker?.mode === 'stopwatch' && !['gte', 'gt'].includes(operator)) return 'gte';
+  return operator;
+}
+
 export function globalThresholdValue(tracker, threshold) {
   const safe = { ...DEFAULT_GLOBAL_TRACKER, ...(tracker || {}) };
   const value = finiteNumberOr(threshold?.value, 0);
@@ -132,13 +140,13 @@ export function globalThresholdValue(tracker, threshold) {
 
 function thresholdLabel(tracker, threshold) {
   if (threshold.label) return threshold.label;
-  const operator = threshold.operator || defaultThresholdOperator(tracker);
+  const operator = effectiveThresholdOperator(tracker, threshold);
   const value = threshold.basis === 'percent' ? `${threshold.value}%` : threshold.basis === 'fromMax' ? `max - ${threshold.value}` : `${threshold.value}`;
   return `${operator === 'gte' ? '>=' : operator === 'lte' ? '<=' : operator === 'gt' ? '>' : operator === 'lt' ? '<' : '='} ${value}`;
 }
 
 function thresholdMatches(tracker, threshold, current) {
-  const operator = threshold.operator || defaultThresholdOperator(tracker);
+  const operator = effectiveThresholdOperator(tracker, threshold);
   const target = globalThresholdValue(tracker, threshold);
   if (operator === 'lte') return current <= target;
   if (operator === 'lt') return current < target;
@@ -149,9 +157,9 @@ function thresholdMatches(tracker, threshold, current) {
 
 function bestActiveThresholdsForScope(active, safe, scope) {
   const scoped = active.filter((threshold) => (threshold.scope || 'current') === scope);
-  const gte = scoped.filter((threshold) => ['gte', 'gt'].includes(threshold.operator || defaultThresholdOperator(safe))).sort((a, b) => globalThresholdValue(safe, b) - globalThresholdValue(safe, a))[0];
-  const lte = scoped.filter((threshold) => ['lte', 'lt'].includes(threshold.operator || defaultThresholdOperator(safe))).sort((a, b) => globalThresholdValue(safe, a) - globalThresholdValue(safe, b))[0];
-  const eq = scoped.filter((threshold) => (threshold.operator || defaultThresholdOperator(safe)) === 'eq');
+  const gte = scoped.filter((threshold) => ['gte', 'gt'].includes(effectiveThresholdOperator(safe, threshold))).sort((a, b) => globalThresholdValue(safe, b) - globalThresholdValue(safe, a))[0];
+  const lte = scoped.filter((threshold) => ['lte', 'lt'].includes(effectiveThresholdOperator(safe, threshold))).sort((a, b) => globalThresholdValue(safe, a) - globalThresholdValue(safe, b))[0];
+  const eq = scoped.filter((threshold) => effectiveThresholdOperator(safe, threshold) === 'eq');
   return [gte, lte, ...eq].filter(Boolean);
 }
 

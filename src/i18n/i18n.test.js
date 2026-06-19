@@ -12,10 +12,12 @@ describe('i18n', () => {
     expect(t('menu.returnHub')).toBe('Retour au hub de campagne');
     expect(t('dialogs.sceneIndicator.title')).toBe('Indicateur de scène');
     expect(t('dialogs.returnPreparation.title')).toBe('Retour à la Préparation');
+    expect(t('dialogs.resetCadence.title')).toBe('Réinitialiser Cadence');
     expect(t('trackers.global.title')).toBe('Indicateur de scène');
     expect(t('trackers.global.templateLabel')).toBe('Modèle d’indicateur de scène');
     expect(t('trackers.step.label')).toBe('Pas');
     expect(t('trackers.clock.freeze')).toBe('Figer cette horloge');
+    expect(t('trackers.common.freezeAutomation')).toBe('Figer cet automatisme');
     expect(t('trackers.boxes.stepLabel')).toBe('Nombre de clics par case');
     expect(t('trackers.counter.edit', { label: 'Compteur' })).toBe('Modifier Compteur');
     expect(t('trackers.global.thresholds.help.counter')).toBe('Pour un compteur, les seuils lisent simplement la valeur courante.');
@@ -26,7 +28,7 @@ describe('i18n', () => {
 
   it('remplace les paramètres dans les textes', () => {
     expect(t('status.add.title', { name: 'Mira' })).toBe('Ajouter un état · Mira');
-    expect(t('menu.brandMeta', { version: '0.9' })).toBe('Menu · v0.9');
+    expect(t('menu.brandMeta', { version: '0.9.46-work' })).toBe('Menu · v0.9.46-work');
   });
 
   it('stabilise les petites zones applicatives statiques', () => {
@@ -48,18 +50,46 @@ describe('i18n', () => {
     expect(t('export.defaultName')).toBe('Campagne Cadence');
     expect(t('initiativeCost.defaultParticipant')).toBe('ce personnage');
     expect(t('initiativeAdjust.defaultParticipant')).toBe('ce participant');
+    expect(t('reserve.empty')).toBe('Vide');
     expect(t('declarations.actions.attack')).toBe('Attaque');
     expect(t('sheet.tracker.reset')).toBe('Réinitialiser');
     expect(t('scene.status.active')).toBe('Actif');
+    expect(t('scene.status.add')).toBe('+ état');
     expect(t('initiative.choose')).toBe('À choisir');
   });
 
   it('stabilise le namespace sheet pour la fenêtre d’édition', () => {
     expect(t('sheet.advancedOptions')).toBe('Options avancées');
+    expect(t('sheet.defaultState')).toBe('État par défaut');
+    expect(t('sheet.defaultState.min')).toBe('Minimum');
+    expect(t('sheet.defaultState.custom')).toBe('Personnalisé');
+    expect(t('sheet.currentValue', { value: 12 })).toBe('valeur actuelle : 12');
+    expect(t('sheet.clock.direction')).toBe('Sens');
+    expect(t('sheet.clock.direction.ascending')).toBe('Croissant');
+    expect(t('sheet.clock.direction.descending')).toBe('Décroissant');
+    expect(t('sheet.clock.segments')).toBe('Nombre de segments');
+    expect(t('sheet.advanced.thresholds')).toBe('Seuils');
+    expect(t('sheet.advanced.reset')).toBe('Automatisme');
+    expect(t('sheet.advanced.automatisms')).toBe('Automatisme');
+    expect(t('sheet.reset.autoAdvance')).toBe('activer les automatismes');
+    expect(t('sheet.reset.canFreeze')).toBe('peut être figé');
+    expect(t('sheet.reset.when')).toBe('Déclenchement');
+    expect(t('sheet.reset.when.round')).toBe('Début de round');
+    expect(t('sheet.reset.when.activation')).toBe('À l’activation');
+    expect(t('status.color')).toBe('Couleur');
+    expect(t('status.tintParticipant')).toBe('Teinter le personnage');
+    expect(t('status.tintScene')).toBe('Teinter le fond de scène');
+    expect(t('sheet.reset.action.default')).toBe('Revenir à l’état par défaut');
+    expect(t('sheet.reset.action.limit')).toBe('Jusqu’à la limite');
+    expect(t('sheet.reset.action.always')).toBe('Toujours');
+    expect(t('sheet.points.autoCounter')).toBe('Modifier le compteur');
     expect(t('sheet.validate')).toBe('Valider');
     expect(t('sheet.initiative.extra', { index: 3 })).toBe('Initiative 3');
     expect(t('sheet.actions.count', { count: 2 })).toBe('2 actions');
     expect(t('sheet.trackers.add')).toBe('Ajouter un indicateur');
+    expect(t('sheet.character.hide')).toBe('dissimuler');
+    expect(t('sheet.character.hideTitle')).toBe('Dissimuler la fiche');
+    expect(t('sheet.character.revealTitle')).toBe('Ne plus dissimuler la fiche');
     expect(t('sheet.thresholds.targetValue', { value: 8 })).toBe('valeur cible : 8');
     expect(t('sheet.clock.endMode.overflow')).toBe('Dépasser avec zone rouge');
     expect(t('sheet.boxes.addBlock')).toBe('+ bloc');
@@ -75,5 +105,9 @@ describe('i18n', () => {
     expect(t('templates.status.summary.duration', { impact: '[o] normal', duration: 3, rythme: 'round(s)' })).toBe('[o] normal | 3 round(s)');
     expect(t('templates.counterScene.timer', { minutes: 5 })).toBe('minuteur 5 min');
     expect(t('templates.editor.sceneCounter.title')).toBe("Modèle d'indicateur de scène");
+    expect(t('templates.editor.saved', { name: 'Blessure' })).toBe('Blessure enregistr\u00e9 comme mod\u00e8le.');
+    expect(t('templates.editor.tracker.saveCurrent')).toBe('Enregistrer cet indicateur comme mod\u00e8le');
+    expect(t('templates.editor.status.saveCurrent')).toBe('Enregistrer comme mod\u00e8le');
+    expect(t('templates.editor.sceneCounter.saveCurrent')).toBe('Enregistrer cet indicateur comme mod\u00e8le');
   });
 });

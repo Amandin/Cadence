@@ -17,6 +17,10 @@ describe('participant statuses', () => {
     expect(participantEstLimite({ statuses: [status] })).toBe(false);
   });
 
+  it('keeps optional color and participant tint metadata', () => {
+    expect(createStatus({ name: 'Marque', color: 'violet', tintParticipant: true })).toMatchObject({ color: 'violet', tintParticipant: true });
+  });
+
   it('stops applying a limited impact once the status has expired', () => {
     expect(participantEstLimite({ statuses: [{ limited: true, expired: false }] })).toBe(true);
     expect(participantEstLimite({ statuses: [{ limited: true, expired: true }] })).toBe(false);

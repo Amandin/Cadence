@@ -35,6 +35,8 @@ export function SceneView({
   onModifierCompteurGlobal,
   onToggleCompteurTemps,
   onToggleSurprisePreparation,
+  onAjouterEtatScene,
+  onModifierEtatScene,
   onRetirerEtatScene,
   onMarquerAJoue,
   onAnnulerAJoue,
@@ -45,7 +47,7 @@ export function SceneView({
 }) {
   return (
     <div className={`app scene-app ${dark ? 'dark' : ''} ${characters.selected ? 'has-character-panel' : ''}`}>
-      <div className="shell">
+      <div className="shell scene-shell">
         <EnteteScene
           scene={scene}
           actif={declarationEnDeclaration ? null : temporalitePhases ? phaseActive : active}
@@ -68,6 +70,8 @@ export function SceneView({
           onModifierCompteurGlobal={onModifierCompteurGlobal}
           onToggleCompteurTemps={onToggleCompteurTemps}
           onToggleSurprisePreparation={onToggleSurprisePreparation}
+          onAjouterEtatScene={onAjouterEtatScene}
+          onModifierEtatScene={onModifierEtatScene}
           onRetirerEtatScene={onRetirerEtatScene}
         />
         <main className={`scene-main ${scene.reserve?.length ? 'with-reserve' : ''}`}>

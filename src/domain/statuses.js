@@ -21,6 +21,8 @@ export function createStatus(data) {
     inactive,
     limited: !inactive && !!data.limited,
     advanceOn: data.advanceOn === 'round' ? 'round' : 'activation',
+    color: data.color || '',
+    tintParticipant: !!data.tintParticipant,
     expired: false,
     skipNextActivation: !!data.skipNextActivation,
     activationSkipConsumed: false,

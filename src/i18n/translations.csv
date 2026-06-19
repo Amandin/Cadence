@@ -118,6 +118,12 @@ dialogs.templateSwitch.help,Que faire des modifications en cours avant d’ouvri
 dialogs.templateSwitch.stay,Rester ici
 dialogs.templateSwitch.confirm,Valider et ouvrir
 dialogs.templateSwitch.discard,Ouvrir sans enregistrer
+dialogs.resetCadence.title,Réinitialiser Cadence
+dialogs.resetCadence.help,Réinitialiser Cadence va supprimer toutes les scènes et tous les modèles locaux. Tu peux enregistrer une copie de la campagne avant de continuer.
+dialogs.resetCadence.warning,Cette action vide la campagne active et renvoie vers le choix des règles de départ.
+dialogs.resetCadence.saveCopy,Enregistrer une copie avant
+dialogs.resetCadence.confirm,Réinitialiser Cadence
+dialogs.resetCadence.copySaved,Copie enregistrée. Tu peux maintenant réinitialiser Cadence.
 export.title,Exporter la campagne
 export.help,Vérifie le nom avant d'enregistrer. Si le navigateur le permet, Cadence ouvrira une fenêtre système pour choisir l'emplacement du fichier.
 export.campaignName,Nom de campagne
@@ -177,13 +183,13 @@ trackers.global.thresholds.help.stopwatch,"Pour un chronomètre, les seuils lise
 trackers.global.thresholds.help.counter,"Pour un compteur, les seuils lisent simplement la valeur courante."
 trackers.global.thresholds.help.clock,"Pour une horloge, les seuils lisent le cycle en cours ou le nombre de boucles si elle boucle."
 trackers.global.thresholds.color.neutral,Neutre
-trackers.global.thresholds.color.green,Vert calme
+trackers.global.thresholds.color.green,Vert
 trackers.global.thresholds.color.amber,Ambre
-trackers.global.thresholds.color.red,Rouge sourd
+trackers.global.thresholds.color.red,Rouge
 trackers.global.thresholds.color.blue,Bleu
 trackers.global.thresholds.color.violet,Violet
-trackers.global.thresholds.basis.fixed,Temps restant
-trackers.global.thresholds.basis.percent,% restant
+trackers.global.thresholds.basis.fixed,Valeur
+trackers.global.thresholds.basis.percent,%
 trackers.global.thresholds.scope.current,Cycle en cours
 trackers.global.thresholds.scope.loops,Nombre de boucles
 trackers.global.thresholds.sound.label,Son
@@ -206,6 +212,9 @@ trackers.step.editCurrent,"Modifier le pas, actuellement {value}"
 trackers.clock.frozen,figée
 trackers.clock.freeze,Figer cette horloge
 trackers.clock.unfreeze,Dégeler cette horloge
+trackers.common.frozen,figé
+trackers.common.freezeAutomation,Figer cet automatisme
+trackers.common.unfreezeAutomation,Dégeler cet automatisme
 trackers.common.toResolve,À résoudre
 trackers.common.resetToZero,Relancer à 0
 trackers.boxes.actionGroup,Action sur les cases
@@ -231,6 +240,10 @@ status.impact.inactive,Inactif
 status.duration,Durée
 status.duration.custom,Perso
 status.duration.customField,Durée personnalisée
+status.color,Couleur
+status.color.none,Aucune
+status.tintParticipant,Teinter le personnage
+status.tintScene,Teinter le fond de scène
 status.advance.field,Évolution
 status.advance.activation,Activation
 status.advance.roundStart,Début du round
@@ -282,6 +295,7 @@ scene.header.flexibleChip,Souple
 scene.status.inactive,Inactif
 scene.status.limited,Limité
 scene.status.active,Actif
+scene.status.add,+ état
 scene.statusMarks.inactive,Rend inactif
 scene.statusMarks.limited,Rend limité
 scene.badge.scene,Scène
@@ -306,7 +320,17 @@ sheet.description,Description
 sheet.category,Catégorie
 sheet.symbol,Symbole
 sheet.color,Couleur
+sheet.currentValue,valeur actuelle : {value}
+sheet.defaultState,État par défaut
+sheet.defaultState.min,Minimum
+sheet.defaultState.max,Maximum
+sheet.defaultState.custom,Personnalisé
 sheet.advancedOptions,Options avancées
+sheet.advanced.bounds,Limites
+sheet.advanced.reset,Automatisme
+sheet.advanced.automatisms,Automatisme
+sheet.advanced.thresholds,Seuils
+sheet.advanced.automation,Automatisation
 sheet.saveAsTemplate,Enregistrer comme modèle
 sheet.validate,Valider
 sheet.validateChanges,Valider les modifications
@@ -329,6 +353,9 @@ sheet.trackers.defaultName,Indicateur
 sheet.tracker.visible,visible
 sheet.tracker.hidden,masqué
 sheet.tracker.secret,secret
+sheet.character.hide,dissimuler
+sheet.character.hideTitle,Dissimuler la fiche
+sheet.character.revealTitle,Ne plus dissimuler la fiche
 sheet.tracker.nameAria,Nom du suivi
 sheet.tracker.typeAria,Type du suivi
 sheet.tracker.resetTitle,Réinitialiser ce suivi
@@ -352,7 +379,15 @@ sheet.thresholds.primaryCounter,Compteur principal
 sheet.thresholds.targetValue,valeur cible : {value}
 sheet.thresholds.outOfBounds,hors limites
 sheet.thresholds.basis.fromMax,% depuis le maximum
-sheet.reset.autoAdvance,avancer automatiquement
+sheet.reset.autoAdvance,activer les automatismes
+sheet.reset.canFreeze,peut être figé
+sheet.reset.when,Déclenchement
+sheet.reset.when.round,Début de round
+sheet.reset.when.activation,À l’activation
+sheet.reset.action,Action
+sheet.reset.action.default,Revenir à l’état par défaut
+sheet.reset.action.limit,Jusqu’à la limite
+sheet.reset.action.always,Toujours
 sheet.reset.flexibleActivationLocked,Indisponible en mode souple : les retours d’activation restent figés.
 sheet.reset.check,Coche
 sheet.bar.clampMin,bloquer au minimum
@@ -360,17 +395,22 @@ sheet.bar.clampMax,bloquer au maximum
 sheet.points.limit,Limite
 sheet.points.limit.clamp,Bloquer au max
 sheet.points.limit.loop,Boucler avec compteur
+sheet.points.autoCounter,Modifier le compteur
 sheet.points.currentCounter,Compteur actuel
 sheet.points.minCounter,Min compteur
 sheet.points.maxCounter,Max compteur
 sheet.clock.initialValue,Valeur initiale
-sheet.clock.increment,Incrément
+sheet.clock.increment,Pas
+sheet.clock.direction,Sens
+sheet.clock.direction.ascending,Croissant
+sheet.clock.direction.descending,Décroissant
+sheet.clock.segments,Nombre de segments
 sheet.clock.endMode,Fin de l’horloge
 sheet.clock.endMode.manual,À résoudre manuellement
 sheet.clock.endMode.increment,Relancer et compter les cycles
 sheet.clock.endMode.overflow,Dépasser avec zone rouge
 sheet.clock.initialCounter,Compteur initial
-sheet.clock.autoAdvance,avancer automatiquement
+sheet.clock.autoAdvance,activer les automatismes
 sheet.boxes.activeLevels,Niveaux actifs
 sheet.boxes.blocks,Blocs
 sheet.boxes.addBlock,+ bloc
@@ -379,6 +419,7 @@ sheet.boxes.blockName,Nom du bloc
 sheet.boxes.lineName,Nom de ligne
 hub.tabs.scenes,Scènes
 reserve.title,Réserve
+reserve.empty,Vide
 reserve.advance,Appliquer le début de round à la réserve
 reserve.notes,Notes de réserve
 reserve.notes.placeholder,Renforts, événements en attente, éléments hors scène immédiate...
@@ -554,10 +595,13 @@ templates.counterScene.counter,compteur /{max}
 templates.counterScene.clock,horloge {segments} segments
 templates.editor.tracker.title,Modèle d'indicateur
 templates.editor.tracker.defaultName,Indicateur
+templates.editor.tracker.saveCurrent,Enregistrer cet indicateur comme modèle
 templates.editor.modelName,Nom du modèle
+templates.editor.saved,{name} enregistré comme modèle.
 templates.editor.status.title,Modèle d'état
 templates.editor.status.defaultName,État
 templates.editor.status.name,Nom de l'état
+templates.editor.status.saveCurrent,Enregistrer comme modèle
 templates.editor.status.duration,Durée
 templates.editor.status.durationPlaceholder,illimitée
 templates.editor.advanced,Options avancées
@@ -570,8 +614,9 @@ templates.editor.sceneStatus.defaultName,État de scène
 templates.editor.sceneCounter.title,Modèle d'indicateur de scène
 templates.editor.sceneCounter.defaultName,Indicateur de scène
 templates.editor.sceneCounter.name,Nom de l'indicateur
+templates.editor.sceneCounter.saveCurrent,Enregistrer cet indicateur comme modèle
 templates.editor.sceneCounter.type,Type
 templates.editor.sceneCounter.value,Valeur
 templates.editor.sceneCounter.durationMinutes,Durée minutes
 templates.editor.sceneCounter.max,Maximum
-templates.editor.sceneCounter.auto,avancer automatiquement à chaque nouveau round
+templates.editor.sceneCounter.auto,activer les automatismes à chaque nouveau round

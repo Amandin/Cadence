@@ -5,6 +5,37 @@ export function couleurVersAccent(couleur) {
   return colorAccents[couleur] || colorAccents.default;
 }
 
+export function teinteEtats(statuses, surface = 'var(--ui-surface)', intensity = 34) {
+  const accents = (statuses || [])
+    .filter((status) => status?.tintParticipant && status?.color && !status.expired)
+    .map((status) => couleurVersAccent(status.color));
+  const accentsUniques = [...new Set(accents)];
+  if (!accentsUniques.length) return null;
+  if (accentsUniques.length === 1) {
+    const accent = accentsUniques[0];
+    const strong = Math.min(94, intensity);
+    const middle = Math.max(18, Math.round(intensity * 0.68));
+    const quiet = Math.max(10, Math.round(intensity * 0.28));
+    const tail = Math.max(22, Math.round(intensity * 0.78));
+    return {
+      accents: accentsUniques,
+      gradient: `linear-gradient(115deg, color-mix(in srgb, ${accent} ${strong}%, ${surface}) 0%, color-mix(in srgb, ${accent} ${middle}%, ${surface}) 34%, color-mix(in srgb, ${accent} ${quiet}%, ${surface}) 62%, ${surface} 78%, color-mix(in srgb, ${accent} ${tail}%, ${surface}) 100%)`,
+    };
+  }
+  const stops = accentsUniques.map((accent, index) => {
+    const position = Math.round((index / (accentsUniques.length - 1)) * 100);
+    return `color-mix(in srgb, ${accent} ${Math.min(92, intensity)}%, ${surface}) ${position}%`;
+  });
+  return {
+    accents: accentsUniques,
+    gradient: `linear-gradient(115deg, ${stops.join(', ')})`,
+  };
+}
+
+export function teinteEtatParticipant(participant) {
+  return teinteEtats(participant?.statuses);
+}
+
 export function AvatarParticipant({ participant }) {
   return <div className={`avatar ${participant.color || 'slate'}`}>{participant.symbol || '●'}</div>;
 }
@@ -19,7 +50,6 @@ export function BoutonRepliFichette({ repliee = false, onClick, className = '' }
     </button>
   );
 }
-
 function libelleEtat(etat) {
   if (etat.duration == null) return '∞';
   if (etat.expired && etat.loop) return '↻ 0';
@@ -33,14 +63,38 @@ function typeEtat(etat) {
   return 'temporary';
 }
 
-export function EtiquetteEtat({ etat, onRetirer }) {
+export function EtiquetteEtat({ etat, onRetirer, onModifier }) {
   const impactActif = !etat.expired;
+  const couleurEtat = etat.color ? couleurVersAccent(etat.color) : '';
+  const modifier = () => onModifier?.();
+  const modifierAuClavier = (event) => {
+    if (!onModifier) return;
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      modifier();
+    }
+  };
   const marqueurImpact = impactActif && etat.inactive
     ? <span className="inactive-status-mark" aria-label={t('scene.statusMarks.inactive')}>!</span>
     : impactActif && etat.limited
       ? <span className="limited-status-mark" aria-label={t('scene.statusMarks.limited')}>!</span>
       : null;
-  return <span className={`status ${typeEtat(etat)} ${etat.advanceOn === 'round' ? 'round-status' : ''} ${etat.inactive ? 'inactive-status' : ''} ${etat.limited ? 'limited-status' : ''} ${etat.expired ? 'expired' : ''}`}>{marqueurImpact}{etat.name} · {libelleEtat(etat)}<button onClick={onRetirer} aria-label={t('common.remove')}>×</button></span>;
+  if (onModifier) {
+    return (
+      <span
+        className={`status ${typeEtat(etat)} ${couleurEtat ? 'colored-status' : ''} editable-status ${etat.advanceOn === 'round' ? 'round-status' : ''} ${etat.inactive ? 'inactive-status' : ''} ${etat.limited ? 'limited-status' : ''} ${etat.expired ? 'expired' : ''}`}
+        style={couleurEtat ? { '--status-color': couleurEtat } : undefined}
+        role="button"
+        tabIndex={0}
+        onClick={modifier}
+        onKeyDown={modifierAuClavier}
+      >
+        {marqueurImpact}{etat.name}{' \u00b7 '}{libelleEtat(etat)}
+        <button onClick={(event) => { event.stopPropagation(); onRetirer?.(); }} aria-label={t('common.remove')}>&times;</button>
+      </span>
+    );
+  }
+  return <span className={`status ${typeEtat(etat)} ${couleurEtat ? 'colored-status' : ''} ${etat.advanceOn === 'round' ? 'round-status' : ''} ${etat.inactive ? 'inactive-status' : ''} ${etat.limited ? 'limited-status' : ''} ${etat.expired ? 'expired' : ''}`} style={couleurEtat ? { '--status-color': couleurEtat } : undefined}>{marqueurImpact}{etat.name} · {libelleEtat(etat)}<button onClick={onRetirer} aria-label={t('common.remove')}>×</button></span>;
 }
 
 export function BadgeRound({ round, effect, phase, surpriseRound = false }) {
@@ -71,9 +125,10 @@ export function BadgeRound({ round, effect, phase, surpriseRound = false }) {
   );
 }
 
-export function Fenetre({ title, children, onClose, header, className = '' }) {
+export function Fenetre({ title, children, onClose, header, className = '', style }) {
   const entete = header ?? <div className="row" style={{ justifyContent: 'space-between', marginBottom: 10 }}><h2 style={{ margin: 0 }}>{title}</h2><button className="icon-btn" onClick={onClose} aria-label={t('common.close')}>×</button></div>;
-  return <div className={`overlay ${className ? `${className}-overlay` : ''}`} onClick={onClose}><div className={`sheet ${className}`} onClick={(event) => event.stopPropagation()}>{entete}{children}</div></div>;
+  const overlayClass = className ? `${className.split(' ')[0]}-overlay` : '';
+  return <div className={`overlay ${overlayClass}`} onClick={onClose}><div className={`sheet ${className}`} style={style} onClick={(event) => event.stopPropagation()}>{entete}{children}</div></div>;
 }
 
 export function MessageChangementTemplate({ onAnnuler, onValider, onAbandonner }) {

@@ -122,6 +122,8 @@ function normalizeStatus(status) {
     inactive: booleanOr(status.inactive),
     limited: !booleanOr(status.inactive) && booleanOr(status.limited),
     advanceOn: status.advanceOn === 'round' ? 'round' : 'activation',
+    color: stringOr(status.color),
+    tintParticipant: booleanOr(status.tintParticipant),
     expired: booleanOr(status.expired),
     skipNextActivation: booleanOr(status.skipNextActivation),
     activationSkipConsumed: booleanOr(status.activationSkipConsumed),
@@ -131,12 +133,29 @@ function normalizeStatus(status) {
 }
 
 function normalizeResetRule(rule = {}) {
+  const legacyMultiplier = rule.multiplier === '' ? '' : rule.multiplier;
+  const percent = rule.percent === '' ? '' : rule.percent != null
+    ? numberOr(rule.percent, 100)
+    : legacyMultiplier === ''
+      ? ''
+      : numberOr(legacyMultiplier, 1) * 100;
+  const legacyBarAutoMode = rule.barAutoMode;
+  const barAutoMode = legacyBarAutoMode === 'increase' || legacyBarAutoMode === 'decrease'
+    ? 'limit'
+    : legacyBarAutoMode === 'increaseFree' || legacyBarAutoMode === 'decreaseFree'
+      ? 'always'
+      : ['limit', 'always', 'default'].includes(legacyBarAutoMode)
+        ? legacyBarAutoMode
+        : 'limit';
   return {
     mode: ['initial', 'zero', 'max', 'checked', 'delta', 'boxDelta', 'towardDefault'].includes(rule.mode) ? rule.mode : 'towardDefault',
     delta: numberOr(rule.delta, 1),
     step: numberOr(rule.step, 1),
+    percent,
     stepMode: rule.stepMode === 'percent' ? 'percent' : 'flat',
+    barAutoMode,
     pointsAutoMode: ['increase', 'decrease', 'default'].includes(rule.pointsAutoMode) ? rule.pointsAutoMode : 'default',
+    pointsAutoCycles: typeof rule.pointsAutoCycles === 'boolean' ? rule.pointsAutoCycles : rule.pointsAutoMode === 'default',
     counterRules: isPlainObject(rule.counterRules) ? rule.counterRules : {},
     boxBlocks: isPlainObject(rule.boxBlocks) ? rule.boxBlocks : {},
     minCap: rule.minCap === '' ? '' : rule.minCap ?? '',
@@ -173,6 +192,8 @@ function normalizeTracker(tracker) {
       resetRule: normalizeResetRule(tracker.resetRule),
       resetDefaultMode: ['full', 'empty', 'custom'].includes(tracker.resetDefaultMode) ? tracker.resetDefaultMode : 'empty',
       fillLevels: Math.max(1, Math.min(5, numberOr(tracker.fillLevels, 1))),
+      emptyLevelActive: tracker.emptyLevelActive !== false,
+      levelVisuals: normalizeArray(tracker.levelVisuals).map((rank) => Math.max(1, Math.min(5, numberOr(rank, 1)))).filter((rank, index, list) => list.indexOf(rank) === index).slice(0, 5),
       levelLabels: normalizeArray(tracker.levelLabels).map((label) => String(label || '').trim()).filter(Boolean).slice(0, 5),
       levelPriorities: normalizeArray(tracker.levelPriorities).map((priority) => Math.max(1, numberOr(priority, 1))).slice(0, 5),
       blocks: normalizeArray(tracker.blocks).filter(isPlainObject),
@@ -202,11 +223,12 @@ function normalizeTracker(tracker) {
       secret: booleanOr(tracker.secret),
       autoReset: ['never', 'round', 'activation'].includes(tracker.autoReset) ? tracker.autoReset : (type === 'clock' ? 'activation' : 'never'),
       autoResetPaused: booleanOr(tracker.autoResetPaused),
+      freezeAllowed: typeof tracker.freezeAllowed === 'boolean' ? tracker.freezeAllowed : false,
       resetMode: ['initial', 'zero', 'max', 'delta'].includes(tracker.resetMode) ? tracker.resetMode : 'initial',
       resetRule: normalizeResetRule(tracker.resetRule),
       resetDefaultMode: ['full', 'empty', 'custom'].includes(tracker.resetDefaultMode) ? tracker.resetDefaultMode : 'empty',
       auto: type === 'clock' ? booleanOr(tracker.auto, true) : tracker.auto,
-      frozen: type === 'clock' ? booleanOr(tracker.frozen) : tracker.frozen,
+      frozen: booleanOr(tracker.frozen),
     };
   }
 
@@ -222,6 +244,7 @@ function normalizeTracker(tracker) {
     secret: booleanOr(tracker.secret),
     autoReset: ['never', 'round', 'activation'].includes(tracker.autoReset) ? tracker.autoReset : (type === 'clock' ? 'activation' : 'never'),
     autoResetPaused: booleanOr(tracker.autoResetPaused),
+    freezeAllowed: typeof tracker.freezeAllowed === 'boolean' ? tracker.freezeAllowed : false,
     resetMode: ['initial', 'zero', 'max', 'delta'].includes(tracker.resetMode) ? tracker.resetMode : 'initial',
     resetRule: normalizeResetRule(tracker.resetRule),
     resetDefaultMode: ['full', 'empty', 'custom'].includes(tracker.resetDefaultMode) ? tracker.resetDefaultMode : (type === 'bar' ? 'full' : 'empty'),

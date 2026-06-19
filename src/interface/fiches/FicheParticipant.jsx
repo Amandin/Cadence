@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { defaultPhaseCount, phaseActionModes } from '../../constants.js';
 import { initiativesActionParticipant } from '../../domain/initiative.js';
 import { initiativeInputIsValid, initiativeValueForMode, normalizeInitiativeTextOrder } from '../../domain/initiativeTextOrder.js';
-import { EtiquetteEtat, Fenetre } from '../commun/ComposantsCommuns.jsx';
+import { t } from '../../i18n/index.js';
+import { EtiquetteEtat, Fenetre, teinteEtatParticipant } from '../commun/ComposantsCommuns.jsx';
 import { IconeOeilMystiqueOuvert, IconeOeilMystiqueFerme } from '../icones/IconesOeilMystique.jsx';
 import { ChampInitiative } from '../initiative/ChampInitiative.jsx';
 import { EditeurPhasesParticipant, normaliserPhaseActions } from '../initiative/EditeurPhasesParticipant.jsx';
@@ -71,15 +72,33 @@ function MiniCompteurInitiative({ participant, departage, initiativeTextOrder, p
   );
 }
 
-export function FicheParticipant({ participant, enInitiative, initiativeTextOrder, phaseActionMode, phaseCount = defaultPhaseCount, multipleActionSlots = true, utiliserInitiative = true, tiebreakerVisible = true, onFermer, onModifier, onChangerInitiatives, onRejoindreInitiative, onQuitterInitiative, onInfoRapide, onSuivi, onSupprimerSuivi, onAjouterEtat, onRetirerEtat, onNote }) {
+export function FicheParticipant({ participant, enInitiative, initiativeTextOrder, phaseActionMode, phaseCount = defaultPhaseCount, multipleActionSlots = true, utiliserInitiative = true, tiebreakerVisible = true, onFermer, onModifier, onBasculerDissimule, onChangerInitiatives, onRejoindreInitiative, onQuitterInitiative, onInfoRapide, onSuivi, onSupprimerSuivi, onAjouterEtat, onModifierEtat, onRetirerEtat, onNote }) {
+  const teinteEtat = teinteEtatParticipant(participant);
+  const dissimule = !!participant.secret;
   const basculerVisibilite = (suivi) => onSuivi(suivi.id, { ...suivi, visible: suivi.visible === false });
+  const basculerSecret = (suivi) => onSuivi(suivi.id, { ...suivi, secret: !suivi.secret });
   const boutonOeil = (suivi) => {
     const visible = suivi.visible !== false;
     return <button className={`eye-toggle ${visible ? 'active' : 'inactive'}`} onClick={(event) => { event.stopPropagation(); basculerVisibilite(suivi); }} aria-label={visible ? 'Masquer sur la fichette' : 'Afficher sur la fichette'} title={visible ? 'Visible sur la fichette' : 'Masqué sur la fichette'} type="button">{visible ? <IconeOeilMystiqueOuvert /> : <IconeOeilMystiqueFerme />}</button>;
   };
+  const boutonsSuivi = (suivi) => (
+    <span className="sheet-tracker-quick-actions">
+      {boutonOeil(suivi)}
+      <button className={`spy-toggle sheet-spy-toggle ${suivi.secret ? 'active' : ''}`} onClick={(event) => { event.stopPropagation(); basculerSecret(suivi); }} aria-pressed={!!suivi.secret} title={t('sheet.tracker.secret')} type="button"><span aria-hidden="true">{'🥷'}</span><b>{t('sheet.tracker.secret')}</b></button>
+    </span>
+  );
+  const enteteFiche = (
+    <div className="character-sheet-header">
+      <div className="character-sheet-title-row">
+        <h2>{participant.name}</h2>
+        <button className="icon-btn" onClick={onFermer} aria-label={t('common.close')} type="button">×</button>
+      </div>
+      <button className={`conceal-character-btn discreet ${dissimule ? 'active' : ''}`} type="button" onClick={onBasculerDissimule} aria-pressed={dissimule} title={dissimule ? t('sheet.character.revealTitle') : t('sheet.character.hideTitle')}><span aria-hidden="true">{'🥷'}</span><b>{t('sheet.character.hide')}</b></button>
+    </div>
+  );
 
   return (
-    <Fenetre title={participant.name} onClose={onFermer} className="character-sheet">
+    <Fenetre title={participant.name} onClose={onFermer} header={enteteFiche} className={`character-sheet ${teinteEtat ? 'status-tinted-character' : ''} ${dissimule ? 'secret-character-sheet' : ''}`} style={teinteEtat ? { '--status-tint-gradient': teinteEtat.gradient } : undefined}>
       <p>{participant.description}</p>
       <div className={`sheet-action-row ${enInitiative && utiliserInitiative ? '' : 'without-init-counter'}`}>
         <button className="primary" onClick={onModifier}>Modifier</button>
@@ -88,9 +107,9 @@ export function FicheParticipant({ participant, enInitiative, initiativeTextOrde
       </div>
       <InfosRapides stats={participant.stats || []} editable onChanger={onInfoRapide} />
       <h3>Indicateurs</h3>
-      <div className="stack sheet-trackers">{participant.trackers.map((suivi) => <Suivi key={suivi.id} suivi={suivi} avantTitre={boutonOeil(suivi)} couleur={participant.color} onModifier={(suivant) => onSuivi(suivi.id, suivant)} onSupprimer={() => onSupprimerSuivi(suivi.id)} />)}</div>
+      <div className="stack sheet-trackers">{participant.trackers.map((suivi) => <Suivi key={suivi.id} suivi={suivi} avantTitre={boutonsSuivi(suivi)} couleur={participant.color} afficherBadgeSecret={false} onModifier={(suivant) => onSuivi(suivi.id, suivant)} onSupprimer={() => onSupprimerSuivi(suivi.id)} />)}</div>
       <h3>États</h3>
-      <div className="statuses">{participant.statuses?.map((etat) => <EtiquetteEtat key={etat.id} etat={etat} onRetirer={() => onRetirerEtat(etat.id)} />)}<button className="small-btn" onClick={onAjouterEtat}>+ état</button></div>
+      <div className="statuses">{participant.statuses?.map((etat) => <EtiquetteEtat key={etat.id} etat={etat} onModifier={() => onModifierEtat?.(etat.id)} onRetirer={() => onRetirerEtat(etat.id)} />)}<button className="small-btn sheet-add-status-btn" onClick={onAjouterEtat}>+ état</button></div>
       <label className="field">Note<textarea value={participant.note || ''} onChange={(event) => onNote(event.target.value)} /></label>
     </Fenetre>
   );
