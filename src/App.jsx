@@ -122,6 +122,21 @@ export default function App() {
   }, [currentView]);
 
   useEffect(() => {
+    const root = document.documentElement;
+    root.classList.toggle('dark', !!dark);
+    root.dataset.skin = APP_SKIN;
+    root.dataset.theme = APP_SKIN;
+    root.dataset.mode = dark ? 'dark' : 'light';
+
+    return () => {
+      root.classList.remove('dark');
+      delete root.dataset.skin;
+      delete root.dataset.theme;
+      delete root.dataset.mode;
+    };
+  }, [dark]);
+
+  useEffect(() => {
     if (!import.meta.env.PROD) return undefined;
     let cancelled = false;
     const primeShell = () => { primePwaShellCache().catch(() => {}); };
@@ -582,7 +597,7 @@ export default function App() {
       .map((seuil) => ({ tintParticipant: true, color: seuil.color || 'neutral', expired: false }))
     : [];
   const teinteScene = teinteEtats([...(scene.statuses || []), ...seuilsFondScene], 'transparent', 32);
-  return <><Suspense fallback={<ChargementVue dark={dark} texte={t('app.loading.scene')} />}><div className={`app scene-app ${dark ? 'dark' : ''} ${teinteScene ? 'scene-status-tinted' : ''}`} style={teinteScene ? { '--scene-status-tint-gradient': teinteScene.gradient } : undefined} {...attributsApp(dark)}><SceneView scene={scene} characters={characters} active={active} activeGroup={activeGroup} declarationEnDeclaration={declarationEnDeclaration} temporaliteSouple={temporaliteSouple} temporalitePhases={temporalitePhases} temporaliteDeclaration={temporaliteDeclaration} phaseActive={phaseActive} phaseActiveId={phaseActiveId} phaseAttendRelanceInitiative={phaseAttendRelanceInitiative} horlogesBloquantesActives={horlogesBloquantesActives} roundEffect={roundEffect} globalAutoTick={globalAutoTick} classeSuivantEffective={classeSuivantEffective} nextLabel={nextLabel} suivantDesactive={suivantDesactive} retourPossible={retourPossible} retourPreparationVisible={retourPreparationVisible} toutLeMondeAJoueSouple={toutLeMondeAJoueSouple} phaseDemarreNouveauRound={phaseDemarreNouveauRound} nextStartsRound={nextStartsRound} libelleBas={libelleBas} dark={dark} onRetourHub={retourHub} onTourPrecedent={() => nextTurn(-1)} onTourSuivant={() => nextTurn(1)} onRetourPreparation={returnToPreparation} onModifierCompteurGlobal={actions.stepGlobal} onToggleCompteurTemps={toggleGlobalRealtime} onToggleSurprisePreparation={(active) => actions.updateSceneField('preparationSurprise', active)} onAjouterEtatScene={() => setSceneStatusOpen({})} onModifierEtatScene={(statusId) => setSceneStatusOpen({ statusId })} onRetirerEtatScene={actions.removeSceneStatus} onMarquerAJoue={marquerAJoue} onAnnulerAJoue={annulerAJoue} onModifierNotesReserve={(notes) => actions.updateSceneField('reserveNotes', notes)} onAjouterParticipant={openAddCharacter} onSaisirInitiatives={openInitiativeEntry} onOuvrirMenu={() => setOpenMenu(true)} /></div></Suspense>{fenetresCommunes}</>;
+  return <><Suspense fallback={<ChargementVue dark={dark} texte={t('app.loading.scene')} />}><div className={`app scene-app ${dark ? 'dark' : ''} ${teinteScene ? 'scene-status-tinted' : ''}`} style={teinteScene ? { '--scene-status-tint-gradient': teinteScene.gradient } : undefined} {...attributsApp(dark)}><SceneView scene={scene} characters={characters} active={active} activeGroup={activeGroup} declarationEnDeclaration={declarationEnDeclaration} temporaliteSouple={temporaliteSouple} temporalitePhases={temporalitePhases} temporaliteDeclaration={temporaliteDeclaration} phaseActive={phaseActive} phaseActiveId={phaseActiveId} phaseAttendRelanceInitiative={phaseAttendRelanceInitiative} horlogesBloquantesActives={horlogesBloquantesActives} roundEffect={roundEffect} globalAutoTick={globalAutoTick} classeSuivantEffective={classeSuivantEffective} nextLabel={nextLabel} suivantDesactive={suivantDesactive} retourPossible={retourPossible} retourPreparationVisible={retourPreparationVisible} toutLeMondeAJoueSouple={toutLeMondeAJoueSouple} phaseDemarreNouveauRound={phaseDemarreNouveauRound} nextStartsRound={nextStartsRound} libelleBas={libelleBas} dark={dark} onRetourHub={retourHub} onTourPrecedent={() => nextTurn(-1)} onTourSuivant={() => nextTurn(1)} onRetourPreparation={returnToPreparation} onModifierCompteurGlobal={actions.stepGlobal} onToggleCompteurTemps={toggleGlobalRealtime} onToggleSurprisePreparation={(active) => actions.updateSceneField('preparationSurprise', active)} onAjouterEtatScene={() => setSceneStatusOpen({})} onModifierEtatScene={(statusId) => setSceneStatusOpen({ statusId })} onRetirerEtatScene={actions.removeSceneStatus} onMarquerAJoue={marquerAJoue} onAnnulerAJoue={annulerAJoue} onModifierNotesReserve={(notes) => actions.updateSceneField('reserveNotes', notes)} onAjouterParticipant={openAddCharacter} onSaisirInitiatives={openInitiativeEntry} onOuvrirMenu={() => setOpenMenu(true)} />{fenetresCommunes}</div></Suspense></>;
 }
 
 

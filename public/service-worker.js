@@ -1,4 +1,4 @@
-const APP_VERSION = '0.10.0-work';
+const APP_VERSION = '0.11.0-beta.1';
 const CACHE_PREFIX = 'cadence-pwa';
 const CACHE_NAME = `${CACHE_PREFIX}:${APP_VERSION}`;
 

@@ -183,8 +183,11 @@
   --ui-chip-border: var(--skin-chip-border);
 }
 
+:root.dark,
+:root[data-mode="dark"],
 .app.dark,
 .app[data-mode="dark"] {
+  color-scheme: dark;
   --skin-bg: var(--theme-dark-bg);
   --skin-bg-soft: var(--theme-dark-bg-deep);
   --skin-app-bg: radial-gradient(circle at top left, var(--theme-purple) 0, var(--theme-dark-bg) 38%, var(--theme-dark-bg-deep) 100%);
@@ -359,6 +362,8 @@ input[type="number"] {
   font-variant-numeric: tabular-nums;
 }
 
+:root.dark,
+:root[data-mode="dark"],
 html:has(.app.dark),
 html:has(.app[data-mode="dark"]),
 body:has(.app.dark),
@@ -1980,6 +1985,8 @@ body:has(.app[data-mode="dark"]),
   spécifiques. Ce bloc est volontairement placé en fin de fichier pour que le
   thème sombre reste cohérent sur le hub, les règles, les modèles et la scène.
 */
+:root.dark,
+:root[data-mode="dark"],
 html:has(.app.dark),
 html:has(.app[data-mode="dark"]),
 body:has(.app.dark),
@@ -1992,139 +1999,141 @@ body:has(.app[data-mode="dark"]),
   color: var(--theme-dark-text);
 }
 
+:root.dark,
+:root[data-mode="dark"],
 .app.dark,
 .app[data-mode="dark"] {
   background-image: var(--ui-app-bg-image) !important;
 }
 
-.app.dark .card,
-.app.dark .panel,
-.app.dark .sheet,
-.app.dark .bottom,
-.app.dark .campaign-hub-header.panel,
-.app.dark .campaign-hub-page > .hub-section.panel,
-.app.dark .rules-panel,
-.app.dark .campaign-files-panel,
-.app.dark .hub-scene-card,
-.app.dark .hub-row,
-.app.dark .rule-group,
-.app.dark .rule-group-body,
-.app.dark .rule-group .advanced-rule-block,
-.app.dark .rule-save-choices,
-.app.dark .edit-sheet-header,
-.app.dark .template-switch-notice,
-.app.dark .tracker,
-.app.dark .box-editor,
-.app.dark .restore-row,
-.app.dark .global-mini-main {
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .card,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .panel,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .sheet,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .bottom,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .campaign-hub-header.panel,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .campaign-hub-page > .hub-section.panel,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .rules-panel,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .campaign-files-panel,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .hub-scene-card,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .hub-row,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .rule-group,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .rule-group-body,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .rule-group .advanced-rule-block,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .rule-save-choices,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .edit-sheet-header,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .template-switch-notice,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .tracker,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .box-editor,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .restore-row,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .global-mini-main {
   background: var(--ui-panel-bg) !important;
   border-color: var(--ui-panel-border) !important;
   color: var(--theme-dark-text);
   box-shadow: var(--ui-panel-shadow);
 }
 
-.app.dark .campaign-hub-header.panel {
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .campaign-hub-header.panel {
   background: var(--ui-emphasis-panel-bg) !important;
   box-shadow: var(--ui-emphasis-panel-shadow);
 }
 
-.app.dark .rule-group,
-.app.dark .rule-group-body,
-.app.dark .rule-group .advanced-rule-block {
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .rule-group,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .rule-group-body,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .rule-group .advanced-rule-block {
   background: var(--ui-rule-panel-bg) !important;
   border-color: var(--ui-rule-panel-border) !important;
 }
 
-.app.dark .rule-group-body {
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .rule-group-body {
   box-shadow: var(--ui-rule-panel-shadow);
 }
 
-.app.dark .muted,
-.app.dark .field,
-.app.dark .compact-help,
-.app.dark .rule-option-note,
-.app.dark .rule-group .compact-help,
-.app.dark .rule-group .advanced-radio small:not(.rule-option-warning),
-.app.dark .hub-row small,
-.app.dark .hub-row em,
-.app.dark .campaign-save-status,
-.app.dark .box-label,
-.app.dark .line-count-row label,
-.app.dark .box-level-row span {
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .muted,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .field,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .compact-help,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .rule-option-note,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .rule-group .compact-help,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .rule-group .advanced-radio small:not(.rule-option-warning),
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .hub-row small,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .hub-row em,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .campaign-save-status,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .box-label,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .line-count-row label,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .box-level-row span {
   color: var(--ui-muted-strong) !important;
 }
 
-.app.dark input,
-.app.dark textarea,
-.app.dark select,
-.app.dark .field input,
-.app.dark .field textarea,
-.app.dark .field select,
-.app.dark .tracker-edit-head input,
-.app.dark .tracker-edit-head select,
-.app.dark .delta-pop input,
-.app.dark .restore-row select {
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) input:not([type="checkbox"]):not([type="radio"]),
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) textarea,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) select,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .field input:not([type="checkbox"]):not([type="radio"]),
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .field textarea,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .field select,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .tracker-edit-head input:not([type="checkbox"]):not([type="radio"]),
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .tracker-edit-head select,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .delta-pop input:not([type="checkbox"]):not([type="radio"]),
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .restore-row select {
   background: var(--ui-input-bg) !important;
   border-color: var(--ui-input-border) !important;
   color: var(--ui-input-text) !important;
   box-shadow: var(--ui-control-shadow);
 }
 
-.app.dark .small-btn,
-.app.dark .icon-btn,
-.app.dark .choice,
-.app.dark .initiative-choice-action,
-.app.dark .controls > button,
-.app.dark .clock-inline button:not(.clock-face),
-.app.dark .global-mini > button,
-.app.dark .hub-section-head .small-btn,
-.app.dark .hub-scene-actions .small-btn,
-.app.dark .template-row-actions .small-btn,
-.app.dark .template-category-actions .small-btn,
-.app.dark .scene-management-grid .small-btn,
-.app.dark .dynamic-insertion-secondary-actions .small-btn,
-.app.dark .initiative-roll-slot .small-btn,
-.app.dark .compact-arrows .small-btn,
-.app.dark .fiche-card .small-btn,
-.app.dark .reserve-card .small-btn,
-.app.dark .initiative-card .small-btn {
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .small-btn,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .icon-btn,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .choice,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .initiative-choice-action,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .controls > button,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .clock-inline button:not(.clock-face),
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .global-mini > button,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .hub-section-head .small-btn,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .hub-scene-actions .small-btn,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .template-row-actions .small-btn,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .template-category-actions .small-btn,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .scene-management-grid .small-btn,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .dynamic-insertion-secondary-actions .small-btn,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .initiative-roll-slot .small-btn,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .compact-arrows .small-btn,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .fiche-card .small-btn,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .reserve-card .small-btn,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .initiative-card .small-btn {
   background: var(--ui-control-bg-strong) !important;
   border-color: var(--ui-control-border) !important;
   color: var(--ui-control-text) !important;
   box-shadow: var(--ui-control-shadow);
 }
 
-.app.dark .primary,
-.app.dark .turn-btn,
-.app.dark .delta button,
-.app.dark .delta-pop button {
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .primary,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .turn-btn,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .delta button,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .delta-pop button {
   background: var(--ui-primary-action-bg) !important;
   border-color: var(--ui-primary-action-border) !important;
   color: var(--ui-primary-contrast) !important;
   box-shadow: var(--ui-primary-action-shadow);
 }
 
-.app.dark .choice.selected,
-.app.dark .selected-toggle,
-.app.dark .initiative-choice-action.primary-choice,
-.app.dark .hub-tabs .choice.selected {
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .choice.selected,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .selected-toggle,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .initiative-choice-action.primary-choice,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .hub-tabs .choice.selected {
   background: var(--ui-selected-bg) !important;
   border-color: var(--ui-selected-border) !important;
   color: var(--ui-primary-contrast) !important;
   box-shadow: var(--ui-selected-shadow);
 }
 
-.app.dark .danger-btn,
-.app.dark .subtle-danger,
-.app.dark .template-row-actions .danger-btn,
-.app.dark .template-category-actions .danger-btn {
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .danger-btn,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .subtle-danger,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .template-row-actions .danger-btn,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .template-category-actions .danger-btn {
   background: var(--ui-danger-soft) !important;
   border-color: var(--ui-danger-border) !important;
   color: var(--ui-danger-contrast) !important;
 }
 
-.app.dark .hub-scene-type,
-.app.dark .chip {
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .hub-scene-type,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .chip {
   background: var(--ui-chip-bg) !important;
   border-color: var(--ui-chip-border) !important;
   color: var(--ui-text) !important;
@@ -2186,10 +2195,10 @@ body:has(.app[data-mode="dark"]),
   color: var(--ui-danger-contrast) !important;
 }
 
-.sheet.main-menu.menu-dark input,
+.sheet.main-menu.menu-dark input:not([type="checkbox"]):not([type="radio"]),
 .sheet.main-menu.menu-dark textarea,
 .sheet.main-menu.menu-dark select,
-.sheet.main-menu.menu-dark .field input,
+.sheet.main-menu.menu-dark .field input:not([type="checkbox"]):not([type="radio"]),
 .sheet.main-menu.menu-dark .field textarea,
 .sheet.main-menu.menu-dark .field select,
 .sheet.main-menu.menu-dark .restore-row select {
