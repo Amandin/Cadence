@@ -30,6 +30,31 @@ describe('campaign rules', () => {
     });
   });
 
+  it('clears active participant data while a scene is in preparation', () => {
+    expect(applyInitiativeRules({
+      round: -1,
+      activeId: 'pj-1',
+      activeSlotId: 'pj-1:slot-1',
+      participants: [{ id: 'pj-1', name: 'Ariane', initiative: 18, statuses: [], trackers: [] }],
+      reserve: [],
+    }, {
+      temporalite: 'classique',
+    })).toMatchObject({
+      round: -1,
+      activeId: '',
+      activeSlotId: '',
+    });
+  });
+
+  it('keeps the initiative bonus rule setting', () => {
+    expect(normalizeCampaignRules({ initiativeBonusEnabled: false }).initiativeBonusEnabled).toBe(false);
+    expect(applyInitiativeRules({ participants: [], reserve: [] }, {
+      initiativeBonusEnabled: false,
+    })).toMatchObject({
+      initiativeBonusEnabled: false,
+    });
+  });
+
   it('keeps the flexible mode initiative display preference', () => {
     expect(applyInitiativeRules({ participants: [], reserve: [] }, {
       temporalite: 'souple',

@@ -1,4 +1,5 @@
 import { APP_VERSION } from './constants.js';
+import { cadenceLogos } from './uiAssets.js';
 
 export const PWA_CACHE_NAME = `cadence-pwa:${APP_VERSION}`;
 
@@ -12,8 +13,8 @@ const PWA_CORE_URLS = [
   '/apple-touch-icon.png',
   '/icon-192.png',
   '/icon-512.png',
-  '/branding/logo-cadence-light.svg',
-  '/branding/logo-cadence-dark.svg',
+  cadenceLogos.light,
+  cadenceLogos.dark,
   '/fonts/lato/lato-latin-400-normal.woff2',
   '/fonts/lato/lato-latin-700-normal.woff2',
   '/fonts/comfortaa/comfortaa-latin-700-normal.woff2',

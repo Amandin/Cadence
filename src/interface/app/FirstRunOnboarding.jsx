@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { t } from '../../i18n/index.js';
+import { getCadenceLogo, uiGlyphs } from '../../uiAssets.js';
 
 function PresetFamilySwitch({ family, onChange }) {
   return (
@@ -75,14 +76,14 @@ export function FirstRunOnboarding({ dark, genericPresets = [], systemPresets = 
   );
 
   return (
-    <div className={`app welcome-app ${dark ? 'dark' : ''}`} data-theme="default">
+    <div className={`app welcome-app ${dark ? 'dark' : ''}`} data-skin="cadence" data-theme="cadence" data-mode={dark ? 'dark' : 'light'}>
       <main className="welcome-shell">
         <section className="panel welcome-panel">
           <div className="welcome-topbar">
             <div className="loading-mark welcome-mark">
-              <img src={dark ? '/branding/logo-cadence-dark.svg' : '/branding/logo-cadence-light.svg'} alt="Cadence" />
+              <img src={getCadenceLogo(dark)} alt="Cadence" />
             </div>
-            <button className={`theme-toggle ${dark ? 'dark-on' : 'light-on'}`} onClick={() => onToggleTheme?.(!dark)} aria-label={t('onboarding.toggleTheme')}><span>☀</span><span>☾</span><i /></button>
+            <button className={`theme-toggle ${dark ? 'dark-on' : 'light-on'}`} onClick={() => onToggleTheme?.(!dark)} aria-label={t('onboarding.toggleTheme')}><span>{uiGlyphs.themeLight}</span><span>{uiGlyphs.themeDark}</span><i /></button>
           </div>
           <div className="welcome-copy">
             <strong className="brand-title">Cadence</strong>

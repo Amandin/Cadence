@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { activeGlobalTrackerThresholds, elapsedGlobalTrackerMs, globalThresholdValue, globalTrackerTimerState, normalizeGlobalThresholds } from '../../domain/globalTracker.js';
 import { t } from '../../i18n/index.js';
 import { Fenetre } from '../commun/ComposantsCommuns.jsx';
+import { globalThresholdBasisOptionsByMode, thresholdColorOptions, thresholdColorStyles, thresholdGlowStyle, thresholdOperatorsForMode, validThresholdOperator } from './thresholdUi.js';
 
 const COMPTEUR_GLOBAL_PAR_DEFAUT = {
   enabled: false,
@@ -25,45 +26,6 @@ const COMPTEUR_GLOBAL_PAR_DEFAUT = {
 };
 
 const MODES_TEMPS_REEL = new Set(['stopwatch', 'timer']);
-const thresholdColors = [
-  ['neutral', 'trackers.global.thresholds.color.neutral'],
-  ['green', 'trackers.global.thresholds.color.green'],
-  ['amber', 'trackers.global.thresholds.color.amber'],
-  ['red', 'trackers.global.thresholds.color.red'],
-  ['blue', 'trackers.global.thresholds.color.blue'],
-  ['violet', 'trackers.global.thresholds.color.violet'],
-];
-const thresholdOptionStyles = {
-  neutral: { backgroundColor: '#e2e8f0', color: '#334155' },
-  green: { backgroundColor: '#dcfce7', color: '#166534' },
-  amber: { backgroundColor: '#fef3c7', color: '#92400e' },
-  red: { backgroundColor: '#fee2e2', color: '#991b1b' },
-  blue: { backgroundColor: '#dbeafe', color: '#1e40af' },
-  violet: { backgroundColor: '#ede9fe', color: '#5b21b6' },
-};
-const thresholdOperators = [
-  ['gte', '>='],
-  ['lte', '<='],
-  ['gt', '>'],
-  ['lt', '<'],
-  ['eq', '='],
-];
-const thresholdOperatorsByMode = {
-  timer: [
-    ['lte', '<='],
-    ['lt', '<'],
-  ],
-  stopwatch: [
-    ['gte', '>='],
-    ['gt', '>'],
-  ],
-};
-const thresholdBases = {
-  timer: [
-    ['fixed', 'trackers.global.thresholds.basis.fixed'],
-    ['percent', 'trackers.global.thresholds.basis.percent'],
-  ],
-};
 const thresholdScopes = [
   ['current', 'trackers.global.thresholds.scope.current'],
   ['loops', 'trackers.global.thresholds.scope.loops'],
@@ -75,14 +37,6 @@ const soundChoices = [
   ['alarm', 'trackers.global.thresholds.sound.alarm'],
   ['custom', 'trackers.global.thresholds.sound.custom'],
 ];
-const thresholdGlowColors = {
-  neutral: '#94a3b8',
-  green: '#22c55e',
-  amber: '#f59e0b',
-  red: '#ef4444',
-  blue: '#3b82f6',
-  violet: '#8b5cf6',
-};
 
 function estTempsReel(compteur) {
   return MODES_TEMPS_REEL.has(compteur?.mode);
@@ -188,26 +142,8 @@ function SeuilsGlobauxActifs({ seuils }) {
   return <span className="global-threshold-chip-row">{seuils.slice(0, 1).map((seuil, index) => <span className={`threshold-chip threshold-${seuil.color || 'neutral'} ${seuil.memorise ? 'threshold-latched' : ''}`} key={`${seuil.label}-${index}`}>{seuil.label}</span>)}</span>;
 }
 
-function styleSeuilsGlobaux(seuils) {
-  if (!seuils.length) return {};
-  return {
-    '--threshold-a': thresholdGlowColors[seuils[0]?.color] || thresholdGlowColors.neutral,
-    '--threshold-b': thresholdGlowColors[seuils[1]?.color] || thresholdGlowColors[seuils[0]?.color] || thresholdGlowColors.neutral,
-  };
-}
-
 function cleSeuil(seuil) {
   return `${seuil.scope || 'current'}:${seuil.basis || 'fixed'}:${seuil.operator || ''}:${seuil.value}:${seuil.label || ''}`;
-}
-
-function operateursSeuil(mode, scope = 'current') {
-  if (scope === 'loops') return thresholdOperatorsByMode.stopwatch;
-  return thresholdOperatorsByMode[mode] || thresholdOperators;
-}
-
-function operateurSeuilValide(mode, scope, operator) {
-  const operateurs = operateursSeuil(mode, scope);
-  return operateurs.some(([value]) => value === operator) ? operator : operateurs[0][0];
 }
 
 function libelleCibleSeuil(compteur, seuil) {
@@ -253,9 +189,9 @@ function SelecteurSon({ soundId = 'beep', soundUrl = '', onChanger }) {
 }
 
 export function EditeurSeuilsCompteurScene({ compteur, onModifier }) {
-  const seuils = normalizeGlobalThresholds(compteur.thresholds).map((seuil) => ({ ...seuil, operator: operateurSeuilValide(compteur.mode || 'clock', seuil.scope || 'current', seuil.operator) }));
+  const seuils = normalizeGlobalThresholds(compteur.thresholds).map((seuil) => ({ ...seuil, operator: validThresholdOperator(compteur.mode || 'clock', seuil.scope || 'current', seuil.operator) }));
   const mode = compteur.mode || 'clock';
-  const bases = thresholdBases[mode] || [];
+  const bases = globalThresholdBasisOptionsByMode[mode] || [];
   const afficherBase = bases.length > 0;
   const afficherCible = mode === 'timer';
   const afficherScope = (mode === 'clock' || mode === 'timer') && compteur.limitMode === 'loop';
@@ -268,7 +204,7 @@ export function EditeurSeuilsCompteurScene({ compteur, onModifier }) {
         ? t('trackers.global.thresholds.help.counter')
         : t('trackers.global.thresholds.help.clock');
   const modifier = (index, patch) => onModifier({ thresholds: seuils.map((seuil, position) => position === index ? { ...seuil, ...patch } : seuil) });
-  const ajouter = () => onModifier({ thresholds: [...seuils, { value: 0, label: '', color: 'neutral', operator: operateurSeuilValide(mode, 'current', ''), basis: 'fixed', scope: 'current', sound: false, soundId: 'beep', soundUrl: '' }] });
+  const ajouter = () => onModifier({ thresholds: [...seuils, { value: 0, label: '', color: 'neutral', operator: validThresholdOperator(mode, 'current', ''), basis: 'fixed', scope: 'current', sound: false, soundId: 'beep', soundUrl: '' }] });
   const supprimer = (index) => onModifier({ thresholds: seuils.filter((_, position) => position !== index) });
 
   return (
@@ -279,8 +215,8 @@ export function EditeurSeuilsCompteurScene({ compteur, onModifier }) {
         <div className={`threshold-edit-row ${afficherScope ? 'has-target' : ''} ${afficherBase && (seuil.scope || 'current') !== 'loops' ? 'has-basis' : ''}`} key={index}>
           <button className="small-btn subtle-danger threshold-delete" onClick={() => supprimer(index)}>x</button>
           <div className="threshold-numeric-row">
-            {afficherScope && <select className="threshold-target-select" value={seuil.scope || 'current'} onChange={(event) => modifier(index, { scope: event.target.value, basis: event.target.value === 'loops' ? 'fixed' : seuil.basis, operator: operateurSeuilValide(mode, event.target.value, seuil.operator) })}>{thresholdScopes.map(([value, labelKey]) => <option key={value} value={value}>{t(labelKey)}</option>)}</select>}
-            <select className="threshold-operator-select" value={operateurSeuilValide(mode, seuil.scope || 'current', seuil.operator)} onChange={(event) => modifier(index, { operator: event.target.value })}>{operateursSeuil(mode, seuil.scope || 'current').map(([value]) => <option key={value} value={value}>{value === 'gte' ? '>=' : value === 'lte' ? '<=' : value === 'gt' ? '>' : value === 'lt' ? '<' : '='}</option>)}</select>
+            {afficherScope && <select className="threshold-target-select" value={seuil.scope || 'current'} onChange={(event) => modifier(index, { scope: event.target.value, basis: event.target.value === 'loops' ? 'fixed' : seuil.basis, operator: validThresholdOperator(mode, event.target.value, seuil.operator) })}>{thresholdScopes.map(([value, labelKey]) => <option key={value} value={value}>{t(labelKey)}</option>)}</select>}
+            <select className="threshold-operator-select" value={validThresholdOperator(mode, seuil.scope || 'current', seuil.operator)} onChange={(event) => modifier(index, { operator: event.target.value })}>{thresholdOperatorsForMode(mode, seuil.scope || 'current').map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
             {afficherBase && (seuil.scope || 'current') !== 'loops' && <select className="threshold-basis-select" value={seuil.basis || 'fixed'} onChange={(event) => modifier(index, { basis: event.target.value })}>{bases.map(([value, labelKey]) => <option key={value} value={value}>{t(labelKey)}</option>)}</select>}
             {(mode === 'timer' || mode === 'stopwatch') && (seuil.basis || 'fixed') === 'fixed' && (seuil.scope || 'current') !== 'loops'
               ? <ChampsTemps totalSecondes={seuil.value ?? 0} onChanger={(value) => modifier(index, { value })} />
@@ -291,7 +227,7 @@ export function EditeurSeuilsCompteurScene({ compteur, onModifier }) {
               <input className="threshold-label-input" value={seuil.label || ''} placeholder={t('trackers.global.thresholds.placeholder')} onChange={(event) => modifier(index, { label: event.target.value })} />
               {afficherCible && <span className="threshold-warning">{libelleCibleSeuil(compteur, seuil)}</span>}
             </div>
-            <select className={`threshold-color-select threshold-${seuil.color || 'neutral'}`} value={seuil.color || 'neutral'} onChange={(event) => modifier(index, { color: event.target.value })}>{thresholdColors.map(([value, labelKey]) => <option key={value} value={value} style={thresholdOptionStyles[value]}>{t(labelKey)}</option>)}</select>
+            <select className={`threshold-color-select threshold-${seuil.color || 'neutral'}`} value={seuil.color || 'neutral'} onChange={(event) => modifier(index, { color: event.target.value })}>{thresholdColorOptions.map(([value, labelKey]) => <option key={value} value={value} style={thresholdColorStyles[value]}>{t(labelKey)}</option>)}</select>
           </div>
           {afficherSon && <div className="threshold-sound-toggle">
             <span>{t('trackers.global.thresholds.sound.label')}</span>
@@ -382,7 +318,7 @@ export function CompteurGlobal({ compteur, onChanger, onToggleTemps, animationTi
   const classeSeuils = seuilsAffiches.length ? 'threshold-glow' : '';
   const classeCouleurSeuil = seuilsAffiches.length ? `threshold-glow-${seuilsAffiches[0]?.color || 'neutral'}` : '';
   const classeCouleurSecondaire = seuilsAffiches[1] ? `threshold-glow-secondary-${seuilsAffiches[1]?.color || 'neutral'}` : '';
-  const styleSeuils = styleSeuilsGlobaux(seuilsAffiches);
+  const styleSeuils = thresholdGlowStyle(seuilsAffiches);
 
   if (!compteur?.enabled) return null;
   if (estTempsReel(compteur)) {

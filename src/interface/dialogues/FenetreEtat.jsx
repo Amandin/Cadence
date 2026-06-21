@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react';
 import { colorNames } from '../../constants.js';
 import { t } from '../../i18n/index.js';
 import { colors } from '../../logic.js';
+import { uiGlyphs } from '../../uiAssets.js';
 import { Fenetre } from '../commun/ComposantsCommuns.jsx';
 import { SelecteurImpactEtat } from '../commun/SelecteurImpactEtat.jsx';
 
 const optionsDuree = [
-  { label: '∞', value: 'infinite' },
+  { label: uiGlyphs.infinity, value: 'infinite' },
   { label: '1', value: '1' },
   { label: '2', value: '2' },
   { label: '3', value: '3' },
@@ -110,9 +111,9 @@ export function FenetreEtat({ participant, initialStatus = null, onFermer, onVal
 
   const entete = onSaveTemplate ? (
     <div className="status-window-header">
-      <button className="icon-btn tracker-template-save-btn" type="button" onClick={enregistrerTemplate} disabled={!peutEnregistrer} title={t('templates.editor.status.saveCurrent')} aria-label={t('templates.editor.status.saveCurrent')}>&#128190;</button>
+      <button className="icon-btn tracker-template-save-btn" type="button" onClick={enregistrerTemplate} disabled={!peutEnregistrer} title={t('templates.editor.status.saveCurrent')} aria-label={t('templates.editor.status.saveCurrent')}>{uiGlyphs.save}</button>
       <h2>{t('status.add.title', { name: participant.name })}</h2>
-      <button className="icon-btn" onClick={onFermer} aria-label={t('common.close')}>×</button>
+      <button className="icon-btn" onClick={onFermer} aria-label={t('common.close')}>{uiGlyphs.close}</button>
     </div>
   ) : null;
 

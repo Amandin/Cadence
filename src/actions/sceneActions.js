@@ -8,7 +8,7 @@ import { clone, resetAutoTrackers, tickParticipant, triggerActivation, untickPar
 import { ajouterJoueSouple, annulerDernierJoueSouple, retirerHistoriqueSouple, retirerJoueSouple, toutLeMondeAJoueSouple } from './flexibleTurnState.js';
 import { appliquerCoutInitiative, appliquerDebutNouveauRoundCout, premierCreneauCoutEligible, slotsNonJoues } from './initiativeCostActions.js';
 import { advanceReserveParticipantRound, arreterTempsReelScene, demarrerTempsReelScene, effacerEtatsParticipant, resetSuivisParticipant, tickSceneRoundStatuses, triggerActivationScene, untickSceneRoundStatuses } from './sceneAutomation.js';
-import { actionSlotsDepuisInitiatives, addPreInitiativeRestorePoint, addRestorePoint, createBlankParticipant, initiativesRenseignees, optionsTri, placerEnReserve, valeurInitiativeRenseignee } from './sceneSupport.js';
+import { actionSlotsDepuisInitiatives, addPreInitiativeRestorePoint, addRestorePoint, clearActiveInPreparation, createBlankParticipant, initiativesRenseignees, optionsTri, placerEnReserve } from './sceneSupport.js';
 import { appliquerSurpriseInitiale, roundDepart } from './sceneSurprise.js';
 import { depilerRetourAction, empilerRetourAction, restaurerDepuisHistorique } from './sceneTurnHistory.js';
 import {
@@ -190,24 +190,33 @@ function preparerParticipantPhases(scene, participant) {
 }
 
 function departageRenseigne(departagesById, participantId) {
+  if (!departagesById || !(participantId in departagesById)) return {};
   const valeur = departagesById?.[participantId];
-  if (String(valeur ?? '').trim() === '') return {};
+  if (String(valeur ?? '').trim() === '') return { departage: '' };
   const nombre = Number(valeur);
   return Number.isFinite(nombre) ? { departage: nombre } : {};
 }
 
-function appliquerInitiativesRenseignees(scene, valuesById, departagesById = {}) {
+function bonusInitiativeRenseigne(initiativeBonusesById, participantId) {
+  if (!initiativeBonusesById || !(participantId in initiativeBonusesById)) return {};
+  const nombre = Number(initiativeBonusesById[participantId]);
+  return Number.isFinite(nombre) ? { initiativeBonus: nombre } : { initiativeBonus: 0 };
+}
+
+function appliquerInitiativesRenseignees(scene, valuesById, departagesById = {}, initiativeBonusesById = {}) {
+  const bonusActifs = scene.initiativeBonusEnabled !== false ? initiativeBonusesById : {};
   const participantsMisAJour = (scene.participants || []).map((participant) => {
     const initiatives = initiativesRenseignees(valuesById, participant.id);
     const departage = departageRenseigne(departagesById, participant.id);
-    if (!initiatives) return { ...participant, ...departage };
+    const bonus = bonusInitiativeRenseigne(bonusActifs, participant.id);
+    if (!initiatives) return { ...participant, ...departage, ...bonus };
     const actionSlots = actionSlotsDepuisInitiatives(initiatives, rulesAllowMultipleSlots(scene));
-    return { ...participant, ...departage, initiative: actionSlots[0]?.initiative ?? participant.initiative, actionSlots };
+    return { ...participant, ...departage, ...bonus, initiative: actionSlots[0]?.initiative ?? participant.initiative, actionSlots };
   });
   const reserveJointe = [];
   const reserve = (scene.reserve || []).flatMap((participant) => {
     const initiatives = initiativesRenseignees(valuesById, participant.id);
-    const participantAvecDepartage = { ...participant, ...departageRenseigne(departagesById, participant.id) };
+    const participantAvecDepartage = { ...participant, ...departageRenseigne(departagesById, participant.id), ...bonusInitiativeRenseigne(bonusActifs, participant.id) };
     if (!initiatives) return [placerEnReserve(participantAvecDepartage)];
     const actionSlots = actionSlotsDepuisInitiatives(initiatives, rulesAllowMultipleSlots(scene));
     reserveJointe.push(preparerParticipantPhases(scene, { ...participantAvecDepartage, initiative: actionSlots[0]?.initiative ?? 0, actionSlots }));
@@ -230,7 +239,7 @@ function appliquerInitiativesRenseignees(scene, valuesById, departagesById = {})
 }
 
 export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, setScenes, setRestorePoints, setRoundEffect }) {
-  const updateScene = (updater) => setScenes((list) => list.map((s, i) => i === sceneIndex ? updater(s) : s));
+  const updateScene = (updater) => setScenes((list) => list.map((s, i) => i === sceneIndex ? clearActiveInPreparation(updater(s)) : s));
   const addStartRestorePoints = (points, sceneBeforeInitiative, nextScene) => addRestorePoint(addPreInitiativeRestorePoint(points, sceneBeforeInitiative.id, sceneBeforeInitiative), sceneBeforeInitiative.id, nextScene);
   const updateParticipant = (id, updater) => updateScene((s) => {
     const nextScene = modifierParticipantDansScene(s, id, updater);
@@ -285,11 +294,11 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
     setActiveParticipant(activeId) {
       updateScene((s) => ({ ...s, activeId, activeSlotId: '' }));
     },
-    applyInitiativeRolls(valuesById, departagesById = {}) {
+    applyInitiativeRolls(valuesById, departagesById = {}, initiativeBonusesById = {}) {
       setRoundEffect(null);
-      updateScene((s) => appliquerInitiativesRenseignees(s, valuesById, departagesById));
+      updateScene((s) => appliquerInitiativesRenseignees(s, valuesById, departagesById, initiativeBonusesById));
     },
-    startSceneWithInitiatives(valuesById, surprisedIds = [], departagesById = {}) {
+    startSceneWithInitiatives(valuesById, surprisedIds = [], departagesById = {}, initiativeBonusesById = {}) {
       setRoundEffect('next');
       updateScene((s) => {
         const sceneReglesCourantes = {
@@ -299,7 +308,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
           surpriseAdvanceOn: scene.surpriseAdvanceOn,
           surpriseDedicatedRound: scene.surpriseDedicatedRound,
         };
-        const sceneAvecInitiatives = appliquerInitiativesRenseignees(sceneReglesCourantes, valuesById, departagesById);
+        const sceneAvecInitiatives = appliquerInitiativesRenseignees(sceneReglesCourantes, valuesById, departagesById, initiativeBonusesById);
         const nextScene = demarrerScene(appliquerSurpriseInitiale(sceneAvecInitiatives, surprisedIds));
         if (nextScene.round >= 0) setRestorePoints((points) => addStartRestorePoints(points, s, nextScene));
         return empilerRetourAction(s, nextScene);

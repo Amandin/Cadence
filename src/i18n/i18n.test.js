@@ -16,7 +16,7 @@ describe('i18n', () => {
     expect(t('trackers.global.title')).toBe('Indicateur de scène');
     expect(t('trackers.global.templateLabel')).toBe('Modèle d’indicateur de scène');
     expect(t('trackers.step.label')).toBe('Pas');
-    expect(t('trackers.clock.freeze')).toBe('Figer cette horloge');
+    expect(t('trackers.common.frozen')).toBe('figé');
     expect(t('trackers.common.freezeAutomation')).toBe('Figer cet automatisme');
     expect(t('trackers.boxes.stepLabel')).toBe('Nombre de clics par case');
     expect(t('trackers.counter.edit', { label: 'Compteur' })).toBe('Modifier Compteur');
@@ -69,7 +69,6 @@ describe('i18n', () => {
     expect(t('sheet.clock.direction.descending')).toBe('Décroissant');
     expect(t('sheet.clock.segments')).toBe('Nombre de segments');
     expect(t('sheet.advanced.thresholds')).toBe('Seuils');
-    expect(t('sheet.advanced.reset')).toBe('Automatisme');
     expect(t('sheet.advanced.automatisms')).toBe('Automatisme');
     expect(t('sheet.reset.autoAdvance')).toBe('activer les automatismes');
     expect(t('sheet.reset.canFreeze')).toBe('peut être figé');
@@ -100,6 +99,8 @@ describe('i18n', () => {
     expect(t('hub.campaigns.status.local')).toBe('Sauvegarde locale active.');
     expect(t('hub.campaigns.loadTest')).toBe('Charger la campagne de test');
     expect(t('templates.hub.title')).toBe('Modèles');
+    expect(t('templates.error.categoryExists')).toBe('Cette catégorie existe déjà.');
+    expect(t('campaign.status.localActive')).toBe('Sauvegarde locale active.');
     expect(t('templates.personnages.uncategorized')).toBe('Sans catégorie');
     expect(t('templates.sections.sceneCounters.title')).toBe('Indicateurs de scène');
     expect(t('templates.status.summary.duration', { impact: '[o] normal', duration: 3, rythme: 'round(s)' })).toBe('[o] normal | 3 round(s)');

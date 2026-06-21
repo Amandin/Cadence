@@ -4,6 +4,7 @@ import { campaignNameFromPayload, campaignTemplatesFromPayload, isValidCampaign,
 import { boxBlocks, clone, isBoxesTracker, isNumericTracker, makeDefaultCampaign, makeTestCampaign, normalizeBoxTracker, uid } from '../logic.js';
 import { mergeTemplateStores } from '../templates.js';
 import { readJsonCadenceFile, shareOrDownloadCampaign } from '../campaignFileIO.js';
+import { t } from '../i18n/index.js';
 
 function valeurNumerique(value, fallback = 0) {
   const next = Number(value);
@@ -35,17 +36,13 @@ function resetCompteurGlobalPourDepartScene(compteur) {
   return compteur ? { ...compteur, current: 0, total: 0, loops: 0, running: false, startedAt: null, elapsedMs: 0 } : compteur;
 }
 
-function premierParticipantId(scene, rules) {
-  if (rules?.temporalite === 'souple') return '';
-  return scene?.participants?.[0]?.id || '';
-}
-
 function remettreSceneAuDepartInitiative(scene, rules) {
   const resetScene = {
     ...scene,
     round: -1,
     phase: 1,
-    activeId: premierParticipantId(scene, rules),
+    activeId: '',
+    activeSlotId: '',
     jouesSouples: [],
     historiqueSouple: [],
     globalTracker: resetCompteurGlobalPourDepartScene(scene.globalTracker),
@@ -58,8 +55,8 @@ function remettreSceneAuDepartInitiative(scene, rules) {
 export function createBlankScene(rules = {}) {
   return applyInitiativeRules({
     id: uid('scene'),
-    title: 'Nouvelle scène',
-    type: 'Scène',
+    title: t('hub.scenes.new'),
+    type: t('hub.scene.defaultType'),
     round: -1,
     phase: 1,
     activeId: '',
@@ -71,7 +68,8 @@ export function createBlankScene(rules = {}) {
 }
 
 function duplicateSceneData(scene, rules) {
-  return remettreSceneAuDepartInitiative({ ...clone(scene), id: uid('scene'), title: `${scene?.title || 'Scène'} — copie` }, rules);
+  const title = scene?.title || t('hub.scene.defaultType');
+  return remettreSceneAuDepartInitiative({ ...clone(scene), id: uid('scene'), title: t('hub.scene.copyName', { title }) }, rules);
 }
 
 export function createCampaignActions({ scenes, campaignRules, rulePresetSnapshot, setCampaignRules, setRulePresetSnapshot = () => {}, sceneIndex, dark, campaignName, templateStore, setScenes, setSceneIndex, setDark, setCampaignNameState, setTemplateStore }) {
@@ -146,7 +144,7 @@ export function createCampaignActions({ scenes, campaignRules, rulePresetSnapsho
     async importCampaign(file) {
       try {
         const data = await readJsonCadenceFile(file);
-        if (!isValidCampaign(data)) return { ok: false, message: `Le fichier choisi n’est pas une campagne Cadence valide. Fichier : ${file?.name || 'sans nom'} (${file?.type || 'type inconnu'}, ${file?.size || 0} octets).` };
+        if (!isValidCampaign(data)) return { ok: false, message: t('campaign.error.invalidCadenceFileDetailed', { fileName: file?.name || t('campaign.file.unnamed'), fileType: file?.type || t('campaign.file.unknownType'), fileSize: file?.size || 0 }) };
         const campaign = normalizeCampaignPayload(data);
         setCampaignRules(campaign.initiativeRules);
         setRulePresetSnapshot(campaign.rulePresetSnapshot || null);
@@ -156,19 +154,19 @@ export function createCampaignActions({ scenes, campaignRules, rulePresetSnapsho
         setSceneIndex(0);
         return { ok: true };
       } catch (error) {
-        return { ok: false, message: `Impossible de lire ce fichier Cadence. ${file?.name ? `Fichier : ${file.name}. ` : ''}${error?.message || 'Erreur inconnue.'}` };
+        return { ok: false, message: t('campaign.error.readNamedFile', { filePrefix: file?.name ? t('campaign.file.prefix', { fileName: file.name }) : '', message: error?.message || t('app.notice.unknownError') }) };
       }
     },
     async importTemplatesFromCampaign(file) {
       try {
         const data = await readJsonCadenceFile(file);
-        if (!isValidCampaign(data)) return { ok: false, message: 'Le fichier choisi n’est pas une campagne Cadence valide.' };
+        if (!isValidCampaign(data)) return { ok: false, message: t('campaign.error.invalidCadenceFile') };
         const importedTemplates = campaignTemplatesFromPayload(normalizeCampaignPayload(data));
         const result = mergeTemplateStores(templateStore, importedTemplates);
         setTemplateStore(result.store);
         return { ok: true, added: result.added.length, skipped: result.skipped.length };
       } catch {
-        return { ok: false, message: 'Impossible de lire les modèles de cette campagne.' };
+        return { ok: false, message: t('campaign.error.importTemplatesFailed') };
       }
     },
     loadTestCampaign() {

@@ -86,10 +86,44 @@
   --skin-accent-soft: rgba(199, 94, 25, .16);
   --skin-danger: var(--theme-danger);
   --skin-danger-soft: var(--theme-danger-soft);
+  --skin-danger-border: color-mix(in srgb, var(--skin-danger) 28%, transparent);
   --skin-success: var(--theme-success);
   --skin-success-soft: var(--theme-success-soft);
+  --skin-success-border: color-mix(in srgb, var(--skin-success) 42%, transparent);
+  --skin-success-contrast: #047857;
+  --skin-control-bg: var(--skin-surface-strong);
+  --skin-control-border: var(--skin-border-strong);
+  --skin-control-text: var(--skin-primary-strong);
+  --skin-input-bg: var(--skin-surface-strong);
+  --skin-input-border: color-mix(in srgb, var(--skin-border) 82%, transparent);
+  --skin-input-text: var(--skin-text);
+  --skin-warning-bg: var(--skin-accent-soft);
+  --skin-warning-border: color-mix(in srgb, var(--skin-accent) 38%, transparent);
+  --skin-warning-text: var(--skin-accent);
+  --skin-overlay-bg: rgba(18, 9, 7, .58);
   --skin-shadow-surface: 0 14px 34px rgba(49, 18, 54, .12);
   --skin-shadow-action: 0 4px 16px rgba(81, 22, 90, .24);
+  --skin-app-bg-image: var(--skin-app-bg);
+  --skin-panel-bg: var(--skin-surface);
+  --skin-panel-border: var(--skin-border);
+  --skin-panel-shadow: var(--skin-shadow-surface);
+  --skin-emphasis-panel-bg: var(--skin-panel-bg);
+  --skin-emphasis-panel-shadow: var(--skin-panel-shadow);
+  --skin-rule-panel-bg: var(--skin-panel-bg);
+  --skin-rule-panel-border: var(--skin-panel-border);
+  --skin-rule-panel-shadow: var(--skin-panel-shadow);
+  --skin-muted-strong: var(--skin-muted);
+  --skin-control-bg-strong: var(--skin-control-bg);
+  --skin-control-shadow: var(--skin-shadow-action);
+  --skin-primary-action-bg: var(--skin-primary);
+  --skin-primary-action-border: var(--skin-control-border);
+  --skin-primary-action-shadow: var(--skin-shadow-action);
+  --skin-selected-bg: var(--skin-primary);
+  --skin-selected-border: var(--skin-control-border);
+  --skin-selected-shadow: var(--skin-shadow-action);
+  --skin-danger-contrast: var(--skin-danger);
+  --skin-chip-bg: var(--skin-accent-soft);
+  --skin-chip-border: var(--skin-border);
 
   /* UI aliases used by existing components. Keep these stable. */
   --ui-bg: var(--skin-bg);
@@ -109,13 +143,48 @@
   --ui-accent-soft: var(--skin-accent-soft);
   --ui-danger: var(--skin-danger);
   --ui-danger-soft: var(--skin-danger-soft);
+  --ui-danger-border: var(--skin-danger-border);
   --ui-success: var(--skin-success);
   --ui-success-soft: var(--skin-success-soft);
+  --ui-success-border: var(--skin-success-border);
+  --ui-success-contrast: var(--skin-success-contrast);
+  --ui-control-bg: var(--skin-control-bg);
+  --ui-control-border: var(--skin-control-border);
+  --ui-control-text: var(--skin-control-text);
+  --ui-input-bg: var(--skin-input-bg);
+  --ui-input-border: var(--skin-input-border);
+  --ui-input-text: var(--skin-input-text);
+  --ui-warning-bg: var(--skin-warning-bg);
+  --ui-warning-border: var(--skin-warning-border);
+  --ui-warning-text: var(--skin-warning-text);
+  --ui-overlay-bg: var(--skin-overlay-bg);
   --ui-shadow-surface: var(--skin-shadow-surface);
   --ui-shadow-action: var(--skin-shadow-action);
+  --ui-app-bg-image: var(--skin-app-bg-image);
+  --ui-panel-bg: var(--skin-panel-bg);
+  --ui-panel-border: var(--skin-panel-border);
+  --ui-panel-shadow: var(--skin-panel-shadow);
+  --ui-emphasis-panel-bg: var(--skin-emphasis-panel-bg);
+  --ui-emphasis-panel-shadow: var(--skin-emphasis-panel-shadow);
+  --ui-rule-panel-bg: var(--skin-rule-panel-bg);
+  --ui-rule-panel-border: var(--skin-rule-panel-border);
+  --ui-rule-panel-shadow: var(--skin-rule-panel-shadow);
+  --ui-muted-strong: var(--skin-muted-strong);
+  --ui-control-bg-strong: var(--skin-control-bg-strong);
+  --ui-control-shadow: var(--skin-control-shadow);
+  --ui-primary-action-bg: var(--skin-primary-action-bg);
+  --ui-primary-action-border: var(--skin-primary-action-border);
+  --ui-primary-action-shadow: var(--skin-primary-action-shadow);
+  --ui-selected-bg: var(--skin-selected-bg);
+  --ui-selected-border: var(--skin-selected-border);
+  --ui-selected-shadow: var(--skin-selected-shadow);
+  --ui-danger-contrast: var(--skin-danger-contrast);
+  --ui-chip-bg: var(--skin-chip-bg);
+  --ui-chip-border: var(--skin-chip-border);
 }
 
-.app.dark {
+.app.dark,
+.app[data-mode="dark"] {
   --skin-bg: var(--theme-dark-bg);
   --skin-bg-soft: var(--theme-dark-bg-deep);
   --skin-app-bg: radial-gradient(circle at top left, var(--theme-purple) 0, var(--theme-dark-bg) 38%, var(--theme-dark-bg-deep) 100%);
@@ -131,8 +200,49 @@
   --skin-primary-contrast: var(--theme-dark-text);
   --skin-accent: var(--theme-orange-deep);
   --skin-accent-soft: rgba(199, 94, 25, .24);
+  --skin-danger: #fb7185;
+  --skin-danger-soft: rgba(244, 63, 94, .18);
+  --skin-danger-border: rgba(244, 114, 182, .38);
+  --skin-success: #34d399;
+  --skin-success-soft: rgba(16, 185, 129, .16);
+  --skin-success-border: rgba(16, 185, 129, .42);
+  --skin-success-contrast: #a7f3d0;
+  --skin-control-bg: #301437;
+  --skin-control-border: rgba(210, 164, 86, .44);
+  --skin-control-text: var(--theme-dark-text);
+  --skin-input-bg: var(--theme-dark-bg-deep);
+  --skin-input-border: var(--theme-dark-border);
+  --skin-input-text: var(--theme-dark-text);
+  --skin-warning-bg: rgba(210, 164, 86, .10);
+  --skin-warning-border: rgba(210, 164, 86, .30);
+  --skin-warning-text: var(--theme-gold);
+  --skin-overlay-bg: rgba(8, 3, 10, .72);
   --skin-shadow-surface: 0 20px 42px rgba(0, 0, 0, .48), inset 0 1px 0 rgba(240, 221, 182, .05);
   --skin-shadow-action: 0 0 0 1px rgba(164, 90, 177, .20), 0 4px 18px rgba(0, 0, 0, .38);
+  --skin-app-bg-image:
+    radial-gradient(ellipse at 12% 0%, rgba(164, 90, 177, .36) 0, rgba(81, 22, 90, .20) 28%, transparent 58%),
+    radial-gradient(ellipse at 88% 8%, rgba(210, 164, 86, .18) 0, rgba(199, 94, 25, .10) 26%, transparent 56%),
+    linear-gradient(145deg, rgba(33, 16, 37, .98) 0, rgba(24, 10, 28, .99) 48%, var(--theme-dark-bg-deep) 100%);
+  --skin-panel-bg: linear-gradient(145deg, rgba(60, 27, 67, .92) 0, rgba(35, 15, 40, .96) 58%, rgba(18, 8, 22, .96) 100%);
+  --skin-panel-border: color-mix(in srgb, var(--theme-dark-border) 78%, rgba(164, 90, 177, .32));
+  --skin-panel-shadow: 0 18px 42px rgba(0, 0, 0, .46), 0 0 0 1px rgba(164, 90, 177, .10), inset 0 1px 0 rgba(255, 247, 237, .055), inset 0 -1px 0 rgba(0, 0, 0, .24);
+  --skin-emphasis-panel-bg: radial-gradient(ellipse at 14% 0%, rgba(210, 164, 86, .14) 0, transparent 48%), linear-gradient(160deg, rgba(50, 23, 57, .99), rgba(29, 12, 33, .99) 60%, rgba(18, 8, 22, .99));
+  --skin-emphasis-panel-shadow: 0 18px 38px rgba(0, 0, 0, .42), 0 0 0 1px rgba(210, 164, 86, .14), inset 0 1px 0 rgba(255, 247, 237, .08);
+  --skin-rule-panel-bg: linear-gradient(155deg, rgba(65, 30, 72, .84) 0, rgba(38, 16, 43, .94) 54%, rgba(20, 8, 24, .96) 100%);
+  --skin-rule-panel-border: color-mix(in srgb, var(--theme-dark-border) 70%, rgba(199, 94, 25, .22));
+  --skin-rule-panel-shadow: inset 0 1px 0 rgba(255, 247, 237, .045), inset 0 0 24px rgba(164, 90, 177, .08);
+  --skin-muted-strong: color-mix(in srgb, var(--theme-dark-muted) 88%, #fff7ed);
+  --skin-control-bg-strong: linear-gradient(180deg, rgba(64, 29, 72, .92), rgba(35, 15, 40, .96));
+  --skin-control-shadow: 0 2px 10px rgba(0, 0, 0, .34), inset 0 1px 0 rgba(255, 247, 237, .05);
+  --skin-primary-action-bg: linear-gradient(180deg, color-mix(in srgb, var(--theme-purple-glow) 42%, var(--theme-purple)) 0%, var(--theme-purple) 55%, var(--theme-purple-deep) 100%);
+  --skin-primary-action-border: color-mix(in srgb, var(--theme-gold) 52%, transparent);
+  --skin-primary-action-shadow: 0 8px 20px rgba(0, 0, 0, .38), 0 0 18px rgba(164, 90, 177, .22), inset 0 1px 0 rgba(255, 247, 237, .10);
+  --skin-selected-bg: linear-gradient(180deg, color-mix(in srgb, var(--theme-purple-glow) 52%, var(--theme-purple)) 0%, var(--theme-purple) 100%);
+  --skin-selected-border: var(--theme-gold);
+  --skin-selected-shadow: 0 8px 18px rgba(0, 0, 0, .34), 0 0 16px rgba(164, 90, 177, .20);
+  --skin-danger-contrast: #fff1f2;
+  --skin-chip-bg: rgba(81, 22, 90, .48);
+  --skin-chip-border: rgba(210, 164, 86, .26);
 }
 
 body {
@@ -143,8 +253,9 @@ body {
   font-size: 15.5px;
 }
 
-/* Future appearance scopes can target [data-theme="..."] on the app root. */
-.app[data-theme="default"] {
+/* Future appearance scopes can target [data-skin="..."] on the app root. */
+.app[data-skin="cadence"],
+.app[data-theme="cadence"] {
 }
 
 button,
@@ -249,8 +360,11 @@ input[type="number"] {
 }
 
 html:has(.app.dark),
+html:has(.app[data-mode="dark"]),
 body:has(.app.dark),
-#root:has(> .app.dark) {
+body:has(.app[data-mode="dark"]),
+#root:has(> .app.dark),
+#root:has(> .app[data-mode="dark"]) {
   background: var(--theme-dark-bg-deep);
   color: var(--theme-dark-text);
 }
@@ -450,14 +564,14 @@ body:has(.app.dark),
 }
 
 .app.dark .onboarding-preset-card {
-  background: linear-gradient(180deg, rgba(64, 29, 72, .88), rgba(35, 15, 40, .96)) !important;
-  color: var(--theme-dark-text) !important;
+  background: var(--ui-control-bg-strong) !important;
+  color: var(--ui-control-text) !important;
 }
 
 .app.dark .onboarding-custom-action {
-  background: color-mix(in srgb, rgba(64, 29, 72, .44) 74%, transparent) !important;
-  color: var(--theme-dark-text) !important;
-  border-color: color-mix(in srgb, var(--theme-gold) 40%, rgba(164, 90, 177, .25)) !important;
+  background: var(--ui-surface-soft) !important;
+  color: var(--ui-control-text) !important;
+  border-color: var(--ui-control-border) !important;
 }
 
 .onboarding-preset-card.selected .onboarding-preset-name,
@@ -477,7 +591,6 @@ body:has(.app.dark),
   max-width: var(--layout-hub-max-width);
 }
 
-.brand,
 .card,
 .panel,
 .bottom,
@@ -587,7 +700,7 @@ body:has(.app.dark),
 .controls > button,
 .clock-inline button:not(.clock-face),
 .global-mini > button {
-  box-shadow: 0 2px 9px rgba(49, 18, 54, .09);
+  box-shadow: var(--ui-shadow-action);
 }
 
 .dark .small-btn,
@@ -597,10 +710,10 @@ body:has(.app.dark),
 .dark .controls > button,
 .dark .clock-inline button:not(.clock-face),
 .dark .global-mini > button {
-  background: color-mix(in srgb, var(--ui-surface-strong) 78%, #100713);
-  border-color: color-mix(in srgb, var(--ui-border-strong) 72%, var(--theme-gold));
+  background: var(--ui-control-bg-strong);
+  border-color: var(--ui-control-border);
   color: var(--ui-primary-contrast);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, .30);
+  box-shadow: var(--ui-control-shadow);
 }
 
 .choice.selected,
@@ -618,9 +731,9 @@ body:has(.app.dark),
 .dark .choice.selected,
 .dark .selected-toggle,
 .dark .initiative-choice-action.primary-choice {
-  background: color-mix(in srgb, var(--ui-primary) 86%, var(--theme-purple-glow));
-  border-color: var(--theme-gold);
-  color: #fff7ed;
+  background: var(--ui-selected-bg);
+  border-color: var(--ui-selected-border);
+  color: var(--ui-primary-contrast);
 }
 
 .initiative-choice-action small,
@@ -639,9 +752,9 @@ body:has(.app.dark),
 
 .dark .danger-btn,
 .dark .subtle-danger {
-  background: color-mix(in srgb, var(--ui-danger) 50%, #100713);
-  border-color: color-mix(in srgb, #fda4af 58%, var(--ui-border-strong));
-  color: #fff1f2;
+  background: var(--ui-danger-soft);
+  border-color: var(--ui-danger-border);
+  color: var(--ui-danger-contrast);
 }
 
 .bottom .small-btn,
@@ -653,7 +766,7 @@ body:has(.app.dark),
 .bottom .small-btn {
   background: var(--ui-surface-strong);
   color: var(--ui-primary-strong);
-  box-shadow: 0 2px 9px rgba(49, 18, 54, .10);
+  box-shadow: var(--ui-shadow-action);
 }
 
 .bottom .turn-btn,
@@ -680,9 +793,9 @@ body:has(.app.dark),
 }
 
 .dark .bottom .small-btn {
-  background: color-mix(in srgb, var(--ui-surface-strong) 78%, #100713);
+  background: var(--ui-control-bg-strong);
   color: var(--ui-primary-contrast);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, .30);
+  box-shadow: var(--ui-control-shadow);
 }
 
 .dark .bottom .turn-btn,
@@ -734,28 +847,28 @@ body:has(.app.dark),
 .app.dark .fiche-card .small-btn,
 .app.dark .reserve-card .small-btn,
 .app.dark .initiative-card .small-btn {
-  background: color-mix(in srgb, var(--theme-dark-surface-soft) 78%, var(--theme-dark-bg-deep)) !important;
-  border-color: color-mix(in srgb, var(--theme-gold) 62%, transparent) !important;
-  color: var(--theme-dark-text) !important;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, .32);
+  background: var(--ui-control-bg-strong) !important;
+  border-color: var(--ui-control-border) !important;
+  color: var(--ui-control-text) !important;
+  box-shadow: var(--ui-control-shadow);
 }
 
 .app.dark .choice.selected,
 .app.dark .selected-toggle,
 .app.dark .initiative-choice-action.primary-choice,
 .app.dark .hub-tabs .choice.selected {
-  background: color-mix(in srgb, var(--theme-purple) 86%, var(--theme-purple-glow)) !important;
-  border-color: var(--theme-gold) !important;
-  color: #fff7ed !important;
+  background: var(--ui-selected-bg) !important;
+  border-color: var(--ui-selected-border) !important;
+  color: var(--ui-primary-contrast) !important;
 }
 
 .app.dark .danger-btn,
 .app.dark .subtle-danger,
 .app.dark .template-row-actions .danger-btn,
 .app.dark .template-category-actions .danger-btn {
-  background: color-mix(in srgb, var(--theme-danger) 52%, var(--theme-dark-bg-deep)) !important;
-  border-color: color-mix(in srgb, #fda4af 58%, var(--theme-dark-border)) !important;
-  color: #fff1f2 !important;
+  background: var(--ui-danger-soft) !important;
+  border-color: var(--ui-danger-border) !important;
+  color: var(--ui-danger-contrast) !important;
 }
 
 .app.dark .primary,
@@ -763,7 +876,7 @@ body:has(.app.dark),
 .app.dark .delta button,
 .app.dark .delta-pop button {
   background: var(--ui-primary);
-  border-color: color-mix(in srgb, var(--theme-gold) 45%, var(--ui-border-strong));
+  border-color: var(--ui-primary-action-border);
   color: var(--ui-primary-contrast);
 }
 
@@ -772,9 +885,9 @@ body:has(.app.dark),
 .app.dark .rule-save-choices,
 .app.dark .rule-group-body,
 .app.dark .edit-sheet-header {
-  background: color-mix(in srgb, var(--theme-dark-surface-soft) 70%, var(--theme-dark-bg-deep)) !important;
-  border-color: color-mix(in srgb, var(--theme-dark-border) 75%, transparent) !important;
-  color: var(--theme-dark-text);
+  background: var(--ui-rule-panel-bg) !important;
+  border-color: var(--ui-rule-panel-border) !important;
+  color: var(--ui-text);
 }
 
 .app.dark .campaign-hub-page > .hub-section.panel,
@@ -1868,21 +1981,22 @@ body:has(.app.dark),
   thème sombre reste cohérent sur le hub, les règles, les modèles et la scène.
 */
 html:has(.app.dark),
+html:has(.app[data-mode="dark"]),
 body:has(.app.dark),
+body:has(.app[data-mode="dark"]),
 #root:has(> .app.dark),
-.app.dark {
+#root:has(> .app[data-mode="dark"]),
+.app.dark,
+.app[data-mode="dark"] {
   background: var(--theme-dark-bg-deep) !important;
   color: var(--theme-dark-text);
 }
 
-.app.dark {
-  background-image:
-    radial-gradient(ellipse at 12% 0%, rgba(164, 90, 177, .36) 0, rgba(81, 22, 90, .20) 28%, transparent 58%),
-    radial-gradient(ellipse at 88% 8%, rgba(210, 164, 86, .18) 0, rgba(199, 94, 25, .10) 26%, transparent 56%),
-    linear-gradient(145deg, rgba(33, 16, 37, .98) 0, rgba(24, 10, 28, .99) 48%, var(--theme-dark-bg-deep) 100%) !important;
+.app.dark,
+.app[data-mode="dark"] {
+  background-image: var(--ui-app-bg-image) !important;
 }
 
-.app.dark .brand,
 .app.dark .card,
 .app.dark .panel,
 .app.dark .sheet,
@@ -1903,39 +2017,26 @@ body:has(.app.dark),
 .app.dark .box-editor,
 .app.dark .restore-row,
 .app.dark .global-mini-main {
-  background:
-    linear-gradient(145deg, rgba(60, 27, 67, .92) 0, rgba(35, 15, 40, .96) 58%, rgba(18, 8, 22, .96) 100%) !important;
-  border-color: color-mix(in srgb, var(--theme-dark-border) 78%, rgba(164, 90, 177, .32)) !important;
+  background: var(--ui-panel-bg) !important;
+  border-color: var(--ui-panel-border) !important;
   color: var(--theme-dark-text);
-  box-shadow:
-    0 18px 42px rgba(0, 0, 0, .46),
-    0 0 0 1px rgba(164, 90, 177, .10),
-    inset 0 1px 0 rgba(255, 247, 237, .055),
-    inset 0 -1px 0 rgba(0, 0, 0, .24);
+  box-shadow: var(--ui-panel-shadow);
 }
 
 .app.dark .campaign-hub-header.panel {
-  background:
-    radial-gradient(ellipse at 14% 0%, rgba(210, 164, 86, .14) 0, transparent 48%),
-    linear-gradient(160deg, rgba(50, 23, 57, .99), rgba(29, 12, 33, .99) 60%, rgba(18, 8, 22, .99)) !important;
-  box-shadow:
-    0 18px 38px rgba(0, 0, 0, .42),
-    0 0 0 1px rgba(210, 164, 86, .14),
-    inset 0 1px 0 rgba(255, 247, 237, .08);
+  background: var(--ui-emphasis-panel-bg) !important;
+  box-shadow: var(--ui-emphasis-panel-shadow);
 }
 
 .app.dark .rule-group,
 .app.dark .rule-group-body,
 .app.dark .rule-group .advanced-rule-block {
-  background:
-    linear-gradient(155deg, rgba(65, 30, 72, .84) 0, rgba(38, 16, 43, .94) 54%, rgba(20, 8, 24, .96) 100%) !important;
-  border-color: color-mix(in srgb, var(--theme-dark-border) 70%, rgba(199, 94, 25, .22)) !important;
+  background: var(--ui-rule-panel-bg) !important;
+  border-color: var(--ui-rule-panel-border) !important;
 }
 
 .app.dark .rule-group-body {
-  box-shadow:
-    inset 0 1px 0 rgba(255, 247, 237, .045),
-    inset 0 0 24px rgba(164, 90, 177, .08);
+  box-shadow: var(--ui-rule-panel-shadow);
 }
 
 .app.dark .muted,
@@ -1950,7 +2051,7 @@ body:has(.app.dark),
 .app.dark .box-label,
 .app.dark .line-count-row label,
 .app.dark .box-level-row span {
-  color: color-mix(in srgb, var(--theme-dark-muted) 88%, #fff7ed) !important;
+  color: var(--ui-muted-strong) !important;
 }
 
 .app.dark input,
@@ -1963,10 +2064,10 @@ body:has(.app.dark),
 .app.dark .tracker-edit-head select,
 .app.dark .delta-pop input,
 .app.dark .restore-row select {
-  background: linear-gradient(180deg, rgba(28, 13, 32, .98), var(--theme-dark-bg-deep)) !important;
-  border-color: var(--theme-dark-border) !important;
-  color: var(--theme-dark-text) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 247, 237, .04);
+  background: var(--ui-input-bg) !important;
+  border-color: var(--ui-input-border) !important;
+  color: var(--ui-input-text) !important;
+  box-shadow: var(--ui-control-shadow);
 }
 
 .app.dark .small-btn,
@@ -1987,69 +2088,54 @@ body:has(.app.dark),
 .app.dark .fiche-card .small-btn,
 .app.dark .reserve-card .small-btn,
 .app.dark .initiative-card .small-btn {
-  background:
-    linear-gradient(180deg, rgba(64, 29, 72, .92), rgba(35, 15, 40, .96)) !important;
-  border-color: color-mix(in srgb, var(--theme-gold) 58%, rgba(164, 90, 177, .18)) !important;
-  color: var(--theme-dark-text) !important;
-  box-shadow:
-    0 2px 10px rgba(0, 0, 0, .34),
-    inset 0 1px 0 rgba(255, 247, 237, .05);
+  background: var(--ui-control-bg-strong) !important;
+  border-color: var(--ui-control-border) !important;
+  color: var(--ui-control-text) !important;
+  box-shadow: var(--ui-control-shadow);
 }
 
 .app.dark .primary,
 .app.dark .turn-btn,
 .app.dark .delta button,
 .app.dark .delta-pop button {
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-purple-glow) 42%, var(--theme-purple)) 0%, var(--theme-purple) 55%, var(--theme-purple-deep) 100%) !important;
-  border-color: color-mix(in srgb, var(--theme-gold) 52%, transparent) !important;
-  color: #fff7ed !important;
-  box-shadow:
-    0 8px 20px rgba(0, 0, 0, .38),
-    0 0 18px rgba(164, 90, 177, .22),
-    inset 0 1px 0 rgba(255, 247, 237, .10);
+  background: var(--ui-primary-action-bg) !important;
+  border-color: var(--ui-primary-action-border) !important;
+  color: var(--ui-primary-contrast) !important;
+  box-shadow: var(--ui-primary-action-shadow);
 }
 
 .app.dark .choice.selected,
 .app.dark .selected-toggle,
 .app.dark .initiative-choice-action.primary-choice,
 .app.dark .hub-tabs .choice.selected {
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-purple-glow) 52%, var(--theme-purple)) 0%, var(--theme-purple) 100%) !important;
-  border-color: var(--theme-gold) !important;
-  color: #fff7ed !important;
-  box-shadow:
-    0 8px 18px rgba(0, 0, 0, .34),
-    0 0 16px rgba(164, 90, 177, .20);
+  background: var(--ui-selected-bg) !important;
+  border-color: var(--ui-selected-border) !important;
+  color: var(--ui-primary-contrast) !important;
+  box-shadow: var(--ui-selected-shadow);
 }
 
 .app.dark .danger-btn,
 .app.dark .subtle-danger,
 .app.dark .template-row-actions .danger-btn,
 .app.dark .template-category-actions .danger-btn {
-  background: color-mix(in srgb, var(--theme-danger) 52%, var(--theme-dark-bg-deep)) !important;
-  border-color: color-mix(in srgb, #fda4af 58%, var(--theme-dark-border)) !important;
-  color: #fff1f2 !important;
+  background: var(--ui-danger-soft) !important;
+  border-color: var(--ui-danger-border) !important;
+  color: var(--ui-danger-contrast) !important;
 }
 
 .app.dark .hub-scene-type,
 .app.dark .chip {
-  background: rgba(81, 22, 90, .48) !important;
-  border-color: rgba(210, 164, 86, .26) !important;
-  color: var(--theme-dark-text) !important;
+  background: var(--ui-chip-bg) !important;
+  border-color: var(--ui-chip-border) !important;
+  color: var(--ui-text) !important;
 }
 
 .sheet.main-menu.menu-dark,
 .main-menu-overlay .sheet.menu-dark {
-  background:
-    linear-gradient(145deg, rgba(60, 27, 67, .96) 0, rgba(35, 15, 40, .98) 58%, rgba(18, 8, 22, .98) 100%) !important;
-  border-color: color-mix(in srgb, var(--theme-dark-border) 78%, rgba(164, 90, 177, .32)) !important;
-  color: var(--theme-dark-text);
-  box-shadow:
-    0 22px 52px rgba(0, 0, 0, .52),
-    0 0 0 1px rgba(164, 90, 177, .12),
-    inset 0 1px 0 rgba(255, 247, 237, .055),
-    inset 0 -1px 0 rgba(0, 0, 0, .24);
+  background: var(--ui-panel-bg) !important;
+  border-color: var(--ui-panel-border) !important;
+  color: var(--ui-text);
+  box-shadow: var(--ui-panel-shadow);
 }
 
 .sheet.main-menu.menu-dark .scene-options,
@@ -2059,16 +2145,15 @@ body:has(.app.dark),
 .sheet.main-menu.menu-dark .menu-flow-section,
 .sheet.main-menu.menu-dark .restore-row,
 .sheet.main-menu.menu-dark .global-mini-main {
-  background:
-    linear-gradient(155deg, rgba(65, 30, 72, .78) 0, rgba(38, 16, 43, .92) 54%, rgba(20, 8, 24, .94) 100%) !important;
-  border-color: color-mix(in srgb, var(--theme-dark-border) 70%, rgba(199, 94, 25, .18)) !important;
-  color: var(--theme-dark-text);
+  background: var(--ui-rule-panel-bg) !important;
+  border-color: var(--ui-rule-panel-border) !important;
+  color: var(--ui-text);
 }
 
 .sheet.main-menu.menu-dark .muted,
 .sheet.main-menu.menu-dark .compact-help,
 .sheet.main-menu.menu-dark .field {
-  color: color-mix(in srgb, var(--theme-dark-muted) 88%, #fff7ed) !important;
+  color: var(--ui-muted-strong) !important;
 }
 
 .sheet.main-menu.menu-dark .small-btn,
@@ -2078,34 +2163,27 @@ body:has(.app.dark),
 .sheet.main-menu.menu-dark .clock-inline button:not(.clock-face),
 .sheet.main-menu.menu-dark .global-mini > button,
 .sheet.main-menu.menu-dark .scene-management-grid .small-btn {
-  background:
-    linear-gradient(180deg, rgba(64, 29, 72, .92), rgba(35, 15, 40, .96)) !important;
-  border-color: color-mix(in srgb, var(--theme-gold) 58%, rgba(164, 90, 177, .18)) !important;
-  color: var(--theme-dark-text) !important;
-  box-shadow:
-    0 2px 10px rgba(0, 0, 0, .34),
-    inset 0 1px 0 rgba(255, 247, 237, .05);
+  background: var(--ui-control-bg-strong) !important;
+  border-color: var(--ui-control-border) !important;
+  color: var(--ui-control-text) !important;
+  box-shadow: var(--ui-control-shadow);
 }
 
 .sheet.main-menu.menu-dark .primary,
 .sheet.main-menu.menu-dark .turn-btn,
 .sheet.main-menu.menu-dark .delta button,
 .sheet.main-menu.menu-dark .delta-pop button {
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-purple-glow) 42%, var(--theme-purple)) 0%, var(--theme-purple) 55%, var(--theme-purple-deep) 100%) !important;
-  border-color: color-mix(in srgb, var(--theme-gold) 52%, transparent) !important;
-  color: #fff7ed !important;
-  box-shadow:
-    0 8px 20px rgba(0, 0, 0, .38),
-    0 0 18px rgba(164, 90, 177, .22),
-    inset 0 1px 0 rgba(255, 247, 237, .10);
+  background: var(--ui-primary-action-bg) !important;
+  border-color: var(--ui-primary-action-border) !important;
+  color: var(--ui-primary-contrast) !important;
+  box-shadow: var(--ui-primary-action-shadow);
 }
 
 .sheet.main-menu.menu-dark .danger-btn,
 .sheet.main-menu.menu-dark .subtle-danger {
-  background: color-mix(in srgb, var(--theme-danger) 52%, var(--theme-dark-bg-deep)) !important;
-  border-color: color-mix(in srgb, #fda4af 58%, var(--theme-dark-border)) !important;
-  color: #fff1f2 !important;
+  background: var(--ui-danger-soft) !important;
+  border-color: var(--ui-danger-border) !important;
+  color: var(--ui-danger-contrast) !important;
 }
 
 .sheet.main-menu.menu-dark input,
@@ -2115,10 +2193,10 @@ body:has(.app.dark),
 .sheet.main-menu.menu-dark .field textarea,
 .sheet.main-menu.menu-dark .field select,
 .sheet.main-menu.menu-dark .restore-row select {
-  background: linear-gradient(180deg, rgba(28, 13, 32, .98), var(--theme-dark-bg-deep)) !important;
-  border-color: var(--theme-dark-border) !important;
-  color: var(--theme-dark-text) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 247, 237, .04);
+  background: var(--ui-input-bg) !important;
+  border-color: var(--ui-input-border) !important;
+  color: var(--ui-input-text) !important;
+  box-shadow: var(--ui-control-shadow);
 }
 
 .app .hub-return-logo {
@@ -2128,23 +2206,16 @@ body:has(.app.dark),
   justify-items: center !important;
   line-height: 0 !important;
   aspect-ratio: 1 / 1 !important;
-  background:
-    radial-gradient(circle at 34% 24%, rgba(255, 250, 245, .98) 0, rgba(241, 227, 214, .94) 58%, rgba(233, 216, 201, .96) 100%) !important;
-  border: 1px solid rgba(49, 18, 54, .12) !important;
-  box-shadow:
-    0 6px 16px rgba(49, 18, 54, .12),
-    inset 0 1px 0 rgba(255, 255, 255, .55);
+  background: var(--ui-surface-strong) !important;
+  border: 1px solid var(--ui-border) !important;
+  box-shadow: var(--ui-shadow-surface);
   overflow: visible !important;
 }
 
 .app.dark .hub-return-logo {
-  background:
-    radial-gradient(circle at 34% 24%, rgba(72, 33, 81, .98) 0, rgba(38, 18, 44, .98) 58%, rgba(17, 8, 21, .98) 100%) !important;
-  border-color: rgba(210, 164, 86, .30) !important;
-  box-shadow:
-    0 8px 18px rgba(0, 0, 0, .36),
-    0 0 14px rgba(164, 90, 177, .18),
-    inset 0 1px 0 rgba(255, 247, 237, .08);
+  background: var(--ui-control-bg) !important;
+  border-color: var(--ui-control-border) !important;
+  box-shadow: var(--ui-shadow-action);
 }
 
 .app .hub-return-logo {
@@ -2180,15 +2251,15 @@ body:has(.app.dark),
 .app.dark option,
 .app.dark optgroup {
   color-scheme: dark;
-  background-color: var(--theme-dark-bg-deep) !important;
-  color: var(--theme-dark-text) !important;
+  background-color: var(--ui-input-bg) !important;
+  color: var(--ui-input-text) !important;
 }
 
 .app.dark select {
   background-image:
-    linear-gradient(45deg, transparent 50%, var(--theme-dark-text) 50%),
-    linear-gradient(135deg, var(--theme-dark-text) 50%, transparent 50%),
-    linear-gradient(180deg, rgba(28, 13, 32, .98), var(--theme-dark-bg-deep)) !important;
+    linear-gradient(45deg, transparent 50%, var(--ui-input-text) 50%),
+    linear-gradient(135deg, var(--ui-input-text) 50%, transparent 50%),
+    linear-gradient(180deg, var(--ui-input-bg), var(--ui-input-bg)) !important;
   background-position:
     calc(100% - 16px) 50%,
     calc(100% - 11px) 50%,
@@ -2199,6 +2270,69 @@ body:has(.app.dark),
     100% 100% !important;
   background-repeat: no-repeat !important;
   padding-right: 32px !important;
+}
+
+.status-color-select,
+.threshold-color-select {
+  background-color: var(--select-bg, var(--tracker-paper-muted)) !important;
+  background-image: radial-gradient(circle, var(--select-dot, var(--tracker-neutral)) 0 55%, transparent 58%) !important;
+  background-repeat: no-repeat !important;
+  background-size: 16px 16px, auto !important;
+  color: var(--select-text, var(--tracker-ink-soft)) !important;
+  border-color: var(--select-border, var(--select-dot, var(--tracker-neutral))) !important;
+}
+
+.status-color-select {
+  background-position: 10px center, 0 0 !important;
+}
+
+.threshold-color-select {
+  background-position: 8px center, 0 0 !important;
+}
+
+.tracker.threshold-glow {
+  background:
+    linear-gradient(115deg,
+      color-mix(in srgb, var(--threshold-a, var(--tracker-neutral)) 32%, var(--ui-surface, var(--tracker-paper))) 0%,
+      color-mix(in srgb, var(--threshold-a, var(--tracker-neutral)) 12%, var(--ui-surface, var(--tracker-paper))) 46%,
+      color-mix(in srgb, var(--threshold-b, var(--tracker-neutral)) 26%, var(--ui-surface, var(--tracker-paper))) 100%),
+    var(--ui-surface, var(--tracker-paper)) !important;
+  border-color: color-mix(in srgb, var(--threshold-a, var(--tracker-neutral)) 48%, var(--ui-border, var(--tracker-border))) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--threshold-a, var(--tracker-neutral)) 16%, transparent);
+}
+
+.tracker-secret.threshold-glow {
+  background:
+    repeating-linear-gradient(45deg, color-mix(in srgb, var(--tracker-neutral-deep) 4%, transparent) 0 6px, color-mix(in srgb, var(--tracker-neutral-deep) 8%, transparent) 6px 12px),
+    linear-gradient(115deg,
+      color-mix(in srgb, var(--threshold-a, var(--tracker-neutral)) 32%, var(--ui-surface, var(--tracker-paper))) 0%,
+      color-mix(in srgb, var(--threshold-a, var(--tracker-neutral)) 12%, var(--ui-surface, var(--tracker-paper))) 46%,
+      color-mix(in srgb, var(--threshold-b, var(--tracker-neutral)) 26%, var(--ui-surface, var(--tracker-paper))) 100%),
+    var(--ui-surface, var(--tracker-paper)) !important;
+  background-blend-mode: normal, normal, normal;
+}
+
+.app.dark .tracker.threshold-glow,
+.dark .tracker.threshold-glow {
+  background:
+    linear-gradient(115deg,
+      color-mix(in srgb, var(--threshold-a, var(--tracker-neutral)) 32%, var(--ui-panel-bg, var(--tracker-ink-deep))) 0%,
+      color-mix(in srgb, var(--threshold-a, var(--tracker-neutral)) 14%, var(--ui-panel-bg, var(--tracker-ink-deep))) 48%,
+      color-mix(in srgb, var(--threshold-b, var(--tracker-neutral)) 28%, var(--ui-panel-bg, var(--tracker-ink-deep))) 100%),
+    var(--ui-panel-bg, var(--tracker-dark-panel-soft)) !important;
+  border-color: color-mix(in srgb, var(--threshold-a, var(--tracker-neutral)) 48%, var(--ui-panel-border, var(--tracker-neutral-deep))) !important;
+}
+
+.app.dark .tracker-secret.threshold-glow,
+.dark .tracker-secret.threshold-glow {
+  background:
+    repeating-linear-gradient(45deg, color-mix(in srgb, var(--tracker-border) 4%, transparent) 0 6px, color-mix(in srgb, var(--tracker-border) 8%, transparent) 6px 12px),
+    linear-gradient(115deg,
+      color-mix(in srgb, var(--threshold-a, var(--tracker-neutral)) 32%, var(--ui-panel-bg, var(--tracker-ink-deep))) 0%,
+      color-mix(in srgb, var(--threshold-a, var(--tracker-neutral)) 14%, var(--ui-panel-bg, var(--tracker-ink-deep))) 48%,
+      color-mix(in srgb, var(--threshold-b, var(--tracker-neutral)) 28%, var(--ui-panel-bg, var(--tracker-ink-deep))) 100%),
+    var(--ui-panel-bg, var(--tracker-dark-panel-soft)) !important;
+  background-blend-mode: normal, normal, normal;
 }
 
 .fiche-card.status-tinted-character,
@@ -2245,16 +2379,16 @@ body:has(.app.dark),
 }
 
 .conceal-character-btn.discreet.active {
-  background: #fef3c7;
-  border-color: #f59e0b;
-  color: #92400e;
-  box-shadow: 0 0 0 2px rgba(245, 158, 11, .16);
+  background: var(--ui-warning-bg);
+  border-color: var(--ui-warning-border);
+  color: var(--ui-warning-text);
+  box-shadow: var(--ui-shadow-action);
 }
 
 .dark .conceal-character-btn.discreet.active {
-  background: rgba(245, 158, 11, .16);
-  border-color: rgba(245, 158, 11, .48);
-  color: #fde68a;
+  background: var(--ui-warning-bg);
+  border-color: var(--ui-warning-border);
+  color: var(--ui-warning-text);
 }
 
 .character-secret-edit {

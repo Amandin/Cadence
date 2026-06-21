@@ -1,26 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { activeThresholds, applyBoxMarkAction, applyDelta, boxBlocks, boxVisualRank, isTriggeredClock, normalizeThresholds, sortBoxBlocks, thresholdValue, trackerBounds, trackerLimitMode } from '../../logic.js';
 import { t } from '../../i18n/index.js';
+import { uiGlyphs } from '../../uiAssets.js';
+import { thresholdGlowColors, thresholdGlowStyle } from './thresholdUi.js';
 
 function TitreSuivi({ titre, avantTitre, suffixe = null }) {
   return <span className="tracker-title">{avantTitre}{titre}{suffixe}</span>;
-}
-
-const thresholdGlowColors = {
-  neutral: '#94a3b8',
-  green: '#22c55e',
-  amber: '#f59e0b',
-  red: '#ef4444',
-  blue: '#3b82f6',
-  violet: '#8b5cf6',
-};
-
-function styleSeuils(seuils) {
-  if (!seuils.length) return {};
-  return {
-    '--threshold-a': thresholdGlowColors[seuils[0]?.color] || thresholdGlowColors.neutral,
-    '--threshold-b': thresholdGlowColors[seuils[1]?.color] || thresholdGlowColors[seuils[0]?.color] || thresholdGlowColors.neutral,
-  };
 }
 
 function SeuilsActifs({ seuils }) {
@@ -119,11 +104,11 @@ export function Suivi({ suivi, onModifier, onSupprimer, avantTitre = null, coule
   const seuils = activeThresholds(suivi) || [];
   const classeSeuils = seuils.length ? 'threshold-glow' : '';
   const classeSecret = suivi.secret ? 'tracker-secret' : '';
-  const styleSeuil = styleSeuils(seuils);
+  const styleSeuil = thresholdGlowStyle(seuils);
   const cyclesPuces = Number(suivi.cycles ?? suivi.cyclesInitial ?? 0) || 0;
   const cyclesHorloge = Number(suivi.cycles ?? suivi.cyclesInitial ?? 0) || 0;
   const titreGel = suivi.frozen ? t('trackers.common.unfreezeAutomation') : t('trackers.common.freezeAutomation');
-  const badgeSecret = suivi.secret && afficherBadgeSecret ? <span className="chip secret-chip" title={t('sheet.tracker.secret')} aria-label={t('sheet.tracker.secret')}>{'🥷'}</span> : null;
+  const badgeSecret = suivi.secret && afficherBadgeSecret ? <span className="chip secret-chip" title={t('sheet.tracker.secret')} aria-label={t('sheet.tracker.secret')}>{uiGlyphs.stealth}</span> : null;
   const suffixePuces = (suivi.type === 'points' || suivi.type === 'dots') && suivi.limitMode === 'loop'
     ? <><span className={`title-counter color-${couleur || 'slate'}`}>{cyclesPuces}</span>{badgeSecret}</>
     : badgeSecret;

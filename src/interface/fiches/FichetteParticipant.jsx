@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { initiativesActionParticipant } from '../../domain/initiative.js';
 import { participantEstInactif, participantEstLimite } from '../../domain/statuses.js';
+import { t } from '../../i18n/index.js';
 import { isVisible } from '../../logic.js';
 import { AvatarParticipant, BoutonRepliFichette, EtiquetteEtat, couleurVersAccent, teinteEtatParticipant } from '../commun/ComposantsCommuns.jsx';
 import { Suivi } from '../suivis/Suivi.jsx';
@@ -35,7 +36,7 @@ export function FichetteParticipant({
   const teinteEtat = teinteEtatParticipant(participant);
   const classes = `card fiche-card ${className} ${active ? 'active active-turn' : ''} ${inactif ? 'inactive-character' : limite ? 'limited-character' : ''} ${teinteEtat ? 'status-tinted-character' : ''} ${participant.secret ? 'secret-character-sheet' : ''} ${repliee ? 'collapsed' : ''}`;
   const styleFiche = { '--accent': couleurVersAccent(participant.color), ...(teinteEtat ? { '--status-tint-gradient': teinteEtat.gradient } : {}) };
-  const visibleBadges = [...badges, inactif && { className: 'inactive-chip', label: 'Inactif' }, limite && { className: 'limited-chip', label: 'Limité' }].filter(Boolean);
+  const visibleBadges = [...badges, inactif && { className: 'inactive-chip', label: t('participant.badge.inactive') }, limite && { className: 'limited-chip', label: t('participant.badge.limited') }].filter(Boolean);
   const hasQuickStats = showInitiative || (participant.stats || []).length > 0;
 
   if (repliee) {
@@ -73,13 +74,13 @@ export function FichetteParticipant({
         </button>
         {primaryAction}
       </div>
-      {hasQuickStats && <div className="quick-stats-full">{showInitiative && <span className="chip init-chip">Init {libelleInitiative(participant)}</span>}<InfosRapides stats={participant.stats || []} /></div>}
+      {hasQuickStats && <div className="quick-stats-full">{showInitiative && <span className="chip init-chip">{t('initiative.groupShort')} {libelleInitiative(participant)}</span>}<InfosRapides stats={participant.stats || []} /></div>}
       {secondaryActions && <div className="fiche-secondary-actions">{secondaryActions}</div>}
       <div className="trackers">
         {suivisVisibles.map((suivi) => <Suivi key={suivi.id} suivi={suivi} couleur={participant.color} onModifier={(suivant) => onSuivi(suivi.id, suivant)} onSupprimer={() => onSupprimerSuivi(suivi.id)} />)}
         <div className="statuses status-control-row">
           {participant.statuses?.map((etat) => <EtiquetteEtat key={etat.id} etat={etat} onModifier={() => onModifierEtat?.(etat.id)} onRetirer={() => onRetirerEtat(etat.id)} />)}
-          <button className="small-btn sheet-add-status-btn" onClick={onAjouterEtat}>+ état</button>
+          <button className="small-btn sheet-add-status-btn" onClick={onAjouterEtat}>{t('scene.status.add')}</button>
           <BoutonRepliFichette onClick={() => setRepliee(true)} className="collapse-inline" />
         </div>
       </div>

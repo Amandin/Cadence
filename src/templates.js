@@ -1,7 +1,9 @@
 import { TEMPLATE_STORAGE_KEY } from './constants.js';
 import { normalizeCampaignRules } from './domain/campaignRules.js';
 import { normalizeGlobalTracker } from './domain/globalTracker.js';
+import { t } from './i18n/index.js';
 import { clone, colors, newTracker, symbols, uid } from './logic.js';
+import { defaultParticipantSymbol } from './uiAssets.js';
 
 export const defaultTemplateCategories = ['PJ', 'PNJ', 'Créature', 'Horloge', 'Autre'];
 const TEMPLATE_STORE_VERSION = 3;
@@ -44,15 +46,16 @@ function ajouterTemplateSurprisSiAncien(statusTemplates, version) {
 }
 
 export function createBlankParticipant() {
-  const symbol = symbols[Math.floor(Math.random() * symbols.length)] || '●';
+  const symbol = symbols[Math.floor(Math.random() * symbols.length)] || defaultParticipantSymbol;
   const color = colors[Math.floor(Math.random() * colors.length)] || 'red';
   return {
     id: uid('p'),
-    name: 'Nouveau personnage',
+    name: t('templates.fallback.character'),
     kind: 'Opposant',
     symbol,
     color,
     initiative: 1,
+    initiativeBonus: 0,
     actionSlots: [{ id: 'slot-1', initiative: 1, order: 0 }],
     description: '',
     stats: [],
@@ -65,7 +68,7 @@ function normalizeCategoryName(value) {
   return value?.trim();
 }
 
-function normalizeTemplateName(value, fallback = 'Modèle sans nom') {
+function normalizeTemplateName(value, fallback = t('templates.fallback.unnamed')) {
   return normalizeCategoryName(value) || fallback;
 }
 
@@ -89,7 +92,7 @@ function normalizeTrackerTemplate(template) {
   const tracker = clone(template.tracker);
   return {
     id: template.id || uid('ttpl'),
-    name: normalizeTemplateName(template.name, tracker.name || 'Indicateur'),
+    name: normalizeTemplateName(template.name, tracker.name || t('templates.fallback.tracker')),
     createdAt: template.createdAt || new Date().toISOString(),
     updatedAt: template.updatedAt,
     tracker: { ...tracker, id: 'template-tracker' },
@@ -143,7 +146,7 @@ function normalizeSceneCounterTemplate(template) {
   const counter = normalizeGlobalTracker(source);
   return {
     id: template.id || uid('sctpl'),
-    name: normalizeTemplateName(template.name, counter.name || 'Indicateur de scène'),
+    name: normalizeTemplateName(template.name, counter.name || t('templates.fallback.sceneCounter')),
     createdAt: template.createdAt || new Date().toISOString(),
     updatedAt: template.updatedAt,
     counter: { ...counter, running: false, startedAt: null, elapsedMs: 0 },
@@ -155,7 +158,7 @@ function normalizeRuleTemplate(template) {
   const rules = normalizeCampaignRules(template.rules || template);
   return {
     id: template.id || uid('rtpl'),
-    name: normalizeTemplateName(template.name, 'Règles'),
+    name: normalizeTemplateName(template.name, t('templates.fallback.rules')),
     createdAt: template.createdAt || new Date().toISOString(),
     updatedAt: template.updatedAt,
     rules,
@@ -207,7 +210,7 @@ export function loadTemplateStore() {
   try {
     return normalizeTemplateStore(JSON.parse(localStorage.getItem(TEMPLATE_STORAGE_KEY)));
   } catch (error) {
-    console.warn('Impossible de charger les modèles Cadence.', error);
+    console.warn(t('templates.warning.loadFailed'), error);
     return normalizeTemplateStore(null);
   }
 }
@@ -330,7 +333,7 @@ export function templateNameExists(templates, category, name) {
 }
 
 export function makeTemplateFromParticipant(participant, { name, category }) {
-  const cleanName = normalizeCategoryName(name) || participant.name || 'Modèle sans nom';
+  const cleanName = normalizeCategoryName(name) || participant.name || t('templates.fallback.unnamed');
   const cleanCategory = normalizeCategoryName(category) || 'PNJ';
 
   return {
@@ -348,7 +351,7 @@ export function makeTemplateFromParticipant(participant, { name, category }) {
 export function makeTrackerTemplateFromTracker(tracker, { name }) {
   return normalizeTrackerTemplate({
     id: uid('ttpl'),
-    name: normalizeTemplateName(name, tracker?.name || 'Indicateur'),
+    name: normalizeTemplateName(name, tracker?.name || t('templates.fallback.tracker')),
     createdAt: new Date().toISOString(),
     tracker: { ...clone(tracker), id: 'template-tracker' },
   });
@@ -357,7 +360,7 @@ export function makeTrackerTemplateFromTracker(tracker, { name }) {
 export function makeStatusTemplateFromStatus(status, { name }) {
   return normalizeStatusTemplate({
     id: uid('stpl'),
-    name: normalizeTemplateName(name, status?.name || 'État'),
+    name: normalizeTemplateName(name, status?.name || t('templates.fallback.status')),
     createdAt: new Date().toISOString(),
     status: { ...clone(status), id: 'template-status' },
   });
@@ -366,7 +369,7 @@ export function makeStatusTemplateFromStatus(status, { name }) {
 export function makeSceneStatusTemplateFromStatus(status, { name }) {
   return normalizeSceneStatusTemplate({
     id: uid('sstpl'),
-    name: normalizeTemplateName(name, status?.name || 'État de scène'),
+    name: normalizeTemplateName(name, status?.name || t('templates.fallback.sceneStatus')),
     createdAt: new Date().toISOString(),
     status: { ...clone(status), id: 'template-status', inactive: false, advanceOn: 'round' },
   });
@@ -375,7 +378,7 @@ export function makeSceneStatusTemplateFromStatus(status, { name }) {
 export function makeSceneCounterTemplateFromCounter(counter, { name }) {
   return normalizeSceneCounterTemplate({
     id: uid('sctpl'),
-    name: normalizeTemplateName(name, counter?.name || 'Indicateur de scène'),
+    name: normalizeTemplateName(name, counter?.name || t('templates.fallback.sceneCounter')),
     createdAt: new Date().toISOString(),
     counter,
   });
@@ -384,7 +387,7 @@ export function makeSceneCounterTemplateFromCounter(counter, { name }) {
 export function makeRuleTemplateFromRules(rules, { name }) {
   return normalizeRuleTemplate({
     id: uid('rtpl'),
-    name: normalizeTemplateName(name, 'Règles'),
+    name: normalizeTemplateName(name, t('templates.fallback.rules')),
     createdAt: new Date().toISOString(),
     rules,
   });
@@ -401,7 +404,7 @@ export function instantiateTemplate(template) {
   return {
     ...clone(source),
     id: uid('p'),
-    name: source.name || template.name || 'Nouveau personnage',
+    name: source.name || template.name || t('templates.fallback.character'),
     statuses: [],
     trackers: resetTrackerIds(source.trackers || []),
   };

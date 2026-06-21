@@ -83,18 +83,18 @@
   min-width: 0;
   width: 100%;
   border-radius: 14px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--ui-input-border);
   padding: 8px 10px;
-  background: white;
-  color: #0f172a;
+  background: var(--ui-input-bg);
+  color: var(--ui-input-text);
 }
 
 .dark .template-picker-row select,
 .dark .template-rule-row select,
 .dark .template-rule-row input {
-  background: #020617;
-  color: #e2e8f0;
-  border-color: #475569;
+  background: var(--ui-input-bg);
+  color: var(--ui-input-text);
+  border-color: var(--ui-input-border);
 }
 
 .rules-panel {
@@ -107,8 +107,8 @@
 }
 
 .rule-preset-block.saved {
-  border-color: rgba(16, 185, 129, .45);
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, .12);
+  border-color: var(--ui-success-border);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ui-success) 14%, transparent);
 }
 
 .rule-current-title {
@@ -126,17 +126,17 @@
   width: 100%;
   min-width: 0;
   border-radius: 14px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--ui-input-border);
   padding: 8px 10px;
-  background: white;
-  color: #0f172a;
+  background: var(--ui-input-bg);
+  color: var(--ui-input-text);
   font-weight: 900;
 }
 
 .dark .rule-current-title input {
-  background: #020617;
-  color: #e2e8f0;
-  border-color: #475569;
+  background: var(--ui-input-bg);
+  color: var(--ui-input-text);
+  border-color: var(--ui-input-border);
 }
 
 .rule-title-edit,
@@ -147,9 +147,9 @@
 }
 
 .rule-save-btn.confirmed {
-  background: #10b981 !important;
-  border-color: #059669 !important;
-  color: white !important;
+  background: var(--ui-success) !important;
+  border-color: var(--ui-success-border) !important;
+  color: var(--ui-primary-contrast) !important;
 }
 
 .compact-rule-template-row {
@@ -160,14 +160,14 @@
   margin-top: 8px;
   padding: 7px 10px;
   border-radius: 14px;
-  background: rgba(16, 185, 129, .12);
-  color: #047857;
+  background: var(--ui-success-soft);
+  color: var(--ui-success-contrast);
   font-size: 12px;
   font-weight: 900;
 }
 
 .dark .rule-save-confirmation {
-  color: #a7f3d0;
+  color: var(--ui-success-contrast);
 }
 
 .rule-save-choices {
@@ -179,13 +179,13 @@
 .rule-group {
   padding: 10px;
   border-radius: 18px;
-  border: 1px solid rgba(49, 18, 54, .10);
-  background: rgba(255, 250, 245, .42);
+  border: 1px solid var(--ui-rule-panel-border);
+  background: var(--ui-rule-panel-bg);
 }
 
 .dark .rule-group {
-  border-color: rgba(210, 164, 86, .14);
-  background: rgba(16, 7, 19, .28);
+  border-color: var(--ui-rule-panel-border);
+  background: var(--ui-rule-panel-bg);
 }
 
 .rule-group-head {
@@ -204,12 +204,12 @@
 .rule-group .advanced-rule-block {
   padding: 8px;
   border-radius: 14px;
-  background: rgba(255, 255, 255, .48);
+  background: var(--ui-surface-soft);
   box-shadow: none;
 }
 
 .dark .rule-group .advanced-rule-block {
-  background: rgba(2, 6, 23, .26);
+  background: var(--ui-surface-soft);
 }
 
 .rule-group .advanced-rule-block h3 {
@@ -284,11 +284,11 @@
   aspect-ratio: 1;
   border-radius: 999px;
   overflow: hidden;
-  background: rgba(255, 250, 245, .92);
+  background: var(--ui-surface-strong);
 }
 
 .dark .hub-return-logo {
-  background: rgba(36, 18, 42, .92);
+  background: var(--ui-control-bg);
 }
 
 .hub-return-logo {
@@ -377,9 +377,9 @@
   min-height: 28px;
   border-radius: 999px;
   overflow: hidden;
-  border: 1px solid rgba(49, 18, 54, .14);
-  background: rgba(81, 22, 90, .10);
-  color: var(--theme-purple-deep);
+  border: 1px solid var(--ui-border);
+  background: var(--ui-surface-soft);
+  color: var(--ui-primary-strong);
   font-size: 11px;
   font-weight: 900;
 }
@@ -394,10 +394,10 @@
   min-width: 30px;
   max-width: 78px;
   border: 0;
-  border-left: 1px solid rgba(49, 18, 54, .14);
+  border-left: 1px solid var(--ui-border);
   border-radius: 0;
   padding: 4px 6px;
-  background: rgba(255, 250, 245, .78);
+  background: var(--ui-input-bg);
   color: inherit;
   font: inherit;
   text-align: center;
@@ -405,8 +405,8 @@
 }
 
 .quick-stat-editable input:focus {
-  background: #fffaf5;
-  box-shadow: inset 0 0 0 1px rgba(199, 94, 25, .34);
+  background: var(--ui-input-bg);
+  box-shadow: inset 0 0 0 1px var(--ui-warning-border);
 }
 
 .quick-stat-row {
@@ -430,8 +430,8 @@
   gap: 8px;
   margin: -16px -16px 10px;
   padding: 12px 16px 10px;
-  background: var(--theme-light-surface);
-  border-bottom: 1px solid rgba(49, 18, 54, .10);
+  background: var(--ui-surface);
+  border-bottom: 1px solid var(--ui-border);
 }
 
 .edit-sheet-header h2 {
@@ -442,30 +442,30 @@
 }
 
 .validate-edit-btn {
-  background: var(--theme-purple) !important;
-  border-color: rgba(199, 94, 25, .55) !important;
-  color: #fff7ed !important;
+  background: var(--ui-primary-action-bg) !important;
+  border-color: var(--ui-primary-action-border) !important;
+  color: var(--ui-primary-contrast) !important;
 }
 
 .dark .edit-sheet-header {
-  background: var(--theme-dark-surface);
-  border-bottom-color: rgba(210, 164, 86, .18);
+  background: var(--ui-surface);
+  border-bottom-color: var(--ui-border);
 }
 
 .dark .quick-stat-editable {
-  border-color: rgba(210, 164, 86, .18);
-  background: rgba(81, 22, 90, .42);
-  color: var(--theme-dark-text);
+  border-color: var(--ui-border);
+  background: var(--ui-surface-soft);
+  color: var(--ui-text);
 }
 
 .dark .quick-stat-editable input {
-  border-left-color: rgba(210, 164, 86, .18);
-  background: rgba(16, 7, 19, .46);
+  border-left-color: var(--ui-border);
+  background: var(--ui-input-bg);
 }
 
 .dark .quick-stat-editable input:focus {
-  background: #100713;
-  box-shadow: inset 0 0 0 1px rgba(210, 164, 86, .34);
+  background: var(--ui-input-bg);
+  box-shadow: inset 0 0 0 1px var(--ui-warning-border);
 }
 
 @media (max-width: 520px) {

@@ -1,4 +1,5 @@
 import { hasTriggeredClock, isVisible } from '../../logic.js';
+import { t } from '../../i18n/index.js';
 import { FichetteParticipant } from './FichetteParticipant.jsx';
 
 function aDuContenuOperationnel(participant, indicateursVisibles) {
@@ -14,13 +15,17 @@ export function FichetteInitiative({ participant, actif, groupeSimultane, tempor
   const boutonSouple = temporaliteSouple && afficherActionsSouples && !groupeSimultane;
   const creneauJoue = !!participant.actionSlotPlayed;
   const afficherActivationActive = actif && !temporaliteSouple && !creneauJoue;
-  const coutLabel = participant.actionSlotCostPaid ? `action résolue - coût ${participant.actionSlotCostPaid}${participant.actionSlotCostResult != null ? ` -> ${participant.actionSlotCostResult}` : ''}` : 'action résolue';
+  const coutLabel = participant.actionSlotCostPaid
+    ? participant.actionSlotCostResult != null
+      ? t('initiative.card.actionResolvedWithCostResult', { cost: participant.actionSlotCostPaid, result: participant.actionSlotCostResult })
+      : t('initiative.card.actionResolvedWithCost', { cost: participant.actionSlotCostPaid })
+    : t('initiative.card.actionResolved');
   const badges = [
-    temporaliteSouple && actionsRestantes > 1 && { className: 'slot-chip', label: `${actionsRestantes} actions` },
+    temporaliteSouple && actionsRestantes > 1 && { className: 'slot-chip', label: t('initiative.card.actionsCount', { count: actionsRestantes }) },
     creneauJoue && { className: 'played-chip', label: coutLabel },
-    dejaJoue && { className: 'played-chip', label: 'Action résolue' },
-    declenchee && { className: 'hot', label: 'À résoudre' },
-    sortieConseillee && { className: 'hot', label: 'Aucun indicateur' },
+    dejaJoue && { className: 'played-chip', label: t('initiative.card.actionResolvedUpper') },
+    declenchee && { className: 'hot', label: t('initiative.card.toResolve') },
+    sortieConseillee && { className: 'hot', label: t('initiative.card.noIndicator') },
   ].filter(Boolean);
   const afficherRetourSouple = boutonSouple && actionsJouees > 0;
   const afficherActionSouple = boutonSouple && actionsRestantes > 0;
@@ -41,10 +46,10 @@ export function FichetteInitiative({ participant, actif, groupeSimultane, tempor
       onRetirerEtat={onRetirerEtat}
       primaryAction={(
         <div className="card-actions">
-          <button className={`small-btn leave-initiative-btn ${sortieConseillee ? 'suggested' : ''}`} onClick={onQuitterInitiative} title="Mettre en réserve" aria-label={`Mettre ${participant.name} en réserve`}><span className="cadence-arrow-icon forward" aria-hidden="true" /> <span>Réserve</span></button>
+          <button className={`small-btn leave-initiative-btn ${sortieConseillee ? 'suggested' : ''}`} onClick={onQuitterInitiative} title={t('initiative.card.moveToReserve')} aria-label={t('initiative.card.moveParticipantToReserve', { name: participant.name })}><span className="cadence-arrow-icon forward" aria-hidden="true" /> <span>{t('reserve.title')}</span></button>
           {boutonSouple && <div className={`flexible-action-row ${afficherRetourSouple ? 'has-undo' : ''}`}>
-            {afficherRetourSouple && <button className="turn-btn compact previous-turn available flexible-play undo-played" onClick={onAnnulerAJoue} aria-label="Annuler l’action résolue" title="Annuler l’action résolue"><span className="cadence-arrow-icon back" aria-hidden="true" /></button>}
-            {afficherActionSouple && <button className="primary flexible-play play-action" onClick={onMarquerAJoue} aria-label={actionsRestantes > 1 ? `${actionsRestantes} actions restantes` : 'Marquer une action résolue'}>{flechesRestantes}</button>}
+            {afficherRetourSouple && <button className="turn-btn compact previous-turn available flexible-play undo-played" onClick={onAnnulerAJoue} aria-label={t('initiative.card.undoResolved')} title={t('initiative.card.undoResolved')}><span className="cadence-arrow-icon back" aria-hidden="true" /></button>}
+            {afficherActionSouple && <button className="primary flexible-play play-action" onClick={onMarquerAJoue} aria-label={actionsRestantes > 1 ? t('initiative.card.remainingActions', { count: actionsRestantes }) : t('initiative.card.markResolved')}>{flechesRestantes}</button>}
           </div>}
         </div>
       )}

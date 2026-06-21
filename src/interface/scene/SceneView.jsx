@@ -45,6 +45,8 @@ export function SceneView({
   onSaisirInitiatives,
   onOuvrirMenu,
 }) {
+  const actifId = scene.round < 0 ? '' : temporalitePhases ? phaseActiveId : scene.activeId;
+
   return (
     <div className={`app scene-app ${dark ? 'dark' : ''} ${characters.selected ? 'has-character-panel' : ''}`}>
       <div className="shell scene-shell">
@@ -78,7 +80,7 @@ export function SceneView({
           <ListeInitiative
             scene={scene}
             participants={scene.participants}
-            actifId={temporalitePhases ? phaseActiveId : scene.activeId}
+            actifId={actifId}
             interactions={characters}
             temporaliteSouple={temporaliteSouple}
             temporalitePhases={temporalitePhases}

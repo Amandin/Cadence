@@ -1,3 +1,5 @@
+import { t } from '../../i18n/index.js';
+
 function valeurSembleVariable(valeur = '') {
   return /^[+\-−]?\d+(?:[.,]\d+)?$/.test(String(valeur).trim());
 }
@@ -52,7 +54,7 @@ export function InfosRapides({ stats = [], editable = false, onChanger }) {
             <span className="quick-stat-title">{info.label}</span>
             <input
               value={info.value}
-              aria-label={`Valeur de ${info.label}`}
+              aria-label={t('quickStats.valueOf', { label: info.label })}
               onClick={(event) => event.stopPropagation()}
               onChange={(event) => onChanger?.(index, { ...info, value: event.target.value })}
             />

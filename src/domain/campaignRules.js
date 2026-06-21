@@ -3,6 +3,7 @@ import {
   defaultDeclarationMode,
   defaultEqualityRule,
   defaultFlexibleUseInitiative,
+  defaultInitiativeBonusEnabled,
   defaultInitiativeOrder,
   defaultInitiativeCostQuickCosts,
   defaultInitiativeCostLimitToCurrent,
@@ -63,6 +64,7 @@ export function normalizeCampaignRules(rules = {}) {
     categoryOrder: Array.isArray(rules.categoryOrder) && rules.categoryOrder.length ? rules.categoryOrder : defaultCategoryOrder,
     tiebreakerVisible: rules.tiebreakerVisible ?? defaultTiebreakerVisible,
     tiebreakerLabel: typeof rules.tiebreakerLabel === 'string' && rules.tiebreakerLabel.trim() ? rules.tiebreakerLabel.trim() : defaultTiebreakerLabel,
+    initiativeBonusEnabled: rules.initiativeBonusEnabled ?? defaultInitiativeBonusEnabled,
     surpriseImpact: ['limited', 'inactive'].includes(rules.surpriseImpact) ? rules.surpriseImpact : defaultSurpriseImpact,
     surpriseAdvanceOn,
     surpriseDedicatedRound: !!(rules.surpriseDedicatedRound ?? defaultSurpriseDedicatedRound),
@@ -93,13 +95,14 @@ function applyTemporality(scene, rules) {
   const flexible = rules.temporalite === temporalityModes.FLEXIBLE;
   const phases = rules.temporalite === temporalityModes.PHASES;
   const declaration = !!rules.declarationMode;
+  const preparation = Number(scene.round) < 0;
   const nextDeclarationStage = declaration ? (scene.declarationStage === declarationStages.RESOLUTION ? declarationStages.RESOLUTION : declarationStages.DECLARATION) : '';
   return {
     ...scene,
     temporalite: rules.temporalite,
     phase: phases ? Math.max(1, Number(scene.phase) || 1) : 1,
-    activeId: declaration && nextDeclarationStage === declarationStages.DECLARATION ? '' : premierParticipantId(scene, rules),
-    activeSlotId: declaration && nextDeclarationStage === declarationStages.DECLARATION ? '' : rules.temporalite === temporalityModes.CLASSIC ? (scene.activeSlotId || '') : '',
+    activeId: preparation || (declaration && nextDeclarationStage === declarationStages.DECLARATION) ? '' : premierParticipantId(scene, rules),
+    activeSlotId: preparation || (declaration && nextDeclarationStage === declarationStages.DECLARATION) ? '' : rules.temporalite === temporalityModes.CLASSIC ? (scene.activeSlotId || '') : '',
     jouesSouples: flexible ? (scene.jouesSouples || []) : [],
     historiqueSouple: flexible ? (scene.historiqueSouple || []) : [],
     declarationStage: nextDeclarationStage,
@@ -164,6 +167,7 @@ export function applyInitiativeRules(scene, patch = {}) {
     categoryOrder: next.categoryOrder,
     tiebreakerVisible: !!next.tiebreakerVisible,
     tiebreakerLabel: next.tiebreakerLabel,
+    initiativeBonusEnabled: !!next.initiativeBonusEnabled,
     surpriseImpact: next.surpriseImpact,
     surpriseAdvanceOn: next.surpriseAdvanceOn,
     surpriseDedicatedRound: !!next.surpriseDedicatedRound,

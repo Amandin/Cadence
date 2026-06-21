@@ -1,15 +1,18 @@
 import { defaultCategoryOrder, defaultEqualityRule, defaultInitiativeOrder } from '../constants.js';
 import { clone, newTracker, uid } from '../logic.js';
 import { rememberBaseInitiative, rulesAllowMultipleSlots } from '../domain/initiativeCost.js';
+import { t } from '../i18n/index.js';
+import { defaultReserveSymbol } from '../uiAssets.js';
 
 export function createBlankParticipant() {
   return {
     id: uid('p'),
-    name: 'Nouveau personnage',
+    name: t('templates.fallback.character'),
     kind: 'Allié',
-    symbol: '🛡',
+    symbol: defaultReserveSymbol,
     color: 'emerald',
     initiative: 1,
+    initiativeBonus: 0,
     actionSlots: [{ id: 'slot-1', initiative: 1, order: 0 }],
     departage: '',
     description: '',
@@ -24,13 +27,19 @@ export function placerEnReserve(participant) {
   return { ...participant, ...memo, initiative: 0, actionSlots: [] };
 }
 
+export function clearActiveInPreparation(scene) {
+  if (!scene || !(Number(scene.round) < 0)) return scene;
+  return { ...scene, activeId: '', activeSlotId: '' };
+}
+
 export function createRestorePoint(scene) {
   if (scene.round < 0) return createPreInitiativeRestorePoint(scene);
-  return { id: uid('restore'), round: scene.round, activeId: scene.activeId, title: `Début R${scene.round}`, scene: clone(scene) };
+  return { id: uid('restore'), round: scene.round, activeId: scene.activeId, title: t('restore.beginRound', { round: scene.round }), scene: clone(scene) };
 }
 
 export function createPreInitiativeRestorePoint(scene) {
-  return { id: uid('restore'), kind: 'pre-initiative', round: -1, activeId: scene.activeId, title: 'Avant initiative', scene: clone(scene) };
+  const scenePreparation = clearActiveInPreparation(clone(scene));
+  return { id: uid('restore'), kind: 'pre-initiative', round: -1, activeId: '', title: t('restore.beforeInitiative'), scene: scenePreparation };
 }
 
 function isPreInitiativePoint(point) {

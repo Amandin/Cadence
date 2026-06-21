@@ -35,6 +35,8 @@ import { isPointsTracker, normalizeBoxTracker, normalizeThresholds, normalizeTra
 import { normalizeRulePresetSnapshot } from './rulePresets.js';
 import { isTemplateStoreLike, loadTemplateStore, normalizeTemplateStore } from './templates.js';
 import { readLocalCampaignPayload, writeLocalCampaignPayload } from './localCampaignStorage.js';
+import { t } from './i18n/index.js';
+import { defaultMechanicalSymbol } from './uiAssets.js';
 
 export const CADENCE_CAMPAIGN_FORMAT = 'cadence-campaign';
 export const CADENCE_CAMPAIGN_SCHEMA_VERSION = 2;
@@ -282,11 +284,12 @@ export function normalizeCampaignParticipant(participant, { reserve = false } = 
   return {
     ...participant,
     id: stringOr(participant.id, uid('p')),
-    name: stringOr(participant.name, 'Nouveau personnage'),
+    name: stringOr(participant.name, t('templates.fallback.character')),
     kind: normalizeKind(participant.kind),
-    symbol: stringOr(participant.symbol, '⚙'),
+    symbol: stringOr(participant.symbol, defaultMechanicalSymbol),
     color: stringOr(participant.color, 'slate'),
     initiative,
+    initiativeBonus: numberOr(participant.initiativeBonus, 0),
     actionSlots,
     previousInitiative,
     previousActionSlots,

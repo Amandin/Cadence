@@ -3,7 +3,6 @@ import {
   initiativeOrders,
   multipleActionModes,
   phaseActionModes,
-  temporalityLabels,
   temporalityModes,
 } from '../constants.js';
 import { t } from '../i18n/index.js';
@@ -11,6 +10,12 @@ import { normalizeInitiativeTextOrder } from './initiativeTextOrder.js';
 import { isInitiativeCostMode, isManualMultipleActionMode, multipleActionModeFromRules } from './initiativeCost.js';
 
 const blocked = (disabled, reason) => ({ disabled: !!disabled, reason: disabled ? reason : '' });
+const temporalitySummaryKeys = {
+  [temporalityModes.CLASSIC]: 'rules.temporality.classic',
+  [temporalityModes.FLEXIBLE]: 'rules.temporality.flexible',
+  [temporalityModes.PHASES]: 'rules.temporality.phases',
+  [temporalityModes.DECLARATION]: 'rules.temporality.declaration',
+};
 
 export const usesTextInitiative = (rules = {}) => normalizeInitiativeTextOrder(rules.initiativeTextOrder).enabled;
 export const usesManualMultipleActionSlots = (rules = {}) => isManualMultipleActionMode(rules);
@@ -35,7 +40,7 @@ export function ruleCompatibilityIssues(rules = {}) {
   const phases = rules.temporalite === temporalityModes.PHASES;
   const flexible = rules.temporalite === temporalityModes.FLEXIBLE;
 
-  if (phases && multipleSlots) issues.push({ id: 'phases-multiple-slots', message: 'Les phases sont incompatibles avec les actions multiples manuelles.' });
+  if (phases && multipleSlots) issues.push({ id: 'phases-multiple-slots', message: t('rules.compat.phasesMultipleSlots') });
   if (initiativeCost && flexible) issues.push({ id: 'initiative-cost-flexible', message: t('rules.compat.initiativeCostFlexible') });
   if (initiativeCost && phases) issues.push({ id: 'initiative-cost-phases', message: t('rules.compat.initiativeCostPhases') });
   if (initiativeCost && textInitiative) issues.push({ id: 'initiative-cost-labels', message: t('rules.compat.initiativeCostLabels') });
@@ -58,7 +63,7 @@ export function ruleOptionAvailability(rules = {}) {
 
   return {
     declarationMode: blocked(initiativeCost, t('rules.compat.disableInitiativeCostActionsFirst')),
-    multipleActionSlots: blocked(phases, "Les actions multiples manuelles ne sont pas disponibles avec les phases."),
+    multipleActionSlots: blocked(phases, t('rules.compat.manualSlotsUnavailableWithPhases')),
     initiativeCost: blocked(
       rules.temporalite === temporalityModes.FLEXIBLE || phases || textInitiative || declaration || rules.initiativeOrder === initiativeOrders.ASC,
       rules.temporalite === temporalityModes.FLEXIBLE
@@ -92,9 +97,9 @@ export function ruleOptionAvailability(rules = {}) {
 
 export function activeRuleSummary(rules = {}) {
   return [
-    temporalityLabels[rules.temporalite || temporalityModes.CLASSIC],
-    usesFlexibleInitiative(rules) ? usesTextInitiative(rules) ? 'Initiative par labels' : t('rules.summary.numericInitiative') : 'Sans initiative',
-    multipleActionModeFromRules(rules) === multipleActionModes.INITIATIVE_COST ? t('rules.summary.initiativeCost') : multipleActionModeFromRules(rules) === multipleActionModes.MANUAL ? t('rules.summary.manualSlots') : 'Une action par personnage',
+    t(temporalitySummaryKeys[rules.temporalite || temporalityModes.CLASSIC] || temporalitySummaryKeys[temporalityModes.CLASSIC]),
+    usesFlexibleInitiative(rules) ? usesTextInitiative(rules) ? t('rules.summary.labelInitiative') : t('rules.summary.numericInitiative') : t('rules.summary.noInitiative'),
+    multipleActionModeFromRules(rules) === multipleActionModes.INITIATIVE_COST ? t('rules.summary.initiativeCost') : multipleActionModeFromRules(rules) === multipleActionModes.MANUAL ? t('rules.summary.manualSlots') : t('rules.summary.singleAction'),
     usesDeclaration(rules) ? t('rules.summary.declaration') : '',
   ].filter(Boolean);
 }

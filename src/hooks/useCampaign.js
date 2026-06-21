@@ -12,8 +12,9 @@ import { hasTriggeredClock, makeTestCampaign, nextTurnInfo } from '../logic.js';
 import { createRulePresetSnapshot } from '../rulePresets.js';
 import { DEFAULT_CAMPAIGN_NAME, campaignNameFromPayload, campaignTemplatesFromPayload, createCampaignPayload, loadCampaign, normalizeCampaignPayload, normalizeCampaignScene, normalizeCampaignScenes, rulePresetSnapshotFromPayload, saveCampaign, serializeCampaign } from '../storage.js';
 import { removeLocalCampaignPayload } from '../localCampaignStorage.js';
-import { campaignEntryFromPayload, copiedCampaignNames, readCadenceFile, scanCampaignDirectory, writeCadenceFile } from './campaignFilePersistence.js';
+import { campaignEntryFromPayload, copiedCampaignNames, readCadenceFile, writeCadenceFile } from './campaignFilePersistence.js';
 import { normalizeTemplateStore } from '../templates.js';
+import { t } from '../i18n/index.js';
 
 const SCENE_INDEX_STORAGE_KEY = 'cadence:interface:scene-index:v1';
 const THEME_STORAGE_KEY = 'cadence:interface:dark:v1';
@@ -92,11 +93,10 @@ export function useCampaign() {
   const [campaignEntries, setCampaignEntries] = useState(() => [initialEntry]);
   const [activeCampaignEntryId, setActiveCampaignEntryId] = useState(initialEntry.id);
   const [pendingFileChoice, setPendingFileChoice] = useState(null);
-  const [fileSaveStatus, setFileSaveStatus] = useState(() => ({ mode: 'local', message: 'Sauvegarde locale active.' }));
+  const [fileSaveStatus, setFileSaveStatus] = useState(() => ({ mode: 'local', message: t('campaign.status.localActive') }));
   const campaignEntriesRef = useRef(campaignEntries);
   const activeCampaignEntryIdRef = useRef(activeCampaignEntryId);
   const fileHandlesRef = useRef(new Map());
-  const campaignDirectoryHandleRef = useRef(null);
   const lastPersistenceSignatureRef = useRef('');
 
   const rawScene = scenes[sceneIndex] || scenes[0] || createBlankScene(campaignRules);
@@ -136,13 +136,13 @@ export function useCampaign() {
 
     const handle = fileHandlesRef.current.get(activeCampaignEntryIdRef.current);
     if (!handle || !activeEntry?.autosave) return undefined;
-    setFileSaveStatus({ mode: 'saving', message: `Enregistrement dans ${activeEntry.fileName}...` });
+    setFileSaveStatus({ mode: 'saving', message: t('campaign.status.saving', { fileName: activeEntry.fileName }) });
     const timer = window.setTimeout(async () => {
       try {
         await writeCadenceFile(handle, content);
-        setFileSaveStatus({ mode: 'saved', message: `Enregistre dans ${activeEntry.folderName}/${activeEntry.fileName}.` });
+        setFileSaveStatus({ mode: 'saved', message: t('campaign.status.saved', { path: `${activeEntry.folderName}/${activeEntry.fileName}` }) });
       } catch (error) {
-        setFileSaveStatus({ mode: 'error', message: `Enregistrement impossible : ${error?.message || 'permission refusee'}.` });
+        setFileSaveStatus({ mode: 'error', message: t('campaign.status.saveError', { message: error?.message || t('campaign.error.permissionDenied') }) });
       }
     }, 650);
     return () => window.clearTimeout(timer);
@@ -213,89 +213,34 @@ export function useCampaign() {
           handle: options.handle || null,
           canUseOriginal: !!options.handle,
         });
-        setFileSaveStatus({ mode: 'choice', message: options.handle ? 'Choisis si Cadence doit ecrire dans ce fichier ou dans une copie.' : 'Ce navigateur ne donne pas acces au fichier original. Cree une copie pour l’enregistrement direct.' });
+        setFileSaveStatus({ mode: 'choice', message: options.handle ? t('campaign.status.choiceOriginal') : t('campaign.status.choiceCopy') });
         return { ok: true, campaign: result.campaign, needsFileChoice: true, canUseOriginal: !!options.handle };
       } catch (error) {
-        return { ok: false, message: `Impossible de lire ce fichier Cadence. ${error?.message || 'Erreur inconnue.'}` };
+        return { ok: false, message: t('campaign.error.readFile', { message: error?.message || t('app.notice.unknownError') }) };
       }
-    },
-    async importCampaignDirectory() {
-      if (!window.showDirectoryPicker) return { ok: false, message: 'Ce navigateur ne permet pas encore de lier un dossier de campagnes.' };
-      try {
-        const directoryHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
-        campaignDirectoryHandleRef.current = directoryHandle;
-        const files = await scanCampaignDirectory(directoryHandle);
-        const loaded = [];
-        for (const item of files) {
-          try {
-            const file = await item.handle.getFile();
-            const result = await readCadenceFile(file);
-            if (!result.ok) continue;
-            const entry = campaignEntryFromPayload(result.campaign, {
-              source: 'dossier',
-              fileName: item.fileName,
-              folderName: item.folderName,
-              autosave: true,
-            });
-            fileHandlesRef.current.set(entry.id, item.handle);
-            loaded.push(entry);
-          } catch {
-            // Un fichier invalide ne bloque pas les autres campagnes du dossier.
-          }
-        }
-        if (!loaded.length) return { ok: false, message: 'Aucune campagne .cad v2 trouvée dans les sous-dossiers choisis.' };
-        setCampaignEntries((entries) => [...loaded, ...entries.filter((entry) => !loaded.some((item) => item.id === entry.id))]);
-        setActiveCampaignEntryId(loaded[0].id);
-        loadCampaignIntoState(loaded[0].snapshot);
-        setPendingFileChoice(null);
-        setFileSaveStatus({ mode: 'saved', message: `${loaded.length} campagne(s) liee(s) au dossier. Enregistrement direct actif.` });
-        return { ok: true, count: loaded.length };
-      } catch (error) {
-        if (error?.name === 'AbortError') return { ok: false, cancelled: true };
-        return { ok: false, message: `Impossible d'ouvrir le dossier : ${error?.message || 'erreur inconnue'}.` };
-      }
-    },
-    selectCampaignEntry(id) {
-      const entry = campaignEntriesRef.current.find((item) => item.id === id);
-      if (!entry) return { ok: false, message: 'Campagne introuvable.' };
-      setActiveCampaignEntryId(entry.id);
-      loadCampaignIntoState(entry.snapshot);
-      setPendingFileChoice(null);
-      const linked = entry.autosave && fileHandlesRef.current.has(entry.id);
-      setFileSaveStatus(linked
-        ? { mode: 'saved', message: `Enregistrement direct actif : ${entry.folderName}/${entry.fileName}.` }
-        : { mode: 'local', message: 'Campagne chargee en memoire. Cree une copie pour lier un .cad.' });
-      return { ok: true };
     },
     async useLoadedCampaignFile() {
       const pending = pendingFileChoice;
-      if (!pending?.handle) return { ok: false, message: 'Le fichier original n’est pas accessible en écriture. Cree une copie.' };
+      if (!pending?.handle) return { ok: false, message: t('campaign.error.originalUnavailable') };
       const entry = campaignEntriesRef.current.find((item) => item.id === pending.entryId);
-      if (!entry) return { ok: false, message: 'Campagne introuvable.' };
+      if (!entry) return { ok: false, message: t('campaign.error.missing') };
       fileHandlesRef.current.set(entry.id, pending.handle);
       setCampaignEntries((entries) => entries.map((item) => item.id === entry.id ? { ...item, autosave: true, source: 'fichier' } : item));
       setPendingFileChoice(null);
       try {
         await writeCadenceFile(pending.handle, campaignTextForEntry(entry));
-        setFileSaveStatus({ mode: 'saved', message: `Enregistrement direct actif : ${entry.folderName}/${entry.fileName}.` });
+        setFileSaveStatus({ mode: 'saved', message: t('campaign.status.directActive', { path: `${entry.folderName}/${entry.fileName}` }) });
         return { ok: true };
       } catch (error) {
-        setFileSaveStatus({ mode: 'error', message: `Enregistrement impossible : ${error?.message || 'permission refusee'}.` });
-        return { ok: false, message: 'Cadence n’a pas pu écrire dans le fichier choisi.' };
+        setFileSaveStatus({ mode: 'error', message: t('campaign.status.saveError', { message: error?.message || t('campaign.error.permissionDenied') }) });
+        return { ok: false, message: t('campaign.error.writeFailed') };
       }
     },
     async saveLoadedCampaignAsCopy() {
       const { copyName, folderName, fileName } = copiedCampaignNames(campaignName);
       try {
-        let handle = null;
-        if (campaignDirectoryHandleRef.current) {
-          const folder = await campaignDirectoryHandleRef.current.getDirectoryHandle(folderName, { create: true });
-          handle = await folder.getFileHandle(fileName, { create: true });
-        } else if (window.showSaveFilePicker) {
-          handle = await window.showSaveFilePicker({ suggestedName: fileName, types: [{ description: 'Campagne Cadence', accept: { 'application/json': ['.cad'] } }] });
-        } else {
-          return { ok: false, message: 'Choisis un dossier de campagnes ou utilise un navigateur compatible pour créer la copie.' };
-        }
+        if (!window.showSaveFilePicker) return { ok: false, message: t('campaign.error.copyUnsupported') };
+        const handle = await window.showSaveFilePicker({ suggestedName: fileName, types: [{ description: 'Campagne Cadence', accept: { 'application/json': ['.cad'] } }] });
         const entry = { id: folderName, name: copyName, fileName, folderName, source: 'copie', autosave: true, updatedAt: new Date().toISOString(), snapshot: JSON.parse(campaignTextForEntry({ id: folderName, fileName, folderName }, copyName)) };
         fileHandlesRef.current.set(entry.id, handle);
         setCampaignEntries((entries) => [entry, ...entries.filter((item) => item.id !== entry.id)]);
@@ -303,19 +248,19 @@ export function useCampaign() {
         setCampaignName(copyName);
         setPendingFileChoice(null);
         await writeCadenceFile(handle, campaignTextForEntry(entry, copyName));
-        setFileSaveStatus({ mode: 'saved', message: `Copie liee : ${entry.folderName}/${entry.fileName}.` });
+        setFileSaveStatus({ mode: 'saved', message: t('campaign.status.copyLinked', { path: `${entry.folderName}/${entry.fileName}` }) });
         return { ok: true };
       } catch (error) {
         if (error?.name === 'AbortError') return { ok: false, cancelled: true };
-        return { ok: false, message: `Copie impossible : ${error?.message || 'erreur inconnue'}.` };
+        return { ok: false, message: t('campaign.error.copyFailed', { message: error?.message || t('app.notice.unknownError') }) };
       }
     },
     dismissLoadedCampaignChoice() {
       setPendingFileChoice(null);
-      setFileSaveStatus({ mode: 'local', message: 'Campagne chargee sans fichier lie.' });
+      setFileSaveStatus({ mode: 'local', message: t('campaign.status.loadedNoLinkedFile') });
     },
     startFirstRunCampaign(preset) {
-      if (!preset?.rules) return { ok: false, message: 'Preset introuvable.' };
+      if (!preset?.rules) return { ok: false, message: t('campaign.error.presetMissing') };
       const nextRules = normalizeCampaignRules(preset.rules);
       const blankScene = createBlankScene(nextRules);
       const snapshot = createCampaignPayload([blankScene], dark, DEFAULT_CAMPAIGN_NAME, templateStore, nextRules, createRulePresetSnapshot(preset, nextRules));
@@ -329,7 +274,7 @@ export function useCampaign() {
       setCampaignEntries([entry]);
       setActiveCampaignEntryId(entry.id);
       setPendingFileChoice(null);
-      setFileSaveStatus({ mode: 'local', message: 'Sauvegarde locale active.' });
+      setFileSaveStatus({ mode: 'local', message: t('campaign.status.localActive') });
       setRoundEffect(null);
       lastPersistenceSignatureRef.current = '';
       if (!hasCompletedFirstRunOnboarding()) markFirstRunOnboardingComplete();
@@ -351,7 +296,7 @@ export function useCampaign() {
       setCampaignEntries([entry]);
       setActiveCampaignEntryId(entry.id);
       setPendingFileChoice(null);
-      setFileSaveStatus({ mode: 'local', message: 'Sauvegarde locale active.' });
+      setFileSaveStatus({ mode: 'local', message: t('campaign.status.localActive') });
       setRoundEffect(null);
       lastPersistenceSignatureRef.current = '';
       if (!hasCompletedFirstRunOnboarding()) markFirstRunOnboardingComplete();
@@ -366,7 +311,7 @@ export function useCampaign() {
       setActiveCampaignEntryId(entry.id);
       loadCampaignIntoState(snapshot);
       setPendingFileChoice(null);
-      setFileSaveStatus({ mode: 'local', message: 'Campagne de test chargée en sauvegarde locale.' });
+      setFileSaveStatus({ mode: 'local', message: t('campaign.status.testLoaded') });
       setRoundEffect(null);
       lastPersistenceSignatureRef.current = '';
       setFirstRunOnboardingNeeded(false);
@@ -375,7 +320,6 @@ export function useCampaign() {
     },
     resetCadence() {
       fileHandlesRef.current.clear();
-      campaignDirectoryHandleRef.current = null;
       removeLocalCampaignPayload(STORAGE_KEY);
       try {
         window.localStorage.removeItem(TEMPLATE_STORAGE_KEY);
@@ -393,7 +337,7 @@ export function useCampaign() {
       setCampaignEntries([]);
       setActiveCampaignEntryId('');
       setPendingFileChoice(null);
-      setFileSaveStatus({ mode: 'local', message: 'Cadence a été réinitialisé.' });
+      setFileSaveStatus({ mode: 'local', message: t('campaign.status.reset') });
       setFirstRunOnboardingNeeded(true);
       setPersistenceEnabled(false);
       lastPersistenceSignatureRef.current = '';
@@ -430,7 +374,6 @@ export function useCampaign() {
     setTemplateStore,
     campaignName,
     campaignEntries,
-    activeCampaignEntryId,
     pendingFileChoice,
     fileSaveStatus,
     scene,

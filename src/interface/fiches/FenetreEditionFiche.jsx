@@ -4,45 +4,15 @@ import { normalizeInitiativeTextOrder } from '../../domain/initiativeTextOrder.j
 import { t } from '../../i18n/index.js';
 import { boxBlocks, boxVisualRank, clone, colors, cycleBoxMark, isBoxesTracker, isNumericTracker, isPointsTracker, isVisible, newTracker, normalizeBoxTracker, resetTracker, sortBoxBlocks, symbols, thresholdValue, uid } from '../../logic.js';
 import { instantiateTrackerTemplate } from '../../templates.js';
+import { uiGlyphs } from '../../uiAssets.js';
 import { Fenetre, MessageChangementTemplate } from '../commun/ComposantsCommuns.jsx';
 import { FenetreConfirmationSuppression } from '../dialogues/FenetreConfirmationSuppression.jsx';
 import { IconeOeilMystiqueFerme, IconeOeilMystiqueOuvert } from '../icones/IconesOeilMystique.jsx';
 import { ChampInitiative } from '../initiative/ChampInitiative.jsx';
 import { EditeurPhasesParticipant } from '../initiative/EditeurPhasesParticipant.jsx';
+import { thresholdColorOptions, thresholdColorStyles, thresholdOperatorOptions, trackerThresholdBasisOptions } from '../suivis/thresholdUi.js';
 import { normaliserInfoRapide, normaliserInfosRapides } from './InfosRapides.jsx';
 import { brouillonCreneauxAction, entierPositif, nombreOuDefaut, normaliserFiche, texteCreneauxAction } from './ficheEditionModel.js';
-
-const thresholdColors = [
-  ['neutral', t('trackers.global.thresholds.color.neutral')],
-  ['green', t('trackers.global.thresholds.color.green')],
-  ['amber', t('trackers.global.thresholds.color.amber')],
-  ['red', t('trackers.global.thresholds.color.red')],
-  ['blue', t('trackers.global.thresholds.color.blue')],
-  ['violet', t('trackers.global.thresholds.color.violet')],
-];
-
-const thresholdOperators = [
-  ['gte', '>='],
-  ['lte', '<='],
-  ['gt', '>'],
-  ['lt', '<'],
-  ['eq', '='],
-];
-
-const thresholdBases = [
-  ['fixed', t('trackers.global.thresholds.basis.fixed')],
-  ['percent', t('trackers.global.thresholds.basis.percent')],
-  ['fromMax', t('sheet.thresholds.basis.fromMax')],
-];
-
-const thresholdOptionStyles = {
-  neutral: { backgroundColor: '#e2e8f0', color: '#334155' },
-  green: { backgroundColor: '#dcfce7', color: '#166534' },
-  amber: { backgroundColor: '#fef3c7', color: '#92400e' },
-  red: { backgroundColor: '#fee2e2', color: '#991b1b' },
-  blue: { backgroundColor: '#dbeafe', color: '#1e40af' },
-  violet: { backgroundColor: '#ede9fe', color: '#5b21b6' },
-};
 
 function ApercuNiveaux({ niveaux, levelVisuals = null, emptyActive = true }) {
   const maximum = entierPositif(niveaux, 5);
@@ -184,8 +154,8 @@ function EditeurSeuils({ suivi, onChange, field = 'thresholds', title, bounds = 
             <button className="small-btn subtle-danger threshold-delete" onClick={() => supprimer(index)}>x</button>
             <div className="threshold-numeric-row">
               {choixCompteurs.length > 0 && <select className="threshold-target-select" value={seuil.counterId || '__main'} onChange={(e) => modifier(index, { counterId: e.target.value })}>{choixCompteurs.map((compteur) => <option key={compteur.id} value={compteur.id}>{compteur.label}</option>)}</select>}
-              <select className="threshold-operator-select" value={seuil.operator || 'gte'} onChange={(e) => modifier(index, { operator: e.target.value })}>{thresholdOperators.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
-              {seuilsBarre && <select className="threshold-basis-select" value={seuil.basis || 'fixed'} onChange={(e) => modifier(index, { basis: e.target.value })}>{thresholdBases.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>}
+              <select className="threshold-operator-select" value={seuil.operator || 'gte'} onChange={(e) => modifier(index, { operator: e.target.value })}>{thresholdOperatorOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
+              {seuilsBarre && <select className="threshold-basis-select" value={seuil.basis || 'fixed'} onChange={(e) => modifier(index, { basis: e.target.value })}>{trackerThresholdBasisOptions.map(([value, labelKey]) => <option key={value} value={value}>{t(labelKey)}</option>)}</select>}
               <input className="threshold-value-input" type="number" inputMode="numeric" value={seuil.value ?? 0} onChange={(e) => modifier(index, { value: Number(e.target.value) })} />
             </div>
             <div className="threshold-label-row">
@@ -195,7 +165,7 @@ function EditeurSeuils({ suivi, onChange, field = 'thresholds', title, bounds = 
                 {!seuilsBarre && horsLimites && <span className="threshold-warning">{t('sheet.thresholds.outOfBounds')}</span>}
                 {seuilsBarre && horsLimites && <span className="threshold-warning secondary-warning">{t('sheet.thresholds.outOfBounds')}</span>}
               </div>
-              <select className={`threshold-color-select threshold-${seuil.color || 'neutral'}`} value={seuil.color || 'neutral'} onChange={(e) => modifier(index, { color: e.target.value })}>{thresholdColors.map(([value, label]) => <option key={value} value={value} style={thresholdOptionStyles[value]}>{label}</option>)}</select>
+              <select className={`threshold-color-select threshold-${seuil.color || 'neutral'}`} value={seuil.color || 'neutral'} onChange={(e) => modifier(index, { color: e.target.value })}>{thresholdColorOptions.map(([value, labelKey]) => <option key={value} value={value} style={thresholdColorStyles[value]}>{t(labelKey)}</option>)}</select>
             </div>
           </div>
         );
@@ -218,7 +188,7 @@ function EditeurCompteursMultiples({ suivi, onChange }) {
 }
 
 function ToggleIconeSuivi({ suivi, onChange }) {
-  return <div className="tracker-option-icons"><button className={`eye-toggle ${isVisible(suivi) ? 'active' : 'inactive'}`} onClick={() => onChange({ visible: suivi.visible === false })} title={isVisible(suivi) ? t('sheet.tracker.visible') : t('sheet.tracker.hidden')} type="button">{isVisible(suivi) ? <IconeOeilMystiqueOuvert /> : <IconeOeilMystiqueFerme />}</button><button className={`spy-toggle ${suivi.secret ? 'active' : ''}`} onClick={() => onChange({ secret: !suivi.secret })} title={t('sheet.tracker.secret')} type="button"><span>{'🥷'}</span><b>{t('sheet.tracker.secret')}</b></button></div>;
+  return <div className="tracker-option-icons"><button className={`eye-toggle ${isVisible(suivi) ? 'active' : 'inactive'}`} onClick={() => onChange({ visible: suivi.visible === false })} title={isVisible(suivi) ? t('sheet.tracker.visible') : t('sheet.tracker.hidden')} type="button">{isVisible(suivi) ? <IconeOeilMystiqueOuvert /> : <IconeOeilMystiqueFerme />}</button><button className={`spy-toggle ${suivi.secret ? 'active' : ''}`} onClick={() => onChange({ secret: !suivi.secret })} title={t('sheet.tracker.secret')} type="button"><span>{uiGlyphs.stealth}</span><b>{t('sheet.tracker.secret')}</b></button></div>;
 }
 
 function OptionsReset({ suivi, onChange, allowActivationAutomation = true }) {
@@ -263,7 +233,8 @@ function OptionsReset({ suivi, onChange, allowActivationAutomation = true }) {
   const changerTimingAuto = (valeur) => onChange({ autoReset: valeur });
   const switchAuto = <><label className={`reset-switch ${autoActif ? 'active' : ''}`}><span>{t('sheet.reset.autoAdvance')}</span><input type="checkbox" checked={autoActif} onChange={(e) => changerAuto(e.target.checked)} /></label>{autoActif && <div className="automation-timing-field"><span>{t('sheet.reset.when')}</span><div className="automation-timing-toggle" role="group" aria-label={t('sheet.reset.when')}><button className={timingAuto === 'round' ? 'active' : ''} type="button" onClick={() => changerTimingAuto('round')} aria-pressed={timingAuto === 'round'}>{t('sheet.reset.when.round')}</button><button className={timingAuto === 'activation' ? 'active' : ''} type="button" onClick={() => changerTimingAuto('activation')} aria-pressed={timingAuto === 'activation'} disabled={!allowActivationAutomation}>{t('sheet.reset.when.activation')}</button></div></div>}{activationVerrouillee && <p className="rule-option-note">{t('sheet.reset.flexibleActivationLocked')}</p>}</>;
   const switchPeutEtreFige = autoActif ? <label className={`reset-switch ${suivi.freezeAllowed ? 'active' : ''}`}><span>{t('sheet.reset.canFreeze')}</span><input type="checkbox" checked={!!suivi.freezeAllowed} onChange={(e) => onChange({ freezeAllowed: e.target.checked, ...(e.target.checked ? {} : { frozen: false }) })} /></label> : null;
-  const optionsNiveaux = Array.from({ length: Number(suivi.fillLevels || 1) }, (_, index) => ({ value: index + 1, label: suivi.levelLabels?.[index] || ['Léger', 'Normal', 'Grave', 'Critique', 'Fatal'][index] || `${t('sheet.reset.check')} ${index + 1}` }));
+  const libellesNiveaux = ['sheet.reset.level.light', 'sheet.reset.level.normal', 'sheet.reset.level.serious', 'sheet.reset.level.critical', 'sheet.reset.level.fatal'];
+  const optionsNiveaux = Array.from({ length: Number(suivi.fillLevels || 1) }, (_, index) => ({ value: index + 1, label: suivi.levelLabels?.[index] || (libellesNiveaux[index] ? t(libellesNiveaux[index]) : `${t('sheet.reset.check')} ${index + 1}`) }));
   const appliquerModeDefautCases = (choix) => {
     if (choix === 'custom') return onChange({ resetDefaultMode: 'custom' });
     return onChange({ ...presetPatch(choix), resetDefaultMode: choix });
@@ -284,7 +255,7 @@ function OptionsReset({ suivi, onChange, allowActivationAutomation = true }) {
       {switchPeutEtreFige}
       {autoActif && <div className="counter-auto-grid">{compteurs.map((compteur) => {
         const regle = (rule.counterRules || {})[compteur.id] || {};
-        return <div className="counter-auto-row" key={compteur.id}><strong>{compteur.label || 'Compteur'}</strong><ChampNombre label="Ajout" valeur={regle.flat ?? 0} onChange={(valeur) => modifierRegleCompteur(compteur.id, { flat: valeur })} /><ChampNombre label="%" valeur={regle.percent ?? 0} onChange={(valeur) => modifierRegleCompteur(compteur.id, { percent: valeur })} /></div>;
+        return <div className="counter-auto-row" key={compteur.id}><strong>{compteur.label || t('sheet.reset.counterFallback')}</strong><ChampNombre label={t('sheet.reset.addValue')} valeur={regle.flat ?? 0} onChange={(valeur) => modifierRegleCompteur(compteur.id, { flat: valeur })} /><ChampNombre label="%" valeur={regle.percent ?? 0} onChange={(valeur) => modifierRegleCompteur(compteur.id, { percent: valeur })} /></div>;
       })}</div>}
     </div>
   );
@@ -292,7 +263,7 @@ function OptionsReset({ suivi, onChange, allowActivationAutomation = true }) {
   if (isBoxesTracker(suivi)) return (
     <div className="reset-options">
       <div className="reset-custom">
-        <label className="field reset-default-select">État par défaut<select value={defaultMode} onChange={(event) => appliquerModeDefautCases(event.target.value)}><option value="empty">vide</option><option value="full">plein</option><option value="custom">personnalisé</option></select></label>
+        <label className="field reset-default-select">{t('sheet.reset.defaultState')}<select value={defaultMode} onChange={(event) => appliquerModeDefautCases(event.target.value)}><option value="empty">{t('sheet.reset.default.empty')}</option><option value="full">{t('sheet.reset.default.full')}</option><option value="custom">{t('sheet.reset.default.custom')}</option></select></label>
         {renduEtatDefautCases}
       </div>
       {switchAuto}
@@ -300,7 +271,7 @@ function OptionsReset({ suivi, onChange, allowActivationAutomation = true }) {
       {autoActif && <div className="box-auto-grid">{blocks.map((block) => {
         const regle = (rule.boxBlocks || {})[block.id] || {};
         const maxLevel = regle.maxLevel ?? suivi.fillLevels ?? 1;
-        return <div className="box-auto-row" key={block.id}><strong>{block.label || 'Bloc'}</strong><ChampNombre label="Cases" valeur={regle.amount ?? 1} onChange={(valeur) => modifierRegleBloc(block.id, { amount: valeur })} /><ChampNombre label="Cran" valeur={regle.levels ?? 1} onChange={(valeur) => modifierRegleBloc(block.id, { levels: valeur })} /><label className="field">Coche max<select value={maxLevel} onChange={(e) => modifierRegleBloc(block.id, { maxLevel: Number(e.target.value) })}>{optionsNiveaux.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label></div>;
+        return <div className="box-auto-row" key={block.id}><strong>{block.label || t('sheet.reset.blockFallback')}</strong><ChampNombre label={t('sheet.reset.boxes')} valeur={regle.amount ?? 1} onChange={(valeur) => modifierRegleBloc(block.id, { amount: valeur })} /><ChampNombre label={t('sheet.reset.step')} valeur={regle.levels ?? 1} onChange={(valeur) => modifierRegleBloc(block.id, { levels: valeur })} /><label className="field">{t('sheet.reset.maxCheck')}<select value={maxLevel} onChange={(e) => modifierRegleBloc(block.id, { maxLevel: Number(e.target.value) })}>{optionsNiveaux.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label></div>;
       })}</div>}
     </div>
   );
@@ -309,7 +280,7 @@ function OptionsReset({ suivi, onChange, allowActivationAutomation = true }) {
     <div className="reset-options">
       {switchAuto}
       {switchPeutEtreFige}
-      {autoActif && <><div className="grid2"><ChampNombre label="Ajout" valeur={rule.step ?? 0} onChange={(valeur) => modifierRegle({ step: valeur })} /><ChampNombre label="%" valeur={rule.percent ?? (rule.multiplier == null || rule.multiplier === '' ? 100 : Number(rule.multiplier) * 100)} onChange={(valeur) => modifierRegle({ percent: valeur })} /></div><label className="field">{t('sheet.reset.action')}<select value={rule.barAutoMode === 'always' && suivi.minAbsolute !== false && suivi.maxAbsolute !== false ? 'limit' : (rule.barAutoMode || 'limit')} onChange={(e) => modifierRegle({ barAutoMode: e.target.value })}><option value="default">{t('sheet.reset.action.default')}</option><option value="limit">{t('sheet.reset.action.limit')}</option>{(suivi.minAbsolute === false || suivi.maxAbsolute === false) && <option value="always">{t('sheet.reset.action.always')}</option>}</select></label><div className="grid2"><ChampNombre className="automation-disabled-field" label="% sous minimum" valeur={rule.underflowRecoveryPercent ?? ''} placeholder="aucun" disabled={suivi.minAbsolute !== false} onChange={(valeur) => modifierRegle({ underflowRecoveryPercent: valeur, rounding: rule.rounding || 'floor' })} /><ChampNombre className="automation-disabled-field" label="% au-dessus max" valeur={rule.excessReductionPercent ?? ''} placeholder="aucun" disabled={suivi.maxAbsolute !== false} onChange={(valeur) => modifierRegle({ excessReductionPercent: valeur, rounding: rule.rounding || 'floor' })} /></div></>}
+      {autoActif && <><div className="grid2"><ChampNombre label={t('sheet.reset.addValue')} valeur={rule.step ?? 0} onChange={(valeur) => modifierRegle({ step: valeur })} /><ChampNombre label="%" valeur={rule.percent ?? (rule.multiplier == null || rule.multiplier === '' ? 100 : Number(rule.multiplier) * 100)} onChange={(valeur) => modifierRegle({ percent: valeur })} /></div><label className="field">{t('sheet.reset.action')}<select value={rule.barAutoMode === 'always' && suivi.minAbsolute !== false && suivi.maxAbsolute !== false ? 'limit' : (rule.barAutoMode || 'limit')} onChange={(e) => modifierRegle({ barAutoMode: e.target.value })}><option value="default">{t('sheet.reset.action.default')}</option><option value="limit">{t('sheet.reset.action.limit')}</option>{(suivi.minAbsolute === false || suivi.maxAbsolute === false) && <option value="always">{t('sheet.reset.action.always')}</option>}</select></label><div className="grid2"><ChampNombre className="automation-disabled-field" label={t('sheet.reset.underflowRecovery')} valeur={rule.underflowRecoveryPercent ?? ''} placeholder={t('sheet.reset.noValue')} disabled={suivi.minAbsolute !== false} onChange={(valeur) => modifierRegle({ underflowRecoveryPercent: valeur, rounding: rule.rounding || 'floor' })} /><ChampNombre className="automation-disabled-field" label={t('sheet.reset.excessReduction')} valeur={rule.excessReductionPercent ?? ''} placeholder={t('sheet.reset.noValue')} disabled={suivi.maxAbsolute !== false} onChange={(valeur) => modifierRegle({ excessReductionPercent: valeur, rounding: rule.rounding || 'floor' })} /></div></>}
     </div>
   );
 
@@ -318,9 +289,9 @@ function OptionsReset({ suivi, onChange, allowActivationAutomation = true }) {
       {switchAuto}
       {switchPeutEtreFige}
       {autoActif && <>
-        <label className="field">Action<select value={rule.pointsAutoMode || 'default'} onChange={(e) => modifierRegle({ pointsAutoMode: e.target.value })}><option value="default">Revenir à l’état par défaut</option><option value="increase">Augmenter</option><option value="decrease">Réduire</option></select></label>
+        <label className="field">{t('sheet.reset.action')}<select value={rule.pointsAutoMode || 'default'} onChange={(e) => modifierRegle({ pointsAutoMode: e.target.value })}><option value="default">{t('sheet.points.autoAction.default')}</option><option value="increase">{t('sheet.points.autoAction.increase')}</option><option value="decrease">{t('sheet.points.autoAction.decrease')}</option></select></label>
         <div className={`points-auto-grid ${suivi.limitMode === 'loop' ? 'with-cycle-toggle' : ''}`}>
-          <ChampNombre label="Pas" valeur={rule.step ?? 1} onChange={(valeur) => modifierRegle({ step: valeur })} />
+          <ChampNombre label={t('trackers.step.label')} valeur={rule.step ?? 1} onChange={(valeur) => modifierRegle({ step: valeur })} />
           {suivi.limitMode === 'loop'
             ? <label className="limit-switch-row"><span>{t('sheet.points.autoCounter')}</span><input type="checkbox" checked={rule.pointsAutoCycles !== false} onChange={(e) => modifierRegle({ pointsAutoCycles: e.target.checked })} /></label>
             : <div />}
@@ -405,8 +376,8 @@ function ChampsEtatDefautHorloge({ suivi, onChange }) {
 function OptionsParType({ suivi, onChange, allowActivationAutomation = true }) {
   if (suivi.type === 'number') return <><EditeurCompteursMultiples suivi={suivi} onChange={onChange} /><details className="advanced-options"><summary>{t('sheet.advancedOptions')}</summary><GroupeOptionsAvancees title={t('sheet.advanced.automatisms')}><OptionsReset suivi={suivi} onChange={onChange} allowActivationAutomation={allowActivationAutomation} /></GroupeOptionsAvancees><GroupeOptionsAvancees title={t('sheet.advanced.thresholds')}><EditeurSeuils suivi={suivi} onChange={onChange} /></GroupeOptionsAvancees></details></>;
   if (suivi.type === 'bar') return <details className="advanced-options"><summary>{t('sheet.advancedOptions')}</summary><GroupeOptionsAvancees title={t('sheet.advanced.bounds')}><LimitesBarre suivi={suivi} onChange={onChange} /></GroupeOptionsAvancees><GroupeOptionsAvancees title={t('sheet.advanced.automatisms')}><OptionsReset suivi={suivi} onChange={onChange} allowActivationAutomation={allowActivationAutomation} /></GroupeOptionsAvancees><GroupeOptionsAvancees title={t('sheet.advanced.thresholds')}><EditeurSeuils suivi={suivi} onChange={onChange} bounds={{ min: suivi.min ?? 0, max: suivi.max }} /></GroupeOptionsAvancees></details>;
-  if (isPointsTracker(suivi)) return <><label className="field">{t('sheet.points.limit')}<select value={suivi.limitMode || 'clamp'} onChange={(e) => onChange({ limitMode: e.target.value })}><option value="clamp">{t('sheet.points.limit.clamp')}</option><option value="loop">{t('sheet.points.limit.loop')}</option></select></label>{suivi.limitMode === 'loop' && <><p className="muted tracker-help">Le compteur indique combien de fois les puces ont dépassé leur limite.</p><div className="grid2"><ChampNombre label={t('sheet.clock.initialCounter')} valeur={suivi.cyclesInitial ?? 0} onChange={(valeur) => onChange({ cyclesInitial: valeur })} /><ChampNombre label={t('sheet.points.currentCounter')} valeur={suivi.cycles ?? 0} onChange={(valeur) => onChange({ cycles: valeur })} /></div><div className="grid2"><ChampNombre label={t('sheet.points.minCounter')} valeur={suivi.cyclesMin ?? ''} placeholder="∞" onChange={(valeur) => onChange({ cyclesMin: valeur })} /><ChampNombre label={t('sheet.points.maxCounter')} valeur={suivi.cyclesMax ?? ''} placeholder="∞" onChange={(valeur) => onChange({ cyclesMax: valeur })} /></div></>}<details className="advanced-options"><summary>{t('sheet.advancedOptions')}</summary><GroupeOptionsAvancees title={t('sheet.advanced.automatisms')}><OptionsReset suivi={suivi} onChange={onChange} allowActivationAutomation={allowActivationAutomation} /></GroupeOptionsAvancees><GroupeOptionsAvancees title={t('sheet.advanced.thresholds')}><EditeurSeuils suivi={suivi} onChange={onChange} field="currentThresholds" title={t('sheet.thresholds.points')} bounds={{ min: suivi.min ?? 0, max: suivi.max }} />{suivi.limitMode === 'loop' && <EditeurSeuils suivi={suivi} onChange={onChange} field="totalThresholds" title={t('sheet.thresholds.totalCounter')} bounds={{ min: suivi.cyclesMin, max: suivi.cyclesMax }} />}</GroupeOptionsAvancees></details></>;
-  if (suivi.type === 'clock') return <><div className="grid2"><label className="field">{t('sheet.clock.direction')}<select value={suivi.direction === 'countdown' ? 'countdown' : 'progression'} onChange={(e) => onChange({ direction: e.target.value })}><option value="progression">{t('sheet.clock.direction.ascending')}</option><option value="countdown">{t('sheet.clock.direction.descending')}</option></select></label><ChampNombre label={t('trackers.step.label')} valeur={suivi.step ?? 1} onChange={(valeur) => onChange({ step: valeur })} /></div><label className="field">{t('sheet.clock.endMode')}<select value={suivi.limitMode || 'manual'} onChange={(e) => onChange({ limitMode: e.target.value })}><option value="manual">{t('sheet.clock.endMode.manual')}</option><option value="increment">{t('sheet.clock.endMode.increment')}</option><option value="overflow">{t('sheet.clock.endMode.overflow')}</option></select></label><ChampsEtatDefautHorloge suivi={suivi} onChange={onChange} /><details className="advanced-options"><summary>{t('sheet.advancedOptions')}</summary><GroupeOptionsAvancees title={t('sheet.advanced.automatisms')}><OptionsReset suivi={suivi} onChange={onChange} allowActivationAutomation={allowActivationAutomation} /></GroupeOptionsAvancees><GroupeOptionsAvancees title={t('sheet.advanced.thresholds')}><EditeurSeuils suivi={suivi} onChange={onChange} field="currentThresholds" title={t('sheet.thresholds.clock')} bounds={{ min: 0, max: suivi.max }} />{suivi.limitMode === 'increment' && <><div className="grid2"><ChampNombre label={t('sheet.points.minCounter')} valeur={suivi.cyclesMin ?? ''} placeholder="∞" onChange={(valeur) => onChange({ cyclesMin: valeur })} /><ChampNombre label={t('sheet.points.maxCounter')} valeur={suivi.cyclesMax ?? ''} placeholder="∞" onChange={(valeur) => onChange({ cyclesMax: valeur })} /></div><EditeurSeuils suivi={suivi} onChange={onChange} field="totalThresholds" title={t('sheet.thresholds.counter')} bounds={{ min: suivi.cyclesMin, max: suivi.cyclesMax }} /></>}</GroupeOptionsAvancees></details></>;
+  if (isPointsTracker(suivi)) return <><label className="field">{t('sheet.points.limit')}<select value={suivi.limitMode || 'clamp'} onChange={(e) => onChange({ limitMode: e.target.value })}><option value="clamp">{t('sheet.points.limit.clamp')}</option><option value="loop">{t('sheet.points.limit.loop')}</option></select></label>{suivi.limitMode === 'loop' && <><p className="muted tracker-help">{t('sheet.points.loopHelp')}</p><div className="grid2"><ChampNombre label={t('sheet.clock.initialCounter')} valeur={suivi.cyclesInitial ?? 0} onChange={(valeur) => onChange({ cyclesInitial: valeur })} /><ChampNombre label={t('sheet.points.currentCounter')} valeur={suivi.cycles ?? 0} onChange={(valeur) => onChange({ cycles: valeur })} /></div><div className="grid2"><ChampNombre label={t('sheet.points.minCounter')} valeur={suivi.cyclesMin ?? ''} placeholder={uiGlyphs.infinity} onChange={(valeur) => onChange({ cyclesMin: valeur })} /><ChampNombre label={t('sheet.points.maxCounter')} valeur={suivi.cyclesMax ?? ''} placeholder={uiGlyphs.infinity} onChange={(valeur) => onChange({ cyclesMax: valeur })} /></div></>}<details className="advanced-options"><summary>{t('sheet.advancedOptions')}</summary><GroupeOptionsAvancees title={t('sheet.advanced.automatisms')}><OptionsReset suivi={suivi} onChange={onChange} allowActivationAutomation={allowActivationAutomation} /></GroupeOptionsAvancees><GroupeOptionsAvancees title={t('sheet.advanced.thresholds')}><EditeurSeuils suivi={suivi} onChange={onChange} field="currentThresholds" title={t('sheet.thresholds.points')} bounds={{ min: suivi.min ?? 0, max: suivi.max }} />{suivi.limitMode === 'loop' && <EditeurSeuils suivi={suivi} onChange={onChange} field="totalThresholds" title={t('sheet.thresholds.totalCounter')} bounds={{ min: suivi.cyclesMin, max: suivi.cyclesMax }} />}</GroupeOptionsAvancees></details></>;
+  if (suivi.type === 'clock') return <><div className="grid2"><label className="field">{t('sheet.clock.direction')}<select value={suivi.direction === 'countdown' ? 'countdown' : 'progression'} onChange={(e) => onChange({ direction: e.target.value })}><option value="progression">{t('sheet.clock.direction.ascending')}</option><option value="countdown">{t('sheet.clock.direction.descending')}</option></select></label><ChampNombre label={t('trackers.step.label')} valeur={suivi.step ?? 1} onChange={(valeur) => onChange({ step: valeur })} /></div><label className="field">{t('sheet.clock.endMode')}<select value={suivi.limitMode || 'manual'} onChange={(e) => onChange({ limitMode: e.target.value })}><option value="manual">{t('sheet.clock.endMode.manual')}</option><option value="increment">{t('sheet.clock.endMode.increment')}</option><option value="overflow">{t('sheet.clock.endMode.overflow')}</option></select></label><ChampsEtatDefautHorloge suivi={suivi} onChange={onChange} /><details className="advanced-options"><summary>{t('sheet.advancedOptions')}</summary><GroupeOptionsAvancees title={t('sheet.advanced.automatisms')}><OptionsReset suivi={suivi} onChange={onChange} allowActivationAutomation={allowActivationAutomation} /></GroupeOptionsAvancees><GroupeOptionsAvancees title={t('sheet.advanced.thresholds')}><EditeurSeuils suivi={suivi} onChange={onChange} field="currentThresholds" title={t('sheet.thresholds.clock')} bounds={{ min: 0, max: suivi.max }} />{suivi.limitMode === 'increment' && <><div className="grid2"><ChampNombre label={t('sheet.points.minCounter')} valeur={suivi.cyclesMin ?? ''} placeholder={uiGlyphs.infinity} onChange={(valeur) => onChange({ cyclesMin: valeur })} /><ChampNombre label={t('sheet.points.maxCounter')} valeur={suivi.cyclesMax ?? ''} placeholder={uiGlyphs.infinity} onChange={(valeur) => onChange({ cyclesMax: valeur })} /></div><EditeurSeuils suivi={suivi} onChange={onChange} field="totalThresholds" title={t('sheet.thresholds.counter')} bounds={{ min: suivi.cyclesMin, max: suivi.cyclesMax }} /></>}</GroupeOptionsAvancees></details></>;
   return null;
 }
 
@@ -463,7 +434,7 @@ export function EditeurSuivi({ suivi, onChange, onDelete, onSaveTemplate, allowA
   );
 }
 
-export function FenetreEditionFiche({ participant, initiativeTextOrder, phaseActionMode, phaseCount = defaultPhaseCount, multipleActionSlots = true, utiliserInitiative = true, allowActivationAutomation = true, categoryOrder = participantKinds, tiebreakerVisible = true, tiebreakerLabel = 'Départage', trackerTemplates = [], title = 'Modifier', templateCategory = '', templateCategories = [], saveTemplateVisible = true, deleteLabel = 'Supprimer la fiche', className = 'character-edit-sheet', templateSwitchRequest = null, onAnnulerChangementTemplate, onAbandonnerChangementTemplate, onValiderChangementTemplate, onClose, onSave, onDelete, onSaveTemplate, onSaveTrackerTemplate }) {
+export function FenetreEditionFiche({ participant, initiativeTextOrder, phaseActionMode, phaseCount = defaultPhaseCount, multipleActionSlots = true, utiliserInitiative = true, initiativeBonusEnabled = true, allowActivationAutomation = true, categoryOrder = participantKinds, tiebreakerVisible = true, tiebreakerLabel = t('sheet.tiebreaker.default'), trackerTemplates = [], title = t('sheet.edit.defaultTitle'), templateCategory = '', templateCategories = [], saveTemplateVisible = true, deleteLabel = t('sheet.edit.deleteCharacter'), className = 'character-edit-sheet', templateSwitchRequest = null, onAnnulerChangementTemplate, onAbandonnerChangementTemplate, onValiderChangementTemplate, onClose, onSave, onDelete, onSaveTemplate, onSaveTrackerTemplate }) {
   const textConfig = normalizeInitiativeTextOrder(initiativeTextOrder);
   const modePhasesCochees = phaseActionMode === phaseActionModes.CHECKED;
   const typesDisponibles = [...new Set([...participantKinds, ...(categoryOrder || []), participant.kind].filter(Boolean))];
@@ -526,8 +497,9 @@ export function FenetreEditionFiche({ participant, initiativeTextOrder, phaseAct
           <label className="field">{t('sheet.type')}<select value={brouillon.kind} onChange={(e) => modifierChamp('kind', e.target.value)}>{typesDisponibles.map((type) => <option key={type}>{type}</option>)}</select></label>
         </div>
         <label className="field">{t('sheet.description')}<textarea value={brouillon.description || ''} onChange={(e) => modifierChamp('description', e.target.value)} /></label>
-        {utiliserInitiative && <div className="grid2">
+        {utiliserInitiative && <div className="initiative-core-grid">
           <ChampInitiative label={t('sheet.initiative.primary')} valeur={creneauxAction[0]?.initiative ?? brouillon.initiative ?? 0} textConfig={textConfig} onChange={(valeur) => modifierCreneauAction(0, valeur)} />
+          {initiativeBonusEnabled ? <ChampNombre className="initiative-bonus-field" label={t('sheet.initiative.bonus')} valeur={brouillon.initiativeBonus ?? 0} onChange={(valeur) => modifierChamp('initiativeBonus', valeur)} /> : <div />}
           {tiebreakerVisible ? <ChampNombre label={tiebreakerLabel} valeur={brouillon.departage} onChange={(valeur) => modifierChamp('departage', valeur)} /> : <div />}
         </div>}
         {multipleActionSlots && <div className="action-slots-editor">
@@ -551,7 +523,7 @@ export function FenetreEditionFiche({ participant, initiativeTextOrder, phaseAct
         <details className="advanced-options">
           <summary>{t('sheet.advancedOptions')}</summary>
           <div className="grid2"><label className="field">{t('sheet.symbol')}<select value={brouillon.symbol || symbols[0]} onChange={(e) => modifierChamp('symbol', e.target.value)}>{symbols.map((symbole) => <option key={symbole} value={symbole}>{symbole}</option>)}</select></label><label className="field">{t('sheet.color')}<select value={brouillon.color || colors[0]} onChange={(e) => modifierChamp('color', e.target.value)}>{colors.map((couleur) => <option key={couleur} value={couleur}>{colorNames[couleur] || couleur}</option>)}</select></label></div>
-          <label className="limit-switch-row character-secret-edit"><span><span aria-hidden="true">{'🥷'}</span> {t('sheet.character.hide')}</span><input type="checkbox" checked={!!brouillon.secret} onChange={(event) => modifierChamp('secret', event.target.checked)} /></label>
+          <label className="limit-switch-row character-secret-edit"><span><span aria-hidden="true">{uiGlyphs.stealth}</span> {t('sheet.character.hide')}</span><input type="checkbox" checked={!!brouillon.secret} onChange={(event) => modifierChamp('secret', event.target.checked)} /></label>
           {saveTemplateVisible && <button className="small-btn" style={{ width: '100%', marginTop: 12 }} onClick={enregistrerCommeTemplate}>{t('sheet.saveAsTemplate')}</button>}
         </details>
         <h3 className="sheet-section-title">{t('sheet.quickInfo.title')}</h3>

@@ -1,5 +1,6 @@
 import { clone, newTracker, uid } from '../logic.js';
 import { mergeRulePresetCatalog } from '../rulePresets.js';
+import { t } from '../i18n/index.js';
 import {
   categoryExists,
   createBlankParticipant,
@@ -27,7 +28,7 @@ function sameCategory(left, right) {
   return templateCategoryFromName(left)?.toLocaleLowerCase() === templateCategoryFromName(right)?.toLocaleLowerCase();
 }
 
-function uniqueTemplateName(templates, category, baseName = 'Nouveau modèle') {
+function uniqueTemplateName(templates, category, baseName = t('templates.fallback.newTemplate')) {
   const cleanCategory = templateCategoryFromName(category) || 'PNJ';
   const existingNames = new Set(
     templates
@@ -40,7 +41,7 @@ function uniqueTemplateName(templates, category, baseName = 'Nouveau modèle') {
   return `${baseName} ${index}`;
 }
 
-function uniqueFlatTemplateName(templates, baseName = 'Nouveau modèle') {
+function uniqueFlatTemplateName(templates, baseName = t('templates.fallback.newTemplate')) {
   const existingNames = new Set(templates.map((template) => template.name.toLocaleLowerCase()));
   if (!existingNames.has(baseName.toLocaleLowerCase())) return baseName;
   let index = 2;
@@ -69,10 +70,10 @@ export function useTemplates(store, setStore) {
   const saveParticipantAsTemplate = (participant, { name, category, newCategory, overwrite = false }) => {
     const targetCategory = newCategory?.trim() || category;
     const cleanName = name?.trim();
-    if (!cleanName) return { ok: false, kind: 'missing-name', message: 'Donne un nom au modèle.' };
-    if (!targetCategory?.trim()) return { ok: false, kind: 'missing-category', message: 'Choisis ou crée une catégorie.' };
+    if (!cleanName) return { ok: false, kind: 'missing-name', message: t('templates.error.missingName') };
+    if (!targetCategory?.trim()) return { ok: false, kind: 'missing-category', message: t('templates.error.missingCategory') };
     const duplicate = templateNameExists(templateStore.templates, targetCategory, cleanName);
-    if (duplicate && !overwrite) return { ok: false, kind: 'duplicate', message: 'Un modèle porte déjà ce nom dans cette catégorie. Tu peux l’écraser ou modifier le nom.' };
+    if (duplicate && !overwrite) return { ok: false, kind: 'duplicate', message: t('templates.error.duplicateNameInCategory') };
 
     const template = makeTemplateFromParticipant(participant, { name: cleanName, category: targetCategory });
     updateStore((currentStore) => ({
@@ -94,8 +95,8 @@ export function useTemplates(store, setStore) {
 
   const addCategory = (category) => {
     const cleanCategory = templateCategoryFromName(category);
-    if (!cleanCategory) return { ok: false, message: 'Donne un nom à la catégorie.' };
-    if (categoryExists(templateStore.categories, cleanCategory)) return { ok: false, message: 'Cette catégorie existe déjà.' };
+    if (!cleanCategory) return { ok: false, message: t('templates.error.categoryName') };
+    if (categoryExists(templateStore.categories, cleanCategory)) return { ok: false, message: t('templates.error.categoryExists') };
     updateStore((currentStore) => ({
         ...currentStore,
         categories: [...currentStore.categories, cleanCategory],
@@ -106,8 +107,8 @@ export function useTemplates(store, setStore) {
   const renameCategory = (category, nextName) => {
     const cleanCurrent = templateCategoryFromName(category);
     const cleanNext = templateCategoryFromName(nextName);
-    if (!cleanCurrent || !cleanNext) return { ok: false, message: 'Donne un nom à la catégorie.' };
-    if (!sameCategory(cleanCurrent, cleanNext) && categoryExists(templateStore.categories, cleanNext)) return { ok: false, message: 'Cette catégorie existe déjà.' };
+    if (!cleanCurrent || !cleanNext) return { ok: false, message: t('templates.error.categoryName') };
+    if (!sameCategory(cleanCurrent, cleanNext) && categoryExists(templateStore.categories, cleanNext)) return { ok: false, message: t('templates.error.categoryExists') };
 
     updateStore((currentStore) => ({
         ...currentStore,
@@ -119,9 +120,9 @@ export function useTemplates(store, setStore) {
 
   const deleteCategory = (category) => {
     const cleanCategory = templateCategoryFromName(category);
-    if (!cleanCategory) return { ok: false, message: 'Catégorie introuvable.' };
+    if (!cleanCategory) return { ok: false, message: t('templates.error.categoryNotFound') };
     const containsTemplates = templateStore.templates.some((template) => sameCategory(template.category, cleanCategory));
-    if (containsTemplates) return { ok: false, message: 'Cette catégorie contient encore des modèles.' };
+    if (containsTemplates) return { ok: false, message: t('templates.error.categoryNotEmpty') };
 
     updateStore((currentStore) => ({
         ...currentStore,
@@ -161,7 +162,7 @@ export function useTemplates(store, setStore) {
 
   const updateTemplateParticipant = (templateId, participant, category) => {
     const cleanParticipant = { ...clone(participant), id: 'template-participant', statuses: [] };
-    const cleanName = cleanParticipant.name?.trim() || 'Modèle sans nom';
+    const cleanName = cleanParticipant.name?.trim() || t('templates.fallback.unnamed');
     const cleanCategory = templateCategoryFromName(category);
     updateStore((currentStore) => ({
         ...currentStore,
@@ -174,7 +175,7 @@ export function useTemplates(store, setStore) {
 
   const setTemplateCategory = (templateId, category) => {
     const cleanCategory = templateCategoryFromName(category);
-    if (!cleanCategory) return { ok: false, message: 'Choisis une catégorie.' };
+    if (!cleanCategory) return { ok: false, message: t('templates.fallback.chooseCategory') };
     updateStore((currentStore) => ({
         ...currentStore,
         categories: categoryExists(currentStore.categories, cleanCategory) ? currentStore.categories : [...currentStore.categories, cleanCategory],
@@ -186,7 +187,7 @@ export function useTemplates(store, setStore) {
   const duplicateTemplate = (templateId) => {
     const source = getTemplate(templateId);
     if (!source) return null;
-    const baseName = uniqueTemplateName(templateStore.templates, source.category, `${source.name || source.participant?.name || 'Modèle'} — copie`);
+    const baseName = uniqueTemplateName(templateStore.templates, source.category, t('templates.fallback.copyName', { name: source.name || source.participant?.name || t('templates.fallback.unnamed') }));
     const duplicate = {
       ...clone(source),
       id: uid('tpl'),
@@ -217,12 +218,12 @@ export function useTemplates(store, setStore) {
   const getTrackerTemplate = (templateId) => templateStore.trackerTemplates.find((template) => template.id === templateId) || null;
   const createTrackerTemplate = (type = 'bar') => {
     const tracker = newTracker(type);
-    const template = makeTrackerTemplateFromTracker(tracker, { name: uniqueFlatTemplateName(templateStore.trackerTemplates, tracker.name || 'Indicateur') });
+    const template = makeTrackerTemplateFromTracker(tracker, { name: uniqueFlatTemplateName(templateStore.trackerTemplates, tracker.name || t('templates.fallback.tracker')) });
     updateStore((currentStore) => ({ ...currentStore, trackerTemplates: [...currentStore.trackerTemplates, template] }));
     return template;
   };
   const updateTrackerTemplate = (templateId, tracker, name) => {
-    const cleanName = templateCategoryFromName(name || tracker?.name) || 'Indicateur';
+    const cleanName = templateCategoryFromName(name || tracker?.name) || t('templates.fallback.tracker');
     updateStore((currentStore) => ({
       ...currentStore,
       trackerTemplates: currentStore.trackerTemplates.map((template) => template.id === templateId
@@ -233,14 +234,14 @@ export function useTemplates(store, setStore) {
   const duplicateTrackerTemplate = (templateId) => {
     const source = getTrackerTemplate(templateId);
     if (!source) return null;
-    const duplicate = { ...clone(source), id: uid('ttpl'), name: uniqueFlatTemplateName(templateStore.trackerTemplates, `${source.name} copie`), createdAt: new Date().toISOString(), updatedAt: undefined };
+    const duplicate = { ...clone(source), id: uid('ttpl'), name: uniqueFlatTemplateName(templateStore.trackerTemplates, t('templates.fallback.copyName', { name: source.name })), createdAt: new Date().toISOString(), updatedAt: undefined };
     updateStore((currentStore) => ({ ...currentStore, trackerTemplates: [...currentStore.trackerTemplates, duplicate] }));
     return duplicate;
   };
   const deleteTrackerTemplate = (templateId) => updateStore((currentStore) => ({ ...currentStore, trackerTemplates: currentStore.trackerTemplates.filter((template) => template.id !== templateId) }));
   const createTrackerFromTemplate = (templateId) => instantiateTrackerTemplate(getTrackerTemplate(templateId));
   const saveTrackerAsTemplate = (tracker, name) => {
-    const cleanName = templateCategoryFromName(name || tracker?.name) || 'Indicateur';
+    const cleanName = templateCategoryFromName(name || tracker?.name) || t('templates.fallback.tracker');
     const template = makeTrackerTemplateFromTracker(tracker, { name: uniqueFlatTemplateName(templateStore.trackerTemplates, cleanName) });
     updateStore((currentStore) => ({ ...currentStore, trackerTemplates: [...currentStore.trackerTemplates, template] }));
     return template;
@@ -248,13 +249,13 @@ export function useTemplates(store, setStore) {
 
   const getStatusTemplate = (templateId) => templateStore.statusTemplates.find((template) => template.id === templateId) || null;
   const createStatusTemplate = () => {
-    const status = { id: 'template-status', name: 'Nouvel état', duration: null, remaining: null, loop: false, inactive: false, advanceOn: 'activation', expired: false };
+    const status = { id: 'template-status', name: t('templates.fallback.newStatus'), duration: null, remaining: null, loop: false, inactive: false, advanceOn: 'activation', expired: false };
     const template = makeStatusTemplateFromStatus(status, { name: uniqueFlatTemplateName(templateStore.statusTemplates, status.name) });
     updateStore((currentStore) => ({ ...currentStore, statusTemplates: [...currentStore.statusTemplates, template] }));
     return template;
   };
   const updateStatusTemplate = (templateId, status, name) => {
-    const cleanName = templateCategoryFromName(name || status?.name) || 'État';
+    const cleanName = templateCategoryFromName(name || status?.name) || t('templates.fallback.status');
     const duration = status.duration == null ? null : Math.max(1, Number(status.duration) || 1);
     updateStore((currentStore) => ({
       ...currentStore,
@@ -266,14 +267,14 @@ export function useTemplates(store, setStore) {
   const duplicateStatusTemplate = (templateId) => {
     const source = getStatusTemplate(templateId);
     if (!source) return null;
-    const duplicate = { ...clone(source), id: uid('stpl'), name: uniqueFlatTemplateName(templateStore.statusTemplates, `${source.name} copie`), createdAt: new Date().toISOString(), updatedAt: undefined };
+    const duplicate = { ...clone(source), id: uid('stpl'), name: uniqueFlatTemplateName(templateStore.statusTemplates, t('templates.fallback.copyName', { name: source.name })), createdAt: new Date().toISOString(), updatedAt: undefined };
     updateStore((currentStore) => ({ ...currentStore, statusTemplates: [...currentStore.statusTemplates, duplicate] }));
     return duplicate;
   };
   const deleteStatusTemplate = (templateId) => updateStore((currentStore) => ({ ...currentStore, statusTemplates: currentStore.statusTemplates.filter((template) => template.id !== templateId) }));
   const createStatusFromTemplate = (templateId) => instantiateStatusTemplate(getStatusTemplate(templateId));
   const saveStatusAsTemplate = (status, name) => {
-    const cleanName = templateCategoryFromName(name || status?.name) || 'État';
+    const cleanName = templateCategoryFromName(name || status?.name) || t('templates.fallback.status');
     const template = makeStatusTemplateFromStatus(status, { name: uniqueFlatTemplateName(templateStore.statusTemplates, cleanName) });
     updateStore((currentStore) => ({ ...currentStore, statusTemplates: [...currentStore.statusTemplates, template] }));
     return template;
@@ -281,13 +282,13 @@ export function useTemplates(store, setStore) {
 
   const getSceneStatusTemplate = (templateId) => templateStore.sceneStatusTemplates.find((template) => template.id === templateId) || null;
   const createSceneStatusTemplate = () => {
-    const status = { id: 'template-status', name: 'Nouvel état de scène', duration: null, remaining: null, loop: false, inactive: false, advanceOn: 'round', expired: false };
+    const status = { id: 'template-status', name: t('templates.fallback.newSceneStatus'), duration: null, remaining: null, loop: false, inactive: false, advanceOn: 'round', expired: false };
     const template = makeSceneStatusTemplateFromStatus(status, { name: uniqueFlatTemplateName(templateStore.sceneStatusTemplates, status.name) });
     updateStore((currentStore) => ({ ...currentStore, sceneStatusTemplates: [...currentStore.sceneStatusTemplates, template] }));
     return template;
   };
   const updateSceneStatusTemplate = (templateId, status, name) => {
-    const cleanName = templateCategoryFromName(name || status?.name) || 'État de scène';
+    const cleanName = templateCategoryFromName(name || status?.name) || t('templates.fallback.sceneStatus');
     const duration = status.duration == null ? null : Math.max(1, Number(status.duration) || 1);
     updateStore((currentStore) => ({
       ...currentStore,
@@ -299,14 +300,14 @@ export function useTemplates(store, setStore) {
   const duplicateSceneStatusTemplate = (templateId) => {
     const source = getSceneStatusTemplate(templateId);
     if (!source) return null;
-    const duplicate = { ...clone(source), id: uid('sstpl'), name: uniqueFlatTemplateName(templateStore.sceneStatusTemplates, `${source.name} copie`), createdAt: new Date().toISOString(), updatedAt: undefined };
+    const duplicate = { ...clone(source), id: uid('sstpl'), name: uniqueFlatTemplateName(templateStore.sceneStatusTemplates, t('templates.fallback.copyName', { name: source.name })), createdAt: new Date().toISOString(), updatedAt: undefined };
     updateStore((currentStore) => ({ ...currentStore, sceneStatusTemplates: [...currentStore.sceneStatusTemplates, duplicate] }));
     return duplicate;
   };
   const deleteSceneStatusTemplate = (templateId) => updateStore((currentStore) => ({ ...currentStore, sceneStatusTemplates: currentStore.sceneStatusTemplates.filter((template) => template.id !== templateId) }));
   const createSceneStatusFromTemplate = (templateId) => instantiateSceneStatusTemplate(getSceneStatusTemplate(templateId));
   const saveSceneStatusAsTemplate = (status, name) => {
-    const cleanName = templateCategoryFromName(name || status?.name) || 'État de scène';
+    const cleanName = templateCategoryFromName(name || status?.name) || t('templates.fallback.sceneStatus');
     const template = makeSceneStatusTemplateFromStatus(status, { name: uniqueFlatTemplateName(templateStore.sceneStatusTemplates, cleanName) });
     updateStore((currentStore) => ({ ...currentStore, sceneStatusTemplates: [...currentStore.sceneStatusTemplates, template] }));
     return template;
@@ -314,13 +315,13 @@ export function useTemplates(store, setStore) {
 
   const getSceneCounterTemplate = (templateId) => templateStore.sceneCounterTemplates.find((template) => template.id === templateId) || null;
   const createSceneCounterTemplate = () => {
-    const counter = { enabled: true, name: 'Nouvel indicateur de scène', mode: 'clock', current: 0, max: 6, direction: 'progression', trigger: 'manual', limitMode: 'clamp', total: 0, loops: 0, auto: false, thresholds: [] };
+    const counter = { enabled: true, name: t('templates.fallback.newSceneCounter'), mode: 'clock', current: 0, max: 6, direction: 'progression', trigger: 'manual', limitMode: 'clamp', total: 0, loops: 0, auto: false, thresholds: [] };
     const template = makeSceneCounterTemplateFromCounter(counter, { name: uniqueFlatTemplateName(templateStore.sceneCounterTemplates, counter.name) });
     updateStore((currentStore) => ({ ...currentStore, sceneCounterTemplates: [...currentStore.sceneCounterTemplates, template] }));
     return template;
   };
   const updateSceneCounterTemplate = (templateId, counter, name) => {
-    const cleanName = templateCategoryFromName(name || counter?.name) || 'Indicateur de scène';
+    const cleanName = templateCategoryFromName(name || counter?.name) || t('templates.fallback.sceneCounter');
     updateStore((currentStore) => ({
       ...currentStore,
       sceneCounterTemplates: currentStore.sceneCounterTemplates.map((template) => template.id === templateId
@@ -331,14 +332,14 @@ export function useTemplates(store, setStore) {
   const duplicateSceneCounterTemplate = (templateId) => {
     const source = getSceneCounterTemplate(templateId);
     if (!source) return null;
-    const duplicate = { ...clone(source), id: uid('sctpl'), name: uniqueFlatTemplateName(templateStore.sceneCounterTemplates, `${source.name} copie`), createdAt: new Date().toISOString(), updatedAt: undefined };
+    const duplicate = { ...clone(source), id: uid('sctpl'), name: uniqueFlatTemplateName(templateStore.sceneCounterTemplates, t('templates.fallback.copyName', { name: source.name })), createdAt: new Date().toISOString(), updatedAt: undefined };
     updateStore((currentStore) => ({ ...currentStore, sceneCounterTemplates: [...currentStore.sceneCounterTemplates, duplicate] }));
     return duplicate;
   };
   const deleteSceneCounterTemplate = (templateId) => updateStore((currentStore) => ({ ...currentStore, sceneCounterTemplates: currentStore.sceneCounterTemplates.filter((template) => template.id !== templateId) }));
   const createSceneCounterFromTemplate = (templateId) => instantiateSceneCounterTemplate(getSceneCounterTemplate(templateId));
   const saveSceneCounterAsTemplate = (counter, name) => {
-    const cleanName = templateCategoryFromName(name || counter?.name) || 'Indicateur de scène';
+    const cleanName = templateCategoryFromName(name || counter?.name) || t('templates.fallback.sceneCounter');
     const template = makeSceneCounterTemplateFromCounter(counter, { name: uniqueFlatTemplateName(templateStore.sceneCounterTemplates, cleanName) });
     updateStore((currentStore) => ({ ...currentStore, sceneCounterTemplates: [...currentStore.sceneCounterTemplates, template] }));
     return template;
@@ -347,12 +348,12 @@ export function useTemplates(store, setStore) {
   const getRuleTemplate = (templateId) => templateStore.ruleTemplates.find((template) => template.id === templateId) || null;
   const saveRuleTemplate = (rules, options) => {
     const config = typeof options === 'string' ? { name: options } : (options || {});
-    const cleanName = templateCategoryFromName(config.name) || 'Règles';
+    const cleanName = templateCategoryFromName(config.name) || t('templates.fallback.rules');
     const sameName = (template) => template.name.toLocaleLowerCase() === cleanName.toLocaleLowerCase();
     const targetId = config.overwriteExistingId || config.templateId;
     const conflict = templateStore.ruleTemplates.find((template) => sameName(template) && template.id !== targetId);
     if (conflict && !config.confirmDuplicate) {
-      return { ok: false, kind: 'duplicate', message: 'Un préréglage de règles porte déjà ce nom.', conflict };
+      return { ok: false, kind: 'duplicate', message: t('templates.rules.duplicateName'), conflict };
     }
 
     const source = makeRuleTemplateFromRules(rules, { name: cleanName });
@@ -378,7 +379,7 @@ export function useTemplates(store, setStore) {
   const duplicateRuleTemplate = (templateId) => {
     const source = getRuleTemplate(templateId);
     if (!source) return null;
-    const duplicate = { ...clone(source), id: uid('rtpl'), name: uniqueFlatTemplateName(templateStore.ruleTemplates, `${source.name} copie`), createdAt: new Date().toISOString(), updatedAt: undefined };
+    const duplicate = { ...clone(source), id: uid('rtpl'), name: uniqueFlatTemplateName(templateStore.ruleTemplates, t('templates.fallback.copyName', { name: source.name })), createdAt: new Date().toISOString(), updatedAt: undefined };
     updateStore((currentStore) => ({ ...currentStore, ruleTemplates: [...currentStore.ruleTemplates, duplicate] }));
     return duplicate;
   };

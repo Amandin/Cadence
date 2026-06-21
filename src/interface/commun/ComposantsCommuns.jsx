@@ -1,5 +1,6 @@
 import { t } from '../../i18n/index.js';
 import { colorAccents } from '../../constants.js';
+import { uiGlyphs } from '../../uiAssets.js';
 
 export function couleurVersAccent(couleur) {
   return colorAccents[couleur] || colorAccents.default;
@@ -37,7 +38,7 @@ export function teinteEtatParticipant(participant) {
 }
 
 export function AvatarParticipant({ participant }) {
-  return <div className={`avatar ${participant.color || 'slate'}`}>{participant.symbol || '●'}</div>;
+  return <div className={`avatar ${participant.color || 'slate'}`}>{participant.symbol || uiGlyphs.avatarFallback}</div>;
 }
 
 export function BoutonRepliFichette({ repliee = false, onClick, className = '' }) {
@@ -51,10 +52,10 @@ export function BoutonRepliFichette({ repliee = false, onClick, className = '' }
   );
 }
 function libelleEtat(etat) {
-  if (etat.duration == null) return '∞';
-  if (etat.expired && etat.loop) return '↻ 0';
-  if (etat.expired) return '× 0';
-  return `⏳ ${etat.remaining}`;
+  if (etat.duration == null) return uiGlyphs.infinity;
+  if (etat.expired && etat.loop) return `${uiGlyphs.loop} 0`;
+  if (etat.expired) return `${uiGlyphs.close} 0`;
+  return `${uiGlyphs.timer} ${etat.remaining}`;
 }
 
 function typeEtat(etat) {
@@ -89,12 +90,12 @@ export function EtiquetteEtat({ etat, onRetirer, onModifier }) {
         onClick={modifier}
         onKeyDown={modifierAuClavier}
       >
-        {marqueurImpact}{etat.name}{' \u00b7 '}{libelleEtat(etat)}
-        <button onClick={(event) => { event.stopPropagation(); onRetirer?.(); }} aria-label={t('common.remove')}>&times;</button>
+        {marqueurImpact}{etat.name}{` ${uiGlyphs.middleDot} `}{libelleEtat(etat)}
+        <button onClick={(event) => { event.stopPropagation(); onRetirer?.(); }} aria-label={t('common.remove')}>{uiGlyphs.close}</button>
       </span>
     );
   }
-  return <span className={`status ${typeEtat(etat)} ${couleurEtat ? 'colored-status' : ''} ${etat.advanceOn === 'round' ? 'round-status' : ''} ${etat.inactive ? 'inactive-status' : ''} ${etat.limited ? 'limited-status' : ''} ${etat.expired ? 'expired' : ''}`} style={couleurEtat ? { '--status-color': couleurEtat } : undefined}>{marqueurImpact}{etat.name} · {libelleEtat(etat)}<button onClick={onRetirer} aria-label={t('common.remove')}>×</button></span>;
+  return <span className={`status ${typeEtat(etat)} ${couleurEtat ? 'colored-status' : ''} ${etat.advanceOn === 'round' ? 'round-status' : ''} ${etat.inactive ? 'inactive-status' : ''} ${etat.limited ? 'limited-status' : ''} ${etat.expired ? 'expired' : ''}`} style={couleurEtat ? { '--status-color': couleurEtat } : undefined}>{marqueurImpact}{etat.name} {uiGlyphs.middleDot} {libelleEtat(etat)}<button onClick={onRetirer} aria-label={t('common.remove')}>{uiGlyphs.close}</button></span>;
 }
 
 export function BadgeRound({ round, effect, phase, surpriseRound = false }) {
@@ -126,7 +127,7 @@ export function BadgeRound({ round, effect, phase, surpriseRound = false }) {
 }
 
 export function Fenetre({ title, children, onClose, header, className = '', style }) {
-  const entete = header ?? <div className="row" style={{ justifyContent: 'space-between', marginBottom: 10 }}><h2 style={{ margin: 0 }}>{title}</h2><button className="icon-btn" onClick={onClose} aria-label={t('common.close')}>×</button></div>;
+  const entete = header ?? <div className="row" style={{ justifyContent: 'space-between', marginBottom: 10 }}><h2 style={{ margin: 0 }}>{title}</h2><button className="icon-btn" onClick={onClose} aria-label={t('common.close')}>{uiGlyphs.close}</button></div>;
   const overlayClass = className ? `${className.split(' ')[0]}-overlay` : '';
   return <div className={`overlay ${overlayClass}`} onClick={onClose}><div className={`sheet ${className}`} style={style} onClick={(event) => event.stopPropagation()}>{entete}{children}</div></div>;
 }

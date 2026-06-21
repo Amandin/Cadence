@@ -1,12 +1,10 @@
 :root {
   /*
-    Tokens de marque historiques.
-    Les valeurs identiques a la palette Cadence pointent vers --theme-* pour
-    eviter de maintenir deux sources divergentes. Les fonds restent separes :
-    ils sont utilises comme variantes plus compactes dans certains blocs.
+    Tokens de compatibilite pour les anciennes classes.
+    Un skin peut remplacer ces valeurs sans toucher aux selecteurs historiques.
   */
-  --cadence-brand-bg-light: #e9d8c9;
-  --cadence-brand-bg-dark: #24130f;
+  --cadence-brand-bg-light: color-mix(in srgb, var(--ui-accent) 18%, var(--ui-surface));
+  --cadence-brand-bg-dark: color-mix(in srgb, var(--ui-primary-strong) 52%, var(--ui-bg));
   --cadence-brand-purple-dark: var(--theme-purple-deep);
   --cadence-brand-purple: var(--theme-purple);
   --cadence-brand-orange: var(--theme-orange);
@@ -14,45 +12,453 @@
   --cadence-brand-ivory: var(--theme-dark-text);
   --cadence-brand-gold: var(--theme-gold);
   --cadence-brand-mist: var(--theme-mist);
+
+  --override-brand-bg: var(--cadence-brand-bg-light);
+  --override-brand-border: color-mix(in srgb, var(--ui-primary-strong) 12%, transparent);
+  --override-brand-title: var(--ui-primary-strong);
+  --override-section-bg: color-mix(in srgb, var(--ui-muted) 12%, transparent);
+  --override-section-border: color-mix(in srgb, var(--ui-muted) 18%, transparent);
+
+  --override-warning-bg: color-mix(in srgb, var(--ui-warning-text) 16%, transparent);
+  --override-warning-border: color-mix(in srgb, var(--ui-warning-text) 60%, transparent);
+  --override-warning-shadow: color-mix(in srgb, var(--ui-warning-text) 16%, transparent);
+  --override-warning-strong: color-mix(in srgb, var(--ui-warning-text) 70%, var(--ui-primary-strong));
+
+  --override-success: var(--ui-success);
+  --override-success-soft: var(--ui-success-soft);
+  --override-success-border: var(--ui-success-border);
+  --override-success-contrast: var(--ui-success-contrast);
+
+  --override-overflow: var(--ui-accent);
+  --override-overflow-soft: color-mix(in srgb, var(--override-overflow) 8%, transparent);
+  --override-overflow-text: color-mix(in srgb, var(--override-overflow) 46%, var(--ui-primary-strong));
+  --override-overflow-badge-bg: color-mix(in srgb, var(--override-overflow) 18%, var(--ui-surface));
+  --override-overflow-badge-border: color-mix(in srgb, var(--override-overflow) 58%, var(--ui-border));
+
+  --override-cycle: color-mix(in srgb, var(--ui-primary) 72%, var(--ui-accent));
+  --override-total-text: color-mix(in srgb, var(--ui-primary) 62%, var(--ui-primary-strong));
+  --override-total-bg: color-mix(in srgb, var(--ui-primary) 18%, var(--ui-surface));
+  --override-total-border: color-mix(in srgb, var(--ui-primary) 48%, var(--ui-border));
+
+  --override-threshold-neutral: #94a3b8;
+  --override-threshold-green: #22c55e;
+  --override-threshold-amber: #f59e0b;
+  --override-threshold-red: #ef4444;
+  --override-threshold-blue: #3b82f6;
+  --override-threshold-violet: #8b5cf6;
+  --threshold-a: var(--override-threshold-neutral);
+  --threshold-b: var(--override-threshold-neutral);
+
+  --override-light-panel: color-mix(in srgb, var(--ui-surface) 94%, var(--ui-accent));
+  --override-light-panel-soft: color-mix(in srgb, var(--ui-surface) 84%, transparent);
+  --override-light-panel-border: color-mix(in srgb, var(--ui-primary-strong) 8%, transparent);
+  --override-light-panel-shadow: color-mix(in srgb, var(--ui-primary-strong) 10%, transparent);
+  --override-light-text: var(--ui-primary-strong);
+
+  --override-dark-panel: color-mix(in srgb, var(--ui-bg) 90%, var(--ui-surface));
+  --override-dark-panel-soft: color-mix(in srgb, var(--ui-bg) 68%, transparent);
+  --override-dark-panel-border: color-mix(in srgb, var(--ui-muted) 22%, transparent);
+  --override-dark-panel-shadow: color-mix(in srgb, black 38%, transparent);
+  --override-dark-text: var(--ui-text);
+
+  --override-bottom-bg: color-mix(in srgb, var(--cadence-brand-bg-light) 96%, transparent);
+  --override-bottom-border: color-mix(in srgb, var(--cadence-brand-purple-dark) 22%, transparent);
+  --override-bottom-shadow: color-mix(in srgb, var(--cadence-brand-purple-dark) 18%, transparent);
+  --override-bottom-control-bg: color-mix(in srgb, var(--ui-surface) 80%, var(--cadence-brand-orange));
+  --override-bottom-control-border: color-mix(in srgb, var(--cadence-brand-orange) 55%, transparent);
+  --override-bottom-control-text: var(--cadence-brand-purple-dark);
+  --override-bottom-primary-text: color-mix(in srgb, var(--ui-surface) 88%, white);
 }
-.menu-brand{display:flex;align-items:center;gap:10px;margin:-2px 0 10px;padding:8px 10px;border-radius:20px;background:var(--cadence-brand-bg-light);border:1px solid rgba(51,21,58,.12)}.dark .menu-brand{background:var(--cadence-brand-bg-dark);border-color:rgba(243,231,220,.14)}.menu-brand img{width:48px;height:48px;object-fit:contain;flex:0 0 auto}.menu-brand strong{display:block;font-size:15px;line-height:1;color:#33153a}.dark .menu-brand strong{color:#f3e7dc}.menu-brand span{display:block;font-size:11px;font-weight:800}
-.scene-options{margin-top:12px;padding:10px;border-radius:18px;background:rgba(148,163,184,.12);border:1px solid rgba(148,163,184,.18)}
-.compact-option-title{display:flex;align-items:center;justify-content:space-between;gap:8px}.compact-option-title h3{margin:0}
-.tracker-title{display:flex;align-items:center;gap:8px;min-width:0}
-.template-warning{background:rgba(245,158,11,.16)!important;border-color:rgba(245,158,11,.6)!important;box-shadow:0 0 0 3px rgba(245,158,11,.12),0 10px 24px rgba(245,158,11,.16)}.template-warning strong{color:#92400e}.dark .template-warning{background:rgba(120,53,15,.55)!important;border-color:#f59e0b!important}.dark .template-warning strong{color:#fde68a}
-.global-mini{position:relative}.global-mini.auto-active .global-mini-main{box-shadow:0 0 0 2px rgba(52,211,153,.18),0 0 12px rgba(52,211,153,.22);border-color:rgba(52,211,153,.45)}
-.active-box:has(.global-mini.threshold-glow-neutral){--threshold-a:#94a3b8;--threshold-b:#94a3b8}.active-box:has(.global-mini.threshold-glow-green){--threshold-a:#22c55e;--threshold-b:#22c55e}.active-box:has(.global-mini.threshold-glow-amber){--threshold-a:#f59e0b;--threshold-b:#f59e0b}.active-box:has(.global-mini.threshold-glow-red){--threshold-a:#ef4444;--threshold-b:#ef4444}.active-box:has(.global-mini.threshold-glow-blue){--threshold-a:#3b82f6;--threshold-b:#3b82f6}.active-box:has(.global-mini.threshold-glow-violet){--threshold-a:#8b5cf6;--threshold-b:#8b5cf6}
-.active-box:has(.global-mini.threshold-glow-secondary-neutral){--threshold-b:#94a3b8}.active-box:has(.global-mini.threshold-glow-secondary-green){--threshold-b:#22c55e}.active-box:has(.global-mini.threshold-glow-secondary-amber){--threshold-b:#f59e0b}.active-box:has(.global-mini.threshold-glow-secondary-red){--threshold-b:#ef4444}.active-box:has(.global-mini.threshold-glow-secondary-blue){--threshold-b:#3b82f6}.active-box:has(.global-mini.threshold-glow-secondary-violet){--threshold-b:#8b5cf6}
-.active-box:has(.global-mini.threshold-glow){background:linear-gradient(115deg,color-mix(in srgb,var(--threshold-a,#94a3b8) 38%,rgba(255,255,255,.9)) 0%,rgba(255,255,255,.84) 38%,color-mix(in srgb,var(--threshold-b,#94a3b8) 54%,rgba(255,255,255,.86)) 82%,color-mix(in srgb,var(--threshold-b,#94a3b8) 66%,rgba(255,255,255,.8)) 100%),rgba(255,255,255,.94);border-color:color-mix(in srgb,var(--threshold-a,#94a3b8) 72%,rgba(15,23,42,.08));box-shadow:0 0 0 3px color-mix(in srgb,var(--threshold-a,#94a3b8) 28%,transparent),10px 0 26px color-mix(in srgb,var(--threshold-b,#94a3b8) 30%,transparent),0 12px 30px rgba(15,23,42,.1)}
-.active-box:has(.global-mini.threshold-glow) .active-name strong{color:color-mix(in srgb,var(--threshold-a,#94a3b8) 64%,#0f172a)}
-.dark .active-box:has(.global-mini.threshold-glow){background:linear-gradient(115deg,color-mix(in srgb,var(--threshold-a,#94a3b8) 36%,rgba(15,23,42,.88)) 0%,rgba(15,23,42,.78) 38%,color-mix(in srgb,var(--threshold-b,#94a3b8) 48%,rgba(15,23,42,.82)) 82%,color-mix(in srgb,var(--threshold-b,#94a3b8) 58%,rgba(15,23,42,.78)) 100%),rgba(15,23,42,.9);border-color:color-mix(in srgb,var(--threshold-a,#94a3b8) 78%,rgba(148,163,184,.22));box-shadow:0 0 0 3px color-mix(in srgb,var(--threshold-a,#94a3b8) 24%,transparent),10px 0 28px color-mix(in srgb,var(--threshold-b,#94a3b8) 26%,transparent),0 20px 40px rgba(0,0,0,.38)}
-.dark .active-box:has(.global-mini.threshold-glow) .active-name strong{color:color-mix(in srgb,var(--threshold-a,#94a3b8) 42%,#f8fafc)}
-.global-mini.threshold-glow .global-mini-main{background:linear-gradient(115deg,color-mix(in srgb,var(--threshold-a,#94a3b8) 36%,rgba(248,250,252,.94)) 0%,rgba(248,250,252,.86) 36%,color-mix(in srgb,var(--threshold-b,#94a3b8) 52%,rgba(248,250,252,.9)) 84%,color-mix(in srgb,var(--threshold-b,#94a3b8) 64%,rgba(248,250,252,.84)) 100%);border-color:color-mix(in srgb,var(--threshold-a,#94a3b8) 72%,rgba(148,163,184,.22));box-shadow:0 0 0 3px color-mix(in srgb,var(--threshold-a,#94a3b8) 22%,transparent),8px 0 18px color-mix(in srgb,var(--threshold-b,#94a3b8) 32%,transparent)}
-.dark .global-mini.threshold-glow .global-mini-main{background:linear-gradient(115deg,color-mix(in srgb,var(--threshold-a,#94a3b8) 34%,rgba(2,6,23,.9)) 0%,rgba(2,6,23,.68) 36%,color-mix(in srgb,var(--threshold-b,#94a3b8) 48%,rgba(2,6,23,.82)) 84%,color-mix(in srgb,var(--threshold-b,#94a3b8) 58%,rgba(2,6,23,.78)) 100%);border-color:color-mix(in srgb,var(--threshold-a,#94a3b8) 72%,rgba(148,163,184,.22))}
-.global-mini.auto-tick .global-mini-main{animation:globalTick .75s ease-out}.auto-plus{position:absolute;right:-8px;top:-12px;font-size:11px;font-weight:900;color:#059669;background:#ecfdf5;border:1px solid #6ee7b7;border-radius:999px;padding:1px 4px;animation:autoPlus .9s ease-out both;pointer-events:none}.dark .auto-plus{background:#064e3b;color:#a7f3d0;border-color:#10b981}
-.global-clock.counter-mode{grid-template-rows:1fr!important;padding:0!important}.global-clock.counter-mode span{align-self:center!important;transform:translateY(-1px);font-size:14px!important}
-.global-mini.overflowing .global-mini-main{box-shadow:none;border-color:rgba(148,163,184,.28)}
-.global-mini.overflowing .global-clock{overflow:visible!important;border-color:#f59e0b!important;animation:none!important}
-.global-mini.overflowing .global-clock::before{z-index:2}
-.global-mini.overflowing .global-clock span,.global-mini.overflowing .global-clock small{z-index:4}
-.global-clock.overflowing::after{content:"";position:absolute;inset:-7px;border-radius:999px;background:conic-gradient(#f97316 var(--overflow-progress),rgba(249,115,22,.08) 0);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 6px),#000 calc(100% - 5px));mask:radial-gradient(farthest-side,transparent calc(100% - 6px),#000 calc(100% - 5px));z-index:3;filter:drop-shadow(0 0 6px rgba(249,115,22,.7));pointer-events:none}
-.dark .global-clock.overflowing::after{background:conic-gradient(#facc15 var(--overflow-progress),rgba(250,204,21,.08) 0);filter:drop-shadow(0 0 7px rgba(250,204,21,.72))}
-.global-mini.cycle-complete .global-mini-main{border-color:#d946ef;box-shadow:0 0 0 3px rgba(217,70,239,.18),0 0 14px rgba(217,70,239,.25)}
-.global-mini.cycle-complete .global-clock{border-color:#d946ef!important;animation:cycleCompletePulse 1.15s ease-in-out infinite}
-.overflow-badge{position:absolute;right:14px;top:-13px;border-radius:999px;padding:1px 5px;font-size:10px;font-weight:900;color:#7c2d12;background:#ffedd5;border:1px solid #fb923c;box-shadow:0 2px 10px rgba(249,115,22,.25);z-index:5;pointer-events:none}.dark .overflow-badge{color:#fef3c7;background:#78350f;border-color:#facc15}
-.global-total-badge{position:absolute;left:14px;bottom:-12px;border-radius:999px;padding:1px 5px;font-size:10px;font-weight:900;color:#164e63;background:#cffafe;border:1px solid #67e8f9;box-shadow:0 2px 10px rgba(8,145,178,.2);z-index:5;pointer-events:none}.dark .global-total-badge{color:#ecfeff;background:#164e63;border-color:#22d3ee}.global-mini.timer-alert .global-clock{border-color:#f97316!important;box-shadow:0 0 0 3px rgba(249,115,22,.2),0 0 18px rgba(249,115,22,.35)}
-.bottom{background:rgba(233,216,201,.96);border-color:rgba(49,18,54,.22);box-shadow:0 0 0 1px rgba(81,22,90,.08),0 16px 34px rgba(49,18,54,.18)}
-.bottom .small-btn{background:#fff7ed;border-color:rgba(199,94,25,.55);color:var(--cadence-brand-purple-dark);box-shadow:0 2px 9px rgba(49,18,54,.1)}
-.bottom .turn-btn{background:var(--cadence-brand-purple-dark);border-color:rgba(81,22,90,.72);color:#fff7ed;box-shadow:0 2px 10px rgba(49,18,54,.22)}
-.bottom .primary{background:var(--cadence-brand-purple);border:1px solid rgba(199,94,25,.62);color:#fff7ed;box-shadow:0 0 0 2px rgba(199,94,25,.12),0 4px 16px rgba(81,22,90,.24)}
-.bottom .primary.next-round{background:var(--cadence-brand-orange-deep);border-color:var(--cadence-brand-purple-dark);box-shadow:0 0 0 2px rgba(199,94,25,.18),0 4px 18px rgba(199,94,25,.24)}
-.bottom .primary.blocked{background:var(--cadence-brand-purple-dark);border-color:var(--cadence-brand-orange);box-shadow:0 0 0 2px rgba(199,94,25,.18),0 4px 18px rgba(49,18,54,.32)}
-.dark .bottom{background:rgba(36,19,15,.96);border-color:rgba(210,164,86,.46);box-shadow:0 0 0 1px rgba(240,221,182,.12),0 18px 42px rgba(0,0,0,.58),0 -2px 18px rgba(210,164,86,.1)}
-.dark .bottom .small-btn{background:#3a211b;border-color:rgba(210,164,86,.72);color:var(--cadence-brand-ivory);box-shadow:0 2px 10px rgba(0,0,0,.3)}
-.dark .bottom .turn-btn{background:#120907;border-color:rgba(210,164,86,.72);color:var(--cadence-brand-ivory);box-shadow:0 2px 10px rgba(0,0,0,.32)}
-.dark .bottom .primary{background:#5b2618;border:1px solid var(--cadence-brand-gold);color:var(--cadence-brand-ivory);box-shadow:0 0 0 2px rgba(210,164,86,.16),0 4px 16px rgba(0,0,0,.34)}
-.dark .bottom .primary.next-round{background:#7a341f;border-color:var(--cadence-brand-gold);box-shadow:0 0 0 2px rgba(210,164,86,.2),0 4px 18px rgba(210,164,86,.18)}
-.dark .bottom .primary.blocked{background:#4a1526;border-color:#d2a456;box-shadow:0 0 0 2px rgba(210,164,86,.18),0 4px 18px rgba(74,21,38,.4)}
-@keyframes cycleCompletePulse{0%,100%{filter:brightness(1);transform:scale(1)}50%{filter:brightness(1.15);transform:scale(1.05)}}
-@keyframes globalTick{0%{transform:scale(1);filter:brightness(1)}35%{transform:scale(1.08);filter:brightness(1.2)}100%{transform:scale(1)}}
-@keyframes autoPlus{0%{transform:translateY(4px) scale(.8);opacity:0}25%{opacity:1}100%{transform:translateY(-12px) scale(1);opacity:0}}
+
+.dark {
+  --override-brand-bg: var(--cadence-brand-bg-dark);
+  --override-brand-border: color-mix(in srgb, var(--cadence-brand-ivory) 14%, transparent);
+  --override-brand-title: var(--cadence-brand-ivory);
+  --override-warning-bg: color-mix(in srgb, var(--ui-warning-text) 18%, var(--ui-bg));
+  --override-warning-strong: color-mix(in srgb, var(--ui-warning-text) 78%, var(--ui-text));
+  --override-overflow: var(--ui-warning-text);
+  --override-overflow-badge-bg: color-mix(in srgb, var(--override-overflow) 24%, var(--ui-bg));
+  --override-total-bg: color-mix(in srgb, var(--ui-primary) 28%, var(--ui-bg));
+  --override-total-text: color-mix(in srgb, var(--ui-primary) 24%, var(--ui-text));
+  --override-total-border: color-mix(in srgb, var(--ui-primary) 58%, var(--ui-border));
+  --override-bottom-bg: color-mix(in srgb, var(--cadence-brand-bg-dark) 96%, transparent);
+  --override-bottom-border: color-mix(in srgb, var(--cadence-brand-gold) 46%, transparent);
+  --override-bottom-shadow: color-mix(in srgb, black 58%, transparent);
+  --override-bottom-control-bg: color-mix(in srgb, var(--cadence-brand-bg-dark) 68%, var(--cadence-brand-gold));
+  --override-bottom-control-border: color-mix(in srgb, var(--cadence-brand-gold) 72%, transparent);
+  --override-bottom-control-text: var(--cadence-brand-ivory);
+  --override-bottom-primary-text: var(--cadence-brand-ivory);
+}
+
+.menu-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: -2px 0 10px;
+  padding: 8px 10px;
+  border-radius: 20px;
+  background: var(--override-brand-bg);
+  border: 1px solid var(--override-brand-border);
+}
+
+.menu-brand img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+
+.menu-brand strong {
+  display: block;
+  font-size: 15px;
+  line-height: 1;
+  color: var(--override-brand-title);
+}
+
+.menu-brand span {
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.scene-options {
+  margin-top: 12px;
+  padding: 10px;
+  border-radius: 18px;
+  background: var(--override-section-bg);
+  border: 1px solid var(--override-section-border);
+}
+
+.compact-option-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.compact-option-title h3 {
+  margin: 0;
+}
+
+.tracker-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.template-warning {
+  background: var(--override-warning-bg) !important;
+  border-color: var(--override-warning-border) !important;
+  box-shadow: 0 0 0 3px var(--override-warning-shadow), 0 10px 24px var(--override-warning-shadow);
+}
+
+.template-warning strong {
+  color: var(--override-warning-strong);
+}
+
+.global-mini {
+  position: relative;
+}
+
+.global-mini.auto-active .global-mini-main {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--override-success) 18%, transparent), 0 0 12px color-mix(in srgb, var(--override-success) 22%, transparent);
+  border-color: color-mix(in srgb, var(--override-success) 45%, transparent);
+}
+
+.active-box:has(.global-mini.threshold-glow-neutral) {
+  --threshold-a: var(--override-threshold-neutral);
+  --threshold-b: var(--override-threshold-neutral);
+}
+
+.active-box:has(.global-mini.threshold-glow-green) {
+  --threshold-a: var(--override-threshold-green);
+  --threshold-b: var(--override-threshold-green);
+}
+
+.active-box:has(.global-mini.threshold-glow-amber) {
+  --threshold-a: var(--override-threshold-amber);
+  --threshold-b: var(--override-threshold-amber);
+}
+
+.active-box:has(.global-mini.threshold-glow-red) {
+  --threshold-a: var(--override-threshold-red);
+  --threshold-b: var(--override-threshold-red);
+}
+
+.active-box:has(.global-mini.threshold-glow-blue) {
+  --threshold-a: var(--override-threshold-blue);
+  --threshold-b: var(--override-threshold-blue);
+}
+
+.active-box:has(.global-mini.threshold-glow-violet) {
+  --threshold-a: var(--override-threshold-violet);
+  --threshold-b: var(--override-threshold-violet);
+}
+
+.active-box:has(.global-mini.threshold-glow-secondary-neutral) { --threshold-b: var(--override-threshold-neutral); }
+.active-box:has(.global-mini.threshold-glow-secondary-green) { --threshold-b: var(--override-threshold-green); }
+.active-box:has(.global-mini.threshold-glow-secondary-amber) { --threshold-b: var(--override-threshold-amber); }
+.active-box:has(.global-mini.threshold-glow-secondary-red) { --threshold-b: var(--override-threshold-red); }
+.active-box:has(.global-mini.threshold-glow-secondary-blue) { --threshold-b: var(--override-threshold-blue); }
+.active-box:has(.global-mini.threshold-glow-secondary-violet) { --threshold-b: var(--override-threshold-violet); }
+
+.active-box:has(.global-mini.threshold-glow) {
+  background:
+    linear-gradient(115deg,
+      color-mix(in srgb, var(--threshold-a) 38%, var(--override-light-panel)) 0%,
+      var(--override-light-panel-soft) 38%,
+      color-mix(in srgb, var(--threshold-b) 54%, var(--override-light-panel)) 82%,
+      color-mix(in srgb, var(--threshold-b) 66%, var(--override-light-panel)) 100%),
+    var(--override-light-panel);
+  border-color: color-mix(in srgb, var(--threshold-a) 72%, var(--override-light-panel-border));
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--threshold-a) 28%, transparent),
+    10px 0 26px color-mix(in srgb, var(--threshold-b) 30%, transparent),
+    0 12px 30px var(--override-light-panel-shadow);
+}
+
+.active-box:has(.global-mini.threshold-glow) .active-name strong {
+  color: color-mix(in srgb, var(--threshold-a) 64%, var(--override-light-text));
+}
+
+.dark .active-box:has(.global-mini.threshold-glow) {
+  background:
+    linear-gradient(115deg,
+      color-mix(in srgb, var(--threshold-a) 36%, var(--override-dark-panel)) 0%,
+      var(--override-dark-panel-soft) 38%,
+      color-mix(in srgb, var(--threshold-b) 48%, var(--override-dark-panel)) 82%,
+      color-mix(in srgb, var(--threshold-b) 58%, var(--override-dark-panel)) 100%),
+    var(--override-dark-panel);
+  border-color: color-mix(in srgb, var(--threshold-a) 78%, var(--override-dark-panel-border));
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--threshold-a) 24%, transparent),
+    10px 0 28px color-mix(in srgb, var(--threshold-b) 26%, transparent),
+    0 20px 40px var(--override-dark-panel-shadow);
+}
+
+.dark .active-box:has(.global-mini.threshold-glow) .active-name strong {
+  color: color-mix(in srgb, var(--threshold-a) 42%, var(--override-dark-text));
+}
+
+.global-mini.threshold-glow .global-mini-main {
+  background:
+    linear-gradient(115deg,
+      color-mix(in srgb, var(--threshold-a) 36%, var(--override-light-panel)) 0%,
+      var(--override-light-panel-soft) 36%,
+      color-mix(in srgb, var(--threshold-b) 52%, var(--override-light-panel)) 84%,
+      color-mix(in srgb, var(--threshold-b) 64%, var(--override-light-panel)) 100%);
+  border-color: color-mix(in srgb, var(--threshold-a) 72%, var(--override-light-panel-border));
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--threshold-a) 22%, transparent),
+    8px 0 18px color-mix(in srgb, var(--threshold-b) 32%, transparent);
+}
+
+.dark .global-mini.threshold-glow .global-mini-main {
+  background:
+    linear-gradient(115deg,
+      color-mix(in srgb, var(--threshold-a) 34%, var(--override-dark-panel)) 0%,
+      var(--override-dark-panel-soft) 36%,
+      color-mix(in srgb, var(--threshold-b) 48%, var(--override-dark-panel)) 84%,
+      color-mix(in srgb, var(--threshold-b) 58%, var(--override-dark-panel)) 100%);
+  border-color: color-mix(in srgb, var(--threshold-a) 72%, var(--override-dark-panel-border));
+}
+
+.global-mini.auto-tick .global-mini-main {
+  animation: globalTick .75s ease-out;
+}
+
+.auto-plus {
+  position: absolute;
+  right: -8px;
+  top: -12px;
+  font-size: 11px;
+  font-weight: 900;
+  color: var(--override-success-contrast);
+  background: var(--override-success-soft);
+  border: 1px solid var(--override-success-border);
+  border-radius: 999px;
+  padding: 1px 4px;
+  animation: autoPlus .9s ease-out both;
+  pointer-events: none;
+}
+
+.global-clock.counter-mode {
+  grid-template-rows: 1fr !important;
+  padding: 0 !important;
+}
+
+.global-clock.counter-mode span {
+  align-self: center !important;
+  transform: translateY(-1px);
+  font-size: 14px !important;
+}
+
+.global-mini.overflowing .global-mini-main {
+  box-shadow: none;
+  border-color: color-mix(in srgb, var(--ui-muted) 28%, transparent);
+}
+
+.global-mini.overflowing .global-clock {
+  overflow: visible !important;
+  border-color: var(--override-overflow) !important;
+  animation: none !important;
+}
+
+.global-mini.overflowing .global-clock::before {
+  z-index: 2;
+}
+
+.global-mini.overflowing .global-clock span,
+.global-mini.overflowing .global-clock small {
+  z-index: 4;
+}
+
+.global-clock.overflowing::after {
+  content: "";
+  position: absolute;
+  inset: -7px;
+  border-radius: 999px;
+  background: conic-gradient(var(--override-overflow) var(--overflow-progress), var(--override-overflow-soft) 0);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 6px), black calc(100% - 5px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 6px), black calc(100% - 5px));
+  z-index: 3;
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--override-overflow) 70%, transparent));
+  pointer-events: none;
+}
+
+.dark .global-clock.overflowing::after {
+  filter: drop-shadow(0 0 7px color-mix(in srgb, var(--override-overflow) 72%, transparent));
+}
+
+.global-mini.cycle-complete .global-mini-main {
+  border-color: var(--override-cycle);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--override-cycle) 18%, transparent), 0 0 14px color-mix(in srgb, var(--override-cycle) 25%, transparent);
+}
+
+.global-mini.cycle-complete .global-clock {
+  border-color: var(--override-cycle) !important;
+  animation: cycleCompletePulse 1.15s ease-in-out infinite;
+}
+
+.overflow-badge,
+.global-total-badge {
+  position: absolute;
+  border-radius: 999px;
+  padding: 1px 5px;
+  font-size: 10px;
+  font-weight: 900;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.overflow-badge {
+  right: 14px;
+  top: -13px;
+  color: var(--override-overflow-text);
+  background: var(--override-overflow-badge-bg);
+  border: 1px solid var(--override-overflow-badge-border);
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--override-overflow) 25%, transparent);
+}
+
+.global-total-badge {
+  left: 14px;
+  bottom: -12px;
+  color: var(--override-total-text);
+  background: var(--override-total-bg);
+  border: 1px solid var(--override-total-border);
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--ui-primary) 20%, transparent);
+}
+
+.global-mini.timer-alert .global-clock {
+  border-color: var(--override-overflow) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--override-overflow) 20%, transparent), 0 0 18px color-mix(in srgb, var(--override-overflow) 35%, transparent);
+}
+
+.bottom {
+  background: var(--override-bottom-bg);
+  border-color: var(--override-bottom-border);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--cadence-brand-purple) 8%, transparent), 0 16px 34px var(--override-bottom-shadow);
+}
+
+.bottom .small-btn {
+  background: var(--override-bottom-control-bg);
+  border-color: var(--override-bottom-control-border);
+  color: var(--override-bottom-control-text);
+  box-shadow: 0 2px 9px color-mix(in srgb, var(--cadence-brand-purple-dark) 10%, transparent);
+}
+
+.bottom .turn-btn {
+  background: var(--cadence-brand-purple-dark);
+  border-color: color-mix(in srgb, var(--cadence-brand-purple) 72%, transparent);
+  color: var(--override-bottom-primary-text);
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--cadence-brand-purple-dark) 22%, transparent);
+}
+
+.bottom .primary {
+  background: var(--cadence-brand-purple);
+  border: 1px solid color-mix(in srgb, var(--cadence-brand-orange) 62%, transparent);
+  color: var(--override-bottom-primary-text);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--cadence-brand-orange) 12%, transparent), 0 4px 16px color-mix(in srgb, var(--cadence-brand-purple) 24%, transparent);
+}
+
+.bottom .primary.next-round {
+  background: var(--cadence-brand-orange-deep);
+  border-color: var(--cadence-brand-purple-dark);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--cadence-brand-orange) 18%, transparent), 0 4px 18px color-mix(in srgb, var(--cadence-brand-orange) 24%, transparent);
+}
+
+.bottom .primary.blocked {
+  background: var(--cadence-brand-purple-dark);
+  border-color: var(--cadence-brand-orange);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--cadence-brand-orange) 18%, transparent), 0 4px 18px color-mix(in srgb, var(--cadence-brand-purple-dark) 32%, transparent);
+}
+
+.dark .bottom {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--cadence-brand-ivory) 12%, transparent), 0 18px 42px var(--override-bottom-shadow), 0 -2px 18px color-mix(in srgb, var(--cadence-brand-gold) 10%, transparent);
+}
+
+.dark .bottom .small-btn {
+  box-shadow: 0 2px 10px color-mix(in srgb, black 30%, transparent);
+}
+
+.dark .bottom .turn-btn {
+  background: color-mix(in srgb, var(--cadence-brand-bg-dark) 76%, black);
+  border-color: var(--override-bottom-control-border);
+  box-shadow: 0 2px 10px color-mix(in srgb, black 32%, transparent);
+}
+
+.dark .bottom .primary {
+  background: color-mix(in srgb, var(--cadence-brand-orange-deep) 44%, var(--cadence-brand-bg-dark));
+  border: 1px solid var(--cadence-brand-gold);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--cadence-brand-gold) 16%, transparent), 0 4px 16px color-mix(in srgb, black 34%, transparent);
+}
+
+.dark .bottom .primary.next-round {
+  background: color-mix(in srgb, var(--cadence-brand-orange-deep) 70%, var(--cadence-brand-bg-dark));
+  border-color: var(--cadence-brand-gold);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--cadence-brand-gold) 20%, transparent), 0 4px 18px color-mix(in srgb, var(--cadence-brand-gold) 18%, transparent);
+}
+
+.dark .bottom .primary.blocked {
+  background: color-mix(in srgb, var(--cadence-brand-purple-dark) 66%, var(--theme-danger));
+  border-color: var(--cadence-brand-gold);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--cadence-brand-gold) 18%, transparent), 0 4px 18px color-mix(in srgb, var(--theme-danger) 40%, transparent);
+}
+
+@keyframes cycleCompletePulse {
+  0%, 100% { filter: brightness(1); transform: scale(1); }
+  50% { filter: brightness(1.15); transform: scale(1.05); }
+}
+
+@keyframes globalTick {
+  0% { transform: scale(1); filter: brightness(1); }
+  35% { transform: scale(1.08); filter: brightness(1.2); }
+  100% { transform: scale(1); }
+}
+
+@keyframes autoPlus {
+  0% { transform: translateY(4px) scale(.8); opacity: 0; }
+  25% { opacity: 1; }
+  100% { transform: translateY(-12px) scale(1); opacity: 0; }
+}

@@ -1,4 +1,5 @@
 import { t } from '../../i18n/index.js';
+import { getCadenceLogo, uiGlyphs } from '../../uiAssets.js';
 import { participantEstInactif, participantEstLimite } from '../../domain/statuses.js';
 import { BadgeRound, EtiquetteEtat } from '../commun/ComposantsCommuns.jsx';
 import { CompteurGlobal } from '../suivis/CompteurGlobal.jsx';
@@ -37,7 +38,7 @@ export function EnteteScene(props) {
       : activationSimultanee
         ? groupeActif.map((participant) => participant.name).join(' + ')
         : temporaliteDeclaration && !actif ? t('scene.header.declareActions') : actif?.name || t('scene.header.noParticipant');
-  const suffixeTemporalite = `${temporaliteSouple ? ` · ${t('scene.header.flexible')}` : temporalitePhases ? ` · ${t('scene.header.phases')}` : ''}${temporaliteDeclaration ? ` · ${t('scene.header.declaration')}` : ''}`;
+  const suffixeTemporalite = `${temporaliteSouple ? ` ${uiGlyphs.middleDot} ${t('scene.header.flexible')}` : temporalitePhases ? ` ${uiGlyphs.middleDot} ${t('scene.header.phases')}` : ''}${temporaliteDeclaration ? ` ${uiGlyphs.middleDot} ${t('scene.header.declaration')}` : ''}`;
   const actionDeclaree = temporaliteDeclaration && actif && scene.declarationStage === 'resolution' && !(scene.declarationPlayedIds || []).includes(actif.id) ? scene.declarations?.[actif.id] : '';
   const statutActif = participantEstInactif(actif) ? t('scene.status.inactive') : participantEstLimite(actif) ? t('scene.status.limited') : t('scene.status.active');
   const libelleActivation = enPreparation
@@ -47,7 +48,7 @@ export function EnteteScene(props) {
       : activationSimultanee
         ? t('scene.header.simultaneousParticipants')
         : temporaliteDeclaration && !actif ? t('scene.header.declaration') : statutActif;
-  const logo = dark ? '/branding/logo-cadence-dark.svg' : '/branding/logo-cadence-light.svg';
+  const logo = getCadenceLogo(dark);
 
   return (
     <header className="top compact">
@@ -55,7 +56,7 @@ export function EnteteScene(props) {
         <button className="hub-return-logo" onClick={onRetourHub} aria-label={t('scene.header.returnHubAria')}><img src={logo} alt="" /></button>
         <div className="scene-title-block" style={{ minWidth: 0 }}>
           <h1>{scene.title}</h1>
-          <div className="muted">{scene.type} · {t('scene.header.participantsInInitiative', { count: scene.participants.length })}{suffixeTemporalite}</div>
+          <div className="muted">{scene.type} {uiGlyphs.middleDot} {t('scene.header.participantsInInitiative', { count: scene.participants.length })}{suffixeTemporalite}</div>
         </div>
         <BadgeRound round={scene.round} effect={effetRound} phase={temporalitePhases ? scene.phase || 1 : null} surpriseRound={!!scene.surpriseRoundActive} />
       </div>
@@ -70,7 +71,7 @@ export function EnteteScene(props) {
             <CompteurGlobal compteur={scene.globalTracker} onChanger={onModifierCompteurGlobal} onToggleTemps={onToggleCompteurTemps} animationTick={compteurGlobalAuto} />
           </div>
         </div>
-        <button className={`turn-btn next ${classeSuivant}`} onClick={onTourSuivant} disabled={suivantDesactive} aria-label={libelleSuivant}>{horlogeABloquee ? '⏸' : '➜'}</button>
+        <button className={`turn-btn next ${classeSuivant}`} onClick={onTourSuivant} disabled={suivantDesactive} aria-label={libelleSuivant}>{horlogeABloquee ? uiGlyphs.pause : uiGlyphs.next}</button>
       </div>
       <div className="statuses status-control-row scene-status-row">
         {(scene.statuses || []).map((etat) => <EtiquetteEtat key={etat.id} etat={etat} onModifier={() => onModifierEtatScene?.(etat.id)} onRetirer={() => onRetirerEtatScene?.(etat.id)} />)}

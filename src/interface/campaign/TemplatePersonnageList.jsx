@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { t } from '../../i18n/index.js';
+import { uiGlyphs } from '../../uiAssets.js';
 import { BoutonIconeTemplate } from './TemplateRows.jsx';
 
 function grouperTemplates(templates = [], categories = []) {
@@ -61,7 +62,7 @@ function EnteteCategorieTemplate({ groupe, index, total, onAjouterTemplateCatego
       <strong>{groupe.templates.length}</strong>
       <span className="template-category-label template-title-with-action">
         <span>{groupe.categorie}</span>
-        <BoutonIconeTemplate className="template-edit-icon" label={t('templates.personnages.renameCategoryAria')} onClick={() => setRenommage(true)}>✎</BoutonIconeTemplate>
+        <BoutonIconeTemplate className="template-edit-icon" label={t('templates.personnages.renameCategoryAria')} onClick={() => setRenommage(true)}>{uiGlyphs.edit}</BoutonIconeTemplate>
       </span>
       <div className="compact-arrows template-category-actions">
         <BoutonIconeTemplate label={t('templates.personnages.addTemplateAria')} onClick={() => onAjouterTemplateCategorie(groupe.categorie)}>+</BoutonIconeTemplate>
@@ -81,12 +82,12 @@ function LigneTemplate({ template, onEditerTemplate, onDupliquerTemplate, onSupp
       <span className="template-row-main">
         <span className="template-title-with-action">
           <strong>{template.name}</strong>
-          <BoutonIconeTemplate className="template-edit-icon" label={t('templates.personnages.editAria', { name: template.name })} onClick={() => onEditerTemplate(template.id)}>✎</BoutonIconeTemplate>
+          <BoutonIconeTemplate className="template-edit-icon" label={t('templates.personnages.editAria', { name: template.name })} onClick={() => onEditerTemplate(template.id)}>{uiGlyphs.edit}</BoutonIconeTemplate>
         </span>
         <small>{template.participant?.kind || t('templates.personnages.kindFallback')}</small>
       </span>
       <div className="compact-arrows template-row-actions">
-        <BoutonIconeTemplate label={t('templates.personnages.duplicateAria', { name: template.name })} onClick={() => onDupliquerTemplate(template.id)}>⧉</BoutonIconeTemplate>
+        <BoutonIconeTemplate label={t('templates.personnages.duplicateAria', { name: template.name })} onClick={() => onDupliquerTemplate(template.id)}>{uiGlyphs.duplicate}</BoutonIconeTemplate>
         {suppressionVisible ? (
           <button className="danger-btn mini-danger template-delete-confirm" onClick={() => onSupprimerTemplate(template.id)}>{t('common.delete')}</button>
         ) : (

@@ -1,4 +1,5 @@
 import { defaultPhaseCount } from '../../constants.js';
+import { t } from '../../i18n/index.js';
 
 export function clesPhases(phaseCount = defaultPhaseCount) {
   return Array.from({ length: Math.max(1, Math.min(20, Number(phaseCount) || defaultPhaseCount)) }, (_, index) => String(index + 1));
@@ -20,7 +21,7 @@ export function EditeurPhasesParticipant({ phaseActions = [], phaseCount = defau
 
   return (
     <div className="phase-actions-editor">
-      <div className="line-count-row"><label>Phases actives</label><strong>{valeurs.size}</strong></div>
+      <div className="line-count-row"><label>{t('initiative.phases.active')}</label><strong>{valeurs.size}</strong></div>
       <div className="phase-check-grid">
         {clesPhases(phaseCount).map((phase) => <label className={`phase-check ${valeurs.has(phase) ? 'selected' : ''}`} key={phase}><input type="checkbox" checked={valeurs.has(phase)} onChange={(event) => basculer(phase, event.target.checked)} /><span>P{phase}</span></label>)}
       </div>

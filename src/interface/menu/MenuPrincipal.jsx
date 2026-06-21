@@ -2,11 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { APP_VERSION } from '../../constants.js';
 import { activeGlobalTrackerThresholds, globalTrackerDisplayValue, globalTrackerTimerState } from '../../domain/globalTracker.js';
 import { t } from '../../i18n/index.js';
+import { getCadenceLogo, uiGlyphs } from '../../uiAssets.js';
 import { EtiquetteEtat, Fenetre } from '../commun/ComposantsCommuns.jsx';
 import { EditeurSeuilsCompteurScene } from '../suivis/CompteurGlobal.jsx';
 
 function MenuEntete({ sombre, onChangerTheme, onClose }) {
-  const logo = sombre ? '/branding/logo-cadence-dark.svg' : '/branding/logo-cadence-light.svg';
+  const logo = getCadenceLogo(sombre);
 
   return (
     <div className="menu-brand menu-brand-header">
@@ -16,11 +17,11 @@ function MenuEntete({ sombre, onChangerTheme, onClose }) {
         <span className="muted brand-meta">{t('menu.brandMeta', { version: APP_VERSION })}</span>
       </div>
       <button className={`theme-toggle ${sombre ? 'dark-on' : 'light-on'}`} onClick={() => onChangerTheme(!sombre)} aria-label={t('menu.toggleTheme')}>
-        <span>☀</span>
-        <span>☾</span>
+        <span>{uiGlyphs.themeLight}</span>
+        <span>{uiGlyphs.themeDark}</span>
         <i />
       </button>
-      <button className="icon-btn menu-close-btn" onClick={onClose} aria-label={t('common.close')}>×</button>
+      <button className="icon-btn menu-close-btn" onClick={onClose} aria-label={t('common.close')}>{uiGlyphs.close}</button>
     </div>
   );
 }
@@ -123,48 +124,6 @@ function ElementsSceneMenu({ scene, onIndicateurScene, onModifierIndicateurScene
         </div>
       )}
     </div>
-  );
-}
-
-function NotesSceneMenu({ scene, onModifierNotes }) {
-  return (
-    <details className="scene-options compact-options menu-scene-notes">
-      <summary>{t('menu.sceneNotes.title')}</summary>
-      <label className="field"><textarea rows={4} value={scene?.notes || ''} onChange={(event) => onModifierNotes?.(event.target.value)} placeholder={t('menu.sceneNotes.placeholder')} /></label>
-    </details>
-  );
-}
-
-function OptionsAvanceesScene({ scene, onAvancerRound, onReculerRound, onAvancerAutomatismes, onReculerAutomatismes }) {
-  if (!scene || scene.round < 0) return null;
-
-  return (
-    <details className="advanced-options menu-advanced-scene-actions">
-      <summary>{t('menu.advancedActions.title')}</summary>
-      <div className="menu-action-grid">
-        <button className="small-btn" onClick={onReculerRound} disabled={scene.round <= 0} title={t('menu.advancedActions.decreaseRoundHint')}>{t('menu.advancedActions.decreaseRound')}</button>
-        <button className="small-btn" onClick={onAvancerRound} title={t('menu.advancedActions.advanceRoundHint')}>{t('menu.advancedActions.advanceRoundNow')}</button>
-        <button className="small-btn" onClick={onAvancerAutomatismes} title={t('menu.advancedActions.advanceAutomationsHint')}>{t('menu.advancedActions.advanceAutomations')}</button>
-        <button className="small-btn" onClick={onReculerAutomatismes} title={t('menu.advancedActions.rewindAutomationsHint')}>{t('menu.advancedActions.rewindAutomations')}</button>
-      </div>
-      <p className="muted compact-help">{t('menu.advancedActions.help')}</p>
-    </details>
-  );
-}
-
-function OptionsDerouleScene({ scene, points, pointActif, onChoisirPoint, onRestaurer, onRetourPreparation, onAvancerRound, onReculerRound, onAvancerAutomatismes, onReculerAutomatismes, onResetSuivis }) {
-  if (!scene) return null;
-
-  return (
-    <details className="scene-options compact-options menu-flow-section">
-      <summary>{t('menu.flow.title')}</summary>
-      <div className="menu-action-grid scene-management-grid">
-        {scene.round >= 0 && <button className="small-btn" onClick={onRetourPreparation}>{t('menu.flow.returnPreparation')}</button>}
-        <button className="small-btn" onClick={onResetSuivis}>{t('menu.flow.resetTrackers')}</button>
-      </div>
-      {points.length > 0 && <RestaurationScene points={points} pointActif={pointActif} onChoisirPoint={onChoisirPoint} onRestaurer={onRestaurer} />}
-      <OptionsAvanceesScene scene={scene} onAvancerRound={onAvancerRound} onReculerRound={onReculerRound} onAvancerAutomatismes={onAvancerAutomatismes} onReculerAutomatismes={onReculerAutomatismes} />
-    </details>
   );
 }
 

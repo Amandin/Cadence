@@ -50,7 +50,6 @@ export function OngletTemplates({
   onEditerTemplate,
   onDupliquerTemplate,
   onSupprimerTemplate,
-  onImporterTemplates,
   onAjouterTemplateSuivi,
   onModifierTemplateSuivi,
   onDupliquerTemplateSuivi,
@@ -79,7 +78,6 @@ export function OngletTemplates({
   const [compteurSceneEditeId, setCompteurSceneEditeId] = useState('');
   const [etatSceneEditeId, setEtatSceneEditeId] = useState('');
   const [changementDemande, setChangementDemande] = useState(null);
-  const importInputRef = useRef(null);
   const suiviEdite = trackerTemplates.find((template) => template.id === suiviEditeId) || null;
   const etatEdite = statusTemplates.find((template) => template.id === etatEditeId) || null;
   const compteurSceneEdite = sceneCounterTemplates.find((template) => template.id === compteurSceneEditeId) || null;
@@ -98,12 +96,6 @@ export function OngletTemplates({
     if (editeurLocalOuvert) onTemplatePanelOpenChange?.(true);
   }, [editeurLocalOuvert, onTemplatePanelOpenChange]);
   useEffect(() => () => onTemplatePanelOpenChange?.(false), [onTemplatePanelOpenChange]);
-  const choisirFichier = () => importInputRef.current?.click();
-  const importerFichier = (event) => {
-    const file = event.target.files?.[0];
-    event.target.value = '';
-    if (file) onImporterTemplates(file);
-  };
   const fermerEditeursLocaux = () => {
     setSuiviEditeId('');
     setEtatEditeId('');
@@ -192,8 +184,6 @@ export function OngletTemplates({
     <div className="stack hub-section panel">
       <div className="hub-section-head">
         <h3>{t('templates.hub.title')}</h3>
-        <button className="small-btn" onClick={choisirFichier}>{t('templates.hub.import')}</button>
-        <input ref={importInputRef} type="file" accept=".cad,application/json" style={{ display: 'none' }} onChange={importerFichier} />
       </div>
       <div className="template-subtabs">
         <button className={`choice ${sousPage === 'personnages' ? 'selected' : ''}`} onClick={() => changerSousPage('personnages')}>{t('templates.tabs.personnages')}</button>

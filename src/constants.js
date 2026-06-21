@@ -13,6 +13,7 @@ export const legacyParticipantKinds = {
 export const defaultCategoryOrder = ['PJ', 'Opposant', 'Allié', 'Environnement'];
 export const defaultTiebreakerVisible = true;
 export const defaultTiebreakerLabel = 'Départage';
+export const defaultInitiativeBonusEnabled = true;
 export const defaultFlexibleUseInitiative = true;
 export const surpriseImpacts = { LIMITED: 'limited', INACTIVE: 'inactive' };
 export const defaultSurpriseImpact = surpriseImpacts.LIMITED;
@@ -45,20 +46,6 @@ export const defaultInitiativeCostThreshold = 0;
 export const defaultInitiativeCostQuickCosts = [1, 2, 3, 5];
 export const defaultInitiativeCostLimitToCurrent = false;
 
-export const temporalityLabels = {
-  [temporalityModes.CLASSIC]: 'Classique',
-  [temporalityModes.FLEXIBLE]: 'Souple',
-  [temporalityModes.PHASES]: 'Phases',
-  [temporalityModes.DECLARATION]: 'Déclaration puis résolution',
-};
-
-export const temporalityDescriptions = {
-  [temporalityModes.CLASSIC]: 'Cadence suit l’ordre d’initiative et avance au participant suivant.',
-  [temporalityModes.FLEXIBLE]: 'Les effets liés à l’activation sont résolus au début du round pour tous les personnages. Le bouton A joué ne déclenche pas d’évolution.',
-  [temporalityModes.PHASES]: 'Cadence enchaîne des phases et applique un décrément aux initiatives.',
-  [temporalityModes.DECLARATION]: 'Un temps de déclaration précède une résolution ordonnée des actions déclarées.',
-};
-
 export const equalityRules = {
   NEVER: 'never',
   STRICT: 'strict',
@@ -73,28 +60,6 @@ export const initiativeOrders = {
 };
 
 export const defaultInitiativeOrder = initiativeOrders.DESC;
-
-export const initiativeOrderLabels = {
-  [initiativeOrders.DESC]: 'Décroissant',
-  [initiativeOrders.ASC]: 'Croissant',
-};
-
-export const initiativeOrderDescriptions = {
-  [initiativeOrders.DESC]: 'Les valeurs hautes agissent d’abord.',
-  [initiativeOrders.ASC]: 'Les valeurs basses agissent d’abord.',
-};
-
-export const equalityRuleLabels = {
-  [equalityRules.NEVER]: 'Jamais',
-  [equalityRules.STRICT]: 'Par type',
-  [equalityRules.LOOSE]: 'Par initiative',
-};
-
-export const equalityRuleDescriptions = {
-  [equalityRules.NEVER]: 'Aucun vrai simultané : si tout est égal, Cadence trie par nom.',
-  [equalityRules.STRICT]: 'Simultané seulement si initiative, départage et type sont identiques.',
-  [equalityRules.LOOSE]: 'Simultané dès que initiative et départage sont identiques.',
-};
 
 export const trackerTypeLabels = {
   bar: 'Barre',

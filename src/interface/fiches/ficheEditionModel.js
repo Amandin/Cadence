@@ -74,6 +74,7 @@ export function normaliserFiche(brouillon, initiativeTextOrder, phaseOptions = {
     ...phasePatch,
     stats: serialiserInfosRapides(fiche.stats),
     initiative: actionSlots[0]?.initiative ?? nombreOuDefaut(fiche.initiative, 0),
+    initiativeBonus: nombreOuDefaut(fiche.initiativeBonus, 0),
     actionSlots,
     departage: fiche.departage === '' ? '' : nombreOuDefaut(fiche.departage, 0),
     trackers: fiche.trackers.map((suivi) => {

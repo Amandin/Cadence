@@ -245,6 +245,74 @@ describe('restore points', () => {
     expect(harness.current().participants[0]).toMatchObject({ id: 'fast', initiative: '14', departage: 3 });
   });
 
+  it('replaces a tiebreaker explicitly sent from the initiative window', () => {
+    const harness = createHarness({
+      id: 'scene',
+      temporalite: temporalityModes.CLASSIC,
+      startRound: 1,
+      round: -1,
+      participants: [{ ...participant('fast', 12), departage: 3 }],
+      reserve: [],
+      statuses: [],
+    });
+
+    harness.actions().applyInitiativeRolls({ fast: ['14'] }, { fast: '' });
+
+    expect(harness.current().participants[0]).toMatchObject({ id: 'fast', initiative: '14', departage: '' });
+  });
+
+  it('does not activate a participant when initiatives are edited in preparation', () => {
+    const harness = createHarness({
+      id: 'scene',
+      temporalite: temporalityModes.CLASSIC,
+      startRound: 1,
+      round: -1,
+      activeId: 'fast',
+      activeSlotId: 'fast:slot-1',
+      participants: [participant('fast', 12), participant('slow', 5)],
+      reserve: [],
+      statuses: [],
+    });
+
+    harness.actions().applyInitiativeRolls({ fast: ['14'], slow: ['7'] });
+
+    expect(harness.current()).toMatchObject({ round: -1, activeId: '', activeSlotId: '' });
+    expect(harness.current().participants[0]).toMatchObject({ id: 'fast', initiative: '14' });
+  });
+
+  it('applies and stores an initiative bonus entered from the initiative window', () => {
+    const harness = createHarness({
+      id: 'scene',
+      temporalite: temporalityModes.CLASSIC,
+      startRound: 1,
+      round: -1,
+      participants: [{ ...participant('fast', 12), initiativeBonus: 0 }],
+      reserve: [],
+      statuses: [],
+    });
+
+    harness.actions().startSceneWithInitiatives({ fast: ['14'] }, [], {}, { fast: 2 });
+
+    expect(harness.current().participants[0]).toMatchObject({ id: 'fast', initiative: '14', initiativeBonus: 2 });
+  });
+
+  it('ignores initiative bonus updates when the rule is disabled', () => {
+    const harness = createHarness({
+      id: 'scene',
+      temporalite: temporalityModes.CLASSIC,
+      initiativeBonusEnabled: false,
+      startRound: 1,
+      round: -1,
+      participants: [{ ...participant('fast', 12), initiativeBonus: 4 }],
+      reserve: [],
+      statuses: [],
+    });
+
+    harness.actions().startSceneWithInitiatives({ fast: ['14'] }, [], {}, { fast: 2 });
+
+    expect(harness.current().participants[0]).toMatchObject({ id: 'fast', initiative: '14', initiativeBonus: 4 });
+  });
+
   it('triggers the first classic activation when leaving preparation', () => {
     const harness = createHarness({
       id: 'scene',
@@ -433,6 +501,29 @@ describe('restore points', () => {
     const points = harness.restorePoints().scene;
     expect(points.map((point) => [point.kind || 'round', point.round])).toEqual([['pre-initiative', -1], ['round', 1]]);
     expect(points[0].scene).toMatchObject({ round: -1, notes: 'Avant le depart', activeId: '' });
+  });
+
+  it('keeps preparation without active participant while editing the roster', () => {
+    const harness = createHarness({
+      id: 'scene',
+      temporalite: temporalityModes.CLASSIC,
+      startRound: 1,
+      round: -1,
+      activeId: 'legacy',
+      activeSlotId: 'legacy:slot-1',
+      participants: [participant('legacy', 10)],
+      reserve: [],
+      statuses: [],
+    });
+
+    harness.actions().addParticipant(participant('new', 12));
+    expect(harness.current()).toMatchObject({ round: -1, activeId: '', activeSlotId: '' });
+
+    harness.actions().setActiveParticipant('new');
+    expect(harness.current()).toMatchObject({ round: -1, activeId: '', activeSlotId: '' });
+
+    harness.actions().updateParticipant('new', (current) => ({ ...current, initiative: 16 }));
+    expect(harness.current()).toMatchObject({ round: -1, activeId: '', activeSlotId: '' });
   });
 
   it('keeps flexible declaration resolution free before returning to declaration next round', () => {

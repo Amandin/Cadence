@@ -1,8 +1,9 @@
 import { APP_VERSION, temporalityModes } from './constants.js';
 import { indexCreneauActif, ordreCreneauxClassique } from './domain/initiative.js';
 import { initiativeCostSlotIsAboveThreshold, isInitiativeCostMode, rulesAllowMultipleSlots } from './domain/initiativeCost.js';
+import { defaultParticipantSymbol, participantSymbols } from './uiAssets.js';
 
-export const symbols = ['●●','⚔','🛡','⚙','⏳','🗡','🧪','🔥'];
+export const symbols = participantSymbols;
 export const colors = ['slate','red','orange','amber','emerald','cyan','blue','violet','pink','rose'];
 
 export function uid(prefix='id'){ return `${prefix}-${Math.random().toString(36).slice(2,9)}`; }
@@ -129,7 +130,7 @@ function makeBaseDefaultCampaign(){ return {name:'Démo automatisations Cadence'
 function demoCampaignMeta(id,name){ return {id,name,folderName:id,fileName:`${id}.cad`}; }
 function demoCampaign(id,name,patch){ return {campaign:demoCampaignMeta(id,name),name,version:APP_VERSION,settings:{dark:true},...patch}; }
 function demoScene(id,title,patch={}){ return {id,title,type:'Démo',round:-1,phase:1,activeId:'',reserve:[],participants:[],statuses:[],notes:'',...patch}; }
-function demoPerson(id,name,initiative,patch={}){ return {id,name,kind:'PJ',symbol:'●',color:'blue',initiative,departage:'',description:'',stats:[],statuses:[],trackers:[],...patch}; }
+function demoPerson(id,name,initiative,patch={}){ return {id,name,kind:'PJ',symbol:defaultParticipantSymbol,color:'blue',initiative,departage:'',description:'',stats:[],statuses:[],trackers:[],...patch}; }
 function demoRichBoxes(name='Blessures structurees'){ return { ...makeBoxes(), id:`${name.toLowerCase().replace(/[^a-z0-9]+/g,'-')}-cases`, name, blocks:boxBlocks({ ...makeBoxes(), blocks:makeBoxes().blocks }).map((block) => ({ ...block, lines:block.lines.map((line) => ({ ...line, boxes:[...line.boxes, ...line.boxes.slice(0, 2).map((box, index) => ({ ...box, id:`${box.id}-extra-${index}`, position:line.boxes.length + index, mark:0, initial:0 }))] })) })) }; }
 
 function makeGlobalTrackerDemoCampaign(){ return demoCampaign('demo-suivis-globaux','Démo - indicateurs de scène',{initiativeRules:{temporalite:temporalityModes.CLASSIC,startRound:0,multipleActionSlots:true},scenes:[

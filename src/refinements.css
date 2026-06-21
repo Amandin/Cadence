@@ -1610,20 +1610,49 @@
   font-weight: 900;
 }
 
-.initiative-tiebreaker-field {
-  display: grid;
-  gap: 3px;
-  min-width: 92px;
+.initiative-tiebreaker-field,
+.initiative-bonus-inline-field,
+.initiative-entry-zone .initiative-roll-slot {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  min-height: 22px;
+  padding: 2px 3px 2px 7px;
+  border: 1px solid var(--ui-border);
+  border-radius: 999px;
+  background: var(--ui-surface-soft);
 }
 
-.initiative-tiebreaker-field small {
+.initiative-tiebreaker-field small,
+.initiative-bonus-inline-field small,
+.initiative-entry-zone .initiative-roll-slot small {
+  flex: 1 1 auto;
+  min-width: 0;
   color: #64748b;
   font-size: 10px;
   font-weight: 900;
+  line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.initiative-tiebreaker-field input {
-  width: 100%;
+.initiative-tiebreaker-field input,
+.initiative-bonus-inline-field input,
+.initiative-entry-zone .initiative-roll-slot input {
+  flex: 0 0 auto;
+  width: 42px;
+  min-width: 0;
+  height: 18px;
+  min-height: 18px;
+  padding: 0 4px;
+  border: 1px solid var(--ui-border);
+  border-radius: 999px;
+  background: var(--ui-surface);
+  color: var(--ui-text);
+  font-size: 11px;
+  line-height: 1;
 }
 
 .initiative-entry-zone .initiative-roll-group {
@@ -1672,6 +1701,7 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
+  flex-wrap: wrap;
   gap: 6px;
   min-width: 0;
 }
@@ -1685,9 +1715,16 @@
 }
 
 .initiative-meta-row .initiative-tiebreaker-field {
-  width: 104px;
-  min-width: 82px;
-  flex: 0 0 104px;
+  width: auto;
+  min-width: 0;
+  flex: 1 1 0;
+}
+
+.initiative-meta-row .initiative-bonus-inline-field {
+  width: auto;
+  min-width: 0;
+  max-width: none;
+  flex: 1 1 0;
 }
 
 .initiative-entry-zone .initiative-roll-slots {
@@ -1697,12 +1734,28 @@
 }
 
 .initiative-entry-zone .initiative-roll-slot {
-  flex: 1 1 74px;
+  flex: 1 1 92px;
+}
+
+.initiative-entry-zone .initiative-roll-slot.has-remove {
+  flex-basis: 122px;
+}
+
+.initiative-entry-zone .initiative-roll-slot .subtle-danger.small-btn {
+  flex: 0 0 auto;
+  width: 20px;
+  min-width: 20px;
+  height: 20px;
+  min-height: 20px;
+  padding: 0;
+  font-size: 11px;
+  line-height: 1;
 }
 
 .initiative-entry-zone .add-roll-slot {
-  min-height: 30px;
-  padding: 4px 7px;
+  flex: 0 0 auto;
+  min-height: 24px;
+  padding: 3px 8px;
 }
 
 .surprise-rule-options .surprise-advance-options {
