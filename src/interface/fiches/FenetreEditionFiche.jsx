@@ -3,7 +3,7 @@ import { colorNames, defaultPhaseCount, participantKinds, phaseActionModes, trac
 import { normalizeInitiativeTextOrder } from '../../domain/initiativeTextOrder.js';
 import { t } from '../../i18n/index.js';
 import { boxBlocks, boxVisualRank, clone, colors, cycleBoxMark, isBoxesTracker, isNumericTracker, isPointsTracker, isVisible, newTracker, normalizeBoxTracker, resetTracker, sortBoxBlocks, symbols, thresholdValue, uid } from '../../logic.js';
-import { instantiateTrackerTemplate } from '../../templates.js';
+import { instantiateTrackerCopy, instantiateTrackerTemplate } from '../../templates.js';
 import { uiGlyphs } from '../../uiAssets.js';
 import { Fenetre, MessageChangementTemplate } from '../commun/ComposantsCommuns.jsx';
 import { FenetreConfirmationSuppression } from '../dialogues/FenetreConfirmationSuppression.jsx';
@@ -381,7 +381,16 @@ function OptionsParType({ suivi, onChange, allowActivationAutomation = true }) {
   return null;
 }
 
-export function EditeurSuivi({ suivi, onChange, onDelete, onSaveTemplate, allowActivationAutomation = true }) {
+function nomCopieUnique(noms = [], nomBase = '') {
+  const depart = t('templates.fallback.copyName', { name: nomBase || t('templates.fallback.tracker') });
+  const utilises = new Set(noms.filter(Boolean));
+  if (!utilises.has(depart)) return depart;
+  let index = 2;
+  while (utilises.has(`${depart} ${index}`)) index += 1;
+  return `${depart} ${index}`;
+}
+
+export function EditeurSuivi({ suivi, onChange, onDuplicate, onDelete, onSaveTemplate, allowActivationAutomation = true }) {
   const modifierSuivi = (valeur) => onChange({ ...suivi, ...valeur });
   const estCases = isBoxesTracker(suivi);
   const estNumerique = isNumericTracker(suivi);
@@ -408,6 +417,17 @@ export function EditeurSuivi({ suivi, onChange, onDelete, onSaveTemplate, allowA
                 aria-label={t('templates.editor.tracker.saveCurrent')}
               >
                 &#128190;
+              </button>
+            )}
+            {onDuplicate && (
+              <button
+                className="icon-btn tracker-duplicate-btn"
+                type="button"
+                onClick={onDuplicate}
+                title={t('sheet.tracker.duplicate')}
+                aria-label={t('sheet.tracker.duplicateAria', { name: suivi.name || t('templates.fallback.tracker') })}
+              >
+                {uiGlyphs.duplicate}
               </button>
             )}
             <button className="danger-btn compact-danger tracker-delete-btn" onClick={onDelete} aria-label={t('common.delete')} title={t('common.delete')}>x</button>
@@ -488,6 +508,18 @@ export function FenetreEditionFiche({ participant, initiativeTextOrder, phaseAct
     setTrackerPersonnaliseNom('');
     setAjoutIndicateurOuvert(false);
   };
+  const dupliquerSuivi = (id) => setBrouillon((courant) => {
+    const suivis = courant.trackers || [];
+    const index = suivis.findIndex((suivi) => suivi.id === id);
+    if (index < 0) return courant;
+    const source = suivis[index];
+    const copie = instantiateTrackerCopy(source);
+    if (!copie) return courant;
+    const nom = nomCopieUnique(suivis.map((suivi) => suivi.name), source.name);
+    const suivisSuivants = [...suivis];
+    suivisSuivants.splice(index + 1, 0, { ...copie, name: nom });
+    return { ...courant, trackers: suivisSuivants };
+  });
   const renduEditionMultiple = (entete, valider, enregistrerCommeTemplate) => (
     <>
       <Fenetre title={title} onClose={onClose} header={entete} className={className}>
@@ -530,7 +562,7 @@ export function FenetreEditionFiche({ participant, initiativeTextOrder, phaseAct
         <EditeurInfosRapides stats={brouillon.stats || []} onChange={(stats) => modifierChamp('stats', stats)} />
         <h3 className="sheet-section-title">{t('sheet.trackers.title')}</h3>
         <div className="stack tracker-list">
-          {(brouillon.trackers || []).map((suivi) => <EditeurSuivi key={suivi.id} suivi={suivi} onChange={(suivant) => modifierSuivi(suivi.id, suivant)} onDelete={() => setBrouillon((courant) => ({ ...courant, trackers: (courant.trackers || []).filter((item) => item.id !== suivi.id) }))} onSaveTemplate={onSaveTrackerTemplate} allowActivationAutomation={allowActivationAutomation} />)}
+          {(brouillon.trackers || []).map((suivi) => <EditeurSuivi key={suivi.id} suivi={suivi} onChange={(suivant) => modifierSuivi(suivi.id, suivant)} onDuplicate={() => dupliquerSuivi(suivi.id)} onDelete={() => setBrouillon((courant) => ({ ...courant, trackers: (courant.trackers || []).filter((item) => item.id !== suivi.id) }))} onSaveTemplate={onSaveTrackerTemplate} allowActivationAutomation={allowActivationAutomation} />)}
           {!ajoutIndicateurOuvert && <button className="primary add-tracker-btn" onClick={() => setAjoutIndicateurOuvert(true)}>{t('sheet.trackers.add')}</button>}
           {ajoutIndicateurOuvert && <div className="stack tracker-add-panel">
             <div className="template-picker-row">

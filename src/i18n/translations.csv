@@ -53,7 +53,14 @@ menu.brandMeta,Menu · v{version}
 menu.toggleTheme,Basculer thème clair ou sombre
 menu.returnHub,Retour au hub de campagne
 menu.addCharacter,Ajouter un personnage
+menu.duplicateCharacter,Dupliquer un personnage
 menu.enterInitiatives,Saisir les initiatives
+menu.characters.duplicateTitle,Dupliquer un personnage
+menu.characters.empty,Aucun personnage dans cette scène.
+menu.characters.inInitiative,initiative
+menu.characters.inReserve,réserve
+menu.characters.duplicateAction,Dupliquer
+menu.characters.duplicateAria,Dupliquer {name}
 menu.sceneElements.title,Éléments de scène
 menu.sceneElements.editIndicator,Modifier l’indicateur
 menu.sceneElements.activateIndicator,Activer un indicateur
@@ -442,6 +449,8 @@ sheet.character.hideTitle,Dissimuler la fiche
 sheet.character.revealTitle,Ne plus dissimuler la fiche
 sheet.tracker.nameAria,Nom du suivi
 sheet.tracker.typeAria,Type du suivi
+sheet.tracker.duplicate,Dupliquer cet indicateur
+sheet.tracker.duplicateAria,Dupliquer l’indicateur {name}
 sheet.tracker.resetTitle,Réinitialiser ce suivi
 sheet.tracker.reset,Réinitialiser
 sheet.counters.title,Compteurs

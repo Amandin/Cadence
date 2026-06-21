@@ -1103,6 +1103,46 @@
   max-width: max-content;
 }
 
+.menu-character-duplicate-list {
+  gap: 6px;
+}
+
+.menu-character-duplicate-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 8px;
+  border: 1px solid var(--ui-border);
+  border-radius: 14px;
+  background: var(--ui-surface-soft);
+}
+
+.menu-character-duplicate-row > div {
+  min-width: 0;
+}
+
+.menu-character-duplicate-row strong,
+.menu-character-duplicate-row small {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.menu-character-duplicate-row small {
+  margin-top: 2px;
+  color: var(--ui-muted);
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.menu-character-duplicate-row .small-btn {
+  min-width: 0;
+  padding: 6px 9px;
+}
+
 @media (max-width: 520px) {
   .menu-action-grid,
   .scene-management-grid {

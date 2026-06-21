@@ -2,6 +2,38 @@ import { useState } from 'react';
 import { classerAjoutDynamique } from '../actions/dynamicInitiative.js';
 import { phaseActionModes, temporalityModes } from '../constants.js';
 import { createStatus, createSurprisedStatus } from '../domain/statuses.js';
+import { t } from '../i18n/index.js';
+import { clone, uid } from '../logic.js';
+import { instantiateTrackerCopy } from '../templates.js';
+
+export function nomCopieUniquePersonnage(personnages = [], nom = '') {
+  const base = t('templates.fallback.copyName', { name: nom || t('templates.fallback.character') });
+  const nomsPris = new Set(personnages.map((participant) => participant.name).filter(Boolean));
+  if (!nomsPris.has(base)) return base;
+  let index = 2;
+  while (nomsPris.has(`${base} ${index}`)) index += 1;
+  return `${base} ${index}`;
+}
+
+function dupliquerStatut(status) {
+  return { ...clone(status), id: uid('s') };
+}
+
+function dupliquerCreneauxAction(slots = []) {
+  return (Array.isArray(slots) ? slots : []).map((slot, index) => ({ ...clone(slot), id: uid('slot'), order: index }));
+}
+
+export function dupliquerPersonnageScene(participant, nom) {
+  return {
+    ...clone(participant),
+    id: uid('p'),
+    name: nom,
+    actionSlots: dupliquerCreneauxAction(participant.actionSlots),
+    statuses: (participant.statuses || []).map(dupliquerStatut),
+    trackers: (participant.trackers || []).map(instantiateTrackerCopy).filter(Boolean),
+    _activationAutomationsDone: false,
+  };
+}
 
 /**
  * Centralizes every mutation that must work both for initiative participants
@@ -98,6 +130,18 @@ export function useCharacterInteractions(scene, actions) {
     else if (editAfterAdd) setEditingId(nextParticipant.id);
     setSelectedId(null);
     return nextParticipant;
+  };
+
+  const duplicateCharacter = (participantId) => {
+    const source = allCharacters.find((participant) => participant.id === participantId);
+    if (!source) return null;
+    const placement = isInInit(participantId) ? 'init' : 'reserve';
+    const duplicate = dupliquerPersonnageScene(source, nomCopieUniquePersonnage(allCharacters, source.name));
+    const dynamicAdditionKind = placement === 'init' ? classerAjoutDynamique(scene, duplicate) : null;
+    actions.addParticipant(duplicate, placement);
+    if (dynamicAdditionKind) setLateInitiativeAddition({ participantId: duplicate.id, editAfterAdd: false, kind: dynamicAdditionKind });
+    setSelectedId(null);
+    return duplicate;
   };
 
   const saveStatus = (data) => {
@@ -222,6 +266,7 @@ export function useCharacterInteractions(scene, actions) {
     deleteCharacterTracker,
     removeCharacterStatus,
     addCharacter,
+    duplicateCharacter,
     saveStatus,
     joinInit,
     leaveInit,

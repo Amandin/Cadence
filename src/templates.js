@@ -293,9 +293,13 @@ function resetTrackerIds(trackers = []) {
   });
 }
 
+export function instantiateTrackerCopy(tracker) {
+  if (!tracker) return null;
+  return resetTrackerIds([tracker])[0] || null;
+}
+
 export function instantiateTrackerTemplate(template) {
-  if (!template?.tracker) return null;
-  return resetTrackerIds([template.tracker])[0] || null;
+  return instantiateTrackerCopy(template?.tracker);
 }
 
 export function instantiateStatusTemplate(template) {

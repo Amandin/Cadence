@@ -75,14 +75,45 @@ function resumeIndicateurScene(compteur) {
   return t('menu.indicator.summary.ratio', { name: nom, value: valeur, max, threshold: seuil ? `, seuil : ${seuil}` : '' });
 }
 
-function ActionsScene({ onAjouterParticipant, onSaisirInitiatives }) {
+function ActionsScene({ onAjouterParticipant, onSaisirInitiatives, onOuvrirDuplicationPersonnage }) {
+  const simple = !onSaisirInitiatives && !onOuvrirDuplicationPersonnage;
   return (
     <div className="scene-options compact-options menu-action-section">
-      <div className={`menu-action-grid ${onSaisirInitiatives ? '' : 'single-action'}`}>
+      <div className={`menu-action-grid ${simple ? 'single-action' : ''}`}>
         <button className="primary" onClick={onAjouterParticipant}>{t('menu.addCharacter')}</button>
+        {onOuvrirDuplicationPersonnage && <button className="small-btn" onClick={onOuvrirDuplicationPersonnage}>{t('menu.duplicateCharacter')}</button>}
         {onSaisirInitiatives && <button className="small-btn" onClick={onSaisirInitiatives}>{t('menu.enterInitiatives')}</button>}
       </div>
     </div>
+  );
+}
+
+function personnagesScene(scene = {}) {
+  return [
+    ...(scene.participants || []).map((participant) => ({ ...participant, placement: t('menu.characters.inInitiative') })),
+    ...(scene.reserve || []).map((participant) => ({ ...participant, placement: t('menu.characters.inReserve') })),
+  ];
+}
+
+function FenetreDuplicationPersonnage({ scene, onDupliquer, onFermer }) {
+  const personnages = personnagesScene(scene);
+
+  return (
+    <Fenetre title={t('menu.characters.duplicateTitle')} onClose={onFermer}>
+      <div className="stack menu-character-duplicate-list">
+        {personnages.length === 0
+          ? <p className="muted compact-help">{t('menu.characters.empty')}</p>
+          : personnages.map((participant) => (
+            <div className="menu-character-duplicate-row" key={participant.id}>
+              <div>
+                <strong>{participant.name || t('templates.fallback.character')}</strong>
+                <small>{participant.kind || t('templates.personnages.kindFallback')} · {participant.placement}</small>
+              </div>
+              <button className="small-btn" onClick={() => onDupliquer(participant.id)} aria-label={t('menu.characters.duplicateAria', { name: participant.name || t('templates.fallback.character') })}>{t('menu.characters.duplicateAction')}</button>
+            </div>
+          ))}
+      </div>
+    </Fenetre>
   );
 }
 
@@ -271,11 +302,12 @@ function FenetreRetourPreparation({ onFermer, onValider }) {
   );
 }
 
-export function MenuPrincipal({ scene, restorePoints = [], onRestore, onReturnToPreparation, onReturnToPreparationWithOptions, onAdvanceRound, onDecreaseRound, onChangeRoundWithAutomations, onAdvanceAutomations, onRewindAutomations, onResetTrackers, onClearStatuses, onEndTemporaryEffects, onClose, dark, setDark, onAddParticipant, onOpenInitiativeRoller, onOpenCampaignHub, onGlobalTracker, onStepGlobalTracker, onAddSceneStatus, onEditSceneStatus, onRemoveSceneStatus, onUpdateSceneNotes }) {
+export function MenuPrincipal({ scene, restorePoints = [], onRestore, onReturnToPreparation, onReturnToPreparationWithOptions, onAdvanceRound, onDecreaseRound, onChangeRoundWithAutomations, onAdvanceAutomations, onRewindAutomations, onResetTrackers, onClearStatuses, onEndTemporaryEffects, onClose, dark, setDark, onAddParticipant, onDuplicateParticipant, onOpenInitiativeRoller, onOpenCampaignHub, onGlobalTracker, onStepGlobalTracker, onAddSceneStatus, onEditSceneStatus, onRemoveSceneStatus, onUpdateSceneNotes }) {
   const pointsRestauration = [...restorePoints].sort((a, b) => a.round - b.round);
   const [pointRestaurationId, setPointRestaurationId] = useState(pointsRestauration.at(-1)?.id || '');
   const [editionIndicateurOuverte, setEditionIndicateurOuverte] = useState(false);
   const [retourPreparationOuvert, setRetourPreparationOuvert] = useState(false);
+  const [duplicationPersonnageOuverte, setDuplicationPersonnageOuverte] = useState(false);
 
   const validerRetourPreparation = (options) => {
     if (onReturnToPreparationWithOptions) {
@@ -286,13 +318,18 @@ export function MenuPrincipal({ scene, restorePoints = [], onRestore, onReturnTo
     if (options.endTemporaryEffects) onEndTemporaryEffects?.();
     onReturnToPreparation?.();
   };
+  const dupliquerPersonnage = (participantId) => {
+    onDuplicateParticipant?.(participantId);
+    setDuplicationPersonnageOuverte(false);
+    onClose?.();
+  };
 
   return (
     <Fenetre title={t('menu.title')} onClose={onClose} header={<MenuEntete sombre={dark} onChangerTheme={setDark} onClose={onClose} />} className={`main-menu ${dark ? 'dark menu-dark' : ''}`}>
       <div className="main-menu-layout">
         <div className="main-menu-primary">
           <button className="primary hub-menu-main-action" onClick={onOpenCampaignHub}>{t('menu.returnHub')}</button>
-          <ActionsScene onAjouterParticipant={onAddParticipant} onSaisirInitiatives={onOpenInitiativeRoller} />
+          <ActionsScene onAjouterParticipant={onAddParticipant} onOuvrirDuplicationPersonnage={onDuplicateParticipant ? () => setDuplicationPersonnageOuverte(true) : null} onSaisirInitiatives={onOpenInitiativeRoller} />
           <ElementsSceneMenu scene={scene} onIndicateurScene={onGlobalTracker} onModifierIndicateurScene={() => setEditionIndicateurOuverte(true)} onAjouterEtatScene={onAddSceneStatus} onModifierEtatScene={onEditSceneStatus} onRetirerEtatScene={onRemoveSceneStatus} onEffacerEtats={onClearStatuses} />
           <OptionsDerouleSceneMenu scene={scene} points={pointsRestauration} pointActif={pointRestaurationId} onChoisirPoint={setPointRestaurationId} onRestaurer={onRestore} onDemanderRetourPreparation={() => setRetourPreparationOuvert(true)} onAvancerRound={onAdvanceRound} onReculerRound={onDecreaseRound} onChangerRoundAvecAutomatismes={onChangeRoundWithAutomations} onAvancerAutomatismes={onAdvanceAutomations} onReculerAutomatismes={onRewindAutomations} onResetSuivis={onResetTrackers} />
         </div>
@@ -300,6 +337,7 @@ export function MenuPrincipal({ scene, restorePoints = [], onRestore, onReturnTo
           <NotesSceneMenuOuvert scene={scene} onModifierNotes={onUpdateSceneNotes} />
         </div>
       </div>
+      {duplicationPersonnageOuverte && <FenetreDuplicationPersonnage scene={scene} onDupliquer={dupliquerPersonnage} onFermer={() => setDuplicationPersonnageOuverte(false)} />}
       {editionIndicateurOuverte && <FenetreEditionIndicateurScene scene={scene} compteur={scene?.globalTracker} onModifier={onGlobalTracker} onChanger={onStepGlobalTracker} onFermer={() => setEditionIndicateurOuverte(false)} />}
       {retourPreparationOuvert && <FenetreRetourPreparation onFermer={() => setRetourPreparationOuvert(false)} onValider={validerRetourPreparation} />}
     </Fenetre>
