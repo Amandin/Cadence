@@ -134,4 +134,14 @@ describe('campaign actions export/import', () => {
     expect(state().templates.trackerTemplates.length).toBeGreaterThan(0);
     expect(state().templates.sceneCounterTemplates.length).toBeGreaterThan(0);
   });
+
+  it('numbers duplicated scene titles', () => {
+    const source = { ...scene, id: 'scene-source', title: 'Bal' };
+    const firstCopy = { ...scene, id: 'scene-copy', title: 'Bal 1' };
+    const { actions, state } = createHarness({ scenes: [source, firstCopy] });
+
+    actions.duplicateScene(0);
+
+    expect(state().scenes.map((item) => item.title)).toEqual(['Bal', 'Bal 2', 'Bal 1']);
+  });
 });

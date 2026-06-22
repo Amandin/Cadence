@@ -3,7 +3,7 @@ import { colorNames, defaultPhaseCount, participantKinds, phaseActionModes, trac
 import { normalizeInitiativeTextOrder } from '../../domain/initiativeTextOrder.js';
 import { t } from '../../i18n/index.js';
 import { boxBlocks, boxVisualRank, clone, colors, cycleBoxMark, isBoxesTracker, isNumericTracker, isPointsTracker, isVisible, newTracker, normalizeBoxTracker, resetTracker, sortBoxBlocks, symbols, thresholdValue, uid } from '../../logic.js';
-import { instantiateTrackerCopy, instantiateTrackerTemplate } from '../../templates.js';
+import { instantiateTrackerCopy, instantiateTrackerTemplate, numberedCopyName } from '../../templates.js';
 import { uiGlyphs } from '../../uiAssets.js';
 import { Fenetre, MessageChangementTemplate } from '../commun/ComposantsCommuns.jsx';
 import { FenetreConfirmationSuppression } from '../dialogues/FenetreConfirmationSuppression.jsx';
@@ -381,15 +381,6 @@ function OptionsParType({ suivi, onChange, allowActivationAutomation = true }) {
   return null;
 }
 
-function nomCopieUnique(noms = [], nomBase = '') {
-  const depart = t('templates.fallback.copyName', { name: nomBase || t('templates.fallback.tracker') });
-  const utilises = new Set(noms.filter(Boolean));
-  if (!utilises.has(depart)) return depart;
-  let index = 2;
-  while (utilises.has(`${depart} ${index}`)) index += 1;
-  return `${depart} ${index}`;
-}
-
 export function EditeurSuivi({ suivi, onChange, onDuplicate, onDelete, onSaveTemplate, allowActivationAutomation = true }) {
   const modifierSuivi = (valeur) => onChange({ ...suivi, ...valeur });
   const estCases = isBoxesTracker(suivi);
@@ -515,7 +506,7 @@ export function FenetreEditionFiche({ participant, initiativeTextOrder, phaseAct
     const source = suivis[index];
     const copie = instantiateTrackerCopy(source);
     if (!copie) return courant;
-    const nom = nomCopieUnique(suivis.map((suivi) => suivi.name), source.name);
+    const nom = numberedCopyName(suivis.map((suivi) => suivi.name), source.name, t('templates.fallback.tracker'));
     const suivisSuivants = [...suivis];
     suivisSuivants.splice(index + 1, 0, { ...copie, name: nom });
     return { ...courant, trackers: suivisSuivants };

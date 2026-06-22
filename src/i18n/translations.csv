@@ -714,7 +714,6 @@ hub.scene.open,Ouvrir
 hub.scene.edit,Modifier
 hub.scene.duplicate,Dupliquer
 hub.scene.deleteRevealAria,Afficher la suppression de {title}
-hub.scene.copyName,{title} — copie
 hub.scenes.title,Scènes
 hub.scenes.help,Crée ou ouvre une scène pour suivre l'initiative, les rounds, les états et les indicateurs.
 hub.scenes.new,Nouvelle scène
@@ -744,7 +743,6 @@ templates.save.duplicateName,Nom déjà utilisé
 templates.save.error,Impossible d’enregistrer
 templates.save.overwrite,Écraser
 templates.save.rename,Modifier le nom
-templates.save.copyName,{name} copie
 templates.tabs.personnages,Personnages
 templates.tabs.suivis,Indicateurs
 templates.tabs.statuses,États
@@ -860,7 +858,6 @@ templates.fallback.sceneStatus,État de scène
 templates.fallback.sceneCounter,Indicateur de scène
 templates.fallback.rules,Règles
 templates.fallback.newTemplate,Nouveau modèle
-templates.fallback.copyName,{name} copie
 templates.fallback.chooseCategory,Choisis une catégorie.
 templates.error.missingName,Donne un nom au modèle.
 templates.error.missingCategory,Choisis ou crée une catégorie.
@@ -895,7 +892,7 @@ app.notice.unknownError,erreur inconnue
 app.notice.templateReplaced.title,Modèle remplacé
 app.notice.templateSaved.title,Modèle enregistré
 app.notice.templateSaved.message,{name} est disponible dans la catégorie {category}.
-campaign.copyName,{name} - copie
+campaign.copyName,{name} 1
 campaign.file.unnamed,sans nom
 campaign.file.unknownType,type inconnu
 campaign.file.prefix,Fichier : {fileName}.

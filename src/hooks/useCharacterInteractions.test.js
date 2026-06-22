@@ -5,11 +5,11 @@ describe('nomCopieUniquePersonnage', () => {
   it('creates a copy name that does not collide with existing characters', () => {
     const personnages = [
       { name: 'Astre' },
-      { name: 'Astre copie' },
-      { name: 'Astre copie 2' },
+      { name: 'Astre 1' },
+      { name: 'Astre 2' },
     ];
 
-    expect(nomCopieUniquePersonnage(personnages, 'Astre')).toBe('Astre copie 3');
+    expect(nomCopieUniquePersonnage(personnages, 'Astre')).toBe('Astre 3');
   });
 });
 
@@ -37,10 +37,10 @@ describe('dupliquerPersonnageScene', () => {
       _activationAutomationsDone: true,
     };
 
-    const copie = dupliquerPersonnageScene(source, 'Astre copie');
+    const copie = dupliquerPersonnageScene(source, 'Astre 1');
 
     expect(copie).toMatchObject({
-      name: 'Astre copie',
+      name: 'Astre 1',
       kind: 'PJ',
       initiative: 18,
       _activationAutomationsDone: false,

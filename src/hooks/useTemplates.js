@@ -17,6 +17,7 @@ import {
   makeTrackerTemplateFromTracker,
   mergeTemplateStores,
   normalizeTemplateStore,
+  numberedCopyName,
   templateNameExists,
 } from '../templates.js';
 
@@ -47,6 +48,19 @@ function uniqueFlatTemplateName(templates, baseName = t('templates.fallback.newT
   let index = 2;
   while (existingNames.has(`${baseName} ${index}`.toLocaleLowerCase())) index += 1;
   return `${baseName} ${index}`;
+}
+
+function duplicateTemplateName(templates, category, sourceName, fallback = t('templates.fallback.unnamed')) {
+  const cleanCategory = templateCategoryFromName(category) || 'PNJ';
+  return numberedCopyName(
+    templates.filter((template) => template.category === cleanCategory).map((template) => template.name),
+    sourceName,
+    fallback,
+  );
+}
+
+function duplicateFlatTemplateName(templates, sourceName, fallback = t('templates.fallback.unnamed')) {
+  return numberedCopyName(templates.map((template) => template.name), sourceName, fallback);
 }
 
 function defaultKindForTemplateCategory(category) {
@@ -187,7 +201,7 @@ export function useTemplates(store, setStore) {
   const duplicateTemplate = (templateId) => {
     const source = getTemplate(templateId);
     if (!source) return null;
-    const baseName = uniqueTemplateName(templateStore.templates, source.category, t('templates.fallback.copyName', { name: source.name || source.participant?.name || t('templates.fallback.unnamed') }));
+    const baseName = duplicateTemplateName(templateStore.templates, source.category, source.name || source.participant?.name, t('templates.fallback.unnamed'));
     const duplicate = {
       ...clone(source),
       id: uid('tpl'),
@@ -234,7 +248,7 @@ export function useTemplates(store, setStore) {
   const duplicateTrackerTemplate = (templateId) => {
     const source = getTrackerTemplate(templateId);
     if (!source) return null;
-    const duplicate = { ...clone(source), id: uid('ttpl'), name: uniqueFlatTemplateName(templateStore.trackerTemplates, t('templates.fallback.copyName', { name: source.name })), createdAt: new Date().toISOString(), updatedAt: undefined };
+    const duplicate = { ...clone(source), id: uid('ttpl'), name: duplicateFlatTemplateName(templateStore.trackerTemplates, source.name, t('templates.fallback.tracker')), createdAt: new Date().toISOString(), updatedAt: undefined };
     updateStore((currentStore) => ({ ...currentStore, trackerTemplates: [...currentStore.trackerTemplates, duplicate] }));
     return duplicate;
   };
@@ -267,7 +281,7 @@ export function useTemplates(store, setStore) {
   const duplicateStatusTemplate = (templateId) => {
     const source = getStatusTemplate(templateId);
     if (!source) return null;
-    const duplicate = { ...clone(source), id: uid('stpl'), name: uniqueFlatTemplateName(templateStore.statusTemplates, t('templates.fallback.copyName', { name: source.name })), createdAt: new Date().toISOString(), updatedAt: undefined };
+    const duplicate = { ...clone(source), id: uid('stpl'), name: duplicateFlatTemplateName(templateStore.statusTemplates, source.name, t('templates.fallback.status')), createdAt: new Date().toISOString(), updatedAt: undefined };
     updateStore((currentStore) => ({ ...currentStore, statusTemplates: [...currentStore.statusTemplates, duplicate] }));
     return duplicate;
   };
@@ -300,7 +314,7 @@ export function useTemplates(store, setStore) {
   const duplicateSceneStatusTemplate = (templateId) => {
     const source = getSceneStatusTemplate(templateId);
     if (!source) return null;
-    const duplicate = { ...clone(source), id: uid('sstpl'), name: uniqueFlatTemplateName(templateStore.sceneStatusTemplates, t('templates.fallback.copyName', { name: source.name })), createdAt: new Date().toISOString(), updatedAt: undefined };
+    const duplicate = { ...clone(source), id: uid('sstpl'), name: duplicateFlatTemplateName(templateStore.sceneStatusTemplates, source.name, t('templates.fallback.sceneStatus')), createdAt: new Date().toISOString(), updatedAt: undefined };
     updateStore((currentStore) => ({ ...currentStore, sceneStatusTemplates: [...currentStore.sceneStatusTemplates, duplicate] }));
     return duplicate;
   };
@@ -332,7 +346,7 @@ export function useTemplates(store, setStore) {
   const duplicateSceneCounterTemplate = (templateId) => {
     const source = getSceneCounterTemplate(templateId);
     if (!source) return null;
-    const duplicate = { ...clone(source), id: uid('sctpl'), name: uniqueFlatTemplateName(templateStore.sceneCounterTemplates, t('templates.fallback.copyName', { name: source.name })), createdAt: new Date().toISOString(), updatedAt: undefined };
+    const duplicate = { ...clone(source), id: uid('sctpl'), name: duplicateFlatTemplateName(templateStore.sceneCounterTemplates, source.name, t('templates.fallback.sceneCounter')), createdAt: new Date().toISOString(), updatedAt: undefined };
     updateStore((currentStore) => ({ ...currentStore, sceneCounterTemplates: [...currentStore.sceneCounterTemplates, duplicate] }));
     return duplicate;
   };
@@ -379,7 +393,7 @@ export function useTemplates(store, setStore) {
   const duplicateRuleTemplate = (templateId) => {
     const source = getRuleTemplate(templateId);
     if (!source) return null;
-    const duplicate = { ...clone(source), id: uid('rtpl'), name: uniqueFlatTemplateName(templateStore.ruleTemplates, t('templates.fallback.copyName', { name: source.name })), createdAt: new Date().toISOString(), updatedAt: undefined };
+    const duplicate = { ...clone(source), id: uid('rtpl'), name: duplicateFlatTemplateName(templateStore.ruleTemplates, source.name, t('templates.fallback.rules')), createdAt: new Date().toISOString(), updatedAt: undefined };
     updateStore((currentStore) => ({ ...currentStore, ruleTemplates: [...currentStore.ruleTemplates, duplicate] }));
     return duplicate;
   };

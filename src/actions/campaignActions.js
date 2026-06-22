@@ -2,7 +2,7 @@ import { applyInitiativeRules, campaignRulesFromPayload, normalizeCampaignRules,
 import { createRulePresetSnapshot, syncRulePresetSnapshot } from '../rulePresets.js';
 import { campaignNameFromPayload, campaignTemplatesFromPayload, isValidCampaign, normalizeCampaignName, normalizeCampaignPayload, serializeCampaign } from '../storage.js';
 import { boxBlocks, clone, isBoxesTracker, isNumericTracker, makeDefaultCampaign, makeTestCampaign, normalizeBoxTracker, uid } from '../logic.js';
-import { mergeTemplateStores } from '../templates.js';
+import { mergeTemplateStores, numberedCopyName } from '../templates.js';
 import { readJsonCadenceFile, shareOrDownloadCampaign } from '../campaignFileIO.js';
 import { t } from '../i18n/index.js';
 
@@ -67,9 +67,9 @@ export function createBlankScene(rules = {}) {
   }, rules);
 }
 
-function duplicateSceneData(scene, rules) {
+function duplicateSceneData(scene, rules, existingScenes = []) {
   const title = scene?.title || t('hub.scene.defaultType');
-  return remettreSceneAuDepartInitiative({ ...clone(scene), id: uid('scene'), title: t('hub.scene.copyName', { title }) }, rules);
+  return remettreSceneAuDepartInitiative({ ...clone(scene), id: uid('scene'), title: numberedCopyName(existingScenes.map((item) => item.title), title, t('hub.scene.defaultType')) }, rules);
 }
 
 export function createCampaignActions({ scenes, campaignRules, rulePresetSnapshot, setCampaignRules, setRulePresetSnapshot = () => {}, sceneIndex, dark, campaignName, templateStore, setScenes, setSceneIndex, setDark, setCampaignNameState, setTemplateStore }) {
@@ -105,7 +105,7 @@ export function createCampaignActions({ scenes, campaignRules, rulePresetSnapsho
         const source = unifiedScenes[sourceIndex] || unifiedScenes[0];
         if (!source) return unifiedScenes;
         const nextScenes = [...unifiedScenes];
-        nextScenes.splice(sourceIndex + 1, 0, duplicateSceneData(source, rules));
+        nextScenes.splice(sourceIndex + 1, 0, duplicateSceneData(source, rules, unifiedScenes));
         return nextScenes;
       });
       setSceneIndex(sourceIndex + 1);

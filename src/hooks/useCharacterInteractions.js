@@ -4,15 +4,10 @@ import { phaseActionModes, temporalityModes } from '../constants.js';
 import { createStatus, createSurprisedStatus } from '../domain/statuses.js';
 import { t } from '../i18n/index.js';
 import { clone, uid } from '../logic.js';
-import { instantiateTrackerCopy } from '../templates.js';
+import { instantiateTrackerCopy, numberedCopyName } from '../templates.js';
 
 export function nomCopieUniquePersonnage(personnages = [], nom = '') {
-  const base = t('templates.fallback.copyName', { name: nom || t('templates.fallback.character') });
-  const nomsPris = new Set(personnages.map((participant) => participant.name).filter(Boolean));
-  if (!nomsPris.has(base)) return base;
-  let index = 2;
-  while (nomsPris.has(`${base} ${index}`)) index += 1;
-  return `${base} ${index}`;
+  return numberedCopyName(personnages.map((participant) => participant.name), nom, t('templates.fallback.character'));
 }
 
 function dupliquerStatut(status) {

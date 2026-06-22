@@ -72,6 +72,15 @@ function normalizeTemplateName(value, fallback = t('templates.fallback.unnamed')
   return normalizeCategoryName(value) || fallback;
 }
 
+export function numberedCopyName(existingNames = [], sourceName = '', fallback = t('templates.fallback.unnamed')) {
+  const source = normalizeTemplateName(sourceName, fallback);
+  const base = source.replace(/\s+\d+$/, '').trim() || source;
+  const usedNames = new Set((existingNames || []).map((name) => String(name || '').trim().toLocaleLowerCase()).filter(Boolean));
+  let index = 1;
+  while (usedNames.has(`${base} ${index}`.toLocaleLowerCase())) index += 1;
+  return `${base} ${index}`;
+}
+
 function normalizeTemplate(template) {
   if (!template?.participant?.name) return null;
   return {
