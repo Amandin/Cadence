@@ -1143,6 +1143,11 @@
   padding: 6px 9px;
 }
 
+.menu-character-duplicate-validate {
+  width: 100%;
+  margin-top: 2px;
+}
+
 @media (max-width: 520px) {
   .menu-action-grid,
   .scene-management-grid {

@@ -95,7 +95,7 @@ function personnagesScene(scene = {}) {
   ];
 }
 
-function FenetreDuplicationPersonnage({ scene, onDupliquer, onFermer }) {
+function FenetreDuplicationPersonnage({ scene, onDupliquer, onFermer, onValider }) {
   const personnages = personnagesScene(scene);
 
   return (
@@ -112,6 +112,7 @@ function FenetreDuplicationPersonnage({ scene, onDupliquer, onFermer }) {
               <button className="small-btn" onClick={() => onDupliquer(participant.id)} aria-label={t('menu.characters.duplicateAria', { name: participant.name || t('templates.fallback.character') })}>{t('menu.characters.duplicateAction')}</button>
             </div>
           ))}
+        <button className="primary menu-character-duplicate-validate" type="button" onClick={onValider}>{t('menu.characters.validate')}</button>
       </div>
     </Fenetre>
   );
@@ -320,6 +321,8 @@ export function MenuPrincipal({ scene, restorePoints = [], onRestore, onReturnTo
   };
   const dupliquerPersonnage = (participantId) => {
     onDuplicateParticipant?.(participantId);
+  };
+  const validerDuplicationPersonnage = () => {
     setDuplicationPersonnageOuverte(false);
     onClose?.();
   };
@@ -337,7 +340,7 @@ export function MenuPrincipal({ scene, restorePoints = [], onRestore, onReturnTo
           <NotesSceneMenuOuvert scene={scene} onModifierNotes={onUpdateSceneNotes} />
         </div>
       </div>
-      {duplicationPersonnageOuverte && <FenetreDuplicationPersonnage scene={scene} onDupliquer={dupliquerPersonnage} onFermer={() => setDuplicationPersonnageOuverte(false)} />}
+      {duplicationPersonnageOuverte && <FenetreDuplicationPersonnage scene={scene} onDupliquer={dupliquerPersonnage} onFermer={() => setDuplicationPersonnageOuverte(false)} onValider={validerDuplicationPersonnage} />}
       {editionIndicateurOuverte && <FenetreEditionIndicateurScene scene={scene} compteur={scene?.globalTracker} onModifier={onGlobalTracker} onChanger={onStepGlobalTracker} onFermer={() => setEditionIndicateurOuverte(false)} />}
       {retourPreparationOuvert && <FenetreRetourPreparation onFermer={() => setRetourPreparationOuvert(false)} onValider={validerRetourPreparation} />}
     </Fenetre>

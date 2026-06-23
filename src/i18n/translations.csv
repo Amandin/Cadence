@@ -61,6 +61,7 @@ menu.characters.inInitiative,initiative
 menu.characters.inReserve,réserve
 menu.characters.duplicateAction,Dupliquer
 menu.characters.duplicateAria,Dupliquer {name}
+menu.characters.validate,Valider
 menu.sceneElements.title,Éléments de scène
 menu.sceneElements.editIndicator,Modifier l’indicateur
 menu.sceneElements.activateIndicator,Activer un indicateur
