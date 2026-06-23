@@ -3,7 +3,7 @@ import { colorNames, defaultPhaseCount, participantKinds, phaseActionModes, trac
 import { normalizeInitiativeTextOrder } from '../../domain/initiativeTextOrder.js';
 import { t } from '../../i18n/index.js';
 import { boxBlocks, boxVisualRank, clone, colors, cycleBoxMark, isBoxesTracker, isNumericTracker, isPointsTracker, isVisible, newTracker, normalizeBoxTracker, resetTracker, sortBoxBlocks, symbols, thresholdValue, uid } from '../../logic.js';
-import { instantiateTrackerCopy, instantiateTrackerTemplate, numberedCopyName } from '../../templates.js';
+import { instantiateTrackerCopy, instantiateTrackerTemplate, numberedCopyInsertIndex, numberedCopyName } from '../../templates.js';
 import { uiGlyphs } from '../../uiAssets.js';
 import { Fenetre, MessageChangementTemplate } from '../commun/ComposantsCommuns.jsx';
 import { FenetreConfirmationSuppression } from '../dialogues/FenetreConfirmationSuppression.jsx';
@@ -507,8 +507,9 @@ export function FenetreEditionFiche({ participant, initiativeTextOrder, phaseAct
     const copie = instantiateTrackerCopy(source);
     if (!copie) return courant;
     const nom = numberedCopyName(suivis.map((suivi) => suivi.name), source.name, t('templates.fallback.tracker'));
+    const insertionIndex = numberedCopyInsertIndex(suivis.map((suivi) => suivi.name), source.name, t('templates.fallback.tracker'));
     const suivisSuivants = [...suivis];
-    suivisSuivants.splice(index + 1, 0, { ...copie, name: nom });
+    suivisSuivants.splice(insertionIndex, 0, { ...copie, name: nom });
     return { ...courant, trackers: suivisSuivants };
   });
   const renduEditionMultiple = (entete, valider, enregistrerCommeTemplate) => (

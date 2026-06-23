@@ -74,11 +74,39 @@ function normalizeTemplateName(value, fallback = t('templates.fallback.unnamed')
 
 export function numberedCopyName(existingNames = [], sourceName = '', fallback = t('templates.fallback.unnamed')) {
   const source = normalizeTemplateName(sourceName, fallback);
-  const base = source.replace(/\s+\d+$/, '').trim() || source;
-  const usedNames = new Set((existingNames || []).map((name) => String(name || '').trim().toLocaleLowerCase()).filter(Boolean));
-  let index = 1;
-  while (usedNames.has(`${base} ${index}`.toLocaleLowerCase())) index += 1;
-  return `${base} ${index}`;
+  const base = numberedCopyBase(source, fallback);
+  const maxIndex = (existingNames || []).reduce((maximum, name) => {
+    const part = numberedCopyParts(name, fallback);
+    return sameCopyBase(part.base, base) ? Math.max(maximum, part.index) : maximum;
+  }, 0);
+  return `${base} ${Math.max(1, maxIndex + 1)}`;
+}
+
+export function numberedCopyInsertIndex(existingNames = [], sourceName = '', fallback = t('templates.fallback.unnamed')) {
+  const base = numberedCopyBase(sourceName, fallback);
+  const lastIndex = (existingNames || []).reduce((position, name, index) => (
+    sameCopyBase(numberedCopyBase(name, fallback), base) ? index : position
+  ), -1);
+  return lastIndex + 1;
+}
+
+export function numberedCopyBase(sourceName = '', fallback = t('templates.fallback.unnamed')) {
+  const source = normalizeTemplateName(sourceName, fallback);
+  const match = source.match(/^(.*?)(?:\s+(\d+))?$/);
+  return match?.[1]?.trim() || source;
+}
+
+function numberedCopyParts(name, fallback) {
+  const source = normalizeTemplateName(name, fallback);
+  const match = source.match(/^(.*?)(?:\s+(\d+))?$/);
+  return {
+    base: match?.[1]?.trim() || source,
+    index: match?.[2] ? Number(match[2]) : 0,
+  };
+}
+
+function sameCopyBase(left, right) {
+  return String(left || '').toLocaleLowerCase() === String(right || '').toLocaleLowerCase();
 }
 
 function normalizeTemplate(template) {
