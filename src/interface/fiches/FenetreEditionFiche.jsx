@@ -514,7 +514,7 @@ export function FenetreEditionFiche({ participant, initiativeTextOrder, phaseAct
   });
   const renduEditionMultiple = (entete, valider, enregistrerCommeTemplate) => (
     <>
-      <Fenetre title={title} onClose={onClose} header={entete} className={className}>
+      <Fenetre title={title} onClose={onClose} header={entete} className={className} outsideCloseMode="double-mouse">
         {templateSwitchRequest && <MessageChangementTemplate onAnnuler={onAnnulerChangementTemplate} onValider={() => onValiderChangementTemplate?.(normaliserFiche(brouillon, textConfig, { phaseActionMode: modePhasesCochees ? phaseActionModes.CHECKED : '', phaseCount, multipleActionSlots }), categorieTemplate)} onAbandonner={onAbandonnerChangementTemplate} />}
         <div className="grid2">
           <label className="field">{t('common.name')}<input value={brouillon.name} onChange={(e) => modifierChamp('name', e.target.value)} /></label>

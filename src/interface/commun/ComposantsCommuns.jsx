@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { t } from '../../i18n/index.js';
 import { colorAccents } from '../../constants.js';
 import { uiGlyphs } from '../../uiAssets.js';
@@ -126,10 +127,31 @@ export function BadgeRound({ round, effect, phase, surpriseRound = false }) {
   );
 }
 
-export function Fenetre({ title, children, onClose, header, className = '', style }) {
+export function fermetureExterieureSurClic(mode, pointerType) {
+  return mode !== 'double-mouse' || pointerType !== 'mouse';
+}
+
+export function fermetureExterieureSurDoubleClic(mode, pointerType) {
+  return mode === 'double-mouse' && pointerType === 'mouse';
+}
+
+export function Fenetre({ title, children, onClose, header, className = '', style, outsideCloseMode = 'single' }) {
+  const pointerTypeRef = useRef('');
   const entete = header ?? <div className="row" style={{ justifyContent: 'space-between', marginBottom: 10 }}><h2 style={{ margin: 0 }}>{title}</h2><button className="icon-btn" onClick={onClose} aria-label={t('common.close')}>{uiGlyphs.close}</button></div>;
   const overlayClass = className ? `${className.split(' ')[0]}-overlay` : '';
-  return <div className={`overlay ${overlayClass}`} onClick={onClose}><div className={`sheet ${className}`} style={style} onClick={(event) => event.stopPropagation()}>{entete}{children}</div></div>;
+  const typePointeur = (event) => pointerTypeRef.current || (event.nativeEvent?.sourceCapabilities?.firesTouchEvents ? 'touch' : 'mouse');
+  const memoriserPointeur = (event) => {
+    if (event.target === event.currentTarget) pointerTypeRef.current = event.pointerType || '';
+  };
+  const fermerSurClic = (event) => {
+    if (event.target !== event.currentTarget) return;
+    if (fermetureExterieureSurClic(outsideCloseMode, typePointeur(event))) onClose?.();
+  };
+  const fermerSurDoubleClic = (event) => {
+    if (event.target !== event.currentTarget) return;
+    if (fermetureExterieureSurDoubleClic(outsideCloseMode, typePointeur(event))) onClose?.();
+  };
+  return <div className={`overlay ${overlayClass}`} onPointerDown={memoriserPointeur} onClick={fermerSurClic} onDoubleClick={fermerSurDoubleClic}><div className={`sheet ${className}`} style={style} onClick={(event) => event.stopPropagation()}>{entete}{children}</div></div>;
 }
 
 export function MessageChangementTemplate({ onAnnuler, onValider, onAbandonner }) {
