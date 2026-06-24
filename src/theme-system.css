@@ -1825,6 +1825,11 @@ body:has(.app[data-mode="dark"]),
     --space-page-inline: 24px;
   }
 
+  .scene-app.has-character-panel {
+    --scene-panel-content-left: max(20px, calc((100vw - 1180px) / 2));
+    --scene-panel-content-width: min(760px, calc(100vw - 540px));
+  }
+
   .scene-main.with-reserve {
     grid-template-columns: minmax(0, 760px);
     justify-content: center;
@@ -1832,9 +1837,9 @@ body:has(.app[data-mode="dark"]),
   }
 
   .scene-app.has-character-panel .shell {
-    width: min(760px, calc(100vw - 540px));
-    max-width: min(760px, calc(100vw - 540px));
-    margin-left: max(20px, calc((100vw - 1180px) / 2));
+    width: var(--scene-panel-content-width);
+    max-width: var(--scene-panel-content-width);
+    margin-left: var(--scene-panel-content-left);
     margin-right: auto;
   }
 
@@ -1842,10 +1847,15 @@ body:has(.app[data-mode="dark"]),
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .scene-app.has-character-panel .top,
   .scene-app.has-character-panel .bottom {
-    left: max(20px, calc((100vw - 1180px) / 2));
+    left: var(--scene-panel-content-left);
     transform: none;
-    width: min(760px, calc(100vw - 540px));
+    width: var(--scene-panel-content-width);
+  }
+
+  .scene-app.has-character-panel .top::before {
+    left: calc(50vw - var(--scene-panel-content-left));
   }
 
   .campaign-hub-page {
