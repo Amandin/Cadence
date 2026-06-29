@@ -35,7 +35,7 @@ function ChargementOnglet({ texte }) {
   return <div className="panel empty-section hub-tab-loading">{texte}</div>;
 }
 
-function EnteteHub({ campaignName, sombre, themeState, onOuvrirOptions, onThemeModeChange }) {
+function EnteteHub({ campaignName, sombre, themeState, onThemeModeChange }) {
   const logo = getCadenceLogo(sombre);
   return (
     <header className="campaign-hub-header panel">
@@ -46,7 +46,6 @@ function EnteteHub({ campaignName, sombre, themeState, onOuvrirOptions, onThemeM
           <span className="muted brand-meta">{campaignName || t('hub.brandFallback')} {uiGlyphs.middleDot} v{APP_VERSION}</span>
         </div>
         <ThemeModeToggle themeState={themeState} onThemeModeChange={onThemeModeChange} ariaLabel={t('hub.themeToggle')} />
-        <button className="icon-btn options-gear-btn" onClick={onOuvrirOptions} aria-label={t('options.open')}>{'\u2699'}</button>
       </div>
     </header>
   );
@@ -273,7 +272,7 @@ export function HubCampagne({ campaignName, scene, scenes, templates, trackerTem
 
   return (
     <div className={`campaign-page shell ${moduleActif ? 'random-system-active' : ''}`}>
-      <EnteteHub campaignName={campaignName} sombre={dark} themeState={themeState} onOuvrirOptions={ouvrirOngletOptions} onThemeModeChange={onThemeModeChange} />
+      <EnteteHub campaignName={campaignName} sombre={dark} themeState={themeState} onThemeModeChange={onThemeModeChange} />
       <main className="campaign-hub-page">
         {moduleActif === 'random-system' ? (
           <Suspense fallback={<ChargementOnglet texte={t('random.loading')} />}>
