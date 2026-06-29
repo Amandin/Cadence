@@ -1,0 +1,276 @@
+key,fr
+dice.loading,Chargement des tirages...
+dice.title,Tirages
+dice.subtitle,Module complémentaire
+dice.openModule,Ouvrir les tirages
+dice.back,Retour aux options
+dice.presets,Dés prédéfinis
+dice.option.count,Dés
+dice.option.specialCount,Différents
+dice.option.specialCountShort,{count} différents
+dice.option.sides,Faces
+dice.option.modifier,Modificateur
+dice.option.mode,Mode
+dice.option.resolution,Système
+dice.option.successThreshold,Seuil de succès
+dice.option.successThresholdShort,Seuil {threshold}+
+dice.option.keepCount,Dés gardés
+dice.option.keepMode,Garde
+dice.option.keepHighestShort,Garde {count} hauts
+dice.option.keepLowestShort,Garde {count} bas
+dice.option.exploding,Explosifs
+dice.option.explodingAria,Activer les dés explosifs
+dice.resolution.total,Total
+dice.resolution.successes,Succès
+dice.resolution.keep,XgY
+dice.keep.highest,Meilleurs dés
+dice.keep.lowest,Plus bas dés
+dice.mode.normal,Normal
+dice.mode.advantage,Avantage
+dice.mode.disadvantage,Désavantage
+dice.roll.action,Lancer
+dice.roll.rolling,Roulement...
+dice.result.title,Résultat
+dice.result.successes,Succès
+dice.result.kept,Gardés
+dice.result.raw,Brut {raw}
+dice.result.successThreshold,Seuil {threshold}+
+dice.result.empty,En attente
+dice.result.noModifier,Sans modificateur
+dice.result.modifier,Mod {modifier}
+dice.group.label,Série {index}
+dice.group.kept,Gardée
+dice.group.discarded,Écartée
+dice.group.total,Total {total}
+dice.visual.placeholder,d{sides} prêt
+dice.visual.rolling,d{sides} en cours
+dice.visual.value,{value} sur d{sides}
+dice.visual.scene,Dés en trois dimensions
+dice.history.title,Historique
+dice.history.clear,Effacer
+dice.saved.title,Lancers enregistrés
+dice.saved.dice,Dés
+dice.saved.formula,Formule
+dice.saved.placeholder,3d8 ou 5(2)d10
+dice.saved.profile.label,Profil
+dice.saved.profile.total,Jet simple
+dice.saved.profile.successes,Système à succès
+dice.saved.profile.keep,XgY
+dice.saved.profile.specialSuccessPool,Pool à seuil
+dice.saved.profile.dualD12,Duo narratif
+dice.saved.detail.threshold,Seuil {threshold}+
+dice.saved.detail.specialDice,{count} distinctifs
+dice.saved.detail.specialDiceHint,Parenthèses = dés distinctifs
+dice.saved.detail.dualDie,2d12 avec 1 dé distinctif
+dice.saved.detail.keepHighest,Garde {count} hauts
+dice.saved.detail.keepLowest,Garde {count} bas
+dice.saved.save,Enregistrer
+dice.saved.empty,Aucun lancer enregistré
+dice.saved.invalidFormula,Formule invalide
+dice.saved.delete,Supprimer {formula}
+random.back,Retour au hub
+random.open,Ouvrir les tirages
+random.loading,Chargement des tirages...
+random.loadingSection,Chargement...
+random.title,Tirages
+random.subtitle,"Des, cartes et tables"
+random.tabs.use,Utiliser
+random.tabs.configure,Configurer
+random.tabs.statistics,Statistiques
+random.resource.rolls,Lancers
+random.resource.cards,Cartes
+random.use.run,Lancer
+random.use.noResource,Aucune ressource configurée
+random.error.generic,Le tirage n’a pas pu être effectué.
+random.result.title,Résultat
+random.result.empty,Aucun tirage pour le moment
+random.result.series,Série {index}
+random.result.showMore,Afficher {count} résultats supplémentaires
+random.result.cardsRemaining,{count} cartes restantes
+random.result.deckEmpty,Le paquet est vide.
+random.history.title,Historique
+random.history.clear,Effacer
+random.history.empty,Aucun tirage récent
+random.config.definitions,Définitions
+random.config.sources,Sources
+random.config.rules,Règles
+random.config.configure,Configuration
+random.rules.title,Règles disponibles
+random.rules.enabledCount,{count} mécanismes actifs
+random.rules.essential,Essentiel
+random.rules.enableAll,Tout activer
+random.rules.group.structure,Structure
+random.rules.group.draw,Tirages
+random.rules.group.calculation,Calculs
+random.rules.combinations,Combinaisons de tirages
+random.rules.modifiers,Modificateurs
+random.rules.modifiers.help,Ajoute ou retire des points fixes au resultat.
+random.rules.keeps,Conservation
+random.rules.keeps.help,Garde seulement les meilleurs ou les plus bas resultats d'un groupe.
+random.rules.thresholds,Seuils de succès
+random.rules.thresholds.help,Compte un succes quand un resultat atteint la valeur demandee.
+random.rules.explosions,Explosions
+random.rules.explosions.help,Relance automatiquement un resultat maximal pour ajouter un nouveau jet.
+random.rules.rerolls,Relances
+random.rules.rerolls.help,Refait les resultats qui correspondent a une condition donnee.
+random.rules.customValues,Valeurs personnalisées
+random.rules.customValues.help,Remplace une face ou une plage de faces par une valeur a toi.
+random.rules.markers,Marqueurs
+random.rules.markers.help,Ajoute des etiquettes utiles pour suivre des effets ou des etats.
+random.rules.occurrenceBonuses,Bonus d’occurrence
+random.rules.occurrenceBonuses.help,Applique un bonus quand certaines valeurs apparaissent plusieurs fois.
+random.definition.new,Nouvelle définition
+random.definition.edit,Modifier la définition
+random.definition.duplicate,Dupliquer
+random.definition.name,Nom du lancer
+random.definition.type,Type de définition
+random.definition.typeRoll,Lancer
+random.definition.typeCombination,Lancer combiné
+random.definition.exposed,Exposé directement
+random.definition.alwaysExposed,Toujours exposé directement
+random.definition.direct,Direct
+random.definition.internal,Interne
+random.definition.exposedGroup,Exposées directement
+random.definition.internalGroup,Internes
+random.definition.unusedInternal,Ni exposé directement ni utilisé dans un lancer combiné
+random.definition.usedByCombination,Ce lancer est utilisé par un lancer combiné.
+random.definition.groups,Sources tirées
+random.definition.group,Groupe {index}
+random.definition.groupName,Nom du groupe
+random.definition.groupNameOptional,Facultatif
+random.definition.groupColor,Couleur
+random.definition.useGroupColor,Utiliser une couleur
+random.definition.source,Source
+random.definition.count,Quantité
+random.definition.explosion,Explosion
+random.definition.explosionMode,Comportement
+random.definition.explosionTrigger,Déclenchement
+random.definition.explosionMaximum,Sur le maximum
+random.definition.explosionThreshold,À partir d’un seuil
+random.definition.fixed,Fixe
+random.definition.requested,Demandé
+random.definition.requestAtUse,Demander au lancer
+random.definition.never,Jamais
+random.definition.always,Toujours
+random.definition.optionalAtUse,Option au lancer
+random.definition.calculation,Calcul
+random.definition.groupCalculation,Calculer ce groupe
+random.definition.overallCalculation,Calcul de l’ensemble
+random.definition.resultMode,Résultat produit
+random.definition.resultValues,Valeurs
+random.definition.resultSum,Somme
+random.definition.resultSubtract,Soustraction
+random.definition.resultSuccesses,Compter les succès
+random.definition.threshold,Seuil
+random.definition.keep,Conservation
+random.definition.keepAll,Tout garder
+random.definition.keepHighest,Garder les plus hauts
+random.definition.keepLowest,Garder les plus bas
+random.definition.keepCount,Nombre gardé
+random.definition.modifier,Modificateur
+random.definition.requestModifier,Demander un modificateur au lancer
+random.definition.none,Aucun
+random.definition.comparisonOption,Proposer Avantage / Normal / Désavantage
+random.definition.combination,Combiner plusieurs lancers
+random.definition.optionName,Nom de l’option
+random.definition.combinationChoices,Choix proposés
+random.definition.combinationChoice,Choix {index}
+random.definition.choiceName,Nom du choix
+random.definition.defaultChoice,Choix par défaut : {name}
+random.definition.associatedRoll,Lancer associé
+random.definition.currentRoll,Lancer courant
+random.definition.chooseRoll,Choisir un lancer
+random.definition.choiceControl,Affichage du choix
+random.definition.choiceControlSwitch,Switch
+random.definition.choiceControlSlider,Curseur
+random.definition.choiceControlSelect,Menu déroulant
+random.definition.moveChoiceUp,Monter {name}
+random.definition.moveChoiceDown,Descendre {name}
+random.definition.deleteChoice,Supprimer {name}
+random.definition.advanced,Autres traitements
+random.definition.reroll,Relance
+random.definition.rerollCondition,Relancer si
+random.definition.maxTimes,Maximum
+random.definition.customValue,Valeur personnalisée
+random.definition.mappedValue,Nouvelle valeur
+random.definition.marker,Marqueur
+random.definition.occurrenceBonus,Bonus d’occurrence
+random.definition.every,Toutes les
+random.definition.bonus,Bonus
+random.source.new,Nouvelle source
+random.source.edit,Modifier la source
+random.source.random,Tirages et tables
+random.source.cards,Cartes
+random.source.cardsNew,Nouvelle source de cartes
+random.source.cardsEdit,Modifier la source de cartes
+random.source.newUniform,Nouvelle uniforme
+random.source.newWeighted,Nouvelle pondérée
+random.source.newCards,Nouveau paquet
+random.source.importCsv,Importer un CSV
+random.source.type,Distribution
+random.source.note,Commentaire (facultatif)
+random.source.uniform,Uniforme
+random.source.weighted,Pondérée
+random.source.minimum,Minimum
+random.source.maximum,Maximum
+random.source.step,Pas
+random.source.csv,Données CSV
+random.source.csvHelp,Utilise un CSV pour importer vite une table pondérée ou enrichir une source existante.
+random.source.guided,Saisie guidée
+random.source.weightedOutcomes,Résultats pondérés
+random.source.weightedHelp,Chaque poids indique la fréquence relative du résultat. Total actuel : {total}
+random.source.weightedList,Résultats · un par ligne
+random.source.outcomeLabel,Libellé
+random.source.weight,Poids
+random.source.outcomeNumber,Résultat {index}
+random.source.outcomeValue,Valeur (facultative)
+random.source.outcomeSymbol,Symbole (facultatif)
+random.source.outcomeImage,Image (facultative)
+random.source.outcomeText,Texte détaillé (facultatif)
+random.source.outcomeDetails,Détails du résultat
+random.source.outcomeDetailsHelp,"Choisis un résultat pour compléter sa valeur visible, son image et son texte."
+random.source.selectedOutcome,Résultat
+random.source.deleteOutcome,Supprimer le résultat {index}
+random.source.labelFaces,Nommer les faces
+random.source.describeFaces,Décrire les faces
+random.source.faceValue,Face
+random.source.faceLabel,Nom
+random.source.faceSymbols,Symboles
+random.source.selectedFace,Face
+random.source.faceDetails,Détails d’une face
+random.source.faceDetailsHelp,"Ajoute un nom, un symbole, une image ou un texte à chaque face utile."
+random.source.tooManyFaces,"La saisie guidée des noms est limitée à 200 faces. Pour aller plus loin, utilisez une source pondérée et importez vos résultats au format CSV."
+random.source.chooseFile,Choisir un fichier
+random.source.used,Cette source est utilisée par une définition.
+random.deck.new,Nouveau paquet
+random.deck.edit,Modifier le paquet
+random.deck.none,Aucun paquet configuré
+random.deck.cards,{count} cartes
+random.deck.cardList,Cartes · une par ligne
+random.deck.cardDetails,Détails d’une carte
+random.deck.cardDetailsHelp,Sélectionne une carte pour compléter sa présentation et son texte.
+random.deck.selectedCard,Carte
+random.deck.cardValue,Valeur (facultative)
+random.deck.cardSymbol,Symbole (facultatif)
+random.deck.cardImage,URL de l’image (facultative)
+random.deck.cardComment,Commentaire (facultatif)
+random.deck.draw,Piocher
+random.deck.drawCount,Nombre de cartes
+random.deck.remaining,{count} restantes
+random.definition.linkedTable,Relier le résultat à une table
+random.definition.linkedTableSource,Source liée
+random.definition.linkedTableLabel,Libellé affiché
+random.deck.discardPile,Défausse
+random.deck.discardSummary,Défausse · {count}
+random.cards.drawMode,Mode de tirage
+random.cards.draw,Pioche
+random.cards.replacement,Tirage avec remise
+random.deck.return,Remettre
+random.deck.shuffle,Mélanger
+random.stats.uses,Utilisations
+random.stats.draws,Tirages élémentaires
+random.stats.reset,Réinitialiser les statistiques
+random.stats.definitions,Définitions utilisées
+random.stats.distribution,Fréquences observées
+random.stats.cards,Sources de cartes utilisées
+random.stats.empty,Pas encore de données

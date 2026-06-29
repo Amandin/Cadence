@@ -36,3 +36,53 @@
   flex: 0 0 auto;
 }
 
+:root[data-performance="low"] *,
+[data-performance="low"] * {
+  animation-duration: .001ms !important;
+  animation-iteration-count: 1 !important;
+  scroll-behavior: auto !important;
+  transition-duration: .001ms !important;
+}
+
+:root[data-performance="low"] .top,
+:root[data-performance="low"] .bottom,
+:root[data-performance="low"] .sheet,
+:root[data-performance="low"] .overlay,
+[data-performance="low"] .top,
+[data-performance="low"] .bottom,
+[data-performance="low"] .sheet,
+[data-performance="low"] .overlay {
+  backdrop-filter: none !important;
+}
+
+:root[data-performance="low"] .brand,
+:root[data-performance="low"] .card,
+:root[data-performance="low"] .panel,
+:root[data-performance="low"] .bottom,
+:root[data-performance="low"] .sheet,
+:root[data-performance="low"] .round,
+:root[data-performance="low"] .small-btn,
+:root[data-performance="low"] .theme-toggle,
+:root[data-performance="low"] .clock-face,
+:root[data-performance="low"] .status.expired,
+:root[data-performance="low"] .tracker.threshold-glow,
+[data-performance="low"] .brand,
+[data-performance="low"] .card,
+[data-performance="low"] .panel,
+[data-performance="low"] .bottom,
+[data-performance="low"] .sheet,
+[data-performance="low"] .round,
+[data-performance="low"] .small-btn,
+[data-performance="low"] .theme-toggle,
+[data-performance="low"] .clock-face,
+[data-performance="low"] .status.expired,
+[data-performance="low"] .tracker.threshold-glow {
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+:root[data-performance="low"] .card.active,
+[data-performance="low"] .card.active {
+  transform: none;
+}
+

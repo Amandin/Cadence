@@ -1,3 +1,4 @@
+import { memo, useMemo } from 'react';
 import { hasTriggeredClock, isVisible } from '../../logic.js';
 import { t } from '../../i18n/index.js';
 import { FichetteParticipant } from './FichetteParticipant.jsx';
@@ -6,10 +7,10 @@ function aDuContenuOperationnel(participant, indicateursVisibles) {
   return indicateursVisibles.length > 0 || (participant.statuses || []).length > 0;
 }
 
-export function FichetteInitiative({ participant, actif, groupeSimultane, temporaliteSouple, montrerInitiative = true, afficherActionsSouples = true, dejaJoue, actionsRestantes = 0, actionsJouees = 0, onMarquerAJoue, onAnnulerAJoue, onOuvrir, onSuivi, onSupprimerSuivi, onAjouterEtat, onModifierEtat, onRetirerEtat, onQuitterInitiative }) {
-  const declenchee = hasTriggeredClock(participant);
+export const FichetteInitiative = memo(function FichetteInitiative({ participant, actif, groupeSimultane, temporaliteSouple, montrerInitiative = true, afficherActionsSouples = true, dejaJoue, actionsRestantes = 0, actionsJouees = 0, onMarquerAJoue, onAnnulerAJoue, onOuvrir, onSuivi, onSupprimerSuivi, onAjouterEtat, onModifierEtat, onRetirerEtat, onQuitterInitiative, performanceLow = false }) {
+  const declenchee = useMemo(() => hasTriggeredClock(participant), [participant]);
   const estPJ = participant.kind === 'PJ';
-  const indicateursVisibles = participant.trackers.filter(isVisible);
+  const indicateursVisibles = useMemo(() => (participant.trackers || []).filter(isVisible), [participant.trackers]);
   const contenuOperationnel = aDuContenuOperationnel(participant, indicateursVisibles);
   const sortieConseillee = !estPJ && !contenuOperationnel;
   const boutonSouple = temporaliteSouple && afficherActionsSouples && !groupeSimultane;
@@ -30,6 +31,7 @@ export function FichetteInitiative({ participant, actif, groupeSimultane, tempor
   const afficherRetourSouple = boutonSouple && actionsJouees > 0;
   const afficherActionSouple = boutonSouple && actionsRestantes > 0;
   const flechesRestantes = Array.from({ length: Math.max(1, actionsRestantes) }, (_, index) => <span className="cadence-arrow-icon forward" key={index} aria-hidden="true" />);
+  const autoCollapsed = performanceLow && !actif && !declenchee;
 
   return (
     <FichetteParticipant
@@ -44,6 +46,7 @@ export function FichetteInitiative({ participant, actif, groupeSimultane, tempor
       onAjouterEtat={onAjouterEtat}
       onModifierEtat={onModifierEtat}
       onRetirerEtat={onRetirerEtat}
+      autoCollapsed={autoCollapsed}
       primaryAction={(
         <div className="card-actions">
           <button className={`small-btn leave-initiative-btn ${sortieConseillee ? 'suggested' : ''}`} onClick={onQuitterInitiative} title={t('initiative.card.moveToReserve')} aria-label={t('initiative.card.moveParticipantToReserve', { name: participant.name })}><span className="cadence-arrow-icon forward" aria-hidden="true" /> <span>{t('reserve.title')}</span></button>
@@ -55,4 +58,4 @@ export function FichetteInitiative({ participant, actif, groupeSimultane, tempor
       )}
     />
   );
-}
+});

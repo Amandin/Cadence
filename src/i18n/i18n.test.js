@@ -1,7 +1,82 @@
 import { describe, expect, it } from 'vitest';
+import baseSource from './translations.csv?raw';
+import randomSource from './translations-random.csv?raw';
 import { getAvailableLocales, t } from './index.js';
 
+function parseCsv(text) {
+  const rows = [];
+  let row = [];
+  let cell = '';
+  let quoted = false;
+
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    const next = text[index + 1];
+
+    if (char === '"' && quoted && next === '"') {
+      cell += '"';
+      index += 1;
+      continue;
+    }
+
+    if (char === '"') {
+      quoted = !quoted;
+      continue;
+    }
+
+    if (char === ',' && !quoted) {
+      row.push(cell);
+      cell = '';
+      continue;
+    }
+
+    if ((char === '\n' || char === '\r') && !quoted) {
+      if (char === '\r' && next === '\n') index += 1;
+      row.push(cell);
+      if (row.some((value) => value.trim())) rows.push(row);
+      row = [];
+      cell = '';
+      continue;
+    }
+
+    cell += char;
+  }
+
+  row.push(cell);
+  if (row.some((value) => value.trim())) rows.push(row);
+  return rows;
+}
+
+function placeholders(value) {
+  return [...String(value || '').matchAll(/\{([a-zA-Z0-9_]+)\}/g)]
+    .map((match) => match[1])
+    .sort();
+}
+
 describe('i18n', () => {
+  it('garde les fichiers CSV bien formes', () => {
+    const sources = [baseSource, randomSource];
+    const keys = new Set();
+
+    sources.forEach((source) => {
+      const [header, ...records] = parseCsv(source);
+      expect(header).toEqual(['key', 'fr']);
+
+      records.forEach((record) => {
+        expect(record).toHaveLength(header.length);
+        const [key, ...values] = record;
+        expect(key).not.toBe('');
+        expect(keys.has(key)).toBe(false);
+        keys.add(key);
+
+        values.forEach((value) => {
+          expect(String(value).trim()).not.toBe('');
+          expect(placeholders(value)).toEqual(placeholders(values[0]));
+        });
+      });
+    });
+  });
+
   it('lit les textes depuis le CSV', () => {
     expect(getAvailableLocales()).toContain('fr');
     expect(t('common.add')).toBe('Ajouter');

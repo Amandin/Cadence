@@ -1,9 +1,10 @@
+import { memo, useMemo } from 'react';
 import { BarreActionBas } from './BarreActionBas.jsx';
 import { EnteteScene } from './EnteteScene.jsx';
 import { ListeInitiative } from './ListeInitiative.jsx';
 import { ReserveHorsInitiative } from './ReserveHorsInitiative.jsx';
 
-export function SceneView({
+export const SceneView = memo(function SceneView({
   scene,
   characters,
   active,
@@ -44,8 +45,13 @@ export function SceneView({
   onAjouterParticipant,
   onSaisirInitiatives,
   onOuvrirMenu,
+  performanceLow = false,
 }) {
-  const actifId = scene.round < 0 ? '' : temporalitePhases ? phaseActiveId : scene.activeId;
+  const actifId = useMemo(() => scene.round < 0 ? '' : temporalitePhases ? phaseActiveId : scene.activeId, [phaseActiveId, scene.activeId, scene.round, temporalitePhases]);
+  const prochainRound = useMemo(
+    () => declarationEnDeclaration ? false : temporaliteSouple ? toutLeMondeAJoueSouple : temporalitePhases ? phaseDemarreNouveauRound : nextStartsRound,
+    [declarationEnDeclaration, nextStartsRound, phaseDemarreNouveauRound, temporalitePhases, temporaliteSouple, toutLeMondeAJoueSouple],
+  );
 
   return (
     <div className={`app scene-app ${dark ? 'dark' : ''} ${characters.selected ? 'has-character-panel' : ''}`}>
@@ -75,6 +81,7 @@ export function SceneView({
           onAjouterEtatScene={onAjouterEtatScene}
           onModifierEtatScene={onModifierEtatScene}
           onRetirerEtatScene={onRetirerEtatScene}
+          performanceLow={performanceLow}
         />
         <main className={`scene-main ${scene.reserve?.length ? 'with-reserve' : ''}`}>
           <ListeInitiative
@@ -86,6 +93,7 @@ export function SceneView({
             temporalitePhases={temporalitePhases}
             temporaliteDeclaration={temporaliteDeclaration}
             phaseAttendRelanceInitiative={phaseAttendRelanceInitiative}
+            performanceLow={performanceLow}
             onMarquerAJoue={onMarquerAJoue}
             onAnnulerAJoue={onAnnulerAJoue}
           />
@@ -95,7 +103,7 @@ export function SceneView({
       <BarreActionBas
         dark={dark}
         classeSuivant={classeSuivantEffective}
-        prochainRound={declarationEnDeclaration ? false : temporaliteSouple ? toutLeMondeAJoueSouple : temporalitePhases ? phaseDemarreNouveauRound : nextStartsRound}
+        prochainRound={prochainRound}
         round={scene.round}
         horlogeBloquee={horlogesBloquantesActives.length > 0}
         suivantDesactive={suivantDesactive}
@@ -111,4 +119,4 @@ export function SceneView({
       />
     </div>
   );
-}
+});

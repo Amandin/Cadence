@@ -3,10 +3,11 @@ import { APP_VERSION } from '../../constants.js';
 import { activeGlobalTrackerThresholds, globalTrackerDisplayValue, globalTrackerTimerState } from '../../domain/globalTracker.js';
 import { t } from '../../i18n/index.js';
 import { getCadenceLogo, uiGlyphs } from '../../uiAssets.js';
+import { ThemeModeToggle } from '../app/MenuOptions.jsx';
 import { EtiquetteEtat, Fenetre } from '../commun/ComposantsCommuns.jsx';
 import { EditeurSeuilsCompteurScene } from '../suivis/CompteurGlobal.jsx';
 
-function MenuEntete({ sombre, onChangerTheme, onClose }) {
+function MenuEntete({ sombre, themeState, onThemeModeChange, onOpenOptions, onClose }) {
   const logo = getCadenceLogo(sombre);
 
   return (
@@ -16,11 +17,8 @@ function MenuEntete({ sombre, onChangerTheme, onClose }) {
         <strong className="brand-title">Cadence</strong>
         <span className="muted brand-meta">{t('menu.brandMeta', { version: APP_VERSION })}</span>
       </div>
-      <button className={`theme-toggle ${sombre ? 'dark-on' : 'light-on'}`} onClick={() => onChangerTheme(!sombre)} aria-label={t('menu.toggleTheme')}>
-        <span>{uiGlyphs.themeLight}</span>
-        <span>{uiGlyphs.themeDark}</span>
-        <i />
-      </button>
+      <ThemeModeToggle themeState={themeState} onThemeModeChange={onThemeModeChange} ariaLabel={t('menu.toggleTheme')} />
+      <button className="icon-btn options-gear-btn" onClick={onOpenOptions} aria-label={t('options.open')}>{'\u2699'}</button>
       <button className="icon-btn menu-close-btn" onClick={onClose} aria-label={t('common.close')}>{uiGlyphs.close}</button>
     </div>
   );
@@ -303,7 +301,7 @@ function FenetreRetourPreparation({ onFermer, onValider }) {
   );
 }
 
-export function MenuPrincipal({ scene, restorePoints = [], onRestore, onReturnToPreparation, onReturnToPreparationWithOptions, onAdvanceRound, onDecreaseRound, onChangeRoundWithAutomations, onAdvanceAutomations, onRewindAutomations, onResetTrackers, onClearStatuses, onEndTemporaryEffects, onClose, dark, setDark, onAddParticipant, onDuplicateParticipant, onOpenInitiativeRoller, onOpenCampaignHub, onGlobalTracker, onStepGlobalTracker, onAddSceneStatus, onEditSceneStatus, onRemoveSceneStatus, onUpdateSceneNotes }) {
+export function MenuPrincipal({ scene, restorePoints = [], onRestore, onReturnToPreparation, onReturnToPreparationWithOptions, onAdvanceRound, onDecreaseRound, onChangeRoundWithAutomations, onAdvanceAutomations, onRewindAutomations, onResetTrackers, onClearStatuses, onEndTemporaryEffects, onClose, dark, themeState, onThemeModeChange, onOpenOptions, onAddParticipant, onDuplicateParticipant, onOpenInitiativeRoller, onOpenCampaignHub, onGlobalTracker, onStepGlobalTracker, onAddSceneStatus, onEditSceneStatus, onRemoveSceneStatus, onUpdateSceneNotes }) {
   const pointsRestauration = [...restorePoints].sort((a, b) => a.round - b.round);
   const [pointRestaurationId, setPointRestaurationId] = useState(pointsRestauration.at(-1)?.id || '');
   const [editionIndicateurOuverte, setEditionIndicateurOuverte] = useState(false);
@@ -328,7 +326,7 @@ export function MenuPrincipal({ scene, restorePoints = [], onRestore, onReturnTo
   };
 
   return (
-    <Fenetre title={t('menu.title')} onClose={onClose} header={<MenuEntete sombre={dark} onChangerTheme={setDark} onClose={onClose} />} className={`main-menu ${dark ? 'dark menu-dark' : ''}`}>
+    <Fenetre title={t('menu.title')} onClose={onClose} header={<MenuEntete sombre={dark} themeState={themeState} onThemeModeChange={onThemeModeChange} onOpenOptions={onOpenOptions} onClose={onClose} />} className={`main-menu ${dark ? 'dark menu-dark' : ''}`}>
       <div className="main-menu-layout">
         <div className="main-menu-primary">
           <button className="primary hub-menu-main-action" onClick={onOpenCampaignHub}>{t('menu.returnHub')}</button>

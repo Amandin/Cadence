@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createBlankScene, createCampaignActions } from '../actions/campaignActions.js';
 import { createSceneActions } from '../actions/sceneActions.js';
 import { createRestorePoint, pruneRestorePoints } from '../actions/sceneSupport.js';
@@ -9,15 +9,17 @@ import { hasCompletedFirstRunOnboarding, markFirstRunOnboardingComplete, resetFi
 import { normaliserCreneauxAction, trierParInitiative } from '../domain/initiative.js';
 import { isManualMultipleActionMode, rulesAllowMultipleSlots } from '../domain/initiativeCost.js';
 import { hasTriggeredClock, makeTestCampaign, nextTurnInfo } from '../logic.js';
+import { addOnboardingTrackerTemplates } from '../onboardingTrackerTemplates.js';
 import { createRulePresetSnapshot } from '../rulePresets.js';
 import { DEFAULT_CAMPAIGN_NAME, campaignNameFromPayload, campaignTemplatesFromPayload, createCampaignPayload, loadCampaign, normalizeCampaignPayload, normalizeCampaignScene, normalizeCampaignScenes, rulePresetSnapshotFromPayload, saveCampaign, serializeCampaign } from '../storage.js';
 import { removeLocalCampaignPayload } from '../localCampaignStorage.js';
 import { campaignEntryFromPayload, copiedCampaignNames, readCadenceFile, writeCadenceFile } from './campaignFilePersistence.js';
 import { normalizeTemplateStore } from '../templates.js';
 import { t } from '../i18n/index.js';
+import { clearThemePreference, devicePrefersDark, initialThemePreference, persistThemePreference, removeLegacyThemePreference, storedThemePreference, themeModeFromPreference, themePreferenceModes } from '../themePreference.js';
 
 const SCENE_INDEX_STORAGE_KEY = 'cadence:interface:scene-index:v1';
-const THEME_STORAGE_KEY = 'cadence:interface:dark:v1';
+const LOCAL_PERSISTENCE_DEBOUNCE_MS = 300;
 
 function initialSceneIndex() {
   try {
@@ -38,21 +40,6 @@ function initialRestorePoints(scenes) {
     const scene = normalizeCampaignScene(rawScene);
     return [scene.id, pruneRestorePoints([createRestorePoint(scene)])];
   }));
-}
-
-function devicePrefersDark() {
-  return typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches;
-}
-
-function storedThemePreference() {
-  try {
-    const value = window.localStorage.getItem(THEME_STORAGE_KEY);
-    if (value === 'true') return true;
-    if (value === 'false') return false;
-  } catch {
-    // La preference visuelle reste locale et optionnelle.
-  }
-  return null;
 }
 
 function initiativeOptions(scene = {}) {
@@ -88,7 +75,8 @@ export function useCampaign() {
   const [campaignName, setCampaignName] = useState(() => campaignNameFromPayload(initialCampaign));
   const [sceneIndex, setSceneIndex] = useState(initialSceneIndex);
   const [restorePoints, setRestorePoints] = useState(() => initialRestorePoints(initialCampaign.scenes));
-  const [dark, setDark] = useState(() => storedThemePreference() ?? devicePrefersDark());
+  const [themePreference, setThemePreference] = useState(storedThemePreference);
+  const [dark, setDark] = useState(() => initialThemePreference({ storedPreference: themePreference }));
   const [roundEffect, setRoundEffect] = useState(null);
   const [campaignEntries, setCampaignEntries] = useState(() => [initialEntry]);
   const [activeCampaignEntryId, setActiveCampaignEntryId] = useState(initialEntry.id);
@@ -98,18 +86,42 @@ export function useCampaign() {
   const activeCampaignEntryIdRef = useRef(activeCampaignEntryId);
   const fileHandlesRef = useRef(new Map());
   const lastPersistenceSignatureRef = useRef('');
+  const lastPersistenceInputsRef = useRef(null);
+  const fileSaveTimerRef = useRef(null);
+  const setManualTheme = useCallback((nextDark) => {
+    const value = !!nextDark;
+    setThemePreference(value);
+    persistThemePreference(value);
+    setDark(value);
+  }, []);
+  const setThemeMode = useCallback((mode) => {
+    if (mode === themePreferenceModes.LIGHT) {
+      setManualTheme(false);
+      return;
+    }
+    if (mode === themePreferenceModes.DARK) {
+      setManualTheme(true);
+      return;
+    }
+    setThemePreference(null);
+    clearThemePreference();
+    setDark(devicePrefersDark());
+  }, [setManualTheme]);
 
-  const rawScene = scenes[sceneIndex] || scenes[0] || createBlankScene(campaignRules);
-  const scene = normalizeCampaignScene(applyInitiativeRules(rawScene, campaignRules));
-  const syncedScenes = normalizeScenesWithCampaignRules(scenes, campaignRules);
+  const rawScene = useMemo(() => scenes[sceneIndex] || scenes[0] || createBlankScene(campaignRules), [campaignRules, sceneIndex, scenes]);
+  const scene = useMemo(() => normalizeCampaignScene(applyInitiativeRules(rawScene, campaignRules)), [campaignRules, rawScene]);
+  const syncedScenes = useMemo(() => normalizeScenesWithCampaignRules(scenes, campaignRules), [campaignRules, scenes]);
   const participants = scene.participants;
-  const active = participants.find((p) => p.id === scene.activeId);
-  const blocked = participants.filter(hasTriggeredClock);
-  const { nextStartsRound } = nextTurnInfo(scene, blocked.length > 0);
+  const active = useMemo(() => participants.find((p) => p.id === scene.activeId), [participants, scene.activeId]);
+  const blocked = useMemo(() => participants.filter(hasTriggeredClock), [participants]);
+  const { nextStartsRound } = useMemo(() => nextTurnInfo(scene, blocked.length > 0), [blocked.length, scene]);
   const nextClass = blocked.length ? 'blocked' : nextStartsRound ? 'next-round' : '';
 
   useEffect(() => { campaignEntriesRef.current = campaignEntries; }, [campaignEntries]);
   useEffect(() => { activeCampaignEntryIdRef.current = activeCampaignEntryId; }, [activeCampaignEntryId]);
+  useEffect(() => () => {
+    if (fileSaveTimerRef.current) window.clearTimeout(fileSaveTimerRef.current);
+  }, []);
   useEffect(() => {
     try {
       window.sessionStorage.setItem(SCENE_INDEX_STORAGE_KEY, String(sceneIndex));
@@ -120,52 +132,66 @@ export function useCampaign() {
 
   useEffect(() => {
     if (!persistenceEnabled) return undefined;
-    const signature = JSON.stringify({ scenes: syncedScenes, campaignName, templateStore, campaignRules, rulePresetSnapshot, activeCampaignEntryId });
-    if (signature === lastPersistenceSignatureRef.current) return undefined;
-    lastPersistenceSignatureRef.current = signature;
-
-    const activeEntry = campaignEntriesRef.current.find((entry) => entry.id === activeCampaignEntryIdRef.current);
-    const meta = activeEntry ? { id: activeEntry.id, name: campaignName, fileName: activeEntry.fileName, folderName: activeEntry.folderName } : {};
-    const content = serializeCampaign(syncedScenes, dark, campaignName, templateStore, campaignRules, rulePresetSnapshot, meta);
-    const snapshot = JSON.parse(content);
-    saveCampaign(syncedScenes, dark, campaignName, templateStore, campaignRules, rulePresetSnapshot, meta);
-
-    setCampaignEntries((entries) => entries.map((entry) => entry.id === activeCampaignEntryIdRef.current
-      ? { ...entry, name: campaignName, fileName: snapshot.campaign.fileName, folderName: snapshot.campaign.folderName, updatedAt: snapshot.savedAt, snapshot }
-      : entry));
-
-    const handle = fileHandlesRef.current.get(activeCampaignEntryIdRef.current);
-    if (!handle || !activeEntry?.autosave) return undefined;
-    setFileSaveStatus({ mode: 'saving', message: t('campaign.status.saving', { fileName: activeEntry.fileName }) });
-    const timer = window.setTimeout(async () => {
-      try {
-        await writeCadenceFile(handle, content);
-        setFileSaveStatus({ mode: 'saved', message: t('campaign.status.saved', { path: `${activeEntry.folderName}/${activeEntry.fileName}` }) });
-      } catch (error) {
-        setFileSaveStatus({ mode: 'error', message: t('campaign.status.saveError', { message: error?.message || t('campaign.error.permissionDenied') }) });
-      }
-    }, 650);
-    return () => window.clearTimeout(timer);
-  }, [syncedScenes, campaignName, templateStore, campaignRules, rulePresetSnapshot, activeCampaignEntryId, persistenceEnabled]);
-
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(THEME_STORAGE_KEY, String(!!dark));
-    } catch {
-      // Le theme reste utilisable meme sans stockage local.
+    const inputs = { syncedScenes, campaignName, templateStore, campaignRules, rulePresetSnapshot, activeCampaignEntryId };
+    const previousInputs = lastPersistenceInputsRef.current;
+    const unchanged = previousInputs
+      && previousInputs.syncedScenes === syncedScenes
+      && previousInputs.campaignName === campaignName
+      && previousInputs.templateStore === templateStore
+      && previousInputs.campaignRules === campaignRules
+      && previousInputs.rulePresetSnapshot === rulePresetSnapshot
+      && previousInputs.activeCampaignEntryId === activeCampaignEntryId;
+    if (!previousInputs || unchanged) {
+      lastPersistenceInputsRef.current = inputs;
+      return undefined;
     }
-  }, [dark]);
+    lastPersistenceInputsRef.current = inputs;
+
+    const timer = window.setTimeout(() => {
+      const signature = JSON.stringify({ scenes: syncedScenes, campaignName, templateStore, campaignRules, rulePresetSnapshot, activeCampaignEntryId });
+      if (signature === lastPersistenceSignatureRef.current) return;
+      lastPersistenceSignatureRef.current = signature;
+
+      const activeEntry = campaignEntriesRef.current.find((entry) => entry.id === activeCampaignEntryIdRef.current);
+      const meta = activeEntry ? { id: activeEntry.id, name: campaignName, fileName: activeEntry.fileName, folderName: activeEntry.folderName } : {};
+      const content = serializeCampaign(syncedScenes, dark, campaignName, templateStore, campaignRules, rulePresetSnapshot, meta);
+      const snapshot = JSON.parse(content);
+      saveCampaign(syncedScenes, dark, campaignName, templateStore, campaignRules, rulePresetSnapshot, meta);
+
+      setCampaignEntries((entries) => entries.map((entry) => entry.id === activeCampaignEntryIdRef.current
+        ? { ...entry, name: campaignName, fileName: snapshot.campaign.fileName, folderName: snapshot.campaign.folderName, updatedAt: snapshot.savedAt, snapshot }
+        : entry));
+
+      const handle = fileHandlesRef.current.get(activeCampaignEntryIdRef.current);
+      if (!handle || !activeEntry?.autosave) return;
+      if (fileSaveTimerRef.current) window.clearTimeout(fileSaveTimerRef.current);
+      setFileSaveStatus({ mode: 'saving', message: t('campaign.status.saving', { fileName: activeEntry.fileName }) });
+      fileSaveTimerRef.current = window.setTimeout(async () => {
+        try {
+          await writeCadenceFile(handle, content);
+          setFileSaveStatus({ mode: 'saved', message: t('campaign.status.saved', { path: `${activeEntry.folderName}/${activeEntry.fileName}` }) });
+        } catch (error) {
+          setFileSaveStatus({ mode: 'error', message: t('campaign.status.saveError', { message: error?.message || t('campaign.error.permissionDenied') }) });
+        }
+      }, 650);
+    }, LOCAL_PERSISTENCE_DEBOUNCE_MS);
+    return () => window.clearTimeout(timer);
+  }, [syncedScenes, dark, campaignName, templateStore, campaignRules, rulePresetSnapshot, activeCampaignEntryId, persistenceEnabled]);
+
+  useEffect(() => { removeLegacyThemePreference(); }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.matchMedia) return undefined;
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    if (themePreference !== null) return undefined;
+    setDark(mediaQuery.matches);
     const updateTheme = (event) => setDark(event.matches);
     mediaQuery.addEventListener?.('change', updateTheme);
     return () => mediaQuery.removeEventListener?.('change', updateTheme);
-  }, []);
+  }, [themePreference]);
 
   const sceneActions = useMemo(() => createSceneActions({ scene, sceneIndex, blocked, restorePoints, setScenes, setRestorePoints, setRoundEffect }), [blocked, scene, restorePoints, sceneIndex]);
-  const campaignActions = useMemo(() => createCampaignActions({ scenes: syncedScenes, campaignRules, rulePresetSnapshot, setCampaignRules, setRulePresetSnapshot, sceneIndex, dark, campaignName, templateStore, setScenes, setSceneIndex, setDark, setCampaignNameState: setCampaignName, setTemplateStore }), [campaignName, campaignRules, rulePresetSnapshot, dark, sceneIndex, syncedScenes, templateStore]);
+  const campaignActions = useMemo(() => createCampaignActions({ scenes: syncedScenes, campaignRules, rulePresetSnapshot, setCampaignRules, setRulePresetSnapshot, sceneIndex, dark, campaignName, templateStore, setScenes, setSceneIndex, setDark: setManualTheme, setCampaignNameState: setCampaignName, setTemplateStore }), [campaignName, campaignRules, rulePresetSnapshot, dark, sceneIndex, setManualTheme, syncedScenes, templateStore]);
 
   const loadCampaignIntoState = (payload) => {
     const campaign = normalizeCampaignPayload(payload);
@@ -263,11 +289,13 @@ export function useCampaign() {
       if (!preset?.rules) return { ok: false, message: t('campaign.error.presetMissing') };
       const nextRules = normalizeCampaignRules(preset.rules);
       const blankScene = createBlankScene(nextRules);
-      const snapshot = createCampaignPayload([blankScene], dark, DEFAULT_CAMPAIGN_NAME, templateStore, nextRules, createRulePresetSnapshot(preset, nextRules));
+      const nextTemplateStore = addOnboardingTrackerTemplates(templateStore, preset);
+      const snapshot = createCampaignPayload([blankScene], dark, DEFAULT_CAMPAIGN_NAME, nextTemplateStore, nextRules, createRulePresetSnapshot(preset, nextRules));
       const entry = campaignEntryFromPayload(snapshot, { source: 'local' });
       setCampaignRules(nextRules);
       setRulePresetSnapshot(snapshot.rulePresetSnapshot || null);
       setScenes([blankScene]);
+      setTemplateStore(nextTemplateStore);
       setCampaignName(DEFAULT_CAMPAIGN_NAME);
       setSceneIndex(0);
       setRestorePoints(initialRestorePoints([blankScene]));
@@ -285,11 +313,13 @@ export function useCampaign() {
     startFirstRunCustomCampaign() {
       const nextRules = normalizeCampaignRules(campaignRules);
       const blankScene = createBlankScene(nextRules);
-      const snapshot = createCampaignPayload([blankScene], dark, DEFAULT_CAMPAIGN_NAME, templateStore, nextRules, null);
+      const nextTemplateStore = addOnboardingTrackerTemplates(templateStore, null);
+      const snapshot = createCampaignPayload([blankScene], dark, DEFAULT_CAMPAIGN_NAME, nextTemplateStore, nextRules, null);
       const entry = campaignEntryFromPayload(snapshot, { source: 'local' });
       setCampaignRules(nextRules);
       setRulePresetSnapshot(null);
       setScenes([blankScene]);
+      setTemplateStore(nextTemplateStore);
       setCampaignName(DEFAULT_CAMPAIGN_NAME);
       setSceneIndex(0);
       setRestorePoints(initialRestorePoints([blankScene]));
@@ -366,6 +396,14 @@ export function useCampaign() {
     },
   }), [sceneIndex]);
 
+  const actions = useMemo(() => ({
+    ...sceneActions,
+    ...campaignActions,
+    ...extraCampaignActions,
+    ...extraSceneActions,
+    setThemeMode,
+  }), [campaignActions, extraCampaignActions, extraSceneActions, sceneActions, setThemeMode]);
+
   return {
     scenes: syncedScenes,
     campaignRules,
@@ -386,11 +424,7 @@ export function useCampaign() {
     nextClass,
     roundEffect,
     firstRunOnboardingNeeded,
-    actions: {
-      ...sceneActions,
-      ...campaignActions,
-      ...extraCampaignActions,
-      ...extraSceneActions,
-    },
+    themeState: { mode: themeModeFromPreference(themePreference), dark },
+    actions,
   };
 }

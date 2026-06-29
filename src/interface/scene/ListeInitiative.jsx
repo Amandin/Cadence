@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
 import { defaultCategoryOrder, defaultEqualityRule, defaultInitiativeOrder } from '../../constants.js';
 import { actionsRestantesSouples, creneauxJouesSouples } from '../../actions/flexibleTurnState.js';
 import { grouperAffichageParticipants, grouperParInitiative, ordreCreneauxClassique, trierParInitiative } from '../../domain/initiative.js';
@@ -27,8 +27,8 @@ function changerInfoRapide(interactions, participant, index, valeur) {
   }));
 }
 
-function GroupeSimultane({ groupe, actifId, interactions }) {
-  const actif = groupe.participants.some((participant) => participant.id === actifId);
+const GroupeSimultane = memo(function GroupeSimultane({ groupe, actifId, interactions, performanceLow }) {
+  const actif = useMemo(() => groupe.participants.some((participant) => participant.id === actifId), [actifId, groupe.participants]);
 
   return (
     <div className={`simultaneous-group ${actif ? 'active' : ''}`}>
@@ -46,38 +46,54 @@ function GroupeSimultane({ groupe, actifId, interactions }) {
           onModifierEtat={(statusId) => interactions.requestStatus(participant.id, statusId)}
           onRetirerEtat={(statusId) => interactions.removeCharacterStatus(participant.id, statusId)}
           onQuitterInitiative={() => interactions.leaveInit(participant.id)}
+          performanceLow={performanceLow}
         />
       ))}
     </div>
   );
-}
+});
 
-function FichetteLibre({ scene, participant, actifId, activeSlotId, interactions, temporaliteSouple, onMarquerAJoue, onAnnulerAJoue, dejaJoue }) {
-  const actionsRestantes = temporaliteSouple ? actionsRestantesSouples(scene, participant.id) : 0;
-  const actionsJouees = temporaliteSouple ? creneauxJouesSouples(scene, participant.id).length : 0;
+const FichetteLibre = memo(function FichetteLibre({ scene, participant, actifId, activeSlotId, interactions, temporaliteSouple, onMarquerAJoue, onAnnulerAJoue, dejaJoue, performanceLow = false }) {
+  const actionsRestantes = useMemo(() => temporaliteSouple ? actionsRestantesSouples(scene, participant.id) : 0, [participant.id, scene, temporaliteSouple]);
+  const actionsJouees = useMemo(() => temporaliteSouple ? creneauxJouesSouples(scene, participant.id).length : 0, [participant.id, scene, temporaliteSouple]);
+  const actif = useMemo(
+    () => participant.actionSlotId ? participant.actionSlotId === activeSlotId || (!activeSlotId && participant.id === actifId) : participant.id === actifId,
+    [activeSlotId, actifId, participant.actionSlotId, participant.id],
+  );
+  const ouvrir = useCallback(() => interactions.openCharacter(participant.id), [interactions, participant.id]);
+  const changerInfo = useCallback((index, valeur) => changerInfoRapide(interactions, participant, index, valeur), [interactions, participant]);
+  const modifierSuivi = useCallback((trackerId, next) => interactions.updateCharacterTracker(participant.id, trackerId, next), [interactions, participant.id]);
+  const supprimerSuivi = useCallback((trackerId) => interactions.deleteCharacterTracker(participant.id, trackerId), [interactions, participant.id]);
+  const ajouterEtat = useCallback(() => interactions.requestStatus(participant.id), [interactions, participant.id]);
+  const modifierEtat = useCallback((statusId) => interactions.requestStatus(participant.id, statusId), [interactions, participant.id]);
+  const retirerEtat = useCallback((statusId) => interactions.removeCharacterStatus(participant.id, statusId), [interactions, participant.id]);
+  const quitterInitiative = useCallback(() => interactions.leaveInit(participant.id), [interactions, participant.id]);
+  const marquerAJoue = useCallback(() => onMarquerAJoue?.(participant.id), [onMarquerAJoue, participant.id]);
+  const annulerAJoue = useCallback(() => onAnnulerAJoue?.(participant.id), [onAnnulerAJoue, participant.id]);
   return (
     <FichetteInitiative
       participant={participant}
-      actif={participant.actionSlotId ? participant.actionSlotId === activeSlotId || (!activeSlotId && participant.id === actifId) : participant.id === actifId}
+      actif={actif}
       temporaliteSouple={temporaliteSouple}
       montrerInitiative={!temporaliteSouple || scene.flexibleUseInitiative !== false}
       afficherActionsSouples={scene.round >= 0}
       dejaJoue={dejaJoue}
       actionsRestantes={actionsRestantes}
       actionsJouees={actionsJouees}
-      onMarquerAJoue={() => onMarquerAJoue?.(participant.id)}
-      onAnnulerAJoue={() => onAnnulerAJoue?.(participant.id)}
-      onOuvrir={() => interactions.openCharacter(participant.id)}
-      onInfoRapide={(index, valeur) => changerInfoRapide(interactions, participant, index, valeur)}
-      onSuivi={(trackerId, next) => interactions.updateCharacterTracker(participant.id, trackerId, next)}
-      onSupprimerSuivi={(trackerId) => interactions.deleteCharacterTracker(participant.id, trackerId)}
-      onAjouterEtat={() => interactions.requestStatus(participant.id)}
-      onModifierEtat={(statusId) => interactions.requestStatus(participant.id, statusId)}
-      onRetirerEtat={(statusId) => interactions.removeCharacterStatus(participant.id, statusId)}
-      onQuitterInitiative={() => interactions.leaveInit(participant.id)}
+      onMarquerAJoue={marquerAJoue}
+      onAnnulerAJoue={annulerAJoue}
+      onOuvrir={ouvrir}
+      onInfoRapide={changerInfo}
+      onSuivi={modifierSuivi}
+      onSupprimerSuivi={supprimerSuivi}
+      onAjouterEtat={ajouterEtat}
+      onModifierEtat={modifierEtat}
+      onRetirerEtat={retirerEtat}
+      onQuitterInitiative={quitterInitiative}
+      performanceLow={performanceLow}
     />
   );
-}
+});
 
 function actionDeclareeVisible(scene, participantId) {
   if (declarationStage(scene) !== declarationStages.RESOLUTION) return '';
@@ -91,11 +107,11 @@ function participantAvecDeclaration(scene, participant) {
   return { ...participant, name: `${participant.name} (${action})` };
 }
 
-function ListeParPaliers({ scene, participants, actifId, activeSlotId, interactions, temporaliteSouple, onMarquerAJoue, onAnnulerAJoue, dejaJoue = false }) {
-  const options = optionsEgalite(scene);
-  const textMode = initiativeTextOrderEnabled(scene?.initiativeTextOrder);
-  const participantsAffiches = participants.map((participant) => participantAvecDeclaration(scene, participant));
-  const groupes = textMode
+const ListeParPaliers = memo(function ListeParPaliers({ scene, participants, actifId, activeSlotId, interactions, temporaliteSouple, onMarquerAJoue, onAnnulerAJoue, dejaJoue = false, performanceLow = false }) {
+  const options = useMemo(() => optionsEgalite(scene), [scene]);
+  const textMode = useMemo(() => initiativeTextOrderEnabled(scene?.initiativeTextOrder), [scene?.initiativeTextOrder]);
+  const participantsAffiches = useMemo(() => participants.map((participant) => participantAvecDeclaration(scene, participant)), [participants, scene]);
+  const groupes = useMemo(() => textMode
     ? participantsAffiches.reduce((items, participant) => {
         const initiative = String(participant.initiative ?? '');
         const groupe = items.find((item) => item.initiative === initiative);
@@ -103,10 +119,10 @@ function ListeParPaliers({ scene, participants, actifId, activeSlotId, interacti
         else items.push({ initiative, participants: [participant] });
         return items;
       }, [])
-    : grouperParInitiative(participantsAffiches, options);
+    : grouperParInitiative(participantsAffiches, options), [options, participantsAffiches, textMode]);
 
   if (temporaliteSouple) {
-    return <div className="initiative-tier-cards flexible-cards">{participantsAffiches.map((participant) => <FichetteLibre key={participant.actionSlotId || participant.id} scene={scene} participant={participant} actifId={actifId} activeSlotId={activeSlotId} interactions={interactions} temporaliteSouple onMarquerAJoue={onMarquerAJoue} onAnnulerAJoue={onAnnulerAJoue} dejaJoue={dejaJoue} />)}</div>;
+    return <div className="initiative-tier-cards flexible-cards">{participantsAffiches.map((participant) => <FichetteLibre key={participant.actionSlotId || participant.id} scene={scene} participant={participant} actifId={actifId} activeSlotId={activeSlotId} interactions={interactions} temporaliteSouple onMarquerAJoue={onMarquerAJoue} onAnnulerAJoue={onAnnulerAJoue} dejaJoue={dejaJoue} performanceLow={performanceLow} />)}</div>;
   }
 
   return groupes.map((groupe) => (
@@ -118,7 +134,7 @@ function ListeParPaliers({ scene, participants, actifId, activeSlotId, interacti
       <div className="initiative-tier-cards">
         {grouperAffichageParticipants(groupe.participants, options).map((bloc) => (
           bloc.simultaneous
-            ? <GroupeSimultane key={bloc.id} groupe={bloc} actifId={actifId} interactions={interactions} />
+            ? <GroupeSimultane key={bloc.id} groupe={bloc} actifId={actifId} interactions={interactions} performanceLow={performanceLow} />
             : <FichetteLibre
                 key={bloc.id}
                 scene={scene}
@@ -126,12 +142,13 @@ function ListeParPaliers({ scene, participants, actifId, activeSlotId, interacti
                 actifId={actifId}
                 activeSlotId={activeSlotId}
                 interactions={interactions}
+                performanceLow={performanceLow}
               />
         ))}
       </div>
     </section>
   ));
-}
+});
 
 function EnteteSectionSouple({ titre, compteur, variant }) {
   return (
@@ -142,9 +159,9 @@ function EnteteSectionSouple({ titre, compteur, variant }) {
   );
 }
 
-function ListeDeclaration({ scene, participants, interactions }) {
-  const declarations = normalizeDeclarations(scene.declarations, participants);
-  const ordreDeclaration = trierParInitiative(participants, optionsEgalite(scene)).reverse();
+const ListeDeclaration = memo(function ListeDeclaration({ scene, participants, interactions, performanceLow = false }) {
+  const declarations = useMemo(() => normalizeDeclarations(scene.declarations, participants), [participants, scene.declarations]);
+  const ordreDeclaration = useMemo(() => trierParInitiative(participants, optionsEgalite(scene)).reverse(), [participants, scene]);
   return (
     <div className="initiative-list flexible-list declaration-list">
       <section className="flexible-section declaration-section">
@@ -152,7 +169,7 @@ function ListeDeclaration({ scene, participants, interactions }) {
         <div className="initiative-tier-cards flexible-cards">
           {ordreDeclaration.map((participant) => (
             <div className="declaration-entry" key={participant.id}>
-              <FichetteLibre scene={scene} participant={participant} actifId="" activeSlotId="" interactions={interactions} />
+              <FichetteLibre scene={scene} participant={participant} actifId="" activeSlotId="" interactions={interactions} performanceLow={performanceLow} />
               <span className={`chip declaration-action-chip ${declarations[participant.id] ? 'ready' : ''}`}>{declarations[participant.id] || t('initiative.choose')}</span>
             </div>
           ))}
@@ -160,36 +177,52 @@ function ListeDeclaration({ scene, participants, interactions }) {
       </section>
     </div>
   );
-}
+});
 
-export function ListeInitiative({ scene, participants, actifId, interactions, temporaliteSouple, temporalitePhases, temporaliteDeclaration, phaseAttendRelanceInitiative, onMarquerAJoue, onAnnulerAJoue }) {
+export const ListeInitiative = memo(function ListeInitiative({ scene, participants, actifId, interactions, temporaliteSouple, temporalitePhases, temporaliteDeclaration, phaseAttendRelanceInitiative, onMarquerAJoue, onAnnulerAJoue, performanceLow = false }) {
   const containerRef = useRef(null);
   const previousFocusKeyRef = useRef(null);
-  const focusKey = [
+  const focusKey = useMemo(() => [
     scene.round,
     scene.phase || '',
     scene.activeSlotId || '',
     temporalitePhases ? (phaseAttendRelanceInitiative ? '' : actifId || '') : actifId || '',
     temporaliteDeclaration ? declarationStage(scene) : '',
-  ].join(':');
+  ].join(':'), [actifId, phaseAttendRelanceInitiative, scene, temporaliteDeclaration, temporalitePhases]);
 
   useEffect(() => {
     if (!focusKey || focusKey === previousFocusKeyRef.current) return;
     previousFocusKeyRef.current = focusKey;
     const frame = requestAnimationFrame(() => {
       const activeCard = containerRef.current?.querySelector('.active-turn');
-      activeCard?.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' });
+      activeCard?.scrollIntoView({ behavior: performanceLow ? 'auto' : 'smooth', block: 'start', inline: 'nearest' });
     });
     return () => cancelAnimationFrame(frame);
-  }, [focusKey]);
+  }, [focusKey, performanceLow]);
 
-  if (scene.round >= 0 && temporaliteDeclaration && declarationStage(scene) === declarationStages.DECLARATION) return <ListeDeclaration scene={scene} participants={participants} interactions={interactions} />;
+  const options = useMemo(() => optionsEgalite(scene), [scene]);
+  const phaseData = useMemo(() => {
+    const sceneAvecParticipants = { ...scene, participants };
+    return {
+      phasesCochees: isCheckedPhaseMode(sceneAvecParticipants),
+      actifs: phaseAttendRelanceInitiative ? [] : participantsPourPhaseAvancee(sceneAvecParticipants, scene.phase),
+      attente: phaseAttendRelanceInitiative ? participants : participantsHorsPhaseAvancee(sceneAvecParticipants, scene.phase),
+    };
+  }, [participants, phaseAttendRelanceInitiative, scene]);
+  const participantsClassiques = useMemo(() => ordreCreneauxClassique(participants, options), [options, participants]);
+  const listesSouples = useMemo(() => {
+    const participantsTries = trierParInitiative(participants, options);
+    const restantsParParticipant = new Map(participantsTries.map((participant) => [participant.id, actionsRestantesSouples(scene, participant.id)]));
+    return {
+      doitJouer: participantsTries.filter((participant) => restantsParParticipant.get(participant.id) > 0),
+      dejaJoues: participantsTries.filter((participant) => restantsParParticipant.get(participant.id) === 0),
+    };
+  }, [options, participants, scene]);
+
+  if (scene.round >= 0 && temporaliteDeclaration && declarationStage(scene) === declarationStages.DECLARATION) return <ListeDeclaration scene={scene} participants={participants} interactions={interactions} performanceLow={performanceLow} />;
 
   if (temporalitePhases) {
-    const sceneAvecParticipants = { ...scene, participants };
-    const phasesCochees = isCheckedPhaseMode(sceneAvecParticipants);
-    const actifs = phaseAttendRelanceInitiative ? [] : participantsPourPhaseAvancee(sceneAvecParticipants, scene.phase);
-    const attente = phaseAttendRelanceInitiative ? participants : participantsHorsPhaseAvancee(sceneAvecParticipants, scene.phase);
+    const { phasesCochees, actifs, attente } = phaseData;
 
     return (
       <div className="initiative-list flexible-list phase-list" ref={containerRef}>
@@ -198,12 +231,12 @@ export function ListeInitiative({ scene, participants, actifId, interactions, te
           {phaseAttendRelanceInitiative
             ? <div className="empty-section panel">{t('initiative.phaseRethink')}</div>
             : actifs.length > 0
-              ? <ListeParPaliers scene={scene} participants={actifs} actifId={actifId} activeSlotId={scene.activeSlotId || ''} interactions={interactions} />
+              ? <ListeParPaliers scene={scene} participants={actifs} actifId={actifId} activeSlotId={scene.activeSlotId || ''} interactions={interactions} performanceLow={performanceLow} />
               : <div className="empty-section panel">{t('initiative.phaseEmpty')}</div>}
         </section>
         {attente.length > 0 && <section className="flexible-section already-played-section phase-waiting-section">
           <EnteteSectionSouple titre={phaseAttendRelanceInitiative ? t('initiative.waitingInitiative') : phasesCochees ? t('initiative.outOfPhase') : t('initiative.waitingNextRound')} compteur={attente.length} variant="played" />
-          <ListeParPaliers scene={scene} participants={attente} actifId="" activeSlotId="" interactions={interactions} />
+          <ListeParPaliers scene={scene} participants={attente} actifId="" activeSlotId="" interactions={interactions} performanceLow={performanceLow} />
         </section>}
       </div>
     );
@@ -212,25 +245,23 @@ export function ListeInitiative({ scene, participants, actifId, interactions, te
   if (!temporaliteSouple) {
     return (
       <div className="initiative-list" ref={containerRef}>
-        <ListeParPaliers scene={scene} participants={ordreCreneauxClassique(participants, optionsEgalite(scene))} actifId={actifId} activeSlotId={scene.activeSlotId || ''} interactions={interactions} />
+        <ListeParPaliers scene={scene} participants={participantsClassiques} actifId={actifId} activeSlotId={scene.activeSlotId || ''} interactions={interactions} performanceLow={performanceLow} />
       </div>
     );
   }
 
-  const participantsTries = trierParInitiative(participants, optionsEgalite(scene));
-  const doitJouer = participantsTries.filter((participant) => actionsRestantesSouples(scene, participant.id) > 0);
-  const dejaJoues = participantsTries.filter((participant) => actionsRestantesSouples(scene, participant.id) === 0);
+  const { doitJouer, dejaJoues } = listesSouples;
 
   return (
     <div className="initiative-list flexible-list" ref={containerRef}>
       <section className="flexible-section">
         <EnteteSectionSouple titre={t('initiative.actionsToResolve')} compteur={doitJouer.length} />
-        <ListeParPaliers scene={scene} participants={doitJouer} actifId={actifId} activeSlotId={scene.activeSlotId || ''} interactions={interactions} temporaliteSouple onMarquerAJoue={onMarquerAJoue} onAnnulerAJoue={onAnnulerAJoue} />
+        <ListeParPaliers scene={scene} participants={doitJouer} actifId={actifId} activeSlotId={scene.activeSlotId || ''} interactions={interactions} temporaliteSouple onMarquerAJoue={onMarquerAJoue} onAnnulerAJoue={onAnnulerAJoue} performanceLow={performanceLow} />
       </section>
       {dejaJoues.length > 0 && <section className="flexible-section already-played-section">
         <EnteteSectionSouple titre={t('initiative.actionsResolved')} compteur={dejaJoues.length} variant="played" />
-        <ListeParPaliers scene={scene} participants={dejaJoues} actifId={actifId} activeSlotId={scene.activeSlotId || ''} interactions={interactions} temporaliteSouple onMarquerAJoue={onMarquerAJoue} onAnnulerAJoue={onAnnulerAJoue} dejaJoue />
+        <ListeParPaliers scene={scene} participants={dejaJoues} actifId={actifId} activeSlotId={scene.activeSlotId || ''} interactions={interactions} temporaliteSouple onMarquerAJoue={onMarquerAJoue} onAnnulerAJoue={onAnnulerAJoue} dejaJoue performanceLow={performanceLow} />
       </section>}
     </div>
   );
-}
+});

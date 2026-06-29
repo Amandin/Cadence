@@ -3,6 +3,20 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <script>
+      (() => {
+        let initialMode = 'light';
+        try {
+          const storedTheme = window.localStorage.getItem('cadence:interface:theme-override:v1');
+          const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
+          initialMode = storedTheme === 'dark' || (storedTheme !== 'light' && prefersDark) ? 'dark' : 'light';
+        } catch {
+          initialMode = window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        document.documentElement.dataset.initialMode = initialMode;
+
+      })();
+    </script>
     <meta name="theme-color" content="#24130f" />
     <meta name="background-color" content="#e9d8c9" />
     <link rel="manifest" href="/manifest.webmanifest" />
@@ -10,9 +24,137 @@
     <link rel="alternate icon" href="/favicon-32.png" sizes="32x32" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <title>Cadence</title>
+    <style>
+      :root {
+        color-scheme: light;
+        background: #f1e3d6;
+      }
+
+      :root[data-initial-mode="dark"] {
+        color-scheme: dark;
+        background: #211025;
+      }
+
+      html,
+      body,
+      #root {
+        min-height: 100%;
+      }
+
+      body {
+        margin: 0;
+        background: #f1e3d6;
+        color: #311236;
+        font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .initial-app-shell {
+        min-height: 100vh;
+        padding: 8px 10px 96px;
+        background: #f1e3d6;
+      }
+
+      .initial-loading-shell {
+        min-height: min(420px, 72vh);
+        display: grid;
+        place-content: center;
+        justify-items: center;
+        gap: 14px;
+        color: #311236;
+        text-align: center;
+      }
+
+      .initial-loading-mark {
+        width: 92px;
+        height: 92px;
+        display: grid;
+        place-items: center;
+        border-radius: 28px;
+        background:
+          radial-gradient(circle at 34% 24%, rgba(255, 250, 245, .98) 0, rgba(241, 227, 214, .94) 58%, rgba(233, 216, 201, .96) 100%);
+        border: 1px solid rgba(49, 18, 54, .12);
+        box-shadow:
+          0 18px 42px rgba(49, 18, 54, .16),
+          inset 0 1px 0 rgba(255, 255, 255, .62);
+      }
+
+      .initial-loading-logo {
+        width: 62px;
+        height: 62px;
+        display: block;
+        background: url("/branding/logo-cadence-light.svg") center / contain no-repeat;
+      }
+
+      .initial-loading-shell strong {
+        font-size: 13px;
+        letter-spacing: .02em;
+      }
+
+      :root[data-initial-mode="dark"] body,
+      :root[data-initial-mode="dark"] .initial-app-shell {
+        background: #211025;
+      }
+
+      :root[data-initial-mode="dark"] .initial-loading-shell {
+        color: #f0ddb6;
+      }
+
+      :root[data-initial-mode="dark"] .initial-loading-mark {
+        background:
+          radial-gradient(circle at 34% 24%, rgba(72, 33, 81, .98) 0, rgba(38, 18, 44, .98) 58%, rgba(17, 8, 21, .98) 100%);
+        border-color: rgba(210, 164, 86, .30);
+        box-shadow:
+          0 20px 46px rgba(0, 0, 0, .40),
+          0 0 22px rgba(164, 90, 177, .18),
+          inset 0 1px 0 rgba(255, 247, 237, .08);
+      }
+
+      :root[data-initial-mode="dark"] .initial-loading-logo {
+        background-image: url("/branding/logo-cadence-dark.svg");
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-initial-mode="light"]) {
+          color-scheme: dark;
+          background: #211025;
+        }
+
+        :root:not([data-initial-mode="light"]) body,
+        :root:not([data-initial-mode="light"]) .initial-app-shell {
+          background: #211025;
+        }
+
+        :root:not([data-initial-mode="light"]) .initial-loading-shell {
+          color: #f0ddb6;
+        }
+
+        :root:not([data-initial-mode="light"]) .initial-loading-mark {
+          background:
+            radial-gradient(circle at 34% 24%, rgba(72, 33, 81, .98) 0, rgba(38, 18, 44, .98) 58%, rgba(17, 8, 21, .98) 100%);
+          border-color: rgba(210, 164, 86, .30);
+          box-shadow:
+            0 20px 46px rgba(0, 0, 0, .40),
+            0 0 22px rgba(164, 90, 177, .18),
+            inset 0 1px 0 rgba(255, 247, 237, .08);
+        }
+
+        :root:not([data-initial-mode="light"]) .initial-loading-logo {
+          background-image: url("/branding/logo-cadence-dark.svg");
+        }
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="initial-app-shell">
+        <div class="initial-loading-shell" role="status" aria-live="polite">
+          <div class="initial-loading-mark">
+            <span class="initial-loading-logo" role="img" aria-label="Cadence"></span>
+          </div>
+          <strong>Cadence se pr&eacute;pare...</strong>
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

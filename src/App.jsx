@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { phasesAttendRelanceInitiative } from './actions/tempoState.js';
 import { temporalityModes } from './constants.js';
 import { isInitiativeCostMode, rulesAllowMultipleSlots } from './domain/initiativeCost.js';
@@ -12,23 +12,35 @@ import { createBlankParticipant } from './templates.js';
 import { activateWaitingServiceWorker, primePwaShellCache, registerCadencePwa } from './pwa.js';
 import { t } from './i18n/index.js';
 import { rulePresetCatalog, rulePresetFamilies } from './rulePresets.js';
+import { keepScreenAwakeWhileForeground } from './screenWakeLock.js';
 import { teinteEtats } from './interface/commun/ComposantsCommuns.jsx';
+import { MenuOptions } from './interface/app/MenuOptions.jsx';
+import { HubCampagne } from './interface/campaign/HubCampagne.jsx';
 import { getCadenceLogo } from './uiAssets.js';
+import {
+  PERFORMANCE_PREFERENCE_STORAGE_KEY,
+  detectHardwarePerformanceRisk,
+  nextSlowPerformanceSamples,
+  normalizePerformancePreference,
+  performanceLevels,
+  resolvePerformanceLevel,
+  shouldCountSlowPerformanceMeasure,
+} from './performanceMode.js';
 
 const AppOverlays = lazy(() => import('./interface/app/AppOverlays.jsx').then((module) => ({ default: module.AppOverlays })));
 const FirstRunOnboarding = lazy(() => import('./interface/app/FirstRunOnboarding.jsx').then((module) => ({ default: module.FirstRunOnboarding })));
-const HubCampagne = lazy(() => import('./interface/campaign/HubCampagne.jsx').then((module) => ({ default: module.HubCampagne })));
 const SceneView = lazy(() => import('./interface/scene/SceneView.jsx').then((module) => ({ default: module.SceneView })));
 
 const VIEW_STORAGE_KEY = 'cadence:interface:view:v1';
-const INITIAL_LOADING_MIN_MS = 650;
+const INITIAL_LOADING_MIN_MS = 180;
 const APP_SKIN = 'cadence';
 
-function attributsApp(dark) {
+function attributsApp(dark, performanceLevel = performanceLevels.NORMAL) {
   return {
     'data-skin': APP_SKIN,
     'data-theme': APP_SKIN,
     'data-mode': dark ? 'dark' : 'light',
+    'data-performance': performanceLevel,
   };
 }
 
@@ -44,8 +56,8 @@ function PanneauChargement({ dark, texte = t('common.loading') }) {
   );
 }
 
-function ChargementVue({ dark, texte = t('common.loading') }) {
-  return <div className={`app ${dark ? 'dark' : ''}`} {...attributsApp(dark)}><PanneauChargement dark={dark} texte={texte} /></div>;
+function ChargementVue({ dark, texte = t('common.loading'), performanceLevel = performanceLevels.NORMAL }) {
+  return <div className={`app ${dark ? 'dark' : ''}`} {...attributsApp(dark, performanceLevel)}><PanneauChargement dark={dark} texte={texte} /></div>;
 }
 
 function initialView() {
@@ -54,6 +66,24 @@ function initialView() {
   } catch {
     return 'hub';
   }
+}
+
+function storedPerformancePreference() {
+  try {
+    return normalizePerformancePreference(window.localStorage.getItem(PERFORMANCE_PREFERENCE_STORAGE_KEY));
+  } catch {
+    return normalizePerformancePreference();
+  }
+}
+
+function hardwarePerformanceRisk() {
+  if (typeof window === 'undefined') return false;
+  const reducedMotion = !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  return detectHardwarePerformanceRisk({
+    deviceMemory: navigator.deviceMemory,
+    hardwareConcurrency: navigator.hardwareConcurrency,
+    reducedMotion,
+  });
 }
 
 function initiativesDeclarees(participant = {}, multipleActionSlots = true) {
@@ -70,7 +100,7 @@ function participantsInitiativeIncompatible(scene = {}) {
 
 export default function App() {
   const campaign = useCampaign();
-  const { scenes, templateStore, setTemplateStore, campaignName, campaignEntries, pendingFileChoice, fileSaveStatus, scene, restorePoints, dark, active, blocked, nextStartsRound, nextClass, roundEffect, rulePresetSnapshot, firstRunOnboardingNeeded, actions } = campaign;
+  const { scenes, templateStore, setTemplateStore, campaignName, campaignEntries, pendingFileChoice, fileSaveStatus, scene, restorePoints, dark, active, blocked, nextStartsRound, nextClass, roundEffect, rulePresetSnapshot, firstRunOnboardingNeeded, themeState, actions } = campaign;
   const characters = useCharacterInteractions(scene, actions);
   const templates = useTemplates(templateStore, setTemplateStore);
   const [currentView, setCurrentView] = useState(initialView);
@@ -100,6 +130,10 @@ export default function App() {
   const [pwaUpdateAvailable, setPwaUpdateAvailable] = useState(false);
   const [chargementInitialVisible, setChargementInitialVisible] = useState(true);
   const [sceneVisualTick, setSceneVisualTick] = useState(0);
+  const [optionsOpen, setOptionsOpen] = useState(false);
+  const [performancePreference, setPerformancePreferenceState] = useState(storedPerformancePreference);
+  const [automaticPerformanceLow, setAutomaticPerformanceLow] = useState(false);
+  const [hardwareRisk] = useState(hardwarePerformanceRisk);
   const previousRoundRef = useRef(scene.round);
   const declarationAutoOpenRef = useRef('');
   const timerDoneRef = useRef(false);
@@ -107,11 +141,30 @@ export default function App() {
   const fileChoiceActionRef = useRef(false);
   const pwaRegistrationRef = useRef(null);
   const pwaReloadRequestedRef = useRef(false);
+  const slowPerformanceSamplesRef = useRef([]);
+  const pendingTurnMeasureRef = useRef(0);
+  const performanceLevel = resolvePerformanceLevel(performancePreference, automaticPerformanceLow);
+  const performanceLow = performanceLevel === performanceLevels.LOW;
+  const setPerformancePreference = useCallback((value) => {
+    setPerformancePreferenceState(normalizePerformancePreference(value));
+    setAutomaticPerformanceLow(false);
+    slowPerformanceSamplesRef.current = [];
+  }, []);
+  const ouvrirOptions = useCallback(() => setOptionsOpen(true), []);
+  const fermerOptions = useCallback(() => setOptionsOpen(false), []);
+  const recordPerformanceMeasure = useCallback((kind, durationMs) => {
+    if (!shouldCountSlowPerformanceMeasure(kind, durationMs, hardwareRisk)) return;
+    const next = nextSlowPerformanceSamples(slowPerformanceSamplesRef.current, Date.now(), hardwareRisk);
+    slowPerformanceSamplesRef.current = next.samples;
+    if (next.activate) setAutomaticPerformanceLow(true);
+  }, [hardwareRisk]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setChargementInitialVisible(false), INITIAL_LOADING_MIN_MS);
     return () => window.clearTimeout(timer);
   }, []);
+
+  useEffect(() => keepScreenAwakeWhileForeground(), []);
 
   useEffect(() => {
     try {
@@ -122,19 +175,29 @@ export default function App() {
   }, [currentView]);
 
   useEffect(() => {
+    try {
+      window.localStorage.setItem(PERFORMANCE_PREFERENCE_STORAGE_KEY, performancePreference);
+    } catch {
+      // Le mode performance reste utilisable meme sans stockage local.
+    }
+  }, [performancePreference]);
+
+  useEffect(() => {
     const root = document.documentElement;
     root.classList.toggle('dark', !!dark);
     root.dataset.skin = APP_SKIN;
     root.dataset.theme = APP_SKIN;
     root.dataset.mode = dark ? 'dark' : 'light';
+    root.dataset.performance = performanceLevel;
 
     return () => {
       root.classList.remove('dark');
       delete root.dataset.skin;
       delete root.dataset.theme;
       delete root.dataset.mode;
+      delete root.dataset.performance;
     };
-  }, [dark]);
+  }, [dark, performanceLevel]);
 
   useEffect(() => {
     if (!import.meta.env.PROD) return undefined;
@@ -165,22 +228,22 @@ export default function App() {
     };
   }, []);
 
-  const ui = buildSceneUiState({ scene, active, blocked, nextStartsRound, nextClass, roundEffect });
+  const ui = useMemo(() => buildSceneUiState({ scene, active, blocked, nextStartsRound, nextClass, roundEffect }), [active, blocked, nextClass, nextStartsRound, roundEffect, scene]);
   const { temporaliteSouple, temporalitePhases, temporaliteDeclaration, coutInitiativeActif, horlogesBloquantesActives, stageDeclaration, declarationEnDeclaration, phaseAttendRelanceInitiative, optionsInitiative, utiliserInitiative, phaseParticipants, phaseActiveId, phaseActive, phaseSuivanteDisponible, phaseDemarreNouveauRound, toutLeMondeAJoueSouple, globalAutoTick, participantAjustementInitiative, retourPreparationVisible, retourPossible, activeGroup, attendRelanceInitiativeCout, nextLabel, classeSuivantEffective, suivantDesactive, libelleBas } = ui;
-  const editingTemplate = editingTemplateId ? templates.getTemplate(editingTemplateId) : null;
+  const editingTemplate = useMemo(() => editingTemplateId ? templates.getTemplate(editingTemplateId) : null, [editingTemplateId, templates]);
   const templatePanelVisible = !!editingTemplate || templatePanelOpen;
-  const fermerEditeursTemplates = () => {
+  const fermerEditeursTemplates = useCallback(() => {
     setEditingTemplateId('');
     setTemplatePanelOpen(false);
     setTemplateSwitchRequest(null);
-  };
-  const rechargerMiseAJourPwa = () => {
+  }, []);
+  const rechargerMiseAJourPwa = useCallback(() => {
     const registration = pwaRegistrationRef.current;
     if (!registration?.waiting) return;
     pwaReloadRequestedRef.current = true;
     setPwaUpdateAvailable(false);
     activateWaitingServiceWorker(registration);
-  };
+  }, []);
   const pwaUpdateBanner = pwaUpdateAvailable ? (
     <div className="pwa-update-banner" role="status" aria-live="polite">
       <div>
@@ -197,8 +260,22 @@ export default function App() {
     if (!element) return;
     const rect = element.getBoundingClientRect();
     const bottomLimit = window.innerHeight - 110;
-    if (rect.bottom > bottomLimit) element.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-  }, [currentView, scene.activeId, scene.round]);
+    if (rect.bottom > bottomLimit) element.scrollIntoView({ block: 'nearest', behavior: performanceLow ? 'auto' : 'smooth' });
+  }, [currentView, performanceLow, scene.activeId, scene.round]);
+
+  useEffect(() => {
+    if (currentView !== 'scene') return undefined;
+    const renderStartedAt = performance.now();
+    const turnStartedAt = pendingTurnMeasureRef.current;
+    const frame = requestAnimationFrame(() => {
+      recordPerformanceMeasure('render', performance.now() - renderStartedAt);
+      if (turnStartedAt) {
+        recordPerformanceMeasure('turn', performance.now() - turnStartedAt);
+        pendingTurnMeasureRef.current = 0;
+      }
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [currentView, recordPerformanceMeasure, scene.activeId, scene.activeSlotId, scene.id, scene.phase, scene.round]);
 
   useEffect(() => {
     if (currentView !== 'scene' || initiativeEntryOpen || initiativeMismatch) return;
@@ -261,11 +338,18 @@ export default function App() {
   useEffect(() => {
     const compteur = scene.globalTracker;
     if (currentView !== 'scene' || !compteur?.enabled || !compteur.running || !['timer', 'stopwatch'].includes(compteur.mode)) return undefined;
-    const id = window.setInterval(() => setSceneVisualTick((value) => value + 1), 1000);
+    const intervalMs = performanceLow ? 4000 : 1000;
+    let expectedAt = performance.now() + intervalMs;
+    const id = window.setInterval(() => {
+      const now = performance.now();
+      recordPerformanceMeasure('timerTick', Math.max(0, now - expectedAt));
+      expectedAt = now + intervalMs;
+      setSceneVisualTick((value) => value + 1);
+    }, intervalMs);
     return () => window.clearInterval(id);
-  }, [currentView, scene.globalTracker?.enabled, scene.globalTracker?.mode, scene.globalTracker?.running]);
+  }, [currentView, performanceLow, recordPerformanceMeasure, scene.globalTracker?.enabled, scene.globalTracker?.mode, scene.globalTracker?.running]);
 
-  const nextTurn = (direction) => {
+  const nextTurn = useCallback((direction) => {
     if (direction < 0 && !retourPossible) return;
     if (direction > 0 && horlogesBloquantesActives.length) { setClockModalOpen(true); return; }
     if (direction > 0 && scene.round < 0 && (utiliserInitiative || scene.preparationSurprise)) {
@@ -285,8 +369,9 @@ export default function App() {
       return;
     }
     skipInitiativeAdjustPromptRef.current = false;
+    pendingTurnMeasureRef.current = performance.now();
     actions.nextTurn(direction);
-  };
+  }, [actions, attendRelanceInitiativeCout, coutInitiativeActif, declarationEnDeclaration, horlogesBloquantesActives.length, participantAjustementInitiative, phaseParticipants.length, phaseSuivanteDisponible, retourPossible, scene.participants.length, scene.round, scene.preparationSurprise, temporalitePhases, temporaliteSouple, toutLeMondeAJoueSouple, utiliserInitiative]);
 
   useEffect(() => {
     if (!pendingNextAfterInitiativeAdjust) return;
@@ -306,10 +391,10 @@ export default function App() {
     nextTurn(1);
   };
 
-  const marquerAJoue = (participantId) => actions.markFlexiblePlayed(participantId);
-  const annulerAJoue = (participantId) => actions.unmarkFlexiblePlayed(participantId);
-  const openAddCharacter = () => { setOpenMenu(false); setAddSheetOpen(true); };
-  const openInitiativeEntry = () => { setOpenMenu(false); setInitiativeEntryScopeIds(null); setInitiativeEntryInitialLaunch(false); setInitiativeEntryOpen(true); };
+  const marquerAJoue = useCallback((participantId) => actions.markFlexiblePlayed(participantId), [actions]);
+  const annulerAJoue = useCallback((participantId) => actions.unmarkFlexiblePlayed(participantId), [actions]);
+  const openAddCharacter = useCallback(() => { setOpenMenu(false); setAddSheetOpen(true); }, []);
+  const openInitiativeEntry = useCallback(() => { setOpenMenu(false); setInitiativeEntryScopeIds(null); setInitiativeEntryInitialLaunch(false); setInitiativeEntryOpen(true); }, []);
   const ouvrirDeclarationAjoutSiBesoin = (participant, options) => {
     if (participant && options?.placement !== 'reserve' && temporaliteSouple && temporaliteDeclaration && scene.round >= 0) {
       setDeclarationActionsOpen(false);
@@ -336,11 +421,11 @@ export default function App() {
     setCurrentView('scene');
     setInitiativeMismatch(incompatibles.length ? { sceneId: cible?.id, ids: incompatibles.map((participant) => participant.id) } : null);
   };
-  const retourHub = () => {
+  const retourHub = useCallback(() => {
     setOpenMenu(false);
     characters.closeCharacterPanels();
     setCurrentView('hub');
-  };
+  }, [characters]);
   const importCampaign = async (file, options = {}) => { const result = await actions.importCampaign(file, options); if (result?.ok === false) { setNotice({ title: t('app.notice.importImpossible.title'), message: result.message || t('app.notice.importImpossible.message') }); return; } setOpenMenu(false); characters.closeCharacterPanels(); setCurrentView('hub'); if (!result?.needsFileChoice) setNotice({ title: t('app.notice.campaignLoaded.title'), message: '' }); };
   const workOnLoadedFile = async () => { const result = await actions.useLoadedCampaignFile(); if (result?.ok === false) setNotice({ title: t('app.notice.fileUnlinked.title'), message: result.message }); else setNotice({ title: t('app.notice.campaignLoaded.title'), message: '' }); };
   const workOnCampaignCopy = async () => { if (fileChoiceActionRef.current) return; fileChoiceActionRef.current = true; const result = await actions.saveLoadedCampaignAsCopy(); fileChoiceActionRef.current = false; if (result?.ok === false && !result.cancelled) setNotice({ title: t('app.notice.copyImpossible.title'), message: result.message }); else if (result?.ok) setNotice({ title: t('app.notice.campaignLoaded.title'), message: '' }); };
@@ -402,7 +487,7 @@ export default function App() {
     setCurrentView('hub');
   };
   const restoreScene = (pointId) => { actions.restoreScene(pointId); setOpenMenu(false); characters.closeCharacterPanels(); };
-  const returnToPreparation = () => { actions.returnToPreparation(); setOpenMenu(false); characters.closeCharacterPanels(); };
+  const returnToPreparation = useCallback(() => { actions.returnToPreparation(); setOpenMenu(false); characters.closeCharacterPanels(); }, [actions, characters]);
   const returnToPreparationWithOptions = (options) => { actions.returnToPreparationWithOptions(options); setOpenMenu(false); characters.closeCharacterPanels(); };
   const advanceRound = () => { actions.advanceRound(); setOpenMenu(false); characters.closeCharacterPanels(); };
   const decreaseRound = () => { actions.changeRoundNumber(-1); setOpenMenu(false); characters.closeCharacterPanels(); };
@@ -412,7 +497,7 @@ export default function App() {
   const resetSceneTrackers = () => { actions.resetSceneTrackers(); setOpenMenu(false); characters.closeCharacterPanels(); };
   const clearSceneStatuses = () => { actions.clearSceneStatuses(); setOpenMenu(false); characters.closeCharacterPanels(); };
   const endTemporaryEffects = () => { actions.endTemporaryEffects(); setOpenMenu(false); characters.closeCharacterPanels(); };
-  const toggleGlobalRealtime = () => { const compteur = scene.globalTracker; if (scene.round < 0) return; if (!['stopwatch', 'timer'].includes(compteur?.mode)) return; const elapsed = Math.max(0, Number(compteur.elapsedMs || 0)) + (compteur.running && compteur.startedAt ? Math.max(0, Date.now() - Number(compteur.startedAt)) : 0); actions.updateGlobalTracker(compteur.running ? { running: false, startedAt: null, elapsedMs: elapsed } : { running: true, startedAt: Date.now() }); };
+  const toggleGlobalRealtime = useCallback(() => { const compteur = scene.globalTracker; if (scene.round < 0) return; if (!['stopwatch', 'timer'].includes(compteur?.mode)) return; const elapsed = Math.max(0, Number(compteur.elapsedMs || 0)) + (compteur.running && compteur.startedAt ? Math.max(0, Date.now() - Number(compteur.startedAt)) : 0); actions.updateGlobalTracker(compteur.running ? { running: false, startedAt: null, elapsedMs: elapsed } : { running: true, startedAt: Date.now() }); }, [actions, scene.globalTracker, scene.round]);
   const restartTimer = () => { actions.updateGlobalTracker({ running: true, startedAt: Date.now(), elapsedMs: 0 }); timerDoneRef.current = false; setTimerDoneOpen(false); };
   const resetTimer = () => { actions.updateGlobalTracker({ running: false, startedAt: null, elapsedMs: 0 }); timerDoneRef.current = false; setTimerDoneOpen(false); };
   const openTimerMenu = () => { setTimerDoneOpen(false); setOpenMenu(true); };
@@ -429,9 +514,9 @@ export default function App() {
   const findClock = (participantId, trackerId) => { const participant = [...scene.participants, ...(scene.reserve || [])].find((item) => item.id === participantId); return participant?.trackers.find((item) => item.id === trackerId); };
   const resetClock = (participantId, trackerId) => { const tracker = findClock(participantId, trackerId); if (!tracker) return; actions.trackerChange(participantId, trackerId, { ...tracker, current: 0 }); };
   const deleteClock = (participantId, trackerId) => actions.deleteTracker(participantId, trackerId);
-  const participantsIncompatibles = initiativeMismatch?.sceneId === scene.id
+  const participantsIncompatibles = useMemo(() => initiativeMismatch?.sceneId === scene.id
     ? scene.participants.filter((participant) => initiativeMismatch.ids.includes(participant.id))
-    : [];
+    : [], [initiativeMismatch, scene.id, scene.participants]);
   const changerInitiativesIncompatibles = () => {
     setInitiativeEntryScopeIds(initiativeMismatch?.ids || null);
     setInitiativeMismatch(null);
@@ -494,6 +579,8 @@ export default function App() {
         scene={scene}
         restorePoints={restorePoints}
         dark={dark}
+        themeState={themeState}
+        onThemeModeChange={actions.setThemeMode}
         currentView={currentView}
         characters={characters}
         templates={templates}
@@ -506,6 +593,7 @@ export default function App() {
           retourHub,
           ouvrirCompteurGlobal: () => setGlobalSheetOpen(true),
           ouvrirEtatScene: (statusId = '') => setSceneStatusOpen({ statusId }),
+          ouvrirOptions,
           fermerAjoutPersonnage: () => setAddSheetOpen(false),
           fermerMenu: () => setOpenMenu(false),
           fermerNotice: () => setNotice(null),
@@ -580,24 +668,87 @@ export default function App() {
       />
     </Suspense>
   ) : null;
+  const menuOptions = optionsOpen ? (
+    <MenuOptions
+      dark={dark}
+      performanceState={{ preference: performancePreference, level: performanceLevel, automatic: automaticPerformanceLow }}
+      themeState={themeState}
+      onClose={fermerOptions}
+      onPerformancePreferenceChange={setPerformancePreference}
+      onThemeModeChange={actions.setThemeMode}
+    />
+  ) : null;
+
+  const seuilsFondScene = useMemo(() => scene.globalTracker?.enabled
+    ? activeGlobalTrackerThresholds(scene.globalTracker, Date.now() + sceneVisualTick)
+      .map((seuil) => ({ tintParticipant: true, color: seuil.color || 'neutral', expired: false }))
+    : [], [scene.globalTracker, sceneVisualTick]);
+  const teinteScene = useMemo(() => teinteEtats([...(scene.statuses || []), ...seuilsFondScene], 'transparent', 32), [scene.statuses, seuilsFondScene]);
+  const tourPrecedent = useCallback(() => nextTurn(-1), [nextTurn]);
+  const tourSuivant = useCallback(() => nextTurn(1), [nextTurn]);
+  const changerSurprisePreparation = useCallback((active) => actions.updateSceneField('preparationSurprise', active), [actions]);
+  const ajouterEtatScene = useCallback(() => setSceneStatusOpen({}), []);
+  const modifierEtatScene = useCallback((statusId) => setSceneStatusOpen({ statusId }), []);
+  const modifierNotesReserve = useCallback((notes) => actions.updateSceneField('reserveNotes', notes), [actions]);
+  const ouvrirMenuScene = useCallback(() => setOpenMenu(true), []);
+  const sceneView = useMemo(() => (
+    <SceneView
+      scene={scene}
+      characters={characters}
+      active={active}
+      activeGroup={activeGroup}
+      declarationEnDeclaration={declarationEnDeclaration}
+      temporaliteSouple={temporaliteSouple}
+      temporalitePhases={temporalitePhases}
+      temporaliteDeclaration={temporaliteDeclaration}
+      phaseActive={phaseActive}
+      phaseActiveId={phaseActiveId}
+      phaseAttendRelanceInitiative={phaseAttendRelanceInitiative}
+      horlogesBloquantesActives={horlogesBloquantesActives}
+      roundEffect={roundEffect}
+      globalAutoTick={globalAutoTick}
+      classeSuivantEffective={classeSuivantEffective}
+      nextLabel={nextLabel}
+      suivantDesactive={suivantDesactive}
+      retourPossible={retourPossible}
+      retourPreparationVisible={retourPreparationVisible}
+      toutLeMondeAJoueSouple={toutLeMondeAJoueSouple}
+      phaseDemarreNouveauRound={phaseDemarreNouveauRound}
+      nextStartsRound={nextStartsRound}
+      libelleBas={libelleBas}
+      dark={dark}
+      performanceLow={performanceLow}
+      onRetourHub={retourHub}
+      onTourPrecedent={tourPrecedent}
+      onTourSuivant={tourSuivant}
+      onRetourPreparation={returnToPreparation}
+      onModifierCompteurGlobal={actions.stepGlobal}
+      onToggleCompteurTemps={toggleGlobalRealtime}
+      onToggleSurprisePreparation={changerSurprisePreparation}
+      onAjouterEtatScene={ajouterEtatScene}
+      onModifierEtatScene={modifierEtatScene}
+      onRetirerEtatScene={actions.removeSceneStatus}
+      onMarquerAJoue={marquerAJoue}
+      onAnnulerAJoue={annulerAJoue}
+      onModifierNotesReserve={modifierNotesReserve}
+      onAjouterParticipant={openAddCharacter}
+      onSaisirInitiatives={openInitiativeEntry}
+      onOuvrirMenu={ouvrirMenuScene}
+    />
+  ), [actions.removeSceneStatus, actions.stepGlobal, active, activeGroup, ajouterEtatScene, annulerAJoue, changerSurprisePreparation, characters, classeSuivantEffective, dark, declarationEnDeclaration, globalAutoTick, horlogesBloquantesActives, libelleBas, marquerAJoue, modifierEtatScene, modifierNotesReserve, nextLabel, nextStartsRound, openAddCharacter, openInitiativeEntry, ouvrirMenuScene, performanceLow, phaseActive, phaseActiveId, phaseAttendRelanceInitiative, phaseDemarreNouveauRound, retourHub, retourPossible, retourPreparationVisible, returnToPreparation, roundEffect, scene, suivantDesactive, temporaliteDeclaration, temporalitePhases, temporaliteSouple, toggleGlobalRealtime, tourPrecedent, tourSuivant, toutLeMondeAJoueSouple]);
 
 
-  if (chargementInitialVisible) return <>{pwaUpdateBanner}<ChargementVue dark={dark} texte={t('app.loading.preparing')} /></>;
+  if (chargementInitialVisible) return <>{pwaUpdateBanner}<ChargementVue dark={dark} performanceLevel={performanceLevel} texte={t('app.loading.preparing')} /></>;
 
   if (firstRunOnboardingNeeded) {
     const genericPresets = rulePresetCatalog.filter((preset) => preset.family === rulePresetFamilies.GENERIC);
     const systemPresets = rulePresetCatalog.filter((preset) => preset.family === rulePresetFamilies.SYSTEM);
-    return <>{pwaUpdateBanner}<Suspense fallback={<ChargementVue dark={dark} texte={t('app.loading.hub')} />}><FirstRunOnboarding dark={dark} genericPresets={genericPresets} systemPresets={systemPresets} onToggleTheme={actions.setDark} onStartPreset={startFirstRunPreset} onStartCustomRules={startFirstRunCustomRules} /></Suspense></>;
+    return <>{pwaUpdateBanner}<Suspense fallback={<ChargementVue dark={dark} performanceLevel={performanceLevel} texte={t('app.loading.hub')} />}><FirstRunOnboarding dark={dark} genericPresets={genericPresets} systemPresets={systemPresets} onToggleTheme={actions.setDark} onStartPreset={startFirstRunPreset} onStartCustomRules={startFirstRunCustomRules} /></Suspense></>;
   }
 
-  if (currentView === 'hub') return <>{pwaUpdateBanner}<div className={`app hub-app ${dark ? 'dark' : ''} ${templatePanelVisible ? 'has-template-panel' : ''}`} {...attributsApp(dark)}><Suspense fallback={<PanneauChargement dark={dark} texte={t('app.loading.hub')} />}><HubCampagne campaignName={campaignName} scene={scene} scenes={scenes} templates={templates.templates} trackerTemplates={templates.trackerTemplates} statusTemplates={templates.statusTemplates} sceneCounterTemplates={templates.sceneCounterTemplates} sceneStatusTemplates={templates.sceneStatusTemplates} ruleTemplates={templates.rulePresets} rulePresetSnapshot={rulePresetSnapshot} templateCategories={templates.categories} campaignEntries={campaignEntries} fileSaveStatus={fileSaveStatus} dark={dark} onChangerTheme={actions.setDark} onChoisirScene={chooseScene} onNouvelleScene={newScene} onModifierScene={actions.updateSceneMeta} onDupliquerScene={actions.duplicateScene} onSupprimerScene={actions.deleteScene} onModifierReglesInitiative={actions.updateCampaignInitiativeRules} onRenommerCampagne={actions.setCampaignName} onExporter={() => setExportOpen(true)} onImporter={importCampaign} onChargerCampagneTest={loadTestCampaign} onReinitialiser={askResetCadence} onAjouterTemplateCategorie={createTemplateInCategory} onAjouterCategorieTemplate={addTemplateCategory} onRenommerCategorieTemplate={renameTemplateCategory} onSupprimerCategorieTemplate={deleteTemplateCategory} onDeplacerCategorieTemplate={templates.moveCategory} onChangerCategorieTemplate={templates.setTemplateCategory} onEditerTemplate={ouvrirEditionTemplatePersonnage} onDupliquerTemplate={duplicateTemplate} onSupprimerTemplate={templates.deleteTemplate} onAjouterTemplateSuivi={templates.createTrackerTemplate} onModifierTemplateSuivi={templates.updateTrackerTemplate} onDupliquerTemplateSuivi={templates.duplicateTrackerTemplate} onSupprimerTemplateSuivi={templates.deleteTrackerTemplate} onAjouterTemplateEtat={templates.createStatusTemplate} onModifierTemplateEtat={templates.updateStatusTemplate} onDupliquerTemplateEtat={templates.duplicateStatusTemplate} onSupprimerTemplateEtat={templates.deleteStatusTemplate} onAjouterTemplateCompteurScene={templates.createSceneCounterTemplate} onModifierTemplateCompteurScene={templates.updateSceneCounterTemplate} onDupliquerTemplateCompteurScene={templates.duplicateSceneCounterTemplate} onSupprimerTemplateCompteurScene={templates.deleteSceneCounterTemplate} onAjouterTemplateEtatScene={templates.createSceneStatusTemplate} onModifierTemplateEtatScene={templates.updateSceneStatusTemplate} onDupliquerTemplateEtatScene={templates.duplicateSceneStatusTemplate} onSupprimerTemplateEtatScene={templates.deleteSceneStatusTemplate} onAppliquerTemplateRegles={actions.applyCampaignRulePreset} onEnregistrerTemplateRegles={templates.saveRuleTemplate} onDupliquerTemplateRegles={templates.duplicateRuleTemplate} onSupprimerTemplateRegles={templates.deleteRuleTemplate} onImporterTemplates={importTemplatesFromCampaign} onFermerEditeursTemplates={fermerEditeursTemplates} templatePersonnageId={editingTemplateId} templatePersonnageOuvert={!!editingTemplate} onFermerEditionTemplatePersonnage={fermerEditionTemplatePersonnage} onDemanderChangementDepuisTemplatePersonnage={setTemplateSwitchRequest} onTemplatePanelOpenChange={setTemplatePanelOpen} /></Suspense>{fenetresCommunes}</div></>;
+  if (currentView === 'hub') return <>{pwaUpdateBanner}<div className={`app hub-app ${dark ? 'dark' : ''} ${templatePanelVisible ? 'has-template-panel' : ''}`} {...attributsApp(dark, performanceLevel)}><HubCampagne campaignName={campaignName} scene={scene} scenes={scenes} templates={templates.templates} trackerTemplates={templates.trackerTemplates} statusTemplates={templates.statusTemplates} sceneCounterTemplates={templates.sceneCounterTemplates} sceneStatusTemplates={templates.sceneStatusTemplates} ruleTemplates={templates.rulePresets} rulePresetSnapshot={rulePresetSnapshot} templateCategories={templates.categories} campaignEntries={campaignEntries} fileSaveStatus={fileSaveStatus} dark={dark} performanceState={{ preference: performancePreference, level: performanceLevel, automatic: automaticPerformanceLow }} themeState={themeState} onChoisirScene={chooseScene} onNouvelleScene={newScene} onModifierScene={actions.updateSceneMeta} onDupliquerScene={actions.duplicateScene} onSupprimerScene={actions.deleteScene} onModifierReglesInitiative={actions.updateCampaignInitiativeRules} onRenommerCampagne={actions.setCampaignName} onExporter={() => setExportOpen(true)} onImporter={importCampaign} onChargerCampagneTest={loadTestCampaign} onReinitialiser={askResetCadence} onAjouterTemplateCategorie={createTemplateInCategory} onAjouterCategorieTemplate={addTemplateCategory} onRenommerCategorieTemplate={renameTemplateCategory} onSupprimerCategorieTemplate={deleteTemplateCategory} onDeplacerCategorieTemplate={templates.moveCategory} onChangerCategorieTemplate={templates.setTemplateCategory} onEditerTemplate={ouvrirEditionTemplatePersonnage} onDupliquerTemplate={duplicateTemplate} onSupprimerTemplate={templates.deleteTemplate} onAjouterTemplateSuivi={templates.createTrackerTemplate} onModifierTemplateSuivi={templates.updateTrackerTemplate} onDupliquerTemplateSuivi={templates.duplicateTrackerTemplate} onSupprimerTemplateSuivi={templates.deleteTrackerTemplate} onAjouterTemplateEtat={templates.createStatusTemplate} onModifierTemplateEtat={templates.updateStatusTemplate} onDupliquerTemplateEtat={templates.duplicateStatusTemplate} onSupprimerTemplateEtat={templates.deleteStatusTemplate} onAjouterTemplateCompteurScene={templates.createSceneCounterTemplate} onModifierTemplateCompteurScene={templates.updateSceneCounterTemplate} onDupliquerTemplateCompteurScene={templates.duplicateSceneCounterTemplate} onSupprimerTemplateCompteurScene={templates.deleteSceneCounterTemplate} onAjouterTemplateEtatScene={templates.createSceneStatusTemplate} onModifierTemplateEtatScene={templates.updateSceneStatusTemplate} onDupliquerTemplateEtatScene={templates.duplicateSceneStatusTemplate} onSupprimerTemplateEtatScene={templates.deleteSceneStatusTemplate} onAppliquerTemplateRegles={actions.applyCampaignRulePreset} onEnregistrerTemplateRegles={templates.saveRuleTemplate} onDupliquerTemplateRegles={templates.duplicateRuleTemplate} onSupprimerTemplateRegles={templates.deleteRuleTemplate} onImporterTemplates={importTemplatesFromCampaign} onFermerEditeursTemplates={fermerEditeursTemplates} templatePersonnageId={editingTemplateId} templatePersonnageOuvert={!!editingTemplate} onFermerEditionTemplatePersonnage={fermerEditionTemplatePersonnage} onDemanderChangementDepuisTemplatePersonnage={setTemplateSwitchRequest} onTemplatePanelOpenChange={setTemplatePanelOpen} onPerformancePreferenceChange={setPerformancePreference} onThemeModeChange={actions.setThemeMode} />{fenetresCommunes}{menuOptions}</div></>;
 
-  const seuilsFondScene = scene.globalTracker?.enabled
-    ? activeGlobalTrackerThresholds(scene.globalTracker, Date.now() + sceneVisualTick)
-      .map((seuil) => ({ tintParticipant: true, color: seuil.color || 'neutral', expired: false }))
-    : [];
-  const teinteScene = teinteEtats([...(scene.statuses || []), ...seuilsFondScene], 'transparent', 32);
-  return <><Suspense fallback={<ChargementVue dark={dark} texte={t('app.loading.scene')} />}><div className={`app scene-app ${dark ? 'dark' : ''} ${teinteScene ? 'scene-status-tinted' : ''}`} style={teinteScene ? { '--scene-status-tint-gradient': teinteScene.gradient } : undefined} {...attributsApp(dark)}><SceneView scene={scene} characters={characters} active={active} activeGroup={activeGroup} declarationEnDeclaration={declarationEnDeclaration} temporaliteSouple={temporaliteSouple} temporalitePhases={temporalitePhases} temporaliteDeclaration={temporaliteDeclaration} phaseActive={phaseActive} phaseActiveId={phaseActiveId} phaseAttendRelanceInitiative={phaseAttendRelanceInitiative} horlogesBloquantesActives={horlogesBloquantesActives} roundEffect={roundEffect} globalAutoTick={globalAutoTick} classeSuivantEffective={classeSuivantEffective} nextLabel={nextLabel} suivantDesactive={suivantDesactive} retourPossible={retourPossible} retourPreparationVisible={retourPreparationVisible} toutLeMondeAJoueSouple={toutLeMondeAJoueSouple} phaseDemarreNouveauRound={phaseDemarreNouveauRound} nextStartsRound={nextStartsRound} libelleBas={libelleBas} dark={dark} onRetourHub={retourHub} onTourPrecedent={() => nextTurn(-1)} onTourSuivant={() => nextTurn(1)} onRetourPreparation={returnToPreparation} onModifierCompteurGlobal={actions.stepGlobal} onToggleCompteurTemps={toggleGlobalRealtime} onToggleSurprisePreparation={(active) => actions.updateSceneField('preparationSurprise', active)} onAjouterEtatScene={() => setSceneStatusOpen({})} onModifierEtatScene={(statusId) => setSceneStatusOpen({ statusId })} onRetirerEtatScene={actions.removeSceneStatus} onMarquerAJoue={marquerAJoue} onAnnulerAJoue={annulerAJoue} onModifierNotesReserve={(notes) => actions.updateSceneField('reserveNotes', notes)} onAjouterParticipant={openAddCharacter} onSaisirInitiatives={openInitiativeEntry} onOuvrirMenu={() => setOpenMenu(true)} />{fenetresCommunes}</div></Suspense></>;
+  return <><Suspense fallback={<ChargementVue dark={dark} performanceLevel={performanceLevel} texte={t('app.loading.scene')} />}><div className={`app scene-app ${dark ? 'dark' : ''} ${teinteScene ? 'scene-status-tinted' : ''}`} style={teinteScene ? { '--scene-status-tint-gradient': teinteScene.gradient } : undefined} {...attributsApp(dark, performanceLevel)}>{sceneView}{fenetresCommunes}{menuOptions}</div></Suspense></>;
 }
 
 

@@ -1,4 +1,5 @@
-import source from './translations.csv?raw';
+import baseSource from './translations.csv?raw';
+import randomSource from './translations-random.csv?raw';
 
 function parseCsv(text) {
   const rows = [];
@@ -44,12 +45,25 @@ function parseCsv(text) {
   return rows;
 }
 
-const [header = [], ...records] = parseCsv(source.trim());
-const localeColumns = header.slice(1);
+function mergeCsvSources(sources) {
+  let locales = [];
+  const records = [];
+
+  for (const source of sources) {
+    const [header = [], ...sourceRecords] = parseCsv(source.trim());
+    const sourceLocales = header.slice(1);
+    if (!locales.length) locales = sourceLocales;
+    records.push(...sourceRecords.map((record) => ({ record, sourceLocales })));
+  }
+
+  return { locales, records };
+}
+
+const { locales: localeColumns, records } = mergeCsvSources([baseSource, randomSource]);
 const dictionary = records.reduce((acc, record) => {
-  const [key, ...values] = record;
+  const [key, ...values] = record.record;
   if (!key) return acc;
-  acc[key] = localeColumns.reduce((entry, locale, index) => {
+  acc[key] = record.sourceLocales.reduce((entry, locale, index) => {
     entry[locale] = values[index] ?? '';
     return entry;
   }, {});

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { activeThresholds, applyBoxMarkAction, applyDelta, boxBlocks, boxVisualRank, isTriggeredClock, normalizeThresholds, sortBoxBlocks, thresholdValue, trackerBounds, trackerLimitMode } from '../../logic.js';
 import { t } from '../../i18n/index.js';
 import { uiGlyphs } from '../../uiAssets.js';
@@ -92,7 +92,7 @@ function useLargeurElement() {
   return [ref, largeur];
 }
 
-export function Suivi({ suivi, onModifier, onSupprimer, avantTitre = null, couleur = 'slate', afficherBadgeSecret = true }) {
+export const Suivi = memo(function Suivi({ suivi, onModifier, onSupprimer, avantTitre = null, couleur = 'slate', afficherBadgeSecret = true }) {
   const [deltaOuvert, setDeltaOuvert] = useState(false);
   const [delta, setDelta] = useState('');
   const [modeSaisieBarre, setModeSaisieBarre] = useState('delta');
@@ -100,11 +100,11 @@ export function Suivi({ suivi, onModifier, onSupprimer, avantTitre = null, coule
   const [actionCases, setActionCases] = useState('fill');
   const [pasCases, setPasCases] = useState('1');
   const champDeltaRef = useRef(null);
-  const declenche = isTriggeredClock(suivi);
-  const seuils = activeThresholds(suivi) || [];
+  const declenche = useMemo(() => isTriggeredClock(suivi), [suivi]);
+  const seuils = useMemo(() => activeThresholds(suivi) || [], [suivi]);
   const classeSeuils = seuils.length ? 'threshold-glow' : '';
   const classeSecret = suivi.secret ? 'tracker-secret' : '';
-  const styleSeuil = thresholdGlowStyle(seuils);
+  const styleSeuil = useMemo(() => thresholdGlowStyle(seuils), [seuils]);
   const cyclesPuces = Number(suivi.cycles ?? suivi.cyclesInitial ?? 0) || 0;
   const cyclesHorloge = Number(suivi.cycles ?? suivi.cyclesInitial ?? 0) || 0;
   const titreGel = suivi.frozen ? t('trackers.common.unfreezeAutomation') : t('trackers.common.freezeAutomation');
@@ -163,7 +163,7 @@ export function Suivi({ suivi, onModifier, onSupprimer, avantTitre = null, coule
   }
 
   return <div className={`tracker ${classeSecret} ${classeSeuils} ${declenche ? 'triggered' : ''} ${suivi.frozen ? 'frozen' : ''}`} style={styleSeuil}><div className="tracker-top"><TitreSuivi titre={suivi.name} avantTitre={avantTitre} suffixe={suffixePuces} /><div className="tracker-top-actions"><SeuilsActifs seuils={seuils} />{suivi.frozen && <span className="chip">{t('trackers.common.frozen')}</span>}{declenche && <span className="chip hot">{t('trackers.common.toResolve')}</span>}<BoutonGelSuivi suivi={suivi} onToggle={() => modifier({ frozen: !suivi.frozen })} title={titreGel} /></div></div><div className="points-controls"><PointsSuivi suivi={suivi} onModifier={modifier} /></div>{declenche && <div className="stack" style={{ marginTop: 8 }}><button className="primary" onClick={() => modifier({ current: 0 })}>{t('trackers.common.resetToZero')}</button><button className="danger-btn" onClick={onSupprimer}>{t('common.delete')}</button></div>}</div>;
-}
+});
 
 function BarreSuivi({ suivi }) {
   const max = Number(suivi.max || 1), min = Number(suivi.min ?? 0), courant = Number(suivi.current || 0), amplitude = Math.max(1, max - min);

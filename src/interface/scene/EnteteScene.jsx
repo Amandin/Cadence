@@ -1,10 +1,11 @@
+import { memo } from 'react';
 import { t } from '../../i18n/index.js';
 import { getCadenceLogo, uiGlyphs } from '../../uiAssets.js';
 import { participantEstInactif, participantEstLimite } from '../../domain/statuses.js';
 import { BadgeRound, EtiquetteEtat } from '../commun/ComposantsCommuns.jsx';
 import { CompteurGlobal } from '../suivis/CompteurGlobal.jsx';
 
-export function EnteteScene(props) {
+export const EnteteScene = memo(function EnteteScene(props) {
   const {
     scene,
     actif,
@@ -27,6 +28,7 @@ export function EnteteScene(props) {
     onAjouterEtatScene,
     onModifierEtatScene,
     onRetirerEtatScene,
+    performanceLow,
   } = props;
   const horlogeABloquee = horlogesBloquantes.length > 0;
   const enPreparation = scene.round < 0;
@@ -68,7 +70,7 @@ export function EnteteScene(props) {
               {temporaliteSouple && !horlogeABloquee && !enPreparation ? <><div className="muted">{t('scene.header.flexibleMode')}</div><strong>{t('scene.header.resolvedActions')}</strong></> : <><div className="muted">{libelleActivation}</div><strong>{nomActivationActive}</strong>{actionDeclaree && <strong className="declaration-header-action">({actionDeclaree})</strong>}</>}
             </div>
             {temporaliteSouple && !horlogeABloquee && !enPreparation && <span className="chip flexible-chip">{t('scene.header.flexibleChip')}</span>}
-            <CompteurGlobal compteur={scene.globalTracker} onChanger={onModifierCompteurGlobal} onToggleTemps={onToggleCompteurTemps} animationTick={compteurGlobalAuto} />
+            <CompteurGlobal compteur={scene.globalTracker} onChanger={onModifierCompteurGlobal} onToggleTemps={onToggleCompteurTemps} animationTick={compteurGlobalAuto} tickIntervalMs={performanceLow ? 4000 : 1000} />
           </div>
         </div>
         <button className={`turn-btn next ${classeSuivant}`} onClick={onTourSuivant} disabled={suivantDesactive} aria-label={libelleSuivant}>{horlogeABloquee ? uiGlyphs.pause : uiGlyphs.next}</button>
@@ -79,4 +81,4 @@ export function EnteteScene(props) {
       </div>
     </header>
   );
-}
+});

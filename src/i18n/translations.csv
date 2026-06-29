@@ -22,6 +22,24 @@ app.loading.hub,Chargement du hub...
 app.loading.scene,Chargement de la scène...
 app.pwa.updateReady,Mise à jour prête
 app.pwa.updateHelp,Recharge l’application pour utiliser la nouvelle version.
+performance.menu.title,Performance
+performance.menu.label,Mode
+performance.menu.autoActive,Auto active
+performance.preference.auto,Automatique
+performance.preference.normal,Normal
+performance.preference.performance,Performance
+options.title,Options
+options.open,Ouvrir les options
+options.theme.title,Apparence
+options.theme.mode,Mode
+options.theme.auto,Automatique
+options.theme.manual,Manuel
+options.theme.label,Thème
+options.theme.system,Système
+options.theme.light,Clair
+options.theme.dark,Sombre
+addons.title,Modules complémentaires
+addons.help,Des outils isolés que l’on peut tester avant de les intégrer au reste de Cadence.
 errors.title,Cadence a rencontré une erreur
 errors.description,L’interface a été interrompue au lieu de continuer sur un état incohérent.
 errors.unknown,Erreur inconnue
@@ -36,6 +54,29 @@ onboarding.description,"Cadence peut démarrer avec un preset générique, un pr
 onboarding.presets.genericTitle,Presets génériques
 onboarding.presets.systemTitle,Presets systèmes
 onboarding.presets.systemNote,"Configurations compatibles, non officielles."
+onboarding.trackers.health,Points de vie
+onboarding.trackers.resource,Ressource
+onboarding.trackers.sanity,Santé mentale
+onboarding.trackers.luck,Chance
+onboarding.trackers.magicPoints,Points de magie
+onboarding.trackers.focus,Concentration
+onboarding.trackers.investiture,Investiture
+onboarding.trackers.armorClass,Classe d’armure
+onboarding.trackers.mainResource,Ressource principale
+onboarding.trackers.legendaryActions,Actions légendaires
+onboarding.trackers.legendaryResistances,Résistances légendaires
+onboarding.trackers.bossPhase,Phase du boss
+onboarding.trackers.harm,Dégâts
+onboarding.trackers.narrativeResource,Ressource narrative
+onboarding.trackers.wounds,Blessures
+onboarding.trackers.fatigue,Fatigue
+onboarding.trackers.bennies,Jetons
+onboarding.trackers.physicalMonitor,Moniteur physique
+onboarding.trackers.stunMonitor,Moniteur étourdissant
+onboarding.trackers.overflowMonitor,Moniteur de débordement
+onboarding.trackers.edge,Edge
+onboarding.trackers.threshold.wounded,Blessé
+onboarding.trackers.threshold.out,Hors combat
 onboarding.start,Commencer
 onboarding.customRules,Règles personnalisées
 characterAdd.title,Ajouter un personnage
@@ -43,7 +84,7 @@ characterAdd.blank,Fiche vierge
 characterAdd.template,Modèle
 characterAdd.category,Catégorie
 characterAdd.model,Modèle
-characterAdd.emptyCategory,Cette catégorie existe dans le Hub, mais ne contient encore aucun modèle.
+characterAdd.emptyCategory,"Cette catégorie existe dans le Hub, mais ne contient encore aucun modèle."
 characterAdd.placement.init,En initiative
 characterAdd.placement.reserve,En réserve
 characterAdd.initiative,Initiative
@@ -69,7 +110,7 @@ menu.sceneElements.addStatus,Ajouter un état
 menu.sceneElements.toggleIndicator,Activer ou désactiver l’indicateur de scène
 menu.sceneElements.clearStatuses,Effacer les états de scène
 menu.sceneNotes.title,Notes de scène
-menu.sceneNotes.placeholder,Ambiance, objectifs, éléments importants...
+menu.sceneNotes.placeholder,"Ambiance, objectifs, éléments importants..."
 menu.flow.title,Déroulé
 menu.flow.returnPreparation,Retour à la préparation
 menu.flow.resetTrackers,Réinitialiser les indicateurs
@@ -78,7 +119,7 @@ menu.flow.advanceRound,Avancer d'un round
 menu.flow.rewindAutomations,Reculer les automatismes
 menu.flow.advanceAutomations,Avancer les automatismes
 menu.flow.roundAutomations,Appliquer les automatismes quand on avance ou recule le round
-menu.flow.help,Ces actions servent à corriger une scène. Pendant le jeu normal, utilise plutôt “Suivant”.
+menu.flow.help,"Ces actions servent à corriger une scène. Pendant le jeu normal, utilise plutôt “Suivant”."
 menu.restore.title,Restaurer
 menu.indicator.defaultTimer,Minuteur
 menu.indicator.defaultStopwatch,Chrono
@@ -109,7 +150,7 @@ dialogs.returnPreparation.title,Retour à la Préparation
 dialogs.returnPreparation.help1,Choisis ce que Cadence doit nettoyer en revenant avant l'initiative.
 dialogs.returnPreparation.resetTrackers,Réinitialiser aussi les indicateurs
 dialogs.returnPreparation.endTemporaryEffects,Mettre fin aux effets temporaires
-dialogs.returnPreparation.help2,Si rien n’est coché, Cadence revient à la préparation sans toucher aux indicateurs ni aux effets.
+dialogs.returnPreparation.help2,"Si rien n’est coché, Cadence revient à la préparation sans toucher aux indicateurs ni aux effets."
 dialogs.returnPreparation.confirm,Retour à la Préparation
 dialogs.returnPreparation.cancel,Annuler
 dialogs.templateSwitch.title,Un modèle est déjà ouvert.
@@ -124,7 +165,7 @@ dialogs.resetCadence.saveCopy,Enregistrer une copie avant
 dialogs.resetCadence.confirm,Réinitialiser Cadence
 dialogs.resetCadence.copySaved,Copie enregistrée. Tu peux maintenant réinitialiser Cadence.
 export.title,Exporter la campagne
-export.help,Vérifie le nom avant d'enregistrer. Si le navigateur le permet, Cadence ouvrira une fenêtre système pour choisir l'emplacement du fichier.
+export.help,"Vérifie le nom avant d'enregistrer. Si le navigateur le permet, Cadence ouvrira une fenêtre système pour choisir l'emplacement du fichier."
 export.campaignName,Nom de campagne
 export.defaultName,Campagne Cadence
 export.saving,Enregistrement...
@@ -176,7 +217,7 @@ trackers.global.thresholds.summary,Seuils
 trackers.global.thresholds.label,Seuils de l’indicateur de scène
 trackers.global.thresholds.add,+ seuil
 trackers.global.thresholds.placeholder,Texte affiché
-trackers.global.thresholds.help.timer,"Les seuils du minuteur lisent le cycle en cours ou le nombre de boucles si le minuteur boucle."
+trackers.global.thresholds.help.timer,Les seuils du minuteur lisent le cycle en cours ou le nombre de boucles si le minuteur boucle.
 trackers.global.thresholds.help.stopwatch,"Pour un chronomètre, les seuils lisent le temps écoulé en minutes/secondes."
 trackers.global.thresholds.help.counter,"Pour un compteur, les seuils lisent simplement la valeur courante."
 trackers.global.thresholds.help.clock,"Pour une horloge, les seuils lisent le cycle en cours ou le nombre de boucles si elle boucle."
@@ -246,7 +287,7 @@ status.loop,renouveler en boucle
 status.surprised.warning,Cet état s’appelle Surpris. Cadence utilise ce nom pour la surprise automatique ; vérifie que ses options correspondent bien à ce que tu veux.
 initiativeCost.title,Coût d’initiative
 initiativeCost.current,Initiative actuelle
-initiativeCost.help,Choisis le coût payé après l’action de {name}. Si l’initiative après coût est inférieure ou égale à {threshold}, aucun nouveau créneau n’est créé ce round.
+initiativeCost.help,"Choisis le coût payé après l’action de {name}. Si l’initiative après coût est inférieure ou égale à {threshold}, aucun nouveau créneau n’est créé ce round."
 initiativeCost.maxRule,Règle active : coût maximum {max} pour ce créneau.
 initiativeCost.custom,Coût personnalisé
 initiativeCost.preview,Nouveau créneau possible : {initiative} - {cost} = {next}.
@@ -537,9 +578,9 @@ hub.tabs.scenes,Scènes
 reserve.title,Réserve
 reserve.empty,Vide
 reserve.notes,Notes de réserve
-reserve.notes.placeholder,Renforts, événements en attente, éléments hors scène immédiate...
+reserve.notes.placeholder,"Renforts, événements en attente, éléments hors scène immédiate..."
 fileChoice.title,Fichier de campagne
-fileChoice.help,Cette campagne vient de {fileName}. Tu peux travailler directement sur ce fichier, ou créer une copie séparée.
+fileChoice.help,"Cette campagne vient de {fileName}. Tu peux travailler directement sur ce fichier, ou créer une copie séparée."
 fileChoice.workOnFile,Travailler sur ce fichier
 fileChoice.createCopy,Créer une copie
 fileChoice.copySafer,Le fichier original n’est pas accessible en écriture depuis ce mode d’import. La copie est le choix sûr.
@@ -558,7 +599,7 @@ rules.compat.initiativeCostLabels,Les actions multiples avec coût d’initiativ
 rules.compat.initiativeCostDeclaration,Les actions multiples avec coût d’initiative sont incompatibles avec déclaration puis résolution.
 rules.compat.initiativeCostAscending,Les actions multiples avec coût d’initiative exigent un ordre décroissant.
 rules.compat.automaticPhasesTextInitiative,Les phases par initiative exigent une initiative numérique. Les libellés restent possibles avec les phases cochées.
-rules.compat.surpriseFlexible,En mode souple, la surprise doit prendre fin au début du round.
+rules.compat.surpriseFlexible,"En mode souple, la surprise doit prendre fin au début du round."
 rules.compat.disableInitiativeCostFirst,Désactive d’abord le coût d’initiative.
 rules.compat.disableInitiativeCostActionsFirst,Désactive d’abord les actions multiples avec coût d’initiative.
 rules.compat.disableManualActionsFirst,Désactive d’abord les actions multiples manuelles.
@@ -568,7 +609,7 @@ rules.compat.numericOnly,Disponible seulement avec une initiative numérique.
 rules.compat.disableDeclarationFirst,Désactive d’abord déclaration puis résolution.
 rules.compat.unavailableAscending,Indisponible en ordre ascendant.
 rules.compat.flexibleNoLabels,Le mode souple sans initiative classe seulement les personnages par type puis par nom. Réactive l’initiative pour utiliser des libellés.
-rules.compat.automaticPhasesNeedNumeric,Les phases par initiative nécessitent une initiative numérique. Avec l’initiative par libellés, utilise les phases cochées.
+rules.compat.automaticPhasesNeedNumeric,"Les phases par initiative nécessitent une initiative numérique. Avec l’initiative par libellés, utilise les phases cochées."
 rules.compat.textInitiativeAutomaticPhases,Les phases par initiative ne sont pas compatibles avec l’initiative par libellés. Utilise les phases cochées ou repasse en initiative numérique.
 rules.summary.numericInitiative,Initiative numérique
 rules.summary.labelInitiative,Initiative par labels
@@ -579,7 +620,6 @@ rules.summary.initiativeCost,Actions multiples avec coût d’initiative
 rules.summary.declaration,Déclaration puis résolution
 rules.compat.phasesMultipleSlots,Les phases sont incompatibles avec les actions multiples manuelles.
 rules.compat.manualSlotsUnavailableWithPhases,Les actions multiples manuelles ne sont pas disponibles avec les phases.
-
 rules.activeTitle,Règles actives
 rules.temporality.title,Temporalité
 rules.temporality.help,Règle appliquée aux scènes de la campagne.
@@ -641,8 +681,8 @@ rules.equality.help,Définit quand deux participants partagent vraiment le même
 rules.equality.never,Jamais
 rules.equality.strict,Par type
 rules.equality.loose,Par initiative
-rules.equality.neverHelp,Aucun vrai simultané : si tout est égal, Cadence trie par nom.
-rules.equality.strictHelp,Simultané seulement si initiative, départage et type sont identiques.
+rules.equality.neverHelp,"Aucun vrai simultané : si tout est égal, Cadence trie par nom."
+rules.equality.strictHelp,"Simultané seulement si initiative, départage et type sont identiques."
 rules.equality.looseHelp,Simultané dès que initiative et départage sont identiques.
 rules.initiativeOrder.title,Ordre d’initiative
 rules.initiativeOrder.help,Sens de parcours des valeurs d’initiative.
@@ -671,7 +711,7 @@ rules.multipleActions.noneHelp,Une seule activation d’initiative par personnag
 rules.multipleActions.manual,Créneaux manuels
 rules.multipleActions.manualHelp,Le MJ saisit plusieurs créneaux au lancement.
 rules.multipleActions.initiativeCost,Actions multiples avec coût d’initiative
-rules.multipleActions.initiativeCostHelp,Après une action, le coût crée un nouveau créneau plus bas si le seuil le permet.
+rules.multipleActions.initiativeCostHelp,"Après une action, le coût crée un nouveau créneau plus bas si le seuil le permet."
 rules.multipleActions.threshold,Seuil de fin de round
 rules.multipleActions.thresholdNote,"Si l’initiative après coût est inférieure ou égale à ce seuil, le personnage ne reçoit pas de nouveau créneau ce round."
 rules.multipleActions.quickCosts,Coûts rapides
@@ -687,12 +727,12 @@ rules.initiativeFormat.modify,Modifier
 rules.newRound.title,Nouveau round
 rules.newRound.reroll,Relancer l’initiative au nouveau round
 rules.categories.title,Ordre des types
-rules.categories.help,"Ordre utilisé pour classer les personnages et départager les initiatives encore égales. Il n’impose pas une activation supplémentaire et reste distinct des libellés d’initiative."
+rules.categories.help,Ordre utilisé pour classer les personnages et départager les initiatives encore égales. Il n’impose pas une activation supplémentaire et reste distinct des libellés d’initiative.
 rules.categories.delete,Supprimer {category}
 rules.categories.new,Nouveau type
 rules.categories.add,Ajouter
 rules.title,Règles d’initiative
-rules.help,"Ces réglages sont appliqués à toutes les scènes de la campagne et servent de base aux nouvelles scènes."
+rules.help,Ces réglages sont appliqués à toutes les scènes de la campagne et servent de base aux nouvelles scènes.
 rules.group.development,Déroulement
 rules.group.developmentHelp,Ce bloc décide comment un round commence et comment les personnages jouent.
 rules.group.initiative,Initiative
@@ -702,7 +742,7 @@ rules.group.equalitiesHelp,Ce bloc sert seulement quand plusieurs personnages ar
 rules.group.organization,Organisation
 rules.group.organizationHelp,Ce bloc définit le classement visuel du mode souple.
 hub.tabs.rules,Règles
-hub.tabs.campaigns,Campagnes
+hub.tabs.campaigns,Options
 hub.tabs.templates,Modèles
 hub.brandFallback,Campagne Cadence
 hub.themeToggle,Basculer thème clair ou sombre
@@ -716,7 +756,7 @@ hub.scene.edit,Modifier
 hub.scene.duplicate,Dupliquer
 hub.scene.deleteRevealAria,Afficher la suppression de {title}
 hub.scenes.title,Scènes
-hub.scenes.help,Crée ou ouvre une scène pour suivre l'initiative, les rounds, les états et les indicateurs.
+hub.scenes.help,"Crée ou ouvre une scène pour suivre l'initiative, les rounds, les états et les indicateurs."
 hub.scenes.new,Nouvelle scène
 hub.scenes.empty,Aucune scène pour le moment. Crée une scène pour commencer.
 hub.campaigns.title,Campagnes
@@ -748,7 +788,7 @@ templates.tabs.personnages,Personnages
 templates.tabs.suivis,Indicateurs
 templates.tabs.statuses,États
 templates.tabs.scene,Scène
-templates.personnages.help,Les modèles de personnages servent de fiches prêtes à réutiliser, avec leurs infos rapides et leurs indicateurs.
+templates.personnages.help,"Les modèles de personnages servent de fiches prêtes à réutiliser, avec leurs infos rapides et leurs indicateurs."
 templates.personnages.empty,Aucun modèle dans cette catégorie.
 templates.personnages.uncategorized,Sans catégorie
 templates.personnages.newCategoryPlaceholder,Nouvelle catégorie
@@ -875,12 +915,12 @@ templates.warning.loadFailed,Impossible de charger les modèles Cadence.
 restore.beginRound,Début R{round}
 restore.beforeInitiative,Avant initiative
 app.notice.importImpossible.title,Import impossible
-app.notice.importImpossible.message,Le fichier n’a pas pu être lu. Essaie avec un export .cad récent, et note le nom du fichier si le problème revient.
+app.notice.importImpossible.message,"Le fichier n’a pas pu être lu. Essaie avec un export .cad récent, et note le nom du fichier si le problème revient."
 app.notice.campaignLoaded.title,Campagne chargée
 app.notice.fileUnlinked.title,Fichier non lié
 app.notice.copyImpossible.title,Copie impossible
 app.notice.templatesImported.title,Modèles importés
-app.notice.templatesImported.message,{added} ajouté(s), {skipped} ignoré(s) car déjà présents.
+app.notice.templatesImported.message,"{added} ajouté(s), {skipped} ignoré(s) car déjà présents."
 app.notice.categoryImpossible.title,Catégorie impossible
 app.notice.renameImpossible.title,Renommage impossible
 app.notice.deleteImpossible.title,Suppression impossible
@@ -917,7 +957,7 @@ campaign.error.writeFailed,Cadence n’a pas pu écrire dans le fichier choisi.
 campaign.error.copyUnsupported,Utilise un navigateur compatible pour créer la copie.
 campaign.error.copyFailed,Copie impossible : {message}.
 campaign.error.presetMissing,Preset introuvable.
-campaign.error.invalidCadenceFileDetailed,Le fichier choisi n’est pas une campagne Cadence valide. Fichier : {fileName} ({fileType}, {fileSize} octets).
+campaign.error.invalidCadenceFileDetailed,"Le fichier choisi n’est pas une campagne Cadence valide. Fichier : {fileName} ({fileType}, {fileSize} octets)."
 campaign.error.invalidCadenceFile,Le fichier choisi n’est pas une campagne Cadence valide.
 campaign.error.invalidCadenceV2File,Le fichier choisi n'est pas une campagne Cadence v2 valide. Fichier : {fileName}.
 campaign.error.importTemplatesFailed,Impossible de lire les modèles de cette campagne.

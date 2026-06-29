@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { activeGlobalTrackerThresholds, elapsedGlobalTrackerMs, globalThresholdValue, globalTrackerTimerState, normalizeGlobalThresholds } from '../../domain/globalTracker.js';
 import { t } from '../../i18n/index.js';
 import { Fenetre } from '../commun/ComposantsCommuns.jsx';
@@ -244,21 +244,21 @@ export function EditeurSeuilsCompteurScene({ compteur, onModifier }) {
   );
 }
 
-export function CompteurGlobal({ compteur, onChanger, onToggleTemps, animationTick }) {
+export const CompteurGlobal = memo(function CompteurGlobal({ compteur, onChanger, onToggleTemps, animationTick, tickIntervalMs = 1000 }) {
   const [tick, setTick] = useState(0);
   const [seuilsMemorises, setSeuilsMemorises] = useState([]);
   const seuilsSonoresJoues = useRef(new Set());
   const minuteurTermineJoue = useRef(false);
   const dernierCycleSonore = useRef(0);
-  const seuilsActifs = compteur?.enabled ? activeGlobalTrackerThresholds(compteur) : [];
-  const signatureSeuilsActifs = seuilsActifs.map(cleSeuil).join('|');
-  const tempsActuel = compteur?.enabled && estTempsReel(compteur) ? etatTempsReel(compteur) : null;
+  const seuilsActifs = useMemo(() => compteur?.enabled ? activeGlobalTrackerThresholds(compteur) : [], [compteur, tick]);
+  const signatureSeuilsActifs = useMemo(() => seuilsActifs.map(cleSeuil).join('|'), [seuilsActifs]);
+  const tempsActuel = useMemo(() => compteur?.enabled && estTempsReel(compteur) ? etatTempsReel(compteur) : null, [compteur, tick]);
 
   useEffect(() => {
     if (!compteur?.enabled || !estTempsReel(compteur) || !compteur.running) return undefined;
-    const id = window.setInterval(() => setTick((value) => value + 1), 1000);
+    const id = window.setInterval(() => setTick((value) => value + 1), tickIntervalMs);
     return () => window.clearInterval(id);
-  }, [compteur?.enabled, compteur?.mode, compteur?.running]);
+  }, [compteur?.enabled, compteur?.mode, compteur?.running, tickIntervalMs]);
 
   useEffect(() => {
     if (!compteur?.enabled) return;
@@ -367,7 +367,7 @@ export function CompteurGlobal({ compteur, onChanger, onToggleTemps, animationTi
       <BoutonPasCompteur pas={1} onChanger={onChanger}>+</BoutonPasCompteur>
     </div>
   );
-}
+});
 
 export function FenetreCompteurGlobal({ compteur, sceneCounterTemplates = [], onModifier, onChanger, onFermer, onSaveTemplate }) {
   const [templateId, setTemplateId] = useState(sceneCounterTemplates[0]?.id || '');
