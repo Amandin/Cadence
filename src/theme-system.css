@@ -651,6 +651,10 @@ body:has(.app[data-mode="dark"]),
   border-radius: var(--radius-surface);
 }
 
+.bottom.bottom-preparation {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto auto;
+}
+
 .primary,
 .turn-btn,
 .delta button,
@@ -1299,11 +1303,11 @@ body:has(.app[data-mode="dark"]),
   }
 
   .bottom:not(.bottom-preparation) {
-    grid-template-columns: 42px minmax(0, 1fr) 42px !important;
+    grid-template-columns: 42px minmax(0, 1fr) 42px 42px;
   }
 
   .bottom.bottom-preparation {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 42px !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 42px 42px;
   }
 
   .bottom .primary,
@@ -1379,7 +1383,7 @@ body:has(.app[data-mode="dark"]),
   }
 
   .grid4.hub-tabs {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 5px;
   }
 
@@ -1914,7 +1918,7 @@ body:has(.app[data-mode="dark"]),
 
   .campaign-hub-page > .hub-section.panel,
   .rules-panel,
-  .campaign-files-panel {
+  .cadence-files-panel {
     margin: 0;
   }
 
@@ -2023,7 +2027,7 @@ body:has(.app[data-mode="dark"]),
 :is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .campaign-hub-header.panel,
 :is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .campaign-hub-page > .hub-section.panel,
 :is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .rules-panel,
-:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .campaign-files-panel,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .cadence-files-panel,
 :is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .hub-scene-card,
 :is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .hub-row,
 :is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .rule-group,

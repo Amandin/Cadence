@@ -3,11 +3,14 @@ import { describe, expect, it } from 'vitest';
 import { createDefinitionDraft } from '../definitionBuilder.js';
 import { randomRuleIds } from '../rulePool.js';
 import { createDefaultRandomSystemState } from '../state.js';
+import { fixedValue, randomAggregateOperations, randomPipelineStepTypes } from '../engine.js';
+import { ensureRandomKitInState } from '../rulePresetKits.js';
 import { CalculationEditor } from './definition/CalculationEditor.jsx';
 import { CalculationFields } from './definition/CalculationFields.jsx';
 import { ComponentEditor } from './definition/ComponentEditor.jsx';
 import { DefinitionEditor } from './DefinitionEditor.jsx';
 import { RulePoolManager } from './RulePoolManager.jsx';
+import { RandomKitManager } from './RandomKitManager.jsx';
 import { ResultView } from './ResultView.jsx';
 import { SourceManager } from './SourceManager.jsx';
 import { CardSourceForm, UsePanel } from './UsePanel.jsx';
@@ -18,38 +21,144 @@ const actions = {
   resetCardSource: () => {},
   runDefinition: () => {},
   saveDefinition: (definition) => definition,
+  deleteRandomKit: () => {},
+  activateRandomKit: () => {},
+  ensureRandomKit: () => {},
+  loadRandomKit: () => {},
+  saveRandomKit: (kit) => kit,
   selectResult: () => {},
+  setDefinitionActive: () => {},
 };
+
+function combinationDefinitions() {
+  const exposed = {
+    id: 'combo-d20',
+    name: 'Jet d20',
+    kind: 'combination',
+    exposed: true,
+    active: true,
+    components: [],
+    options: [{
+      id: 'combination',
+      label: 'Mode',
+      type: 'choice',
+      defaultValue: 'normal',
+      choices: [
+        { value: 'normal', label: 'Normal' },
+        { value: 'advantage', label: 'Avantage' },
+      ],
+    }],
+    pipeline: [{
+      id: 'combination',
+      type: randomPipelineStepTypes.REPEAT_SELECT,
+      optionId: 'combination',
+      variants: {
+        normal: { definitionId: 'combo-d20-normal' },
+        advantage: { definitionId: 'combo-d20-advantage' },
+      },
+    }],
+    primaryAggregateId: '',
+  };
+  const base = {
+    id: 'combo-d20-normal',
+    name: 'Base de Jet d20',
+    kind: 'roll',
+    exposed: false,
+    active: false,
+    components: [{ id: 'main', label: 'Jet', source: fixedValue('standard-d20'), count: fixedValue(1) }],
+    pipeline: [{
+      id: 'total',
+      type: randomPipelineStepTypes.AGGREGATE,
+      operation: randomAggregateOperations.SUM,
+      outputId: 'total',
+    }],
+    primaryAggregateId: 'total',
+  };
+  const advantage = {
+    ...base,
+    id: 'combo-d20-advantage',
+    name: 'Jet d20 - Avantage',
+  };
+  return [exposed, base, advantage];
+}
 
 describe('RandomSystem definition UI', () => {
   it('uses a dedicated editor for combined definitions', () => {
-    const state = createDefaultRandomSystemState();
+    const state = {
+      ...createDefaultRandomSystemState(),
+      definitions: combinationDefinitions(),
+    };
     const html = renderToStaticMarkup(
       <DefinitionEditor
         definitions={state.definitions}
         sources={state.sources}
         rulePool={state.rulePool}
         actions={actions}
+        onOpenResultOptions={() => {}}
       />,
     );
 
-    expect(html).toContain('Lancer combiné');
+    expect(html).toContain('Tirage combiné');
     expect(html).toContain('Lancer associé');
     expect(html).toContain('Affichage du choix');
     expect(html).toContain('Monter Normal');
     expect(html).toContain('Choix par défaut : Normal');
-    expect(html).toContain('Toujours exposé directement');
+    expect(html).toContain('Toujours exposé comme candidat actif');
+    expect(html).toContain('Options de résultat');
     expect(html).not.toContain('Règle de combinaison');
     expect(html).not.toContain('Combiner plusieurs lancers');
   });
 
   it('does not list internal definitions in direct use', () => {
-    const state = createDefaultRandomSystemState();
+    const state = {
+      ...createDefaultRandomSystemState(),
+      definitions: combinationDefinitions(),
+    };
     const html = renderToStaticMarkup(<UsePanel state={state} actions={actions} />);
 
     expect(html).toContain('Jet d20');
     expect(html).not.toContain('Base de Jet d20');
     expect(html).toContain('Cartes');
+  });
+
+  it('does not list exposed inactive definitions in direct use', () => {
+    const state = ensureRandomKitInState(createDefaultRandomSystemState(), 'kit-d6-pool');
+    const html = renderToStaticMarkup(
+      <UsePanel
+        state={{
+          ...state,
+          definitions: state.definitions.map((definition) => (
+            definition.id === 'kit-d6-pool-successes'
+              ? { ...definition, active: false }
+              : definition
+          )),
+        }}
+        actions={actions}
+      />,
+    );
+
+    expect(html).not.toContain('Pool de d6');
+    expect(html).toContain('Initiative Shadowrun');
+  });
+
+  it('saves active rolls as a compact kit snapshot', () => {
+    const state = ensureRandomKitInState(createDefaultRandomSystemState(), 'kit-d20-generic');
+    const html = renderToStaticMarkup(<RandomKitManager state={state} actions={actions} />);
+
+    expect(html).toContain('class="rs-kit-save-panel"');
+    expect(html).toContain('actuellement actif');
+    expect(html).toContain('Enregistrer l’ensemble');
+    expect(html).not.toContain('rs-kit-included-rolls');
+    expect(html).not.toContain('Tirages inclus');
+    expect(html).toContain('class="small-btn rs-kit-load-btn"');
+    expect(html).toContain('class="small-btn rs-kit-activate-btn"');
+    expect(html).toContain('src="/branding/button-cadence-light.svg"');
+    expect(html).toContain('src="/branding/button-cadence-dark.svg"');
+    expect(html).toContain('class="rs-kit-list-group rs-kit-catalog"');
+    expect(html).toContain('Prêts à l’emploi');
+    expect(html).not.toContain('class="rs-kit-list-group rs-kit-catalog" open');
+    expect(html).not.toContain('Exporter .cadlib');
+    expect(html).not.toContain('Importer .cadlib');
   });
 
   it('provides standard card decks in the shared source editor and exposes the discard pile', () => {
@@ -109,7 +218,7 @@ describe('RandomSystem definition UI', () => {
       />,
     );
 
-    expect(html).toContain('Nouvelle pondérée');
+    expect(html).toContain('Nouvelle table');
     expect(html).toContain('Importer un CSV');
     expect(html).toContain('Décrire les faces');
     expect(html).toContain('Détails d’une face');
@@ -139,7 +248,10 @@ describe('RandomSystem definition UI', () => {
   });
 
   it('separates exposed and internal definitions and warns about unused internals', () => {
-    const state = createDefaultRandomSystemState();
+    const state = {
+      ...createDefaultRandomSystemState(),
+      definitions: combinationDefinitions(),
+    };
     const orphan = {
       ...state.definitions.find((definition) => definition.kind === 'roll'),
       id: 'unused-internal',
@@ -155,9 +267,9 @@ describe('RandomSystem definition UI', () => {
       />,
     );
 
-    expect(html).toContain('Exposées directement');
-    expect(html).toContain('Internes');
-    expect(html).toContain('Ni exposé directement ni utilisé dans un lancer combiné');
+    expect(html).toContain('Tirages proposés à l’utilisateur');
+    expect(html).toContain('Tirages utilisés en interne');
+    expect(html).toContain('Ni exposé ni utilisé dans un lancer combiné');
     expect(html.match(/rs-definition-warning/g)).toHaveLength(1);
   });
 
@@ -359,5 +471,23 @@ describe('RandomSystem definition UI', () => {
 
     expect(html).toContain('Ajoute ou retire des points fixes');
     expect(html).toContain('Refait les resultats');
+  });
+
+  it('does not repeat the result options title inside its dialog content', () => {
+    const state = createDefaultRandomSystemState();
+    const html = renderToStaticMarkup(
+      <RulePoolManager
+        embedded
+        rulePool={state.rulePool}
+        actions={{
+          enableAllRules: () => {},
+          setRuleEnabled: () => {},
+          useEssentialRules: () => {},
+        }}
+      />,
+    );
+
+    expect(html).toContain('Choisis les comportements');
+    expect(html).not.toContain('<h2>Options de résultat</h2>');
   });
 });

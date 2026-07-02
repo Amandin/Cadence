@@ -9,6 +9,7 @@ import {
   instantiateStatusTemplate,
   instantiateTemplate,
   instantiateTrackerTemplate,
+  makeInitiativeTextPreset,
   makeRuleTemplateFromRules,
   makeSceneCounterTemplateFromCounter,
   makeSceneStatusTemplateFromStatus,
@@ -399,6 +400,21 @@ export function useTemplates(store, setStore) {
   };
   const deleteRuleTemplate = (templateId) => updateStore((currentStore) => ({ ...currentStore, ruleTemplates: currentStore.ruleTemplates.filter((template) => template.id !== templateId) }));
 
+  const saveInitiativeTextPreset = (config, name) => {
+    const cleanName = templateCategoryFromName(name);
+    if (!cleanName) return { ok: false, kind: 'missing-name', message: t('templates.error.missingName') };
+    if (templateStore.initiativeTextPresets.some((preset) => preset.name.toLocaleLowerCase() === cleanName.toLocaleLowerCase())) {
+      return { ok: false, kind: 'duplicate', message: t('initiativeText.presetDuplicate') };
+    }
+    const preset = makeInitiativeTextPreset(config, { name: cleanName });
+    if (!preset) return { ok: false, kind: 'invalid', message: t('initiativeText.presetInvalid') };
+    updateStore((currentStore) => ({
+      ...currentStore,
+      initiativeTextPresets: [...currentStore.initiativeTextPresets, preset],
+    }));
+    return { ok: true, preset };
+  };
+
   const importTemplates = (incomingStore) => {
     const result = mergeTemplateStores(templateStore, incomingStore);
     setStore(result.store);
@@ -413,6 +429,7 @@ export function useTemplates(store, setStore) {
     sceneStatusTemplates: templateStore.sceneStatusTemplates,
     sceneCounterTemplates: templateStore.sceneCounterTemplates,
     ruleTemplates: templateStore.ruleTemplates,
+    initiativeTextPresets: templateStore.initiativeTextPresets,
     rulePresets: mergeRulePresetCatalog(templateStore.ruleTemplates),
     saveParticipantAsTemplate,
     createParticipantFromTemplate,
@@ -458,6 +475,7 @@ export function useTemplates(store, setStore) {
     saveRuleTemplate,
     duplicateRuleTemplate,
     deleteRuleTemplate,
+    saveInitiativeTextPreset,
     importTemplates,
   };
 }

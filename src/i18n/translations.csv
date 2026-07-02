@@ -409,6 +409,17 @@ initiative.entry.sort.type,Type
 initiative.entry.sort.name,Nom
 initiative.entry.sort.initiative,Initiative
 initiative.entry.bonusLabel,Bonus d'init
+initiative.entry.rollOne,Lancer l'initiative de {name}
+initiative.entry.rollGroup,Lancer l'initiative du groupe {group}
+initiative.entry.rollGrouped,Lancer groupés
+initiative.entry.drawOne,Tirer l'initiative de {name}
+initiative.entry.drawGroup,Tirer l'initiative du groupe {group}
+initiative.entry.drawGrouped,Tirer par type
+initiative.entry.drawAll,Distribuer à tous
+initiative.entry.drawAllTitle,Tirer une carte pour chaque personnage dans l’ordre actuellement affiché
+initiative.entry.rollUnavailable,Tirage d'initiative introuvable ou sans résultat numérique.
+initiative.entry.cardDrawUnavailable,"Paquet d'initiative introuvable ou vide, ou carte incompatible avec les libellés configurés."
+initiative.entry.cardDrawIncomplete,"{drawn} carte(s) distribuée(s) sur {count} : le paquet ne contient pas assez de cartes compatibles."
 initiative.entry.partialWarning,"Certaines valeurs actives sont renseignées, d’autres non. Choisis quoi faire des champs vides."
 initiative.entry.empty,Aucun personnage à renseigner.
 initiative.entry.inInitiative,En initiative
@@ -702,6 +713,9 @@ rules.tiebreaker.hiddenNote,Les anciennes valeurs restent conservées mais n’i
 rules.initiativeBonus.title,Bonus d'initiative
 rules.initiativeBonus.help,Autorise un bonus discret ajouté aux jets d'initiative numériques.
 rules.initiativeBonus.enable,Utiliser les bonus d'initiative
+rules.initiativeBonus.roll,Tirage d'initiative
+rules.initiativeBonus.noRoll,Aucun tirage lié
+rules.initiativeBonus.rollNote,La saisie d'initiative utilisera ce tirage pour remplir l'initiative en y injectant le bonus du personnage.
 rules.initiativeBonus.textNote,Les bonus sont conservés mais ne s'appliquent pas aux initiatives par libellés.
 rules.initiativeBonus.hiddenNote,Les anciennes valeurs restent conservées mais sont ignorées et masquées.
 rules.multipleActions.title,Actions multiples
@@ -720,6 +734,7 @@ rules.initiativeFormat.title,Saisie d’initiative
 rules.initiativeFormat.numeric,Numérique
 rules.initiativeFormat.numericFields,Champs numériques
 rules.initiativeFormat.presetSummary,Préréglage : {preset} - {resume}
+rules.initiativeFormat.cardSourceSummary,Paquet lié : {source}
 rules.initiativeFormat.numericHelp,Les initiatives sont saisies avec des nombres.
 rules.initiativeFormat.labels,Par libellés
 rules.initiativeFormat.labelsHelp,La saisie utilise les menus du préréglage choisi.
@@ -733,6 +748,11 @@ rules.categories.new,Nouveau type
 rules.categories.add,Ajouter
 rules.title,Règles d’initiative
 rules.help,Ces réglages sont appliqués à toutes les scènes de la campagne et servent de base aux nouvelles scènes.
+rules.navigation.title,Règles et tirages
+rules.navigation.initiative,Initiative
+rules.navigation.kits,Tirages disponibles
+rules.navigation.randomRules,Options de résultat
+rules.navigation.library,Import / export
 rules.group.development,Déroulement
 rules.group.developmentHelp,Ce bloc décide comment un round commence et comment les personnages jouent.
 rules.group.initiative,Initiative
@@ -742,6 +762,7 @@ rules.group.equalitiesHelp,Ce bloc sert seulement quand plusieurs personnages ar
 rules.group.organization,Organisation
 rules.group.organizationHelp,Ce bloc définit le classement visuel du mode souple.
 hub.tabs.rules,Règles
+hub.tabs.random,Tirages
 hub.tabs.campaigns,Options
 hub.tabs.templates,Modèles
 hub.brandFallback,Campagne Cadence
@@ -771,10 +792,32 @@ hub.campaigns.advanced,Actions avancées
 hub.campaigns.loadTest,Charger la campagne de test
 hub.campaigns.reset,Réinitialiser Cadence
 hub.campaigns.filePickerDescription,Campagne Cadence
+hub.files.title,Fichiers Cadence
+hub.files.help,Choisis si tu veux sauvegarder toute la campagne ou seulement les éléments réutilisables.
+hub.files.campaignTitle,Campagne complète
+hub.files.campaignHelp,"Contient les scènes, les règles, les modèles et les tirages actifs de cette campagne."
+hub.files.libraryTitle,Bibliothèque réutilisable
+hub.files.libraryHelp,"Contient les modèles, les préréglages et les ensembles de tirages à partager entre campagnes."
+hub.files.openCampaign,Ouvrir une campagne
+hub.files.saveCampaign,Enregistrer une copie
+hub.files.importLibrary,Importer une bibliothèque
+hub.files.exportLibrary,Exporter la bibliothèque
 hub.loading.rules,Chargement des règles...
 hub.loading.templates,Chargement des modèles...
 templates.hub.title,Modèles
-templates.hub.import,Importer les modèles depuis une autre campagne
+templates.hub.import,Importer modèles ou bibliothèque
+templates.hub.exportLibrary,Exporter modèles .cadlib
+library.tab,Bibliothèques
+library.title,Importer et exporter
+library.help,"Les fichiers .cadlib regroupent les modèles, préréglages et ensembles de tirages que tu souhaites partager ou conserver."
+library.modelsTitle,Modèles et préréglages
+library.modelsHelp,Importe ou exporte les modèles de campagne ainsi que les préréglages personnels de règles et de libellés d’initiative.
+library.importModels,Importer modèles/presets
+library.exportModels,Exporter modèles/presets
+library.kitsTitle,Ensembles de tirages
+library.kitsHelp,Importe ou exporte les ensembles qui activent plusieurs tirages à la fois.
+library.importKits,Importer kits
+library.exportKits,Exporter kits
 templates.save.title,Enregistrer comme modèle
 templates.save.help,Le modèle gardera la fiche et ses indicateurs. Les états temporaires ne seront pas appliqués quand tu l’ajouteras à une scène.
 templates.save.newCategory,Nouvelle catégorie…
@@ -867,8 +910,18 @@ initiativeText.leaveWithoutSaving,Quitter sans conserver
 initiativeText.title,Modifier les libellés d’initiative
 initiativeText.saveLabels,Enregistrer les libellés
 initiativeText.preset,Préréglage
+initiativeText.cardSource,Paquet de cartes lié
+initiativeText.noCardSource,Aucun paquet lié
+initiativeText.cardSourceHelp,"Le lien indique quel paquet RandomSystem utiliser pour les initiatives par cartes. Cadence convertit chaque carte en parties de libellé, par exemple As + Pique, au lieu de reprendre le nom complet de la carte."
+initiativeText.cardSourceRequired,Crée ou importe d’abord un paquet dans les sources de hasard.
 initiativeText.custom,Personnalisé
 initiativeText.addPart,+ partie
+initiativeText.savePreset,Enregistrer comme préréglage
+initiativeText.presetName,Nom du préréglage
+initiativeText.savePresetAction,Enregistrer
+initiativeText.presetSaved,Préréglage « {name} » enregistré. Il sera inclus dans les exports .cadlib de modèles et presets.
+initiativeText.presetDuplicate,Un préréglage de libellés porte déjà ce nom.
+initiativeText.presetInvalid,Ce préréglage de libellés est incomplet.
 deleteCharacter.title,Supprimer la fiche ?
 deleteCharacter.warningBefore,Tu es sur le point de supprimer
 deleteCharacter.warningAfter,de la scène.
@@ -898,6 +951,7 @@ templates.fallback.status,État
 templates.fallback.sceneStatus,État de scène
 templates.fallback.sceneCounter,Indicateur de scène
 templates.fallback.rules,Règles
+templates.fallback.initiativeText,Libellés d’initiative
 templates.fallback.newTemplate,Nouveau modèle
 templates.fallback.chooseCategory,Choisis une catégorie.
 templates.error.missingName,Donne un nom au modèle.
@@ -921,6 +975,9 @@ app.notice.fileUnlinked.title,Fichier non lié
 app.notice.copyImpossible.title,Copie impossible
 app.notice.templatesImported.title,Modèles importés
 app.notice.templatesImported.message,"{added} ajouté(s), {skipped} ignoré(s) car déjà présents."
+app.notice.libraryExported.message,Bibliothèque Cadence exportée.
+app.notice.libraryImported.title,Bibliothèque importée
+app.notice.libraryImported.message,"{templates} élément(s) de modèle et {kits} ensemble(s) de tirages importé(s)."
 app.notice.categoryImpossible.title,Catégorie impossible
 app.notice.renameImpossible.title,Renommage impossible
 app.notice.deleteImpossible.title,Suppression impossible

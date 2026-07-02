@@ -55,6 +55,17 @@ describe('campaign rules', () => {
     });
   });
 
+  it('keeps the initiative bonus roll link', () => {
+    expect(normalizeCampaignRules({ initiativeBonusRollDefinitionId: 'initiative-bonus' })).toMatchObject({
+      initiativeBonusRollDefinitionId: 'initiative-bonus',
+    });
+    expect(applyInitiativeRules({ participants: [], reserve: [] }, {
+      initiativeBonusRollDefinitionId: 'initiative-bonus',
+    })).toMatchObject({
+      initiativeBonusRollDefinitionId: 'initiative-bonus',
+    });
+  });
+
   it('keeps the flexible mode initiative display preference', () => {
     expect(applyInitiativeRules({ participants: [], reserve: [] }, {
       temporalite: 'souple',

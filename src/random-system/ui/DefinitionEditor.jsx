@@ -60,7 +60,7 @@ function DefinitionListGroup({
   );
 }
 
-export function DefinitionEditor({ definitions, sources, rulePool, actions }) {
+export function DefinitionEditor({ definitions, sources, rulePool, actions, onOpenResultOptions }) {
   const [selectedId, setSelectedId] = useState(definitions[0]?.id || '');
   const selected = definitions.find((item) => item.id === selectedId) || null;
   const [draft, setDraft] = useState(() => definitionToDraft(selected, sources));
@@ -145,11 +145,12 @@ export function DefinitionEditor({ definitions, sources, rulePool, actions }) {
       <aside className="rs-config-list">
         <div className="rs-section-head">
           <div>
-            <span className="rs-section-kicker">{t('random.config.configure')}</span>
+            <span className="rs-section-kicker">{t('random.definition.listKicker')}</span>
             <div className="rs-heading-with-mark">
               <span className="rs-heading-mark" aria-hidden="true">✦</span>
               <h3>{t('random.config.definitions')}</h3>
             </div>
+            <p className="muted compact-help">{t('random.definition.listHelp')}</p>
           </div>
           <button type="button" className="small-btn" onClick={newDefinition}>{t('common.add')}</button>
         </div>
@@ -170,14 +171,15 @@ export function DefinitionEditor({ definitions, sources, rulePool, actions }) {
       </aside>
       <section className="rs-config-editor">
         <div className="rs-section-head">
-          <div>
+          <div className="rs-section-copy">
             <span className="rs-section-kicker">{draft.kind === builderDefinitionKinds.COMBINATION ? t('random.definition.typeCombination') : t('random.definition.typeRoll')}</span>
             <div className="rs-heading-with-mark">
               <span className="rs-heading-mark" aria-hidden="true">✦</span>
               <h2>{selected ? t('random.definition.edit') : t('random.definition.new')}</h2>
             </div>
           </div>
-          <div>
+          <div className="rs-section-actions">
+            {onOpenResultOptions && <button type="button" className="small-btn" onClick={onOpenResultOptions}>{t('random.rules.open')}</button>}
             {selected && <button type="button" className="small-btn" onClick={duplicateDefinition}>{t('random.definition.duplicate')}</button>}
             {selected && (
               <button

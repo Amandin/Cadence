@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createCampaignActions } from './campaignActions.js';
+import { createCadenceLibraryPayload } from '../cadLibrary.js';
+import { randomKitCatalog } from '../random-system/rulePresetKits.js';
+import { createDefaultRandomSystemState } from '../random-system/state.js';
 import { isValidCampaign, serializeCampaign } from '../storage.js';
 
 const scene = { id: 'scene-export', title: 'Export', participants: [] };
@@ -9,6 +12,7 @@ function createHarness(overrides = {}) {
   let rules = overrides.rules || { temporalite: 'classique' };
   let campaignName = overrides.campaignName || 'Campagne test';
   let templates = overrides.templates || null;
+  let randomSystem = overrides.randomSystem || createDefaultRandomSystemState();
   let sceneIndex = 0;
   let dark = overrides.dark ?? true;
 
@@ -19,11 +23,12 @@ function createHarness(overrides = {}) {
     setDark: vi.fn((next) => { dark = next; }),
     setCampaignNameState: vi.fn((next) => { campaignName = next; }),
     setTemplateStore: vi.fn((next) => { templates = next; }),
+    setRandomSystemState: vi.fn((next) => { randomSystem = typeof next === 'function' ? next(randomSystem) : next; }),
   };
 
   return {
     calls,
-    state: () => ({ scenes, rules, campaignName, templates, sceneIndex, dark }),
+    state: () => ({ scenes, rules, campaignName, templates, randomSystem, sceneIndex, dark }),
     actions: createCampaignActions({
       scenes,
       campaignRules: rules,
@@ -32,11 +37,13 @@ function createHarness(overrides = {}) {
       dark,
       campaignName,
       templateStore: templates,
+      randomSystemState: randomSystem,
       setScenes: calls.setScenes,
       setSceneIndex: calls.setSceneIndex,
       setDark: calls.setDark,
       setCampaignNameState: calls.setCampaignNameState,
       setTemplateStore: calls.setTemplateStore,
+      setRandomSystemState: calls.setRandomSystemState,
     }),
   };
 }
@@ -117,6 +124,80 @@ describe('campaign actions export/import', () => {
     expect(result.message).toContain('campagne Cadence valide');
     expect(calls.setScenes).not.toHaveBeenCalled();
     expect(calls.setDark).not.toHaveBeenCalled();
+  });
+
+  it('rejects corrupted .cad files without mutating campaign state', async () => {
+    const file = {
+      name: 'campagne-corrompue.cad',
+      type: 'application/json',
+      size: 12,
+      text: async () => '{ pas du json',
+    };
+    const { actions, calls } = createHarness();
+
+    const result = await actions.importCampaign(file);
+
+    expect(result.ok).toBe(false);
+    expect(result.message).toContain('campagne-corrompue.cad');
+    expect(calls.setCampaignRules).not.toHaveBeenCalled();
+    expect(calls.setScenes).not.toHaveBeenCalled();
+    expect(calls.setTemplateStore).not.toHaveBeenCalled();
+    expect(calls.setDark).not.toHaveBeenCalled();
+  });
+
+  it('imports templates and rule presets from .cadlib libraries', async () => {
+    const library = createCadenceLibraryPayload({
+      name: 'Bibliotheque',
+      templates: {
+        templates: [{
+          name: 'Archiviste',
+          category: 'PNJ',
+          participant: { id: 'template-participant', name: 'Archiviste', kind: 'Opposant', trackers: [], statuses: [] },
+        }],
+      },
+      rulePresets: [{ name: 'Regles de test', rules: { temporalite: 'classique' } }],
+      randomKits: [randomKitCatalog[0]],
+    });
+    const file = {
+      name: 'bibliotheque.cadlib',
+      type: 'application/json',
+      size: 1,
+      text: async () => JSON.stringify(library),
+    };
+    const { actions, state, calls } = createHarness();
+
+    const result = await actions.importTemplatesFromCampaign(file);
+
+    expect(result).toMatchObject({ ok: true, added: 2, skipped: 0, kitsAdded: 1, kitsUpdated: 0 });
+    expect(calls.setTemplateStore).toHaveBeenCalled();
+    expect(calls.setRandomSystemState).toHaveBeenCalled();
+    expect(state().templates.templates[0]).toMatchObject({ name: 'Archiviste' });
+    expect(state().templates.ruleTemplates[0]).toMatchObject({ name: 'Regles de test' });
+    expect(state().randomSystem.randomKits[0]).toMatchObject({ id: randomKitCatalog[0].id });
+  });
+
+  it('exports local templates and rule presets as a .cadlib library', async () => {
+    const capture = stubSavePicker();
+    const { actions } = createHarness({
+      templates: {
+        templates: [],
+        ruleTemplates: [{ name: 'Regles locales', rules: { temporalite: 'classique' } }],
+      },
+      randomSystem: {
+        ...createDefaultRandomSystemState(),
+        randomKits: [randomKitCatalog[0]],
+      },
+    });
+
+    const result = await actions.exportTemplateLibrary('Bibliotheque locale');
+    const payload = JSON.parse(await capture.blob.text());
+
+    expect(result).toMatchObject({ ok: true, method: 'picker' });
+    expect(capture.suggestedName).toMatch(/^bibliotheque-locale-\d{2}-\d{2}-\d{4}\.cadlib$/);
+    expect(capture.types[0].accept['application/json']).toEqual(['.cadlib']);
+    expect(payload.format).toBe('cadence-library');
+    expect(payload.templates.ruleTemplates[0]).toMatchObject({ name: 'Regles locales' });
+    expect(payload.randomKits[0]).toMatchObject({ id: randomKitCatalog[0].id });
   });
 
   it('loads the explicit test campaign with several scenes and templates', () => {

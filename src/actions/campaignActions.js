@@ -3,7 +3,9 @@ import { createRulePresetSnapshot, syncRulePresetSnapshot } from '../rulePresets
 import { campaignNameFromPayload, campaignTemplatesFromPayload, isValidCampaign, normalizeCampaignName, normalizeCampaignPayload, serializeCampaign } from '../storage.js';
 import { boxBlocks, clone, isBoxesTracker, isNumericTracker, makeDefaultCampaign, makeTestCampaign, normalizeBoxTracker, uid } from '../logic.js';
 import { mergeTemplateStores, numberedCopyName } from '../templates.js';
-import { readJsonCadenceFile, shareOrDownloadCampaign } from '../campaignFileIO.js';
+import { readJsonCadenceFile, shareOrDownloadCampaign, shareOrDownloadLibrary } from '../campaignFileIO.js';
+import { importCadenceLibraryRandomKits, isValidCadenceLibrary, mergeCadenceLibraryTemplates, serializeCadenceLibrary } from '../cadLibrary.js';
+import { normalizeRandomSystemState } from '../random-system/state.js';
 import { t } from '../i18n/index.js';
 
 function valeurNumerique(value, fallback = 0) {
@@ -72,13 +74,14 @@ function duplicateSceneData(scene, rules, existingScenes = []) {
   return remettreSceneAuDepartInitiative({ ...clone(scene), id: uid('scene'), title: numberedCopyName(existingScenes.map((item) => item.title), title, t('hub.scene.defaultType')) }, rules);
 }
 
-export function createCampaignActions({ scenes, campaignRules, rulePresetSnapshot, setCampaignRules, setRulePresetSnapshot = () => {}, sceneIndex, dark, campaignName, templateStore, setScenes, setSceneIndex, setDark, setCampaignNameState, setTemplateStore }) {
+export function createCampaignActions({ scenes, campaignRules, rulePresetSnapshot, setCampaignRules, setRulePresetSnapshot = () => {}, sceneIndex, dark, campaignName, templateStore, randomSystemState, setScenes, setSceneIndex, setDark, setCampaignNameState, setTemplateStore, setRandomSystemState = () => {} }) {
   const applyCampaign = (payload) => {
     const fresh = normalizeCampaignPayload(payload);
     setCampaignRules(campaignRulesFromPayload(fresh));
     setRulePresetSnapshot(fresh.rulePresetSnapshot || null);
     setScenes(fresh.scenes);
     setTemplateStore(campaignTemplatesFromPayload(fresh));
+    setRandomSystemState(normalizeRandomSystemState(fresh.randomSystem));
     setCampaignNameState(campaignNameFromPayload(fresh));
     setSceneIndex(0);
   };
@@ -137,7 +140,7 @@ export function createCampaignActions({ scenes, campaignRules, rulePresetSnapsho
       const exportName = normalizeCampaignName(name);
       const rules = normalizeCampaignRules(campaignRules);
       const exportScenes = unifyCampaignScenes(scenes, rules);
-      const result = await shareOrDownloadCampaign(serializeCampaign(exportScenes, dark, exportName, templateStore, rules, rulePresetSnapshot), exportName);
+      const result = await shareOrDownloadCampaign(serializeCampaign(exportScenes, dark, exportName, templateStore, rules, rulePresetSnapshot, {}, randomSystemState), exportName);
       if (result?.ok) setCampaignNameState(exportName);
       return result;
     },
@@ -151,6 +154,7 @@ export function createCampaignActions({ scenes, campaignRules, rulePresetSnapsho
         setScenes(campaign.scenes);
         setCampaignNameState(campaignNameFromPayload(campaign));
         setTemplateStore(campaignTemplatesFromPayload(campaign));
+        setRandomSystemState(normalizeRandomSystemState(campaign.randomSystem));
         setSceneIndex(0);
         return { ok: true };
       } catch (error) {
@@ -160,14 +164,36 @@ export function createCampaignActions({ scenes, campaignRules, rulePresetSnapsho
     async importTemplatesFromCampaign(file) {
       try {
         const data = await readJsonCadenceFile(file);
-        if (!isValidCampaign(data)) return { ok: false, message: t('campaign.error.invalidCadenceFile') };
-        const importedTemplates = campaignTemplatesFromPayload(normalizeCampaignPayload(data));
-        const result = mergeTemplateStores(templateStore, importedTemplates);
+        let result = null;
+        let randomKitResult = { added: 0, updated: 0 };
+        if (isValidCadenceLibrary(data)) {
+          result = mergeCadenceLibraryTemplates(templateStore, data);
+          randomKitResult = importCadenceLibraryRandomKits(randomSystemState, data);
+          setRandomSystemState(randomKitResult.state);
+        } else if (isValidCampaign(data)) {
+          const importedTemplates = campaignTemplatesFromPayload(normalizeCampaignPayload(data));
+          result = mergeTemplateStores(templateStore, importedTemplates);
+        } else {
+          return { ok: false, message: t('campaign.error.invalidCadenceFile') };
+        }
         setTemplateStore(result.store);
-        return { ok: true, added: result.added.length, skipped: result.skipped.length };
+        return {
+          ok: true,
+          added: result.added.length,
+          skipped: result.skipped.length,
+          kitsAdded: randomKitResult.added,
+          kitsUpdated: randomKitResult.updated,
+        };
       } catch {
         return { ok: false, message: t('campaign.error.importTemplatesFailed') };
       }
+    },
+    async exportTemplateLibrary(name = `${campaignName} - bibliotheque`) {
+      return shareOrDownloadLibrary(serializeCadenceLibrary({
+        name,
+        templates: templateStore,
+        randomKits: randomSystemState?.randomKits || [],
+      }), name);
     },
     loadTestCampaign() {
       applyCampaign(makeTestCampaign());

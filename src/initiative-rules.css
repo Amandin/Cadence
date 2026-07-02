@@ -69,6 +69,118 @@
   min-width: 0;
 }
 
+.initiative-entry-top-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  min-width: 0;
+}
+
+.initiative-draw-all-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 24px;
+  padding: 3px 9px;
+  font-size: 11px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.initiative-draw-all-btn > span:first-child {
+  font-size: 14px;
+}
+
+.initiative-group-roll-menu {
+  position: relative;
+}
+
+.initiative-group-roll-menu summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 9px;
+  border: 1px solid var(--ui-border);
+  border-radius: 999px;
+  background: var(--ui-surface);
+  color: var(--ui-text);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+  list-style: none;
+  white-space: nowrap;
+}
+
+.initiative-group-roll-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.initiative-group-roll-menu summary::after {
+  content: "▾";
+  margin-left: 6px;
+  color: var(--ui-muted);
+  font-size: 9px;
+}
+
+.initiative-group-roll-menu[open] summary {
+  border-color: var(--ui-accent);
+  color: var(--ui-accent);
+}
+
+.initiative-group-roll-options {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 5px);
+  right: 0;
+  display: grid;
+  gap: 4px;
+  width: max-content;
+  min-width: 180px;
+  max-width: min(260px, calc(100vw - 32px));
+  padding: 5px;
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+  background: var(--ui-surface);
+  box-shadow: var(--ui-shadow-surface);
+}
+
+.initiative-group-roll-options button {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px;
+  min-height: 30px;
+  padding: 5px 7px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ui-text);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 850;
+  text-align: left;
+}
+
+.initiative-group-roll-options button:hover,
+.initiative-group-roll-options button:focus-visible {
+  background: var(--ui-accent-soft);
+  color: var(--ui-accent);
+}
+
+.initiative-group-roll-options button small {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--ui-surface-soft);
+  color: var(--ui-muted);
+  font-size: 10px;
+}
+
 .initiative-sort-field {
   display: inline-flex;
   align-items: center;
@@ -654,6 +766,8 @@
 .advanced-rule-block h3 {
   margin: 0 0 5px;
   font-size: 15px;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .compact-help {
@@ -733,7 +847,13 @@
   }
 
   .initiative-entry-topline {
+    align-items: flex-start;
+    flex-wrap: wrap;
     gap: 6px;
+  }
+
+  .initiative-entry-top-actions {
+    flex: 1 1 auto;
   }
 
   .initiative-sort-field {

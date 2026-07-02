@@ -23,8 +23,9 @@ import {
   createDefaultRandomRulePool,
   normalizeRandomRulePool,
 } from './rulePool.js';
+import { normalizeRandomKits, randomKitResources } from './rulePresetKits.js';
 
-export const RANDOM_SYSTEM_SCHEMA_VERSION = 11;
+export const RANDOM_SYSTEM_SCHEMA_VERSION = 13;
 export const RANDOM_HISTORY_LIMIT = 20;
 
 export function emptyRandomStatistics() {
@@ -45,6 +46,7 @@ export function createDefaultRandomSystemState() {
     definitions: normalizeDefinitionCollection(createStarterDefinitions()),
     rulePool: createDefaultRandomRulePool(),
     sourceStates: Object.fromEntries(cardSources.map((source) => [source.id, resetCardSource(source)])),
+    randomKits: [],
     lastResult: null,
     history: [],
     statistics: emptyRandomStatistics(),
@@ -270,6 +272,23 @@ function upgradeGeneratedCombinationRolls(definitions) {
   return definitions.map((definition) => replacements.get(definition.id) || definition);
 }
 
+function upgradeBuiltInD20Definitions(definitions) {
+  const replacements = new Map(
+    randomKitResources('kit-d20-generic').definitions
+      .filter((definition) => ['kit-d20-check', 'kit-d20-initiative'].includes(definition.id))
+      .map((definition) => [definition.id, definition]),
+  );
+  return definitions.map((definition) => {
+    const replacement = replacements.get(definition.id);
+    if (!replacement) return definition;
+    return normalizeRandomDefinition({
+      ...replacement,
+      exposed: definition.exposed,
+      active: definition.active,
+    });
+  });
+}
+
 function normalizedStatistics(statistics) {
   const source = statistics && typeof statistics === 'object' ? statistics : {};
   const bySource = source.bySource && typeof source.bySource === 'object'
@@ -326,9 +345,12 @@ export function normalizeRandomSystemState(state) {
   const withoutLegacyCombinations = Number(state.schemaVersion) < 4
     ? replaceLegacyCombinationMechanics(normalizedDefinitions)
     : normalizedDefinitions;
-  const definitions = Number(state.schemaVersion) === 4
+  const upgradedCombinations = Number(state.schemaVersion) === 4
     ? upgradeGeneratedCombinationRolls(withoutLegacyCombinations)
     : withoutLegacyCombinations;
+  const definitions = Number(state.schemaVersion) < 13
+    ? upgradeBuiltInD20Definitions(upgradedCombinations)
+    : upgradedCombinations;
   const cardSources = sources.filter((source) => source.kind === randomSourceKinds.CARDS);
   const sourceStates = Object.fromEntries(cardSources.map((source) => [
     source.id,
@@ -402,9 +424,65 @@ export function normalizeRandomSystemState(state) {
     definitions,
     rulePool,
     sourceStates,
+    randomKits: normalizeRandomKits(state.randomKits),
     lastResult: reviveResult(state.lastResult) || history[0] || null,
     history,
     statistics: normalizedStatistics(state.statistics),
+  };
+}
+
+function definitionSourceIds(definition) {
+  return [
+    ...(definition.components || []).flatMap((component) => {
+      if (component.source?.kind === 'fixed') return [component.source.value];
+      const parameter = (definition.parameters || []).find((item) => item.id === component.source?.parameterId);
+      return parameter?.type === 'source' ? [parameter.defaultValue] : [];
+    }),
+    ...(definition.pipeline || []).filter((step) => step.type === randomPipelineStepTypes.LOOKUP_TABLE).map((step) => step.sourceId),
+  ].filter(Boolean);
+}
+
+function referencedDefinitionIds(definition) {
+  return (definition.pipeline || [])
+    .filter((step) => step.type === randomPipelineStepTypes.REPEAT_SELECT)
+    .flatMap((step) => Object.values(step.variants || {}).map((variant) => variant?.definitionId))
+    .filter(Boolean);
+}
+
+export function exportRandomSystemStateForCampaign(state) {
+  const normalized = normalizeRandomSystemState(state);
+  const byId = new Map(normalized.definitions.map((definition) => [definition.id, definition]));
+  const selectedIds = new Set(normalized.definitions
+    .filter((definition) => definition.exposed !== false && definition.active !== false)
+    .map((definition) => definition.id));
+  const visit = (definitionId) => {
+    const definition = byId.get(definitionId);
+    if (!definition) return;
+    referencedDefinitionIds(definition).forEach((dependencyId) => {
+      if (selectedIds.has(dependencyId)) return;
+      selectedIds.add(dependencyId);
+      visit(dependencyId);
+    });
+  };
+  [...selectedIds].forEach(visit);
+
+  const definitions = normalized.definitions.filter((definition) => selectedIds.has(definition.id));
+  const sourceIds = new Set(definitions.flatMap(definitionSourceIds));
+  const sources = normalized.sources.filter((source) => sourceIds.has(source.id));
+  const includedSourceIds = new Set(sources.map((source) => source.id));
+  const sourceStates = Object.fromEntries(Object.entries(normalized.sourceStates)
+    .filter(([sourceId]) => includedSourceIds.has(sourceId)));
+
+  return {
+    schemaVersion: RANDOM_SYSTEM_SCHEMA_VERSION,
+    sources,
+    definitions,
+    rulePool: normalizeRandomRulePool(normalized.rulePool),
+    sourceStates,
+    randomKits: [],
+    lastResult: null,
+    history: [],
+    statistics: emptyRandomStatistics(),
   };
 }
 

@@ -33,18 +33,18 @@ export function ChoiceOptionControl({ option, value, onChange }) {
     return (
       <fieldset className="rs-choice-control rs-choice-slider">
         <legend>{option.label}</legend>
-        <output>{option.choices[selectedIndex].label}</output>
-        <input
-          type="range"
-          min="0"
-          max={option.choices.length - 1}
-          step="1"
-          value={selectedIndex}
-          onChange={(event) => onChange(option.choices[Number(event.target.value)].value)}
-          aria-label={option.label}
-        />
-        <div>
-          {option.choices.map((choice, index) => <span className={index === selectedIndex ? 'selected' : ''} key={choice.value}>{choice.label}</span>)}
+        <div className="rs-choice-segments" role="group" aria-label={option.label}>
+          {option.choices.map((choice, index) => (
+            <button
+              type="button"
+              className={index === selectedIndex ? 'selected' : ''}
+              aria-pressed={index === selectedIndex}
+              onClick={() => onChange(choice.value)}
+              key={choice.value}
+            >
+              {choice.label}
+            </button>
+          ))}
         </div>
       </fieldset>
     );

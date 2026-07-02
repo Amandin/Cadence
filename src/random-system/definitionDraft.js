@@ -61,6 +61,7 @@ export function createDefinitionDraft(sources = [], definitions = []) {
     name: 'Nouveau lancer',
     kind: randomDefinitionKinds.ROLL,
     exposed: true,
+    active: true,
     components: [{
       id: createResourceId('component'),
       label: 'Groupe 1',
@@ -213,6 +214,7 @@ export function definitionToDraft(definition, sources = []) {
     name: normalized.name,
     kind: normalized.kind,
     exposed: normalized.exposed,
+    active: normalized.active,
     components,
     ...overallCalculation,
     linkedTable: {

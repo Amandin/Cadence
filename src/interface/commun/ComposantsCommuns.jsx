@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useId, useRef } from 'react';
 import { t } from '../../i18n/index.js';
 import { colorAccents } from '../../constants.js';
 import { uiGlyphs } from '../../uiAssets.js';
@@ -42,13 +42,19 @@ export function AvatarParticipant({ participant }) {
   return <div className={`avatar ${participant.color || 'slate'}`}>{participant.symbol || uiGlyphs.avatarFallback}</div>;
 }
 
+export function IconeRepliFichette({ repliee = false, className = '' }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className={`${repliee ? 'is-collapsed' : ''} ${className}`.trim()}>
+      <path d="M7 13.5 12 9l5 4.5" />
+      <path d="M7 17.5 12 13l5 4.5" />
+    </svg>
+  );
+}
+
 export function BoutonRepliFichette({ repliee = false, onClick, className = '' }) {
   return (
     <button className={`icon-btn collapse-btn fiche-collapse-btn ${className}`} onClick={onClick} aria-label={repliee ? t('common.expand') : t('common.collapse')} type="button">
-      <svg viewBox="0 0 24 24" aria-hidden="true" className={repliee ? 'is-collapsed' : ''}>
-        <path d="M7 13.5 12 9l5 4.5" />
-        <path d="M7 17.5 12 13l5 4.5" />
-      </svg>
+      <IconeRepliFichette repliee={repliee} />
     </button>
   );
 }
@@ -137,9 +143,26 @@ export function fermetureExterieureSurDoubleClic(mode, pointerType) {
 
 export function Fenetre({ title, children, onClose, header, className = '', style, outsideCloseMode = 'single' }) {
   const pointerTypeRef = useRef('');
-  const entete = header ?? <div className="row" style={{ justifyContent: 'space-between', marginBottom: 10 }}><h2 style={{ margin: 0 }}>{title}</h2><button className="icon-btn" onClick={onClose} aria-label={t('common.close')}>{uiGlyphs.close}</button></div>;
+  const sheetRef = useRef(null);
+  const previousFocusRef = useRef(null);
+  const titleId = useId();
+  const entete = header ?? <div className="row" style={{ justifyContent: 'space-between', marginBottom: 10 }}><h2 id={titleId} style={{ margin: 0 }}>{title}</h2><button className="icon-btn" onClick={onClose} aria-label={t('common.close')}>{uiGlyphs.close}</button></div>;
   const overlayClass = className ? `${className.split(' ')[0]}-overlay` : '';
   const typePointeur = (event) => pointerTypeRef.current || (event.nativeEvent?.sourceCapabilities?.firesTouchEvents ? 'touch' : 'mouse');
+  useEffect(() => {
+    previousFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    sheetRef.current?.focus();
+    return () => {
+      if (previousFocusRef.current?.isConnected) previousFocusRef.current.focus();
+    };
+  }, []);
+  useEffect(() => {
+    const fermerSurEchap = (event) => {
+      if (event.key === 'Escape') onClose?.();
+    };
+    document.addEventListener('keydown', fermerSurEchap);
+    return () => document.removeEventListener('keydown', fermerSurEchap);
+  }, [onClose]);
   const memoriserPointeur = (event) => {
     if (event.target === event.currentTarget) pointerTypeRef.current = event.pointerType || '';
   };
@@ -151,7 +174,7 @@ export function Fenetre({ title, children, onClose, header, className = '', styl
     if (event.target !== event.currentTarget) return;
     if (fermetureExterieureSurDoubleClic(outsideCloseMode, typePointeur(event))) onClose?.();
   };
-  return <div className={`overlay ${overlayClass}`} onPointerDown={memoriserPointeur} onClick={fermerSurClic} onDoubleClick={fermerSurDoubleClic}><div className={`sheet ${className}`} style={style} onClick={(event) => event.stopPropagation()}>{entete}{children}</div></div>;
+  return <div className={`overlay ${overlayClass}`} onPointerDown={memoriserPointeur} onClick={fermerSurClic} onDoubleClick={fermerSurDoubleClic}><div ref={sheetRef} className={`sheet ${className}`} style={style} role="dialog" aria-modal="true" aria-labelledby={header ? undefined : titleId} aria-label={header ? title : undefined} tabIndex={-1} onClick={(event) => event.stopPropagation()}>{entete}{children}</div></div>;
 }
 
 export function MessageChangementTemplate({ onAnnuler, onValider, onAbandonner }) {

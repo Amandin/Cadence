@@ -8,6 +8,21 @@ function themeControlMode(themeState) {
   return themeState?.mode && themeState.mode !== themePreferenceModes.SYSTEM ? 'manual' : 'auto';
 }
 
+function OptionsSection({ title, help, actions, className = '', children }) {
+  return (
+    <section className={`scene-options compact-options options-section ${className}`.trim()}>
+      <div className="options-section-head">
+        <div className="options-section-title">
+          <h3>{title}</h3>
+          {help && <p className="muted compact-help">{help}</p>}
+        </div>
+        {actions && <div className="options-section-actions">{actions}</div>}
+      </div>
+      <div className="options-section-body">{children}</div>
+    </section>
+  );
+}
+
 export function ThemeModeToggle({ themeState, onThemeModeChange, ariaLabel = t('menu.toggleTheme') }) {
   const dark = !!themeState?.dark;
   if (themeControlMode(themeState) !== 'manual') return null;
@@ -33,10 +48,7 @@ export function OptionsContent({ performanceState, themeState, onPerformancePref
 
   return (
     <div className="options-menu-content">
-      <section className="scene-options compact-options options-section">
-        <div className="compact-option-title">
-          <h3>{t('options.theme.title')}</h3>
-        </div>
+      <OptionsSection title={t('options.theme.title')}>
         <label className="field">
           {t('options.theme.mode')}
           <select value={themeMode} onChange={(event) => choisirModeTheme(event.target.value)}>
@@ -44,13 +56,12 @@ export function OptionsContent({ performanceState, themeState, onPerformancePref
             <option value="manual">{t('options.theme.manual')}</option>
           </select>
         </label>
-      </section>
+      </OptionsSection>
 
-      <section className="scene-options compact-options options-section">
-        <div className="compact-option-title">
-          <h3>{t('performance.menu.title')}</h3>
-          {performanceState?.automatic && <span className="chip hot">{t('performance.menu.autoActive')}</span>}
-        </div>
+      <OptionsSection
+        title={t('performance.menu.title')}
+        actions={performanceState?.automatic && <span className="chip hot">{t('performance.menu.autoActive')}</span>}
+      >
         <label className="field">
           {t('performance.menu.label')}
           <select value={performanceState?.preference || performancePreferences.AUTO} onChange={(event) => onPerformancePreferenceChange?.(event.target.value)}>
@@ -59,7 +70,7 @@ export function OptionsContent({ performanceState, themeState, onPerformancePref
             <option value={performancePreferences.PERFORMANCE}>{t('performance.preference.performance')}</option>
           </select>
         </label>
-      </section>
+      </OptionsSection>
     </div>
   );
 }

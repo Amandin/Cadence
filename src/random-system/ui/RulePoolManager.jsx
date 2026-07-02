@@ -6,20 +6,21 @@ const ruleGroups = [
   { id: 'calculation', labelKey: 'random.rules.group.calculation' },
 ];
 
-export function RulePoolManager({ rulePool, actions }) {
+export function RulePoolManager({ rulePool, actions, embedded = false }) {
   const enabled = new Set(rulePool.enabledRuleIds);
   return (
-    <section className="rs-rule-pool">
+    <section className={`rs-rule-pool ${embedded ? 'embedded' : ''}`.trim()}>
       <div className="rs-section-head">
-        <div>
-          <span className="rs-section-kicker">{t('random.config.rules')}</span>
-          <div className="rs-heading-with-mark">
+        <div className="rs-section-copy">
+          {!embedded && <span className="rs-section-kicker">{t('random.config.rules')}</span>}
+          {!embedded && <div className="rs-heading-with-mark">
             <span className="rs-heading-mark" aria-hidden="true">◌</span>
             <h2>{t('random.rules.title')}</h2>
-          </div>
+          </div>}
+          <p className="muted compact-help">{t('random.rules.help')}</p>
           <span>{t('random.rules.enabledCount', { count: enabled.size })}</span>
         </div>
-        <div>
+        <div className="rs-section-actions">
           <button type="button" className="small-btn" onClick={actions.useEssentialRules}>{t('random.rules.essential')}</button>
           <button type="button" className="small-btn" onClick={actions.enableAllRules}>{t('random.rules.enableAll')}</button>
         </div>

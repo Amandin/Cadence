@@ -16,6 +16,7 @@ const cardAliases = {
   carreau: '\u2666',
   trefle: '\u2663',
   'tr\u00e8fle': '\u2663',
+  pic: '\u2660',
   atout: '\u2605',
 };
 const uniq = (values) => {
@@ -34,7 +35,7 @@ const uniq = (values) => {
 export const initiativeTextOrderPresetIds = { CARDS: 'cards', TAROT: 'tarot', POSTURES: 'postures' };
 export const initiativeTextOrderPresets = {
   cards: {
-    label: 'Jeu de cartes classique',
+    label: 'Paquet de cartes',
     separator: '',
     separators: [''],
     parts: [
@@ -92,6 +93,7 @@ export function normalizeInitiativeTextOrder(config = {}) {
   return {
     enabled: !!source.enabled,
     preset: clean(source.preset),
+    cardSourceId: clean(source.cardSourceId),
     separator: separators[0] ?? cleanSeparator(source.separator) ?? ' de ',
     separators,
     unknown: source.unknown === 'first' ? 'first' : 'last',
@@ -109,6 +111,53 @@ export const presetInitiativeTextOrder = (id) => normalizeInitiativeTextOrder({
   preset: id,
   enabled: true,
 });
+
+function cardWeight(card = {}) {
+  if (Number.isFinite(Number(card.value))) return Number(card.value);
+  const value = canonicalKey(card.value || card.rank || card.label || card.id);
+  if (value === canonicalKey('\u{1F0CF}') || value === 'joker' || value === 'excuse') return 1000;
+  return 0;
+}
+
+function orderedCardFieldValues(cards = [], field) {
+  const byValue = new Map();
+  arr(cards).forEach((card, index) => {
+    const value = clean(card?.[field]);
+    if (!value) return;
+    const existing = byValue.get(canonicalKey(value));
+    const weight = cardWeight(card);
+    if (!existing || weight > existing.weight) {
+      byValue.set(canonicalKey(value), { value, weight, index });
+    }
+  });
+  return [...byValue.values()]
+    .sort((left, right) => right.weight - left.weight || left.index - right.index)
+    .map((item) => item.value);
+}
+
+function cardRankValue(card = {}) {
+  return clean(card.rank) || clean(card.label) || clean(card.value) || clean(card.id);
+}
+
+export function initiativeTextOrderFromCardSource(source = {}, baseConfig = {}) {
+  const cards = arr(source.cards);
+  const ranks = orderedCardFieldValues(cards.map((card) => ({ ...card, rank: cardRankValue(card) })), 'rank');
+  const suits = orderedCardFieldValues(cards, 'suit');
+  const parts = [
+    { label: 'Valeur', values: ranks },
+    ...(suits.length ? [{ label: 'Couleur', values: suits }] : []),
+  ].filter((part) => part.values.length);
+  return normalizeInitiativeTextOrder({
+    ...baseConfig,
+    enabled: baseConfig.enabled ?? true,
+    preset: initiativeTextOrderPresetIds.CARDS,
+    cardSourceId: source.id || baseConfig.cardSourceId || '',
+    separator: '',
+    separators: Array.from({ length: Math.max(0, parts.length - 1) }, () => ''),
+    unknown: baseConfig.unknown || 'last',
+    parts,
+  });
+}
 
 function separatorAt(config, index) {
   return config.separators[index] ?? config.separator ?? '';
@@ -233,8 +282,50 @@ function comparable(config = {}) {
   return {
     separators: normalized.separators,
     unknown: normalized.unknown,
+    cardSourceId: normalized.cardSourceId,
     parts: normalized.parts.map((part) => ({ label: part.label, values: part.values })),
   };
+}
+
+function cardCandidates(card = {}) {
+  const label = clean(card.label);
+  const labelParts = label
+    .split(/\s+d[eu\u2019']\s+|\s*[-/]\s*/i)
+    .map(clean)
+    .filter(Boolean);
+  return uniq([
+    card.rank,
+    card.suit,
+    card.color,
+    label,
+    ...labelParts,
+    card.value,
+    card.id,
+    ...(card.markers || []),
+    card.symbol,
+  ]);
+}
+
+function cardValueForPart(card, part) {
+  const candidates = cardCandidates(card);
+  return part.values.find((value) => (
+    candidates.some((candidate) => canonicalKey(candidate) === canonicalKey(value))
+  )) || '';
+}
+
+export function initiativeLabelFromCard(card, config = {}) {
+  const normalized = normalizeInitiativeTextOrder(config);
+  if (!initiativeTextOrderEnabled(normalized)) return clean(card?.label);
+  const parts = normalized.parts.map((part) => cardValueForPart(card, part));
+  const label = composeInitiativeLabel(parts, normalized);
+  return label || clean(card?.label);
+}
+
+export function initiativeLabelFromCardDraw(drawResult, config = {}) {
+  const card = arr(drawResult?.cards)[0];
+  if (!card) return '';
+  const label = initiativeLabelFromCard(card, config);
+  return initiativeInputIsValid(label, config) ? label : '';
 }
 
 export function sameInitiativeTextOrder(left = {}, right = {}) {
@@ -244,6 +335,7 @@ export function sameInitiativeTextOrder(left = {}, right = {}) {
 export function initiativeTextOrderPresetId(config = {}) {
   const normalized = normalizeInitiativeTextOrder(config);
   if (!initiativeTextOrderEnabled(normalized)) return '';
+  if (normalized.preset === initiativeTextOrderPresetIds.CARDS && normalized.cardSourceId) return initiativeTextOrderPresetIds.CARDS;
   if (normalized.preset && presetIds().includes(normalized.preset) && sameInitiativeTextOrder(normalized, presetInitiativeTextOrder(normalized.preset))) return normalized.preset;
   return presetIds().find((id) => sameInitiativeTextOrder(normalized, presetInitiativeTextOrder(id))) || '';
 }

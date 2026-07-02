@@ -3,6 +3,7 @@ import { prepareCombinedDefinition } from './combinations.js';
 import { executeRandomDefinition } from './engine.js';
 import { recordRandomResult } from './state.js';
 import { RANDOM_SYSTEM_STORAGE_KEY, loadRandomSystemState, saveRandomSystemState } from './storage.js';
+import { randomKitResources } from './rulePresetKits.js';
 
 function memoryStorage() {
   const values = new Map();
@@ -16,7 +17,7 @@ describe('RandomSystem storage', () => {
   it('uses a dedicated storage key and never depends on campaign payloads', () => {
     const storage = memoryStorage();
     const state = loadRandomSystemState(storage);
-    state.definitions = state.definitions.slice(0, 1);
+    state.definitions = randomKitResources('kit-d20-generic').definitions.slice(0, 1);
     expect(saveRandomSystemState(state, storage)).toBe(true);
 
     const raw = JSON.parse(storage.getItem(RANDOM_SYSTEM_STORAGE_KEY));
@@ -29,16 +30,17 @@ describe('RandomSystem storage', () => {
   it('stores roll details once and restores their convenient aliases', () => {
     const storage = memoryStorage();
     const initial = loadRandomSystemState(storage);
-    const definition = initial.definitions.find((item) => item.id === 'starter-d20');
-    const prepared = prepareCombinedDefinition(definition, initial.definitions, { combination: 'normal' });
+    const resources = randomKitResources('kit-d20-generic');
+    const definition = resources.definitions.find((item) => item.id === 'kit-d20-check');
+    const prepared = prepareCombinedDefinition(definition, resources.definitions, { mode: 'normal' });
     const result = executeRandomDefinition({
       definition: prepared.definition,
       sources: initial.sources,
       parameters: { modifier: 0 },
-      options: { combination: 'normal' },
+      options: { mode: 'normal' },
       rng: () => 0,
     });
-    saveRandomSystemState(recordRandomResult(initial, result), storage);
+    saveRandomSystemState(recordRandomResult({ ...initial, definitions: resources.definitions }, result), storage);
 
     const raw = JSON.parse(storage.getItem(RANDOM_SYSTEM_STORAGE_KEY));
     expect(raw.lastResult).toBeNull();

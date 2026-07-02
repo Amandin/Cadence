@@ -44,6 +44,7 @@ export const SceneView = memo(function SceneView({
   onModifierNotesReserve,
   onAjouterParticipant,
   onSaisirInitiatives,
+  onOuvrirLanceurDes,
   onOuvrirMenu,
   performanceLow = false,
 }) {
@@ -115,6 +116,7 @@ export const SceneView = memo(function SceneView({
         onRetourPreparation={retourPreparationVisible ? onRetourPreparation : null}
         onAjouterParticipant={onAjouterParticipant}
         onSaisirInitiatives={onSaisirInitiatives}
+        onOuvrirLanceurDes={onOuvrirLanceurDes}
         onOuvrirMenu={onOuvrirMenu}
       />
     </div>

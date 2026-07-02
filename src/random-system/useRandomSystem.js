@@ -19,6 +19,14 @@ import {
   randomRuleCatalogue,
   setRandomRuleEnabled,
 } from './rulePool.js';
+import {
+  activateRandomKitInState,
+  deleteRandomKitFromState,
+  ensureRandomKitInState,
+  loadRandomKitInState,
+  saveRandomKitToState,
+} from './rulePresetKits.js';
+import { importCadenceLibraryRandomKits } from '../cadLibrary.js';
 
 const PERSISTENCE_DELAY_MS = 250;
 
@@ -33,8 +41,22 @@ function definitionUsesSource(definition, sourceId) {
   )) || definition.pipeline.some((step) => step.type === 'lookup-table' && step.sourceId === sourceId);
 }
 
-export function useRandomSystem() {
-  const [state, setState] = useState(loadRandomSystemState);
+export function executeDefinitionFromState(state, definitionId, parameters, options) {
+  const definition = (state?.definitions || []).find((item) => item.id === definitionId);
+  if (!definition) return null;
+  const prepared = prepareCombinedDefinition(definition, state.definitions, options);
+  return executeRandomDefinition({
+    definition: prepared.definition,
+    sources: state.sources.filter((source) => source.kind !== randomSourceKinds.CARDS),
+    parameters,
+    options,
+  });
+}
+
+export function useRandomSystem(controlled = {}) {
+  const controlledMode = controlled.state && controlled.setState;
+  const [localState, setLocalState] = useState(loadRandomSystemState);
+  const state = controlledMode ? normalizeRandomSystemState(controlled.state) : localState;
   const stateRef = useRef(state);
 
   useEffect(() => {
@@ -45,12 +67,15 @@ export function useRandomSystem() {
     const next = typeof nextOrUpdater === 'function'
       ? nextOrUpdater(stateRef.current)
       : nextOrUpdater;
-    stateRef.current = next;
-    setState(next);
-    return next;
-  }, []);
+    const normalized = normalizeRandomSystemState(next);
+    stateRef.current = normalized;
+    if (controlledMode) controlled.setState(normalized);
+    else setLocalState(normalized);
+    return normalized;
+  }, [controlled, controlledMode]);
 
   useEffect(() => {
+    if (controlledMode) return undefined;
     let idleId = null;
     const timer = window.setTimeout(() => {
       if (window.requestIdleCallback) {
@@ -63,23 +88,20 @@ export function useRandomSystem() {
       window.clearTimeout(timer);
       if (idleId !== null) window.cancelIdleCallback?.(idleId);
     };
-  }, [state]);
+  }, [controlledMode, state]);
+
+  const runDefinitionTransient = useCallback((definitionId, parameters, options) => {
+    return executeDefinitionFromState(stateRef.current, definitionId, parameters, options);
+  }, []);
 
   const runDefinition = useCallback((definitionId, parameters, options) => {
+    const result = runDefinitionTransient(definitionId, parameters, options);
+    if (!result) return null;
     const current = stateRef.current;
-    const definition = current.definitions.find((item) => item.id === definitionId);
-    if (!definition) return null;
-    const prepared = prepareCombinedDefinition(definition, current.definitions, options);
-    const result = executeRandomDefinition({
-      definition: prepared.definition,
-      sources: current.sources.filter((source) => source.kind !== randomSourceKinds.CARDS),
-      parameters,
-      options,
-    });
     const next = recordRandomResult(current, result);
     commitState(next);
     return result;
-  }, [commitState]);
+  }, [commitState, runDefinitionTransient]);
 
   const saveDefinition = useCallback((definition) => {
     const normalized = normalizeRandomDefinition(definition);
@@ -88,6 +110,17 @@ export function useRandomSystem() {
       definitions: upsertById(current.definitions, normalized),
     }));
     return normalized;
+  }, [commitState]);
+
+  const setDefinitionActive = useCallback((definitionId, active) => {
+    commitState((current) => ({
+      ...current,
+      definitions: current.definitions.map((definition) => (
+        definition.id === definitionId && definition.exposed !== false
+          ? { ...definition, active: !!active }
+          : definition
+      )),
+    }));
   }, [commitState]);
 
   const deleteDefinition = useCallback((definitionId) => {
@@ -223,13 +256,65 @@ export function useRandomSystem() {
     }));
   }, [commitState]);
 
+  const ensureRandomKit = useCallback((kitOrId) => {
+    let nextState = null;
+    commitState((current) => {
+      nextState = ensureRandomKitInState(current, kitOrId);
+      return nextState;
+    });
+    return nextState;
+  }, [commitState]);
+
+  const loadRandomKit = useCallback((kitOrId) => {
+    let nextState = null;
+    commitState((current) => {
+      nextState = loadRandomKitInState(current, kitOrId);
+      return nextState;
+    });
+    return nextState;
+  }, [commitState]);
+
+  const activateRandomKit = useCallback((kitOrId) => {
+    let nextState = null;
+    commitState((current) => {
+      nextState = activateRandomKitInState(current, kitOrId);
+      return nextState;
+    });
+    return nextState;
+  }, [commitState]);
+
+  const saveRandomKit = useCallback((kit) => {
+    let saved = null;
+    commitState((current) => {
+      const next = saveRandomKitToState(current, kit);
+      saved = next.randomKits[0] || null;
+      return next;
+    });
+    return saved;
+  }, [commitState]);
+
+  const deleteRandomKit = useCallback((kitId) => {
+    commitState((current) => deleteRandomKitFromState(current, kitId));
+  }, [commitState]);
+
+  const importRandomLibrary = useCallback((libraryPayload) => {
+    let result = null;
+    commitState((current) => {
+      result = importCadenceLibraryRandomKits(current, libraryPayload);
+      return result.state;
+    });
+    return result;
+  }, [commitState]);
+
   const resetModule = useCallback(() => {
     commitState(normalizeRandomSystemState(null));
   }, [commitState]);
 
   const actions = useMemo(() => ({
     runDefinition,
+    runDefinitionTransient,
     saveDefinition,
+    setDefinitionActive,
     deleteDefinition,
     saveSource,
     deleteSource,
@@ -242,19 +327,33 @@ export function useRandomSystem() {
     setRuleEnabled,
     enableAllRules,
     useEssentialRules,
+    ensureRandomKit,
+    loadRandomKit,
+    activateRandomKit,
+    saveRandomKit,
+    deleteRandomKit,
+    importRandomLibrary,
     resetModule,
   }), [
     clearHistory,
+    activateRandomKit,
     deleteDefinition,
+    deleteRandomKit,
     deleteSource,
     drawCards,
     enableAllRules,
+    ensureRandomKit,
+    importRandomLibrary,
+    loadRandomKit,
     resetCardSource,
     resetModule,
     resetStatistics,
     returnCards,
     runDefinition,
+    runDefinitionTransient,
     saveDefinition,
+    setDefinitionActive,
+    saveRandomKit,
     saveSource,
     selectResult,
     setRuleEnabled,

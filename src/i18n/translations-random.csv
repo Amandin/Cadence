@@ -76,10 +76,17 @@ random.title,Tirages
 random.subtitle,"Des, cartes et tables"
 random.tabs.use,Utiliser
 random.tabs.configure,Configurer
+random.tabs.configureRolls,Tirages
 random.tabs.statistics,Statistiques
 random.resource.rolls,Lancers
 random.resource.cards,Cartes
 random.use.run,Lancer
+random.quick.title,Lancer les dés
+random.quick.open,Ouvrir le lanceur de dés
+random.quick.type,Type de lancer
+random.quick.noRoll,Aucun tirage actif. Active au moins un tirage depuis les règles de campagne.
+random.quick.kept,Conservé
+random.quick.discarded,Écarté
 random.use.noResource,Aucune ressource configurée
 random.error.generic,Le tirage n’a pas pu être effectué.
 random.result.title,Résultat
@@ -91,17 +98,70 @@ random.result.deckEmpty,Le paquet est vide.
 random.history.title,Historique
 random.history.clear,Effacer
 random.history.empty,Aucun tirage récent
-random.config.definitions,Définitions
-random.config.sources,Sources
-random.config.rules,Règles
+random.config.definitions,Types de tirage
+random.config.rollDefinitions,Types de tirage
+random.config.sources,"Dés, cartes et tables"
+random.config.rules,Comportement des tirages
+random.config.kits,Ensembles de tirages
+random.config.rollKits,Tirages disponibles
+random.config.definitionWorkshop,Définition du hasard
 random.config.configure,Configuration
-random.rules.title,Règles disponibles
-random.rules.enabledCount,{count} mécanismes actifs
-random.rules.essential,Essentiel
+random.kits.catalog,Cadence
+random.kits.custom,Personnalisé
+random.kits.load,Charger
+random.kits.activate,Activer
+random.kits.active,Actif
+random.kits.saveCurrent,Enregistrer cet ensemble
+random.kits.snapshotHelp,"Crée un nouvel ensemble avec les {count} tirage(s) actuellement actif(s)."
+random.kits.name,Nom de l’ensemble
+random.kits.description,Description
+random.kits.noDescription,Aucune description renseignée.
+random.kits.activeRolls,Choisir les tirages accessibles
+random.kits.activeRollsHelp,"{count} tirage(s) actif(s). Active un tirage pour le rendre disponible dans le reste de Cadence."
+random.kits.definitions,Tirages inclus
+random.kits.definitionsHelp,Seuls les tirages exposés sont proposés ici. Les dépendances fonctionnelles internes nécessaires seront incluses discrètement.
+random.kits.initiativeMode,Initiative
+random.kits.defaultRoll,Tirage par défaut
+random.kits.defaultSource,Source par défaut
+random.kits.noDefault,Aucun
+random.kits.policy,Application recommandée
+random.kits.saveHelp,"L’ensemble inclura {definitions} tirage(s) actif(s) et les {sources} dés, cartes ou tables nécessaires."
+random.kits.internalHelp,"{count} tirage(s) technique(s) nécessaire(s) seront inclus automatiquement."
+random.kits.save,Enregistrer l’ensemble
+random.kits.libraryName,Ensembles de tirages Cadence
+random.kits.savedGroupsKicker,Prêts à l’emploi
+random.kits.savedGroups,Ensembles enregistrés
+random.kits.savedGroupsHelp,Active un ensemble pour rendre immédiatement ses tirages disponibles dans Cadence.
+random.kits.personalGroups,Mes ensembles
+random.kits.availableKicker,Accès dans Cadence
+random.kits.pageHelp,Choisis les tirages accessibles puis enregistre cette sélection pour pouvoir la réutiliser.
+random.kits.importLibrary,Importer .cadlib
+random.kits.exportLibrary,Exporter .cadlib
+random.kits.libraryImported,"{count} kit(s) importé(s)."
+random.kits.libraryExported,"{count} kit(s) exporté(s)."
+random.kits.libraryInvalid,Bibliothèque Cadence illisible ou sans kit de tirage.
+random.kits.summary.sources,{count} élément(s) aléatoire(s)
+random.kits.summary.definitions,{count} lancer(s)
+random.kits.summary.internal,{count} technique(s)
+random.kits.initiative.numeric,Initiative numérique
+random.kits.initiative.random-order,Ordre aléatoire
+random.kits.initiative.cards,Initiative par cartes
+random.kits.initiative.label-order,Ordre textuel
+random.kits.initiative.manual,Ordre manuel
+random.kits.initiative.none,Sans initiative
+random.kits.policy.fill-empty,Compléter les vides
+random.kits.policy.replace-all,Remplacer tout
+random.kits.policy.ask,Demander
+random.kits.policy.manual-only,Manuel seulement
+random.rules.title,Options de résultat
+random.rules.open,Options de résultat
+random.rules.help,Choisis les comportements que les types de tirage pourront utiliser.
+random.rules.enabledCount,{count} options actives
+random.rules.essential,Réglages de base
 random.rules.enableAll,Tout activer
 random.rules.group.structure,Structure
-random.rules.group.draw,Tirages
-random.rules.group.calculation,Calculs
+random.rules.group.draw,Relances et effets
+random.rules.group.calculation,Calcul du résultat
 random.rules.combinations,Combinaisons de tirages
 random.rules.modifiers,Modificateurs
 random.rules.modifiers.help,Ajoute ou retire des points fixes au resultat.
@@ -119,20 +179,22 @@ random.rules.markers,Marqueurs
 random.rules.markers.help,Ajoute des etiquettes utiles pour suivre des effets ou des etats.
 random.rules.occurrenceBonuses,Bonus d’occurrence
 random.rules.occurrenceBonuses.help,Applique un bonus quand certaines valeurs apparaissent plusieurs fois.
-random.definition.new,Nouvelle définition
-random.definition.edit,Modifier la définition
+random.definition.new,Nouveau tirage
+random.definition.edit,Modifier le tirage
+random.definition.listKicker,Ce que l’on peut lancer
+random.definition.listHelp,Un type de tirage combine des dés ou des tables avec les options nécessaires pour produire un résultat.
 random.definition.duplicate,Dupliquer
 random.definition.name,Nom du lancer
-random.definition.type,Type de définition
-random.definition.typeRoll,Lancer
-random.definition.typeCombination,Lancer combiné
-random.definition.exposed,Exposé directement
-random.definition.alwaysExposed,Toujours exposé directement
+random.definition.type,Type de tirage
+random.definition.typeRoll,Tirage simple
+random.definition.typeCombination,Tirage combiné
+random.definition.exposed,Exposé comme candidat actif
+random.definition.alwaysExposed,Toujours exposé comme candidat actif
 random.definition.direct,Direct
 random.definition.internal,Interne
-random.definition.exposedGroup,Exposées directement
-random.definition.internalGroup,Internes
-random.definition.unusedInternal,Ni exposé directement ni utilisé dans un lancer combiné
+random.definition.exposedGroup,Tirages proposés à l’utilisateur
+random.definition.internalGroup,Tirages utilisés en interne
+random.definition.unusedInternal,Ni exposé ni utilisé dans un lancer combiné
 random.definition.usedByCombination,Ce lancer est utilisé par un lancer combiné.
 random.definition.groups,Sources tirées
 random.definition.group,Groupe {index}
@@ -197,14 +259,14 @@ random.definition.marker,Marqueur
 random.definition.occurrenceBonus,Bonus d’occurrence
 random.definition.every,Toutes les
 random.definition.bonus,Bonus
-random.source.new,Nouvelle source
-random.source.edit,Modifier la source
-random.source.random,Tirages et tables
-random.source.cards,Cartes
-random.source.cardsNew,Nouvelle source de cartes
-random.source.cardsEdit,Modifier la source de cartes
-random.source.newUniform,Nouvelle uniforme
-random.source.newWeighted,Nouvelle pondérée
+random.source.new,Nouvel élément
+random.source.edit,Modifier l’élément
+random.source.random,Dé ou table
+random.source.cards,Paquet de cartes
+random.source.cardsNew,Nouveau paquet de cartes
+random.source.cardsEdit,Modifier le paquet de cartes
+random.source.newUniform,Nouveau dé ou plage
+random.source.newWeighted,Nouvelle table
 random.source.newCards,Nouveau paquet
 random.source.importCsv,Importer un CSV
 random.source.type,Distribution
@@ -241,7 +303,9 @@ random.source.faceDetails,Détails d’une face
 random.source.faceDetailsHelp,"Ajoute un nom, un symbole, une image ou un texte à chaque face utile."
 random.source.tooManyFaces,"La saisie guidée des noms est limitée à 200 faces. Pour aller plus loin, utilisez une source pondérée et importez vos résultats au format CSV."
 random.source.chooseFile,Choisir un fichier
-random.source.used,Cette source est utilisée par une définition.
+random.source.used,Cet élément est utilisé par un type de tirage.
+random.source.listKicker,Ce qui produit le hasard
+random.source.listHelp,"Crée les dés, paquets de cartes et tables de résultats utilisés par les tirages."
 random.deck.new,Nouveau paquet
 random.deck.edit,Modifier le paquet
 random.deck.none,Aucun paquet configuré
@@ -270,6 +334,8 @@ random.deck.shuffle,Mélanger
 random.stats.uses,Utilisations
 random.stats.draws,Tirages élémentaires
 random.stats.reset,Réinitialiser les statistiques
+random.stats.open,Ouvrir
+random.stats.optionsHelp,Consulte les fréquences observées et l’historique statistique des tirages dans une fenêtre dédiée.
 random.stats.definitions,Définitions utilisées
 random.stats.distribution,Fréquences observées
 random.stats.cards,Sources de cartes utilisées

@@ -29,6 +29,10 @@ import { declarationStages, normalizeInitiativeModeOptions } from './initiativeM
 import { trierParInitiative } from './initiative.js';
 import { normalizeInitiativeTextOrder } from './initiativeTextOrder.js';
 
+function cleanId(value) {
+  return String(value ?? '').trim();
+}
+
 export function normalizeCampaignRules(rules = {}) {
   const initiativeModeOptions = normalizeInitiativeModeOptions(rules);
   const legacyDeclaration = rules.temporalite === temporalityModes.DECLARATION;
@@ -65,6 +69,7 @@ export function normalizeCampaignRules(rules = {}) {
     tiebreakerVisible: rules.tiebreakerVisible ?? defaultTiebreakerVisible,
     tiebreakerLabel: typeof rules.tiebreakerLabel === 'string' && rules.tiebreakerLabel.trim() ? rules.tiebreakerLabel.trim() : defaultTiebreakerLabel,
     initiativeBonusEnabled: rules.initiativeBonusEnabled ?? defaultInitiativeBonusEnabled,
+    initiativeBonusRollDefinitionId: cleanId(rules.initiativeBonusRollDefinitionId),
     surpriseImpact: ['limited', 'inactive'].includes(rules.surpriseImpact) ? rules.surpriseImpact : defaultSurpriseImpact,
     surpriseAdvanceOn,
     surpriseDedicatedRound: !!(rules.surpriseDedicatedRound ?? defaultSurpriseDedicatedRound),
@@ -168,6 +173,7 @@ export function applyInitiativeRules(scene, patch = {}) {
     tiebreakerVisible: !!next.tiebreakerVisible,
     tiebreakerLabel: next.tiebreakerLabel,
     initiativeBonusEnabled: !!next.initiativeBonusEnabled,
+    initiativeBonusRollDefinitionId: next.initiativeBonusRollDefinitionId,
     surpriseImpact: next.surpriseImpact,
     surpriseAdvanceOn: next.surpriseAdvanceOn,
     surpriseDedicatedRound: !!next.surpriseDedicatedRound,

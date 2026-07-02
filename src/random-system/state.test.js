@@ -1,11 +1,66 @@
 import { describe, expect, it } from 'vitest';
 import { prepareCombinedDefinition } from './combinations.js';
-import { executeRandomDefinition } from './engine.js';
-import { RANDOM_SYSTEM_SCHEMA_VERSION, createDefaultRandomSystemState, normalizeRandomSystemState, recordRandomResult } from './state.js';
+import {
+  executeRandomDefinition,
+  fixedValue,
+  randomAggregateOperations,
+  randomPipelineStepTypes,
+} from './engine.js';
+import {
+  RANDOM_SYSTEM_SCHEMA_VERSION,
+  createDefaultRandomSystemState,
+  exportRandomSystemStateForCampaign,
+  normalizeRandomSystemState,
+  recordRandomResult,
+} from './state.js';
 import { randomRuleIds } from './rulePool.js';
+import { randomKitResources } from './rulePresetKits.js';
+
+function legacyD20Definitions() {
+  const target = {
+    id: 'legacy-d20-normal',
+    name: 'Jet d20 - Normal',
+    exposed: false,
+    components: [{ id: 'main', label: 'Jet', source: fixedValue('standard-d20'), count: fixedValue(1) }],
+    pipeline: [{
+      id: 'total',
+      type: randomPipelineStepTypes.AGGREGATE,
+      operation: randomAggregateOperations.SUM,
+      outputId: 'total',
+    }],
+    primaryAggregateId: 'total',
+  };
+  const combination = {
+    id: 'legacy-d20',
+    name: 'Jet d20',
+    exposed: true,
+    components: [],
+    options: [{
+      id: 'combination',
+      label: 'Mode',
+      type: 'choice',
+      defaultValue: 'normal',
+      choices: [
+        { value: 'normal', label: 'Normal' },
+        { value: 'high', label: 'Plus haut' },
+      ],
+    }],
+    pipeline: [{
+      id: 'combination',
+      type: 'repeat-select',
+      optionId: 'combination',
+      variants: {
+        normal: { definitionId: target.id, repetitions: 1, select: 'first' },
+        high: { definitionId: target.id, repetitions: 2, select: 'highest' },
+      },
+    }],
+    primaryAggregateId: '',
+  };
+  return { combination, target };
+}
 
 describe('RandomSystem state', () => {
-  it('starts with generic sources and editable example definitions', () => {
+  it('starts with generic sources and no demo definitions outside kits', () => {
     const state = createDefaultRandomSystemState();
     expect(state.sources.map((source) => source.name)).toContain('d20');
     expect(state.sources.find((source) => source.id === 'example-weather-d10')).toMatchObject({
@@ -21,15 +76,7 @@ describe('RandomSystem state', () => {
         10: '💨',
       },
     });
-    expect(state.definitions.filter((definition) => definition.exposed).map((definition) => definition.name)).toEqual([
-      'Jet d20',
-      'Pool',
-      'Roll & Keep',
-      'Pastèque',
-      'Step',
-    ]);
-    expect(state.definitions.find((definition) => definition.id === 'starter-d20-advantage'))
-      .toMatchObject({ name: 'Jet d20 - Avantage', exposed: false, kind: 'roll' });
+    expect(state.definitions).toEqual([]);
     const cardSources = state.sources.filter((source) => source.kind === 'cards');
     expect(cardSources.map((source) => [source.name, source.cards.length])).toEqual([
       ['Jeu de 54 cartes', 54],
@@ -128,37 +175,50 @@ describe('RandomSystem state', () => {
     expect(migrated.lastResult.groups[0].draws[0].outcome.symbol).toBe(expectedWeather.symbols['5']);
   });
 
+  it('upgrades the built-in d20 rolls without changing their activation', () => {
+    const previous = createDefaultRandomSystemState();
+    const resources = randomKitResources('kit-d20-generic');
+    const legacyDefinitions = resources.definitions.map((definition) => (
+      definition.id === 'kit-d20-initiative'
+        ? {
+          ...definition,
+          name: 'Initiative d20',
+          active: false,
+          parameters: [{ id: 'modifier', label: 'Modificateur', type: 'integer', defaultValue: 0 }],
+        }
+        : definition.id === 'kit-d20-check'
+          ? {
+            ...definition,
+            options: definition.options.map((option) => ({
+              ...option,
+              choices: [...option.choices].reverse(),
+            })),
+          }
+          : definition
+    ));
+    const migrated = normalizeRandomSystemState({
+      ...previous,
+      schemaVersion: 11,
+      definitions: legacyDefinitions,
+    });
+    const simple = migrated.definitions.find((definition) => definition.id === 'kit-d20-initiative');
+    const check = migrated.definitions.find((definition) => definition.id === 'kit-d20-check');
+
+    expect(simple).toMatchObject({ name: 'd20 simple', active: false, parameters: [], options: [] });
+    expect(check.options[0].choices.map((choice) => choice.value))
+      .toEqual(['disadvantage', 'normal', 'advantage']);
+    expect(check.options[0].defaultValue).toBe('normal');
+  });
+
   it('replaces old combination mechanics with independent referenced rolls', () => {
     const oldState = createDefaultRandomSystemState();
-    const target = oldState.definitions.find((item) => item.id === 'starter-d20-normal');
-    const legacyCombination = {
-      ...oldState.definitions.find((item) => item.id === 'starter-d20'),
-      options: [{
-        id: 'combination',
-        label: 'Mode',
-        type: 'choice',
-        defaultValue: 'normal',
-        choices: [
-          { value: 'normal', label: 'Normal' },
-          { value: 'high', label: 'Plus haut' },
-        ],
-      }],
-      pipeline: [{
-        id: 'combination',
-        type: 'repeat-select',
-        optionId: 'combination',
-        variants: {
-          normal: { definitionId: target.id, repetitions: 1, select: 'first' },
-          high: { definitionId: target.id, repetitions: 2, select: 'highest' },
-        },
-      }],
-    };
+    const { combination: legacyCombination, target } = legacyD20Definitions();
     const migrated = normalizeRandomSystemState({
       ...oldState,
       schemaVersion: 3,
       definitions: [legacyCombination, target],
     });
-    const combination = migrated.definitions.find((item) => item.id === 'starter-d20');
+    const combination = migrated.definitions.find((item) => item.id === 'legacy-d20');
     const variants = combination.pipeline[0].variants;
 
     expect(variants.normal.definitionId).not.toBe(variants.high.definitionId);
@@ -172,40 +232,88 @@ describe('RandomSystem state', () => {
 
   it('records observed frequencies without feeding them back to the engine', () => {
     const state = createDefaultRandomSystemState();
-    const definition = state.definitions.find((item) => item.id === 'starter-d20');
-    const prepared = prepareCombinedDefinition(definition, state.definitions, { combination: 'normal' });
+    const resources = randomKitResources('kit-d20-generic');
+    const definition = resources.definitions.find((item) => item.id === 'kit-d20-check');
+    const prepared = prepareCombinedDefinition(definition, resources.definitions, { mode: 'normal' });
     const result = executeRandomDefinition({
       definition: prepared.definition,
       sources: state.sources,
       parameters: { modifier: 0 },
-      options: { combination: 'normal' },
+      options: { mode: 'normal' },
       rng: () => 0,
     });
-    const next = recordRandomResult(state, result);
+    const next = recordRandomResult({ ...state, definitions: resources.definitions }, result);
 
     expect(next.lastResult).toBe(result);
     expect(next.statistics).toMatchObject({
       totalUses: 1,
       totalDraws: 1,
-      byDefinition: { 'starter-d20': 1 },
+      byDefinition: { 'kit-d20-check': 1 },
     });
     expect(next.statistics.bySource['standard-d20'].outcomes['value-1']).toBe(1);
   });
 
   it('records large pools in one pass', () => {
     const state = createDefaultRandomSystemState();
-    const definition = state.definitions.find((item) => item.id === 'starter-pool');
+    const resources = randomKitResources('kit-d6-pool');
+    const definition = resources.definitions.find((item) => item.id === 'kit-d6-pool-successes');
     const result = executeRandomDefinition({
       definition,
       sources: state.sources,
-      parameters: { count: 1000, threshold: 6 },
+      parameters: { count: 1000, threshold: 5 },
       options: { exploding: false },
-      rng: () => 0.5,
+      rng: () => 0.9,
     });
     const next = recordRandomResult(state, result);
 
     expect(result.draws).toHaveLength(1000);
     expect(next.statistics.totalDraws).toBe(1000);
-    expect(next.statistics.bySource['standard-d10'].outcomes['value-6']).toBe(1000);
+    expect(next.statistics.bySource['standard-d6'].outcomes['value-6']).toBe(1000);
+  });
+
+  it('exports only active campaign rolls and their functional dependencies', () => {
+    const resources = randomKitResources('kit-d20-generic');
+    const active = resources.definitions.find((item) => item.id === 'kit-d20-check');
+    const inactive = resources.definitions.find((item) => item.id === 'kit-d20-damage');
+    const internal = {
+      id: 'campaign-internal-damage',
+      name: 'Degats internes',
+      exposed: false,
+      active: false,
+      components: [{ id: 'die', label: 'Degat', source: fixedValue('standard-d6'), count: fixedValue(1) }],
+      pipeline: [{ id: 'sum', type: randomPipelineStepTypes.AGGREGATE, aggregateId: 'sum', operation: randomAggregateOperations.SUM }],
+      primaryAggregateId: 'sum',
+    };
+    const combo = {
+      id: 'campaign-combo',
+      name: 'Jet actif combine',
+      exposed: true,
+      active: true,
+      components: [],
+      options: [{ id: 'mode', label: 'Mode', type: 'choice', defaultValue: 'damage', choices: [{ value: 'damage', label: 'Degats' }] }],
+      pipeline: [{ id: 'select', type: randomPipelineStepTypes.REPEAT_SELECT, optionId: 'mode', variants: { damage: { definitionId: internal.id } } }],
+      primaryAggregateId: '',
+    };
+    const state = {
+      ...createDefaultRandomSystemState(),
+      sources: resources.sources,
+      definitions: [
+        { ...active, active: true },
+        { ...inactive, active: false },
+        combo,
+        internal,
+      ],
+    };
+
+    const exported = exportRandomSystemStateForCampaign(state);
+
+    expect(exported.definitions.map((definition) => definition.id).sort()).toEqual([
+      'campaign-combo',
+      'campaign-internal-damage',
+      'kit-d20-check',
+    ]);
+    expect(exported.sources.map((source) => source.id).sort()).toEqual(['standard-d20', 'standard-d6']);
+    expect(exported.randomKits).toEqual([]);
+    expect(exported.history).toEqual([]);
   });
 });

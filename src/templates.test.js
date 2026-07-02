@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { instantiateTrackerCopy, numberedCopyInsertIndex, numberedCopyName } from './templates.js';
+import { instantiateTrackerCopy, makeInitiativeTextPreset, mergeTemplateStores, normalizeTemplateStore, numberedCopyInsertIndex, numberedCopyName } from './templates.js';
 
 describe('numberedCopyName', () => {
   it('starts copied names at 1 and increments the suffix', () => {
@@ -53,5 +53,60 @@ describe('instantiateTrackerCopy', () => {
     expect(copy.blocks[0].id).not.toBe(source.blocks[0].id);
     expect(copy.blocks[0].lines[0].id).not.toBe(source.blocks[0].lines[0].id);
     expect(copy.blocks[0].lines[0].boxes[0].id).not.toBe(source.blocks[0].lines[0].boxes[0].id);
+  });
+});
+
+describe('initiative text presets', () => {
+  it('normalizes saved presets as reusable custom label configurations', () => {
+    const preset = makeInitiativeTextPreset({
+      enabled: true,
+      preset: 'cards',
+      cardSourceId: 'deck-1',
+      separators: [' puis '],
+      parts: [
+        { label: 'Vitesse', values: ['Rapide', 'Lent'] },
+        { label: 'Priorite', values: ['Haute', 'Basse'] },
+      ],
+    }, { name: 'Ordre maison' });
+
+    expect(preset).toMatchObject({
+      name: 'Ordre maison',
+      config: {
+        enabled: true,
+        preset: '',
+        cardSourceId: '',
+        separators: [' puis '],
+      },
+    });
+  });
+
+  it('merges imported initiative text presets by name', () => {
+    const current = normalizeTemplateStore({
+      initiativeTextPresets: [{
+        id: 'itpl-current',
+        name: 'Ordre maison',
+        config: { enabled: true, parts: [{ label: 'Vitesse', values: ['Rapide', 'Lent'] }] },
+      }],
+    });
+    const incoming = normalizeTemplateStore({
+      initiativeTextPresets: [
+        {
+          id: 'itpl-duplicate',
+          name: 'Ordre maison',
+          config: { enabled: true, parts: [{ label: 'Vitesse', values: ['Vif', 'Lent'] }] },
+        },
+        {
+          id: 'itpl-new',
+          name: 'Ordre dramatique',
+          config: { enabled: true, parts: [{ label: 'Tempo', values: ['Maintenant', 'Apres'] }] },
+        },
+      ],
+    });
+
+    const result = mergeTemplateStores(current, incoming);
+
+    expect(result.store.initiativeTextPresets.map((preset) => preset.name)).toEqual(['Ordre maison', 'Ordre dramatique']);
+    expect(result.added).toContainEqual(expect.objectContaining({ name: 'Ordre dramatique', type: 'initiative-text' }));
+    expect(result.skipped).toContainEqual(expect.objectContaining({ name: 'Ordre maison', type: 'initiative-text' }));
   });
 });

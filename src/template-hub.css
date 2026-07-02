@@ -56,6 +56,23 @@
   gap: 6px;
 }
 
+.rules-subtabs {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.rules-subtabs .choice {
+  min-width: 0;
+  padding-inline: 5px;
+}
+
+.rules-hub-content {
+  min-width: 0;
+}
+
+.rules-hub-content > .random-system-page {
+  padding-top: 0;
+}
+
 .scene-template-group {
   display: grid;
   gap: 8px;
@@ -470,6 +487,10 @@
 }
 
 @media (max-width: 520px) {
+  .rules-subtabs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .template-category-title,
   .template-row,
   .template-rule-row {

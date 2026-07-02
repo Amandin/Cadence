@@ -15,6 +15,8 @@ import { DEFAULT_CAMPAIGN_NAME, campaignNameFromPayload, campaignTemplatesFromPa
 import { removeLocalCampaignPayload } from '../localCampaignStorage.js';
 import { campaignEntryFromPayload, copiedCampaignNames, readCadenceFile, writeCadenceFile } from './campaignFilePersistence.js';
 import { normalizeTemplateStore } from '../templates.js';
+import { normalizeRandomSystemState } from '../random-system/state.js';
+import { loadRandomSystemState } from '../random-system/storage.js';
 import { t } from '../i18n/index.js';
 import { clearThemePreference, devicePrefersDark, initialThemePreference, persistThemePreference, removeLegacyThemePreference, storedThemePreference, themeModeFromPreference, themePreferenceModes } from '../themePreference.js';
 
@@ -72,6 +74,7 @@ export function useCampaign() {
   const [rulePresetSnapshot, setRulePresetSnapshot] = useState(() => rulePresetSnapshotFromPayload(initialCampaign, campaignRulesFromPayload(initialCampaign)));
   const [scenes, setScenes] = useState(() => normalizeScenesWithCampaignRules(initialCampaign.scenes, campaignRulesFromPayload(initialCampaign)));
   const [templateStore, setTemplateStore] = useState(() => campaignTemplatesFromPayload(initialCampaign));
+  const [randomSystemState, setRandomSystemState] = useState(() => normalizeRandomSystemState(initialCampaign.randomSystem || loadRandomSystemState()));
   const [campaignName, setCampaignName] = useState(() => campaignNameFromPayload(initialCampaign));
   const [sceneIndex, setSceneIndex] = useState(initialSceneIndex);
   const [restorePoints, setRestorePoints] = useState(() => initialRestorePoints(initialCampaign.scenes));
@@ -132,7 +135,7 @@ export function useCampaign() {
 
   useEffect(() => {
     if (!persistenceEnabled) return undefined;
-    const inputs = { syncedScenes, campaignName, templateStore, campaignRules, rulePresetSnapshot, activeCampaignEntryId };
+    const inputs = { syncedScenes, campaignName, templateStore, campaignRules, rulePresetSnapshot, randomSystemState, activeCampaignEntryId };
     const previousInputs = lastPersistenceInputsRef.current;
     const unchanged = previousInputs
       && previousInputs.syncedScenes === syncedScenes
@@ -140,6 +143,7 @@ export function useCampaign() {
       && previousInputs.templateStore === templateStore
       && previousInputs.campaignRules === campaignRules
       && previousInputs.rulePresetSnapshot === rulePresetSnapshot
+      && previousInputs.randomSystemState === randomSystemState
       && previousInputs.activeCampaignEntryId === activeCampaignEntryId;
     if (!previousInputs || unchanged) {
       lastPersistenceInputsRef.current = inputs;
@@ -148,15 +152,15 @@ export function useCampaign() {
     lastPersistenceInputsRef.current = inputs;
 
     const timer = window.setTimeout(() => {
-      const signature = JSON.stringify({ scenes: syncedScenes, campaignName, templateStore, campaignRules, rulePresetSnapshot, activeCampaignEntryId });
+      const signature = JSON.stringify({ scenes: syncedScenes, campaignName, templateStore, campaignRules, rulePresetSnapshot, randomSystemState, activeCampaignEntryId });
       if (signature === lastPersistenceSignatureRef.current) return;
       lastPersistenceSignatureRef.current = signature;
 
       const activeEntry = campaignEntriesRef.current.find((entry) => entry.id === activeCampaignEntryIdRef.current);
       const meta = activeEntry ? { id: activeEntry.id, name: campaignName, fileName: activeEntry.fileName, folderName: activeEntry.folderName } : {};
-      const content = serializeCampaign(syncedScenes, dark, campaignName, templateStore, campaignRules, rulePresetSnapshot, meta);
+      const content = serializeCampaign(syncedScenes, dark, campaignName, templateStore, campaignRules, rulePresetSnapshot, meta, randomSystemState);
       const snapshot = JSON.parse(content);
-      saveCampaign(syncedScenes, dark, campaignName, templateStore, campaignRules, rulePresetSnapshot, meta);
+      saveCampaign(syncedScenes, dark, campaignName, templateStore, campaignRules, rulePresetSnapshot, meta, randomSystemState);
 
       setCampaignEntries((entries) => entries.map((entry) => entry.id === activeCampaignEntryIdRef.current
         ? { ...entry, name: campaignName, fileName: snapshot.campaign.fileName, folderName: snapshot.campaign.folderName, updatedAt: snapshot.savedAt, snapshot }
@@ -176,7 +180,7 @@ export function useCampaign() {
       }, 650);
     }, LOCAL_PERSISTENCE_DEBOUNCE_MS);
     return () => window.clearTimeout(timer);
-  }, [syncedScenes, dark, campaignName, templateStore, campaignRules, rulePresetSnapshot, activeCampaignEntryId, persistenceEnabled]);
+  }, [syncedScenes, dark, campaignName, templateStore, campaignRules, rulePresetSnapshot, randomSystemState, activeCampaignEntryId, persistenceEnabled]);
 
   useEffect(() => { removeLegacyThemePreference(); }, []);
 
@@ -191,7 +195,7 @@ export function useCampaign() {
   }, [themePreference]);
 
   const sceneActions = useMemo(() => createSceneActions({ scene, sceneIndex, blocked, restorePoints, setScenes, setRestorePoints, setRoundEffect }), [blocked, scene, restorePoints, sceneIndex]);
-  const campaignActions = useMemo(() => createCampaignActions({ scenes: syncedScenes, campaignRules, rulePresetSnapshot, setCampaignRules, setRulePresetSnapshot, sceneIndex, dark, campaignName, templateStore, setScenes, setSceneIndex, setDark: setManualTheme, setCampaignNameState: setCampaignName, setTemplateStore }), [campaignName, campaignRules, rulePresetSnapshot, dark, sceneIndex, setManualTheme, syncedScenes, templateStore]);
+  const campaignActions = useMemo(() => createCampaignActions({ scenes: syncedScenes, campaignRules, rulePresetSnapshot, setCampaignRules, setRulePresetSnapshot, sceneIndex, dark, campaignName, templateStore, randomSystemState, setScenes, setSceneIndex, setDark: setManualTheme, setCampaignNameState: setCampaignName, setTemplateStore, setRandomSystemState }), [campaignName, campaignRules, rulePresetSnapshot, dark, sceneIndex, setManualTheme, syncedScenes, templateStore, randomSystemState]);
 
   const loadCampaignIntoState = (payload) => {
     const campaign = normalizeCampaignPayload(payload);
@@ -200,6 +204,7 @@ export function useCampaign() {
     setScenes(campaign.scenes);
     setCampaignName(campaignNameFromPayload(campaign));
     setTemplateStore(campaignTemplatesFromPayload(campaign));
+    setRandomSystemState(normalizeRandomSystemState(campaign.randomSystem));
     setSceneIndex(0);
     setRestorePoints(initialRestorePoints(campaign.scenes));
     lastPersistenceSignatureRef.current = '';
@@ -214,6 +219,7 @@ export function useCampaign() {
     campaignRules,
     rulePresetSnapshot,
     entry ? { id: entry.id, name, fileName: entry.fileName, folderName: entry.folderName } : {},
+    randomSystemState,
   );
 
   const extraCampaignActions = useMemo(() => ({
@@ -290,12 +296,14 @@ export function useCampaign() {
       const nextRules = normalizeCampaignRules(preset.rules);
       const blankScene = createBlankScene(nextRules);
       const nextTemplateStore = addOnboardingTrackerTemplates(templateStore, preset);
-      const snapshot = createCampaignPayload([blankScene], dark, DEFAULT_CAMPAIGN_NAME, nextTemplateStore, nextRules, createRulePresetSnapshot(preset, nextRules));
+      const nextRandomSystem = normalizeRandomSystemState(null);
+      const snapshot = createCampaignPayload([blankScene], dark, DEFAULT_CAMPAIGN_NAME, nextTemplateStore, nextRules, createRulePresetSnapshot(preset, nextRules), {}, nextRandomSystem);
       const entry = campaignEntryFromPayload(snapshot, { source: 'local' });
       setCampaignRules(nextRules);
       setRulePresetSnapshot(snapshot.rulePresetSnapshot || null);
       setScenes([blankScene]);
       setTemplateStore(nextTemplateStore);
+      setRandomSystemState(nextRandomSystem);
       setCampaignName(DEFAULT_CAMPAIGN_NAME);
       setSceneIndex(0);
       setRestorePoints(initialRestorePoints([blankScene]));
@@ -314,12 +322,14 @@ export function useCampaign() {
       const nextRules = normalizeCampaignRules(campaignRules);
       const blankScene = createBlankScene(nextRules);
       const nextTemplateStore = addOnboardingTrackerTemplates(templateStore, null);
-      const snapshot = createCampaignPayload([blankScene], dark, DEFAULT_CAMPAIGN_NAME, nextTemplateStore, nextRules, null);
+      const nextRandomSystem = normalizeRandomSystemState(null);
+      const snapshot = createCampaignPayload([blankScene], dark, DEFAULT_CAMPAIGN_NAME, nextTemplateStore, nextRules, null, {}, nextRandomSystem);
       const entry = campaignEntryFromPayload(snapshot, { source: 'local' });
       setCampaignRules(nextRules);
       setRulePresetSnapshot(null);
       setScenes([blankScene]);
       setTemplateStore(nextTemplateStore);
+      setRandomSystemState(nextRandomSystem);
       setCampaignName(DEFAULT_CAMPAIGN_NAME);
       setSceneIndex(0);
       setRestorePoints(initialRestorePoints([blankScene]));
@@ -363,6 +373,7 @@ export function useCampaign() {
       setSceneIndex(0);
       setRestorePoints({});
       setTemplateStore(normalizeTemplateStore(null));
+      setRandomSystemState(normalizeRandomSystemState(null));
       setCampaignName(DEFAULT_CAMPAIGN_NAME);
       setCampaignEntries([]);
       setActiveCampaignEntryId('');
@@ -372,7 +383,7 @@ export function useCampaign() {
       setPersistenceEnabled(false);
       lastPersistenceSignatureRef.current = '';
     },
-  }), [campaignName, campaignRules, dark, pendingFileChoice, syncedScenes, templateStore]);
+  }), [campaignName, campaignRules, dark, pendingFileChoice, syncedScenes, templateStore, randomSystemState]);
 
   const extraSceneActions = useMemo(() => ({
     updateSceneField(key, value) {
@@ -402,6 +413,7 @@ export function useCampaign() {
     ...extraCampaignActions,
     ...extraSceneActions,
     setThemeMode,
+    setRandomSystemState,
   }), [campaignActions, extraCampaignActions, extraSceneActions, sceneActions, setThemeMode]);
 
   return {
@@ -409,6 +421,7 @@ export function useCampaign() {
     campaignRules,
     rulePresetSnapshot,
     templateStore,
+    randomSystemState,
     setTemplateStore,
     campaignName,
     campaignEntries,

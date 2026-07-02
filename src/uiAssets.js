@@ -11,6 +11,7 @@ export const uiGlyphs = {
   avatarFallback: '●',
   close: '×',
   duplicate: '⧉',
+  dice: '\u2684',
   edit: '✎',
   infinity: '∞',
   loop: '↻',

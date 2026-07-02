@@ -4,7 +4,7 @@ import {
   combinationTargetDefinition,
   definitionCombination,
 } from '../combinations.js';
-import { directlyExposedDefinitions } from '../definitionAccess.js';
+import { activeDefinitions } from '../definitionAccess.js';
 import { randomOptionTypes, randomParameterTypes, randomSourceKinds } from '../engine.js';
 import { ChoiceOptionControl } from './ChoiceOptionControl.jsx';
 import { HistoryPanel } from './HistoryPanel.jsx';
@@ -22,11 +22,14 @@ function initialInputs(definition) {
   };
 }
 
-const DefinitionForm = memo(function DefinitionForm({
+export const DefinitionForm = memo(function DefinitionForm({
   definition,
   definitions,
   sources,
   onRun,
+  className = '',
+  showHeader = true,
+  runLabel = t('random.use.run'),
 }) {
   const [inputs, setInputs] = useState(() => initialInputs(definition));
   const [error, setError] = useState('');
@@ -95,8 +98,8 @@ const DefinitionForm = memo(function DefinitionForm({
   };
 
   return (
-    <section className="rs-use-form">
-      <div className="rs-section-head">
+    <section className={`rs-use-form ${className}`}>
+      {showHeader && <div className="rs-section-head">
         <div>
           <span className="rs-section-kicker">{t('random.resource.rolls')}</span>
           <div className="rs-heading-with-mark">
@@ -105,7 +108,7 @@ const DefinitionForm = memo(function DefinitionForm({
           </div>
           {definition.note && <span>{definition.note}</span>}
         </div>
-      </div>
+      </div>}
       <div className="rs-input-grid">
         {targetDefinition.parameters.map((parameter) => (
           <label className="field" key={parameter.id}>
@@ -142,7 +145,7 @@ const DefinitionForm = memo(function DefinitionForm({
         ))}
       </div>
       {error && <p className="rs-error" role="alert">{error}</p>}
-      <button type="button" className="primary rs-run-button" onClick={run}>{t('random.use.run')}</button>
+      <button type="button" className="primary rs-run-button" onClick={run}>{runLabel}</button>
     </section>
   );
 });
@@ -210,12 +213,12 @@ export function CardSourceForm({ source, sourceState, actions }) {
 }
 
 export function UsePanel({ state, actions }) {
-  const exposedDefinitions = useMemo(
-    () => directlyExposedDefinitions(state.definitions),
+  const activeRollDefinitions = useMemo(
+    () => activeDefinitions(state.definitions),
     [state.definitions],
   );
   const [resourceKind, setResourceKind] = useState('definitions');
-  const [selectedDefinitionId, setSelectedDefinitionId] = useState(exposedDefinitions[0]?.id || '');
+  const [selectedDefinitionId, setSelectedDefinitionId] = useState(activeRollDefinitions[0]?.id || '');
   const cardSources = useMemo(
     () => state.sources.filter((source) => source.kind === randomSourceKinds.CARDS),
     [state.sources],
@@ -225,19 +228,19 @@ export function UsePanel({ state, actions }) {
     [state.sources],
   );
   const [selectedCardSourceId, setSelectedCardSourceId] = useState(cardSources[0]?.id || '');
-  const selectedDefinition = exposedDefinitions.find((item) => item.id === selectedDefinitionId)
-    || exposedDefinitions[0];
+  const selectedDefinition = activeRollDefinitions.find((item) => item.id === selectedDefinitionId)
+    || activeRollDefinitions[0];
   const selectedCardSource = cardSources.find((item) => item.id === selectedCardSourceId)
     || cardSources[0];
 
   useEffect(() => {
-    if (!selectedDefinition && exposedDefinitions[0]) setSelectedDefinitionId(exposedDefinitions[0].id);
-  }, [exposedDefinitions, selectedDefinition]);
+    if (!selectedDefinition && activeRollDefinitions[0]) setSelectedDefinitionId(activeRollDefinitions[0].id);
+  }, [activeRollDefinitions, selectedDefinition]);
   useEffect(() => {
     if (!selectedCardSource && cardSources[0]) setSelectedCardSourceId(cardSources[0].id);
   }, [cardSources, selectedCardSource]);
 
-  const resources = resourceKind === 'definitions' ? exposedDefinitions : cardSources;
+  const resources = resourceKind === 'definitions' ? activeRollDefinitions : cardSources;
   const selectedId = resourceKind === 'definitions' ? selectedDefinition?.id : selectedCardSource?.id;
 
   return (

@@ -27,6 +27,9 @@ function cardRow(card = {}, index = 0) {
     id: card.id || `card-${index + 1}`,
     label: card.label || '',
     value: card.value ?? card.label ?? '',
+    rank: card.rank || '',
+    suit: card.suit || '',
+    color: card.color || '',
     symbol: card.symbol || '',
     image: card.image || '',
     text: card.comment || '',
@@ -289,6 +292,9 @@ export function SourceManager({ sources, definitions, actions }) {
           id: original?.id || `card-${index + 1}`,
           label: cleanLabel,
           value: original?.value ?? cleanLabel,
+          rank: original?.rank || '',
+          suit: original?.suit || '',
+          color: original?.color || '',
           symbol: original?.symbol || '',
           image: original?.image || '',
           comment: original?.text || '',
@@ -385,11 +391,12 @@ export function SourceManager({ sources, definitions, actions }) {
       <aside className="rs-config-list">
         <div className="rs-section-head">
           <div>
-            <span className="rs-section-kicker">{t('random.config.configure')}</span>
+            <span className="rs-section-kicker">{t('random.source.listKicker')}</span>
             <div className="rs-heading-with-mark">
               <span className="rs-heading-mark" aria-hidden="true">◈</span>
               <h3>{t('random.config.sources')}</h3>
             </div>
+            <p className="muted compact-help">{t('random.source.listHelp')}</p>
           </div>
         </div>
         <div className="rs-new-source-actions">

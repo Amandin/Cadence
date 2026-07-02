@@ -33,6 +33,7 @@ import { normaliserCreneauxAction } from './domain/initiative.js';
 import { baseInitiativeSlots, multipleActionModeFromRules, normalizeInitiativeCostLimitToCurrent, normalizeInitiativeCostQuickCosts, normalizeInitiativeCostThreshold } from './domain/initiativeCost.js';
 import { isPointsTracker, normalizeBoxTracker, normalizeThresholds, normalizeTrackerThresholds, makeDefaultCampaign, uid } from './logic.js';
 import { normalizeRulePresetSnapshot } from './rulePresets.js';
+import { exportRandomSystemStateForCampaign, normalizeRandomSystemState } from './random-system/state.js';
 import { isTemplateStoreLike, loadTemplateStore, normalizeTemplateStore } from './templates.js';
 import { readLocalCampaignPayload, writeLocalCampaignPayload } from './localCampaignStorage.js';
 import { t } from './i18n/index.js';
@@ -345,6 +346,7 @@ export function normalizeCampaignScene(scene) {
     categoryOrder: normalizeArray(scene.categoryOrder).length ? normalizeArray(scene.categoryOrder).map((category) => String(category)) : defaultCategoryOrder,
     tiebreakerVisible: booleanOr(scene.tiebreakerVisible, defaultTiebreakerVisible),
     tiebreakerLabel: stringOr(scene.tiebreakerLabel, defaultTiebreakerLabel).trim() || defaultTiebreakerLabel,
+    initiativeBonusRollDefinitionId: stringOr(scene.initiativeBonusRollDefinitionId),
     globalTracker: normalizeGlobalTracker(scene.globalTracker),
     reserve: normalizeArray(scene.reserve).map((participant) => normalizeCampaignParticipant(participant, { reserve: true })).filter(Boolean),
     participants: normalizeArray(scene.participants).map((participant) => normalizeCampaignParticipant(participant)).filter(Boolean),
@@ -367,7 +369,7 @@ export function rulePresetSnapshotFromPayload(data, activeRules = null) {
   return normalizeRulePresetSnapshot(data?.rulePresetSnapshot, activeRules);
 }
 
-export function createCampaignPayload(scenes, dark, campaignName = DEFAULT_CAMPAIGN_NAME, templates, initiativeRules, rulePresetSnapshot = null, campaignMeta = {}) {
+export function createCampaignPayload(scenes, dark, campaignName = DEFAULT_CAMPAIGN_NAME, templates, initiativeRules, rulePresetSnapshot = null, campaignMeta = {}, randomSystemState = null) {
   const safeScenes = normalizeCampaignScenes(scenes);
   const rules = normalizeCampaignRules(initiativeRules || campaignRulesFromPayload({ scenes: safeScenes }));
   const name = normalizeCampaignName(campaignMeta.name || campaignName);
@@ -389,6 +391,7 @@ export function createCampaignPayload(scenes, dark, campaignName = DEFAULT_CAMPA
     rulePresetSnapshot: rulePresetSnapshotFromPayload({ rulePresetSnapshot }, rules),
     scenes: unifyCampaignScenes(safeScenes, rules),
     templates: exportedTemplateStore(templates),
+    randomSystem: exportRandomSystemStateForCampaign(randomSystemState),
   };
 }
 
@@ -437,6 +440,7 @@ export function normalizeCampaignPayload(data) {
     rulePresetSnapshot: rulePresetSnapshotFromPayload(data, initiativeRules),
     scenes: unifyCampaignScenes(sourceScenes, initiativeRules),
     templates: campaignTemplatesFromPayload(data),
+    randomSystem: normalizeRandomSystemState(data?.randomSystem),
   };
 }
 
@@ -451,12 +455,12 @@ export function loadCampaign() {
   return normalizeCampaignPayload(makeDefaultCampaign());
 }
 
-export function saveCampaign(scenes, dark, campaignName, templates, initiativeRules, rulePresetSnapshot = null, campaignMeta = {}) {
-  writeLocalCampaignPayload(STORAGE_KEY, createCampaignPayload(scenes, dark, campaignName, templates, initiativeRules, rulePresetSnapshot, campaignMeta));
+export function saveCampaign(scenes, dark, campaignName, templates, initiativeRules, rulePresetSnapshot = null, campaignMeta = {}, randomSystemState = null) {
+  writeLocalCampaignPayload(STORAGE_KEY, createCampaignPayload(scenes, dark, campaignName, templates, initiativeRules, rulePresetSnapshot, campaignMeta, randomSystemState));
 }
 
-export function serializeCampaign(scenes, dark, campaignName, templates, initiativeRules, rulePresetSnapshot = null, campaignMeta = {}) {
-  return JSON.stringify(createCampaignPayload(scenes, dark, campaignName, templates, initiativeRules, rulePresetSnapshot, campaignMeta), null, 2);
+export function serializeCampaign(scenes, dark, campaignName, templates, initiativeRules, rulePresetSnapshot = null, campaignMeta = {}, randomSystemState = null) {
+  return JSON.stringify(createCampaignPayload(scenes, dark, campaignName, templates, initiativeRules, rulePresetSnapshot, campaignMeta, randomSystemState), null, 2);
 }
 
 function hasScenes(data) {

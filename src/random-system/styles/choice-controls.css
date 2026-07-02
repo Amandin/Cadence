@@ -89,36 +89,36 @@
   gap: 6px;
 }
 
-.rs-choice-slider output {
-  color: var(--rs-accent);
-  font-size: 12px;
-  font-weight: 900;
-  text-align: center;
-}
-
-.rs-choice-slider input {
-  width: 100%;
-  accent-color: var(--rs-accent);
-}
-
-.rs-choice-slider > div {
+.rs-choice-segments {
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: minmax(0, 1fr);
-  gap: 4px;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid var(--rs-border);
+  border-radius: 7px;
+  background: var(--rs-surface);
 }
 
-.rs-choice-slider span {
+.rs-choice-segments button {
   min-width: 0;
+  min-height: 32px;
+  padding: 5px 7px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
   color: var(--rs-muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 9px;
-  font-weight: 800;
+  font-size: 10px;
+  font-weight: 900;
   text-align: center;
 }
 
-.rs-choice-slider span.selected {
+.rs-choice-segments button.selected {
+  border-color: var(--ui-selected-border);
+  background: var(--ui-selected-bg);
   color: var(--rs-accent);
+  box-shadow: var(--ui-selected-shadow);
 }

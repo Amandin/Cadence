@@ -1,6 +1,7 @@
 import { TEMPLATE_STORAGE_KEY } from './constants.js';
 import { normalizeCampaignRules } from './domain/campaignRules.js';
 import { normalizeGlobalTracker } from './domain/globalTracker.js';
+import { normalizeInitiativeTextOrder } from './domain/initiativeTextOrder.js';
 import { t } from './i18n/index.js';
 import { clone, colors, newTracker, symbols, uid } from './logic.js';
 import { defaultParticipantSymbol } from './uiAssets.js';
@@ -36,6 +37,7 @@ const legacySurprisedStatusTemplate = {
 };
 
 export const defaultRuleTemplates = [];
+export const defaultInitiativeTextPresets = [];
 
 function ajouterTemplateSurprisSiAncien(statusTemplates, version) {
   if (version == null) return statusTemplates;
@@ -202,6 +204,24 @@ function normalizeRuleTemplate(template) {
   };
 }
 
+function normalizeInitiativeTextPreset(template) {
+  if (!template || typeof template !== 'object' || Array.isArray(template)) return null;
+  const config = normalizeInitiativeTextOrder(template.config || template.initiativeTextOrder || template);
+  if (!config.parts.length) return null;
+  return {
+    id: template.id || uid('itpl'),
+    name: normalizeTemplateName(template.name, t('templates.fallback.initiativeText')),
+    createdAt: template.createdAt || new Date().toISOString(),
+    updatedAt: template.updatedAt,
+    config: {
+      ...config,
+      enabled: true,
+      preset: '',
+      cardSourceId: '',
+    },
+  };
+}
+
 export function normalizeTemplateStore(value) {
   if (Array.isArray(value)) {
     const templates = value.map(normalizeTemplate).filter(Boolean);
@@ -214,6 +234,7 @@ export function normalizeTemplateStore(value) {
       sceneStatusTemplates: defaultSceneStatusTemplates.map(normalizeSceneStatusTemplate).filter(Boolean),
       sceneCounterTemplates: defaultSceneCounterTemplates.map(normalizeSceneCounterTemplate).filter(Boolean),
       ruleTemplates: defaultRuleTemplates.map(normalizeRuleTemplate).filter(Boolean),
+      initiativeTextPresets: defaultInitiativeTextPresets.map(normalizeInitiativeTextPreset).filter(Boolean),
     };
   }
 
@@ -230,6 +251,8 @@ export function normalizeTemplateStore(value) {
   const sceneCounterTemplates = sourceSceneCounterTemplates.map(normalizeSceneCounterTemplate).filter(Boolean);
   const sourceRuleTemplates = Array.isArray(value?.ruleTemplates) ? value.ruleTemplates : defaultRuleTemplates;
   const ruleTemplates = sourceRuleTemplates.map(normalizeRuleTemplate).filter(Boolean);
+  const sourceInitiativeTextPresets = Array.isArray(value?.initiativeTextPresets) ? value.initiativeTextPresets : defaultInitiativeTextPresets;
+  const initiativeTextPresets = sourceInitiativeTextPresets.map(normalizeInitiativeTextPreset).filter(Boolean);
 
   return {
     version: TEMPLATE_STORE_VERSION,
@@ -240,6 +263,7 @@ export function normalizeTemplateStore(value) {
     sceneStatusTemplates,
     sceneCounterTemplates,
     ruleTemplates,
+    initiativeTextPresets,
   };
 }
 
@@ -303,6 +327,7 @@ export function mergeTemplateStores(currentStore, incomingStore) {
       sceneStatusTemplates: mergeSimple(current.sceneStatusTemplates, incoming.sceneStatusTemplates, 'sstpl', 'scene-status'),
       sceneCounterTemplates: mergeSimple(current.sceneCounterTemplates, incoming.sceneCounterTemplates, 'sctpl', 'scene-counter'),
       ruleTemplates: mergeSimple(current.ruleTemplates, incoming.ruleTemplates, 'rtpl', 'rules'),
+      initiativeTextPresets: mergeSimple(current.initiativeTextPresets, incoming.initiativeTextPresets, 'itpl', 'initiative-text'),
     }),
     added,
     skipped,
@@ -431,6 +456,15 @@ export function makeRuleTemplateFromRules(rules, { name }) {
     name: normalizeTemplateName(name, t('templates.fallback.rules')),
     createdAt: new Date().toISOString(),
     rules,
+  });
+}
+
+export function makeInitiativeTextPreset(config, { name }) {
+  return normalizeInitiativeTextPreset({
+    id: uid('itpl'),
+    name: normalizeTemplateName(name, t('templates.fallback.initiativeText')),
+    createdAt: new Date().toISOString(),
+    config,
   });
 }
 

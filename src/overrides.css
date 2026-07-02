@@ -129,15 +129,49 @@
   border: 1px solid var(--override-section-border);
 }
 
-.compact-option-title {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+.options-menu-content .options-section {
+  margin: 0;
+  padding: 10px;
+  display: grid;
+  gap: 12px;
 }
 
-.compact-option-title h3 {
+.options-menu-content .options-section-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.options-menu-content .options-section-title {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.options-menu-content .options-section-title h3 {
   margin: 0;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.options-menu-content .options-section-title .compact-help {
+  margin: 0 !important;
+}
+
+.options-menu-content .options-section-actions {
+  display: inline-flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.options-menu-content .options-section-body {
+  display: grid;
+  gap: 12px;
 }
 
 .tracker-title {
@@ -488,10 +522,6 @@
 .hub-options-tab {
   display: grid;
   gap: 12px;
-}
-
-.options-section {
-  margin: 0;
 }
 
 .options-section .field {

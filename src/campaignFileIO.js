@@ -13,6 +13,10 @@ export function campaignExportFileName(campaignName) {
   return `${slugifyFilePart(campaignName)}-${dateFrPourFichier()}.cad`;
 }
 
+export function libraryExportFileName(libraryName) {
+  return `${slugifyFilePart(libraryName || 'bibliotheque-cadence')}-${dateFrPourFichier()}.cadlib`;
+}
+
 function downloadBlob(blob, fileName) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
@@ -28,9 +32,9 @@ function downloadBlob(blob, fileName) {
   }, 1000);
 }
 
-async function saveWithPicker(blob, fileName) {
+async function saveWithPicker(blob, fileName, { description = 'Campagne Cadence', extensions = ['.cad'] } = {}) {
   if (!window.showSaveFilePicker) return false;
-  const handle = await window.showSaveFilePicker({ suggestedName: fileName, types: [{ description: 'Campagne Cadence', accept: { 'application/json': ['.cad'] } }] });
+  const handle = await window.showSaveFilePicker({ suggestedName: fileName, types: [{ description, accept: { 'application/json': extensions } }] });
   const writable = await handle.createWritable();
   await writable.write(blob);
   await writable.close();
@@ -64,6 +68,21 @@ export async function shareOrDownloadCampaign(content, campaignName) {
         console.warn('Partage impossible, téléchargement direct utilisé.', error);
       }
     }
+  }
+
+  downloadBlob(blob, fileName);
+  return { ok: true, method: 'download' };
+}
+
+export async function shareOrDownloadLibrary(content, libraryName) {
+  const fileName = libraryExportFileName(libraryName);
+  const blob = new Blob([content], { type: 'application/json;charset=utf-8' });
+
+  try {
+    if (await saveWithPicker(blob, fileName, { description: 'Bibliotheque Cadence', extensions: ['.cadlib'] })) return { ok: true, method: 'picker' };
+  } catch (error) {
+    if (error?.name === 'AbortError') return { ok: false, cancelled: true };
+    console.warn('Enregistrement de bibliotheque impossible, fallback utilise.', error);
   }
 
   downloadBlob(blob, fileName);

@@ -7,3 +7,8 @@ export function directlyExposedDefinitions(definitions) {
       || definition.exposed !== false
     ));
 }
+
+export function activeDefinitions(definitions) {
+  return directlyExposedDefinitions(definitions)
+    .filter((definition) => definition.active !== false);
+}

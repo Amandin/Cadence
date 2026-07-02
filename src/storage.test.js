@@ -165,6 +165,84 @@ describe('campaign storage', () => {
     expect(serialized.templates.ruleTemplates).toEqual([]);
   });
 
+  it('roundtrips normalized .cad payloads with scenes, participants, rules and shared templates', () => {
+    const sourceScene = {
+      id: 'scene-roundtrip',
+      title: 'Pont suspendu',
+      type: 'Affrontement',
+      round: 2,
+      phase: 1,
+      activeId: 'pj-roundtrip',
+      notes: 'Vent fort.',
+      statuses: [{ id: 'scene-fog', name: 'Brouillard', duration: 2, remaining: 1, advanceOn: 'round' }],
+      globalTracker: { enabled: true, name: 'Menace', mode: 'clock', current: 3, max: 6, auto: true },
+      participants: [{
+        id: 'pj-roundtrip',
+        name: 'Ariane',
+        kind: 'PJ',
+        initiative: 18,
+        stats: [{ label: 'CA', value: '17', editable: true }],
+        statuses: [{ id: 'haste', name: 'Hate', duration: 1, remaining: 1, limited: true }],
+        trackers: [{ id: 'pv', type: 'bar', name: 'PV', current: 9, max: 12, thresholds: [{ value: 3, label: 'danger', color: 'red' }] }],
+      }],
+      reserve: [{
+        id: 'reserve-roundtrip',
+        name: 'Renfort',
+        kind: 'Allie',
+        initiative: 99,
+        trackers: [{ id: 'prep', type: 'clock', name: 'Preparation', current: 1, max: 4 }],
+      }],
+    };
+    const initiativeRules = {
+      temporalite: 'phases',
+      phaseActionMode: 'checked',
+      phaseDecrement: 5,
+      phaseCount: 3,
+      phaseRerollEachRound: true,
+      categoryOrder: ['PJ', 'Opposant', 'Allie', 'Environnement'],
+    };
+    const templates = normalizeTemplateStore({
+      categories: ['PJ', 'Opposant'],
+      templates: [{ name: 'Eclaireuse', category: 'PJ', participant: { name: 'Eclaireuse', kind: 'PJ', initiative: 12 } }],
+      trackerTemplates: [{ name: 'Stress', tracker: { type: 'points', name: 'Stress', current: 1, max: 5 } }],
+      statusTemplates: [{ name: 'Sonne', status: { name: 'Sonne', duration: 1, remaining: 1 } }],
+      sceneStatusTemplates: [{ name: 'Brouillard', status: { name: 'Brouillard', duration: 2, remaining: 2, advanceOn: 'round' } }],
+      sceneCounterTemplates: [{ name: 'Menace', counter: { enabled: true, name: 'Menace', mode: 'clock', current: 0, max: 6 } }],
+    });
+
+    const normalized = normalizeCampaignPayload({
+      format: CADENCE_CAMPAIGN_FORMAT,
+      schemaVersion: CADENCE_CAMPAIGN_SCHEMA_VERSION,
+      campaign: { name: 'Roundtrip', folderName: 'roundtrip', fileName: 'roundtrip.cad' },
+      name: 'Roundtrip',
+      initiativeRules,
+      scenes: [sourceScene],
+      templates,
+    });
+    const serialized = serializeCampaign(normalized.scenes, false, normalized.name, normalized.templates, normalized.initiativeRules, normalized.rulePresetSnapshot, normalized.campaign);
+    const parsed = JSON.parse(serialized);
+    const reloaded = normalizeCampaignPayload(parsed);
+
+    expect(isValidCampaign(parsed)).toBe(true);
+    expect(reloaded.campaign).toMatchObject({ name: 'Roundtrip', folderName: 'roundtrip', fileName: 'roundtrip.cad' });
+    expect(reloaded.initiativeRules).toMatchObject({ temporalite: 'phases', phaseActionMode: 'checked', phaseDecrement: 5, phaseCount: 3, phaseRerollEachRound: true });
+    expect(reloaded.scenes[0]).toMatchObject({
+      id: 'scene-roundtrip',
+      title: 'Pont suspendu',
+      notes: 'Vent fort.',
+      globalTracker: { enabled: true, name: 'Menace', mode: 'clock', current: 3, max: 6 },
+      participants: [{ id: 'pj-roundtrip', name: 'Ariane', kind: 'PJ', initiative: 18 }],
+      reserve: [{ id: 'reserve-roundtrip', name: 'Renfort', initiative: 0 }],
+    });
+    expect(reloaded.scenes[0].statuses[0]).toMatchObject({ name: 'Brouillard', advanceOn: 'round' });
+    expect(reloaded.scenes[0].participants[0].trackers[0]).toMatchObject({ id: 'pv', name: 'PV', current: 9, max: 12 });
+    expect(reloaded.templates.templates[0]).toMatchObject({ name: 'Eclaireuse', category: 'PJ' });
+    expect(reloaded.templates.trackerTemplates[0]).toMatchObject({ name: 'Stress', tracker: { type: 'points', name: 'Stress' } });
+    expect(reloaded.templates.statusTemplates[0]).toMatchObject({ name: 'Sonne', status: { duration: 1 } });
+    expect(reloaded.templates.sceneStatusTemplates[0]).toMatchObject({ name: 'Brouillard', status: { advanceOn: 'round' } });
+    expect(reloaded.templates.sceneCounterTemplates[0]).toMatchObject({ name: 'Menace', counter: { mode: 'clock', max: 6 } });
+  });
+
   it('ignores legacy campaign rule templates when opening old .cad files', () => {
     const localRuleTemplate = normalizeTemplateStore({
       ruleTemplates: [{ name: 'Local maison', rules: { temporalite: 'classique', multipleActionSlots: false } }],

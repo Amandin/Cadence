@@ -110,6 +110,9 @@ export function normalizeRandomDefinition(definition, index = 0) {
     name: cleanLabel(definition?.name, `Définition ${index + 1}`),
     kind,
     exposed: kind === randomDefinitionKinds.COMBINATION || definition?.exposed !== false,
+    active: definition?.active !== undefined
+      ? definition.active !== false
+      : kind === randomDefinitionKinds.COMBINATION || definition?.exposed !== false,
     parameters: (Array.isArray(definition?.parameters) ? definition.parameters : []).map(normalizeParameter),
     options: (Array.isArray(definition?.options) ? definition.options : []).map(normalizeOption),
     components: (Array.isArray(definition?.components) ? definition.components : []).map(normalizeComponent),

@@ -5,21 +5,29 @@ import {
 } from './cardSourceDefaults.js';
 
 describe('RandomSystem standard decks', () => {
-  it('creates a complete 54-card deck with two jokers', () => {
+  it('creates a complete 54-card deck with structured rank and suit fields', () => {
     const deck = createStandard54CardSource();
     expect(deck.cards).toHaveLength(54);
     expect(new Set(deck.cards.map((card) => card.id)).size).toBe(54);
     expect(deck.cards.filter((card) => card.markers.includes('joker'))).toHaveLength(2);
     expect(deck.cards.filter((card) => card.markers.includes('rouge'))).toHaveLength(27);
     expect(deck.cards.filter((card) => card.markers.includes('noir'))).toHaveLength(27);
+    expect(deck.cards.find((card) => card.id === 'as-pique')).toMatchObject({
+      label: 'A♠',
+      rank: 'A',
+      suit: '♠',
+      color: 'noir',
+      comment: 'As de pique',
+    });
   });
 
-  it('creates a 78-card French tarot with four suits, trumps and the Excuse', () => {
+  it('creates a 78-card French tarot with matching trump and suit metadata', () => {
     const deck = createFrenchTarotCardSource();
     expect(deck.cards).toHaveLength(78);
     expect(new Set(deck.cards.map((card) => card.id)).size).toBe(78);
     expect(deck.cards.filter((card) => card.markers.includes('atout'))).toHaveLength(22);
-    expect(deck.cards.find((card) => card.id === 'excuse')?.label).toBe('L’Excuse');
+    expect(deck.cards.find((card) => card.id === 'excuse')).toMatchObject({ label: '🃏★', rank: '🃏', suit: '★' });
+    expect(deck.cards.find((card) => card.id === 'atout-21')).toMatchObject({ label: '21★', rank: '21', suit: '★' });
     expect(deck.cards.filter((card) => card.id.startsWith('cavalier-'))).toHaveLength(4);
   });
 });

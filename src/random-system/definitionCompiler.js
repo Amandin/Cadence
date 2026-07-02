@@ -115,6 +115,7 @@ function buildCombinationDefinition(draft) {
     name: String(draft.name || '').trim() || 'Combinaison sans nom',
     kind: randomDefinitionKinds.COMBINATION,
     exposed: true,
+    active: draft.active !== false,
     parameters: [],
     options: [{
       id: 'combination',
@@ -322,6 +323,7 @@ export function buildRandomDefinition(draft) {
     name: String(draft.name || '').trim() || 'Lancer sans nom',
     kind: randomDefinitionKinds.ROLL,
     exposed: draft.exposed,
+    active: draft.active !== false,
     parameters,
     options: buildRollOptions(draft),
     components,
