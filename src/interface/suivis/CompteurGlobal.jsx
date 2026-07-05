@@ -1,6 +1,7 @@
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { activeGlobalTrackerThresholds, elapsedGlobalTrackerMs, globalThresholdValue, globalTrackerTimerState, normalizeGlobalThresholds } from '../../domain/globalTracker.js';
 import { t } from '../../i18n/index.js';
+import { uiSymbols } from '../../uiAssets.js';
 import { Fenetre } from '../commun/ComposantsCommuns.jsx';
 import { globalThresholdBasisOptionsByMode, thresholdColorOptions, thresholdColorStyles, thresholdGlowStyle, thresholdOperatorsForMode, validThresholdOperator } from './thresholdUi.js';
 
@@ -213,7 +214,7 @@ export function EditeurSeuilsCompteurScene({ compteur, onModifier }) {
       <p className="muted compact-help">{aide}</p>
       {seuils.map((seuil, index) => (
         <div className={`threshold-edit-row ${afficherScope ? 'has-target' : ''} ${afficherBase && (seuil.scope || 'current') !== 'loops' ? 'has-basis' : ''}`} key={index}>
-          <button className="small-btn subtle-danger threshold-delete" onClick={() => supprimer(index)}>x</button>
+          <button className="small-btn subtle-danger threshold-delete" onClick={() => supprimer(index)}>{uiSymbols.remove}</button>
           <div className="threshold-numeric-row">
             {afficherScope && <select className="threshold-target-select" value={seuil.scope || 'current'} onChange={(event) => modifier(index, { scope: event.target.value, basis: event.target.value === 'loops' ? 'fixed' : seuil.basis, operator: validThresholdOperator(mode, event.target.value, seuil.operator) })}>{thresholdScopes.map(([value, labelKey]) => <option key={value} value={value}>{t(labelKey)}</option>)}</select>}
             <select className="threshold-operator-select" value={validThresholdOperator(mode, seuil.scope || 'current', seuil.operator)} onChange={(event) => modifier(index, { operator: event.target.value })}>{thresholdOperatorsForMode(mode, seuil.scope || 'current').map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
@@ -347,7 +348,7 @@ export const CompteurGlobal = memo(function CompteurGlobal({ compteur, onChanger
 
   return (
     <div className={`global-mini ${classeSeuils} ${classeCouleurSeuil} ${classeCouleurSecondaire} ${compteur.auto ? 'auto-active' : ''} ${animationTick ? 'auto-tick' : ''} ${cycleExact ? 'cycle-complete' : ''} ${deborde ? 'overflowing' : ''}`} style={styleSeuils}>
-      <BoutonPasCompteur pas={-1} onChanger={onChanger}>-</BoutonPasCompteur>
+      <BoutonPasCompteur pas={-1} onChanger={onChanger}>{uiSymbols.subtract}</BoutonPasCompteur>
       <div className="global-mini-main">
         <span>{compteur.name || t('trackers.global.defaultName')}</span>
         <SeuilsGlobauxActifs seuils={seuilsAffiches} />
@@ -364,7 +365,7 @@ export const CompteurGlobal = memo(function CompteurGlobal({ compteur, onChanger
         {boucle && cyclesComplets > 0 && <em className="overflow-badge">x{cyclesComplets}</em>}
         {boucle && <em className="global-total-badge">{total}</em>}
       </div>
-      <BoutonPasCompteur pas={1} onChanger={onChanger}>+</BoutonPasCompteur>
+      <BoutonPasCompteur pas={1} onChanger={onChanger}>{uiSymbols.add}</BoutonPasCompteur>
     </div>
   );
 });

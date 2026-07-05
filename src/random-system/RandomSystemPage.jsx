@@ -1,5 +1,6 @@
 import { lazy, Suspense, useState } from 'react';
 import { t } from '../i18n/index.js';
+import { defaultMechanicalSymbol, uiSymbols } from '../uiAssets.js';
 import { UsePanel } from './ui/UsePanel.jsx';
 import { useRandomSystem } from './useRandomSystem.js';
 import './styles/base.css';
@@ -13,9 +14,9 @@ const ConfigurationPanel = lazy(() => loadConfigurationPanel()
 const StatisticsPanel = lazy(() => loadStatisticsPanel()
   .then((module) => ({ default: module.StatisticsPanel })));
 const pageTabs = [
-  { id: 'use', icon: '✦', labelKey: 'random.tabs.use' },
-  { id: 'configure', icon: '⚙', labelKey: 'random.tabs.configure' },
-  { id: 'statistics', icon: '◔', labelKey: 'random.tabs.statistics' },
+  { id: 'use', icon: uiSymbols.draw, labelKey: 'random.tabs.use' },
+  { id: 'configure', icon: defaultMechanicalSymbol, labelKey: 'random.tabs.configure' },
+  { id: 'statistics', icon: uiSymbols.statistics, labelKey: 'random.tabs.statistics' },
 ];
 
 export function RandomSystemPage({ onBack }) {
@@ -26,13 +27,13 @@ export function RandomSystemPage({ onBack }) {
     <section className="random-system-page">
       <header className="rs-toolbar">
         <button type="button" className="small-btn rs-back" onClick={onBack}>
-          <span aria-hidden="true">↩</span>
+          <span aria-hidden="true">{uiSymbols.randomBack}</span>
           <span>{t('random.back')}</span>
         </button>
         <div className="rs-toolbar-title">
           <span className="rs-section-kicker">Cadence</span>
           <div className="rs-heading-with-mark">
-            <span className="rs-heading-mark" aria-hidden="true">✦</span>
+            <span className="rs-heading-mark" aria-hidden="true">{uiSymbols.draw}</span>
             <div>
               <h1>{t('random.title')}</h1>
               <span>{t('random.subtitle')}</span>

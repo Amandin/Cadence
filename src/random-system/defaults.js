@@ -2,6 +2,7 @@ import { createUniformSource } from './engine.js';
 import { createStarterCardSources } from './cardSourceDefaults.js';
 
 export const standardSourceIds = {
+  D3: 'standard-d3',
   D4: 'standard-d4',
   D6: 'standard-d6',
   D8: 'standard-d8',
@@ -47,7 +48,7 @@ export function createWeatherD10Source() {
 
 export function createStandardSources() {
   return [
-    ...[4, 6, 8, 10, 12, 20, 100].map((max) => createUniformSource({
+    ...[3, 4, 6, 8, 10, 12, 20, 100].map((max) => createUniformSource({
       id: `standard-d${max}`,
       name: `d${max}`,
       min: 1,

@@ -2,6 +2,8 @@ import { lazy, Suspense, useMemo, useState } from 'react';
 import { t } from '../../i18n/index.js';
 import { Fenetre } from '../../interface/commun/ComposantsCommuns.jsx';
 import { RulePoolManager } from './RulePoolManager.jsx';
+import '../styles/base.css';
+import '../styles/choice-controls.css';
 import '../styles/configuration.css';
 
 const loadDefinitionEditor = () => import('./DefinitionEditor.jsx');

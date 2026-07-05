@@ -48,7 +48,7 @@ export const standardCardSourceIds = {
   STANDARD_54: 'standard-54-cards',
 };
 
-const cosmereSpeedSourceId = 'kit-cosmere-speed';
+const cosmerePlotSourceId = 'kit-cosmere-plot-d6';
 
 function integerParameter(id, label, defaultValue, min = -999, max = 999) {
   return {
@@ -104,6 +104,7 @@ function d20RollDefinition(id, name) {
   return {
     id,
     name,
+    visualId: 'd20',
     parameters: [integerParameter('modifier', 'Modificateur', 0)],
     options: [{
       id: 'mode',
@@ -157,25 +158,11 @@ function singleDieTotalDefinition(id, name, sourceId) {
   };
 }
 
-function singleDieDefinition(id, name, sourceId) {
-  return {
-    id,
-    name,
-    components: [{
-      id: 'die',
-      label: '',
-      source: fixedValue(sourceId),
-      count: fixedValue(1),
-    }],
-    pipeline: [totalStep()],
-    primaryAggregateId: 'total',
-  };
-}
-
 function dicePoolTotalDefinition(id, name, defaultSourceId) {
   return {
     id,
     name,
+    visualId: 'dice-pool',
     parameters: [
       sourceParameter('die', 'De', defaultSourceId),
       integerParameter('count', 'Nombre de des', 1, 1, 1000),
@@ -192,10 +179,51 @@ function dicePoolTotalDefinition(id, name, defaultSourceId) {
   };
 }
 
+function mixedDiceTotalDefinition(id, name, firstSourceId, secondSourceId, exploding = false) {
+  const pipeline = [totalStep(), modifierStep()];
+  if (exploding) {
+    pipeline.unshift({
+      id: 'explosion',
+      type: randomPipelineStepTypes.EXPLODE,
+      condition: { type: 'source-extreme', extreme: 'max' },
+      maxIterations: 20,
+    });
+  }
+  return {
+    id,
+    name,
+    visualId: 'dice-pool',
+    parameters: [
+      sourceParameter('die-1', 'Premier dé', firstSourceId),
+      integerParameter('count-1', 'Nombre', 1, 0, 1000),
+      sourceParameter('die-2', 'Second dé', secondSourceId),
+      integerParameter('count-2', 'Nombre', 0, 0, 1000),
+      integerParameter('modifier', 'Modificateur', 0),
+    ],
+    components: [
+      {
+        id: 'dice-1',
+        label: 'Premier groupe',
+        source: parameterValue('die-1'),
+        count: parameterValue('count-1'),
+      },
+      {
+        id: 'dice-2',
+        label: 'Second groupe',
+        source: parameterValue('die-2'),
+        count: parameterValue('count-2'),
+      },
+    ],
+    pipeline,
+    primaryAggregateId: 'total',
+  };
+}
+
 function poolSuccessDefinition(id, name, sourceId, thresholdDefault) {
   return {
     id,
     name,
+    visualId: 'dice-pool',
     parameters: [
       integerParameter('count', 'Nombre de des', 5, 1, 1000),
       integerParameter('threshold', 'Seuil', thresholdDefault, -999, 999),
@@ -237,13 +265,61 @@ function poolSuccessDefinition(id, name, sourceId, thresholdDefault) {
   };
 }
 
-function createCosmereSpeedSource() {
+function savageTraitDefinition() {
+  return {
+    id: 'kit-savage-trait-wild',
+    name: 'Dé de trait + dé Joker',
+    visualId: 'dice-pool',
+    parameters: [
+      sourceParameter('trait-die', 'Dé de trait', standardSourceIds.D8),
+      integerParameter('modifier', 'Modificateur', 0),
+    ],
+    components: [
+      {
+        id: 'trait',
+        label: 'Trait',
+        source: parameterValue('trait-die'),
+        count: fixedValue(1),
+      },
+      {
+        id: 'wild',
+        label: 'Dé Joker',
+        source: fixedValue(standardSourceIds.D6),
+        count: fixedValue(1),
+      },
+    ],
+    pipeline: [
+      {
+        id: 'explosion',
+        type: randomPipelineStepTypes.EXPLODE,
+        condition: { type: 'source-extreme', extreme: 'max' },
+        maxIterations: 20,
+      },
+      {
+        id: 'keep-highest',
+        type: randomPipelineStepTypes.KEEP,
+        count: fixedValue(1),
+        unit: 'chain',
+        order: 'highest',
+      },
+      totalStep(),
+      modifierStep(),
+    ],
+    primaryAggregateId: 'total',
+  };
+}
+
+function createCosmerePlotSource() {
   return createWeightedSource({
-    id: cosmereSpeedSourceId,
-    name: 'Cosmere - vitesse',
+    id: cosmerePlotSourceId,
+    name: 'Cosmere - dé d’intrigue',
     outcomes: [
-      { id: 'rapide', value: 'Rapide', label: 'Rapide', weight: 1 },
-      { id: 'lent', value: 'Lent', label: 'Lent', weight: 1 },
+      { id: 'complication-1', value: 1, label: 'Complication', weight: 1 },
+      { id: 'complication-2', value: 2, label: 'Complication', weight: 1 },
+      { id: 'neutre-3', value: 3, label: 'Neutre', weight: 1 },
+      { id: 'neutre-4', value: 4, label: 'Neutre', weight: 1 },
+      { id: 'opportunite-5', value: 5, label: 'Opportunité', weight: 1 },
+      { id: 'opportunite-6', value: 6, label: 'Opportunité', weight: 1 },
     ],
   });
 }
@@ -263,7 +339,7 @@ export const randomKitCatalog = [
   {
     id: 'kit-d20-generic',
     label: 'd20 generique',
-    description: 'Ajoute un jet d20 avec avantage ou desavantage, un d20 simple et un tirage de des multiples pour les degats, armes et sorts.',
+    description: 'Couvre les dés polyédriques usuels des jeux d20, avec avantage ou désavantage sur le d20 et un tirage multiple configurable.',
     familyTags: [randomKitFamilyTags.D20_GENERIC],
     presetIds: d20PresetIds,
     sourceIds: [
@@ -273,16 +349,16 @@ export const randomKitCatalog = [
       standardSourceIds.D10,
       standardSourceIds.D12,
       standardSourceIds.D20,
+      standardSourceIds.D100,
     ],
     sources: [],
     definitions: [
       d20RollDefinition('kit-d20-check', 'Jet d20'),
-      dicePoolTotalDefinition('kit-d20-damage', 'Degats / des multiples', standardSourceIds.D6),
-      singleDieDefinition('kit-d20-initiative', 'd20 simple', standardSourceIds.D20),
+      mixedDiceTotalDefinition('kit-d20-polyhedral', 'Dés polyédriques', standardSourceIds.D6, standardSourceIds.D4),
     ],
     initiative: {
       mode: randomKitInitiativeModes.NUMERIC,
-      defaultDefinitionId: 'kit-d20-initiative',
+      defaultDefinitionId: 'kit-d20-check',
       tiebreaker: 'modifier-or-manual',
       order: 'desc',
     },
@@ -291,16 +367,36 @@ export const randomKitCatalog = [
   {
     id: 'kit-d100-percentile',
     label: 'd100 / percentile',
-    description: 'Ajoute un jet percentile contre un seuil et un ordre au d100 pour les jeux bases sur les pourcentages.',
+    description: 'Couvre les jets percentile avec dé bonus ou pénalité, ainsi que les dés de dégâts usuels de l’Appel de Cthulhu.',
     familyTags: [randomKitFamilyTags.D100_PERCENTILE],
     presetIds: ['systemes/appel-de-cthulhu-7e'],
-    sourceIds: [standardSourceIds.D100],
+    sourceIds: [
+      standardSourceIds.D3,
+      standardSourceIds.D4,
+      standardSourceIds.D6,
+      standardSourceIds.D8,
+      standardSourceIds.D10,
+      standardSourceIds.D20,
+      standardSourceIds.D100,
+    ],
     sources: [],
     definitions: [
       {
         id: 'kit-d100-check',
         name: 'Jet percentile',
         parameters: [integerParameter('target', 'Seuil', 50, 1, 100)],
+        options: [{
+          id: 'mode',
+          label: 'Mode',
+          type: randomOptionTypes.CHOICE,
+          control: randomChoiceControlKinds.SLIDER,
+          defaultValue: 'normal',
+          choices: [
+            { value: 'bonus', label: 'Dé bonus' },
+            { value: 'normal', label: 'Normal' },
+            { value: 'penalty', label: 'Dé pénalité' },
+          ],
+        }],
         components: [{
           id: 'd100',
           label: 'd100',
@@ -308,6 +404,16 @@ export const randomKitCatalog = [
           count: fixedValue(1),
         }],
         pipeline: [
+          {
+            id: 'mode',
+            type: randomPipelineStepTypes.REPEAT_SELECT,
+            optionId: 'mode',
+            variants: {
+              normal: { repetitions: 1, select: 'first', aggregateId: 'roll' },
+              bonus: { repetitions: 2, select: 'lowest', aggregateId: 'roll' },
+              penalty: { repetitions: 2, select: 'highest', aggregateId: 'roll' },
+            },
+          },
           {
             id: 'success-threshold',
             type: randomPipelineStepTypes.SUCCESS_THRESHOLD,
@@ -317,11 +423,11 @@ export const randomKitCatalog = [
         ],
         primaryAggregateId: 'roll',
       },
-      singleDieTotalDefinition('kit-d100-initiative', 'Ordre d100', standardSourceIds.D100),
+      mixedDiceTotalDefinition('kit-d100-polyhedral', 'Dés polyédriques', standardSourceIds.D6, standardSourceIds.D4),
     ],
     initiative: {
-      mode: randomKitInitiativeModes.NUMERIC,
-      defaultDefinitionId: 'kit-d100-initiative',
+      mode: randomKitInitiativeModes.MANUAL,
+      defaultDefinitionId: null,
       tiebreaker: 'manual',
       order: 'desc',
     },
@@ -330,18 +436,18 @@ export const randomKitCatalog = [
   {
     id: 'kit-d6-pool',
     label: 'Pool de d6',
-    description: 'Ajoute un pool de d6 a succes, avec seuil configurable, explosion optionnelle et une initiative simple au d6.',
+    description: 'Couvre les pools de d6 à succès de Shadowrun et les sommes de d6 avec modificateur.',
     familyTags: [randomKitFamilyTags.D6_POOL],
     presetIds: ['systemes/shadowrun-5'],
     sourceIds: [standardSourceIds.D6],
     sources: [],
     definitions: [
       poolSuccessDefinition('kit-d6-pool-successes', 'Pool de d6', standardSourceIds.D6, 5),
-      singleDieTotalDefinition('kit-shadowrun-initiative', 'Initiative Shadowrun', standardSourceIds.D6),
+      dicePoolTotalDefinition('kit-d6-total', 'd6 cumulés', standardSourceIds.D6),
     ],
     initiative: {
       mode: randomKitInitiativeModes.NUMERIC,
-      defaultDefinitionId: 'kit-shadowrun-initiative',
+      defaultDefinitionId: 'kit-d6-total',
       tiebreaker: 'manual',
       order: 'desc',
     },
@@ -385,30 +491,39 @@ export const randomKitCatalog = [
   },
   {
     id: 'kit-cosmere-label-order',
-    label: 'Ordre rapide/lent',
-    description: 'Ajoute les jets d20 du Cosmere et une initiative textuelle rapide/lent pour les tours sans valeur numerique.',
+    label: 'Cosmere RPG',
+    description: 'Couvre le d20, le dé d’intrigue d6 et les dés polyédriques utilisés par le Cosmere RPG.',
     familyTags: [randomKitFamilyTags.D20_GENERIC],
     presetIds: ['systemes/cosmere-rpg'],
-    sourceIds: [standardSourceIds.D20, cosmereSpeedSourceId],
-    sources: [createCosmereSpeedSource()],
+    sourceIds: [
+      standardSourceIds.D4,
+      standardSourceIds.D6,
+      standardSourceIds.D8,
+      standardSourceIds.D10,
+      standardSourceIds.D12,
+      standardSourceIds.D20,
+      cosmerePlotSourceId,
+    ],
+    sources: [createCosmerePlotSource()],
     definitions: [
-      d20RollDefinition('kit-cosmere-d20-check', 'Jet d20 Cosmere'),
+      d20RollDefinition('kit-cosmere-d20-check', 'Jet d20'),
       {
-        id: 'kit-cosmere-speed',
-        name: 'Initiative rapide/lent',
+        id: 'kit-cosmere-plot',
+        name: 'Dé d’intrigue (d6)',
         components: [{
-          id: 'speed',
-          label: 'Vitesse',
-          source: fixedValue(cosmereSpeedSourceId),
+          id: 'plot',
+          label: 'Dé d’intrigue',
+          source: fixedValue(cosmerePlotSourceId),
           count: fixedValue(1),
         }],
-        pipeline: [valueStep('speed', 'Vitesse')],
-        primaryAggregateId: 'speed',
+        pipeline: [valueStep('plot', 'Intrigue')],
+        primaryAggregateId: 'plot',
       },
+      mixedDiceTotalDefinition('kit-cosmere-polyhedral', 'Dés polyédriques', standardSourceIds.D6, standardSourceIds.D4),
     ],
     initiative: {
       mode: randomKitInitiativeModes.LABEL_ORDER,
-      defaultDefinitionId: 'kit-cosmere-speed',
+      defaultDefinitionId: null,
       tiebreaker: 'manual',
       order: 'text-order',
     },
@@ -417,7 +532,7 @@ export const randomKitCatalog = [
   {
     id: 'kit-savage-step-cards',
     label: 'Savage Worlds',
-    description: 'Ajoute les des de trait explosifs et prepare une initiative par cartes avec paquet standard de 54 cartes.',
+    description: 'Couvre les dés de trait et le dé Joker, les dés cumulés explosifs et le paquet de cartes standard.',
     familyTags: [
       randomKitFamilyTags.STEP_DICE,
       randomKitFamilyTags.EXPLODING_DICE,
@@ -434,31 +549,8 @@ export const randomKitCatalog = [
     ],
     sources: [],
     definitions: [
-      {
-        id: 'kit-savage-step',
-        name: 'De de trait explosif',
-        parameters: [
-          sourceParameter('die', 'De', standardSourceIds.D8),
-          integerParameter('modifier', 'Modificateur', 0),
-        ],
-        components: [{
-          id: 'trait',
-          label: 'Trait',
-          source: parameterValue('die'),
-          count: fixedValue(1),
-        }],
-        pipeline: [
-          {
-            id: 'explosion',
-            type: randomPipelineStepTypes.EXPLODE,
-            condition: { type: 'source-extreme', extreme: 'max' },
-            maxIterations: 20,
-          },
-          totalStep(),
-          modifierStep(),
-        ],
-        primaryAggregateId: 'total',
-      },
+      savageTraitDefinition(),
+      mixedDiceTotalDefinition('kit-savage-step', 'Dés explosifs cumulés', standardSourceIds.D6, standardSourceIds.D8, true),
     ],
     initiative: {
       mode: randomKitInitiativeModes.CARDS,
@@ -473,15 +565,15 @@ export const randomKitCatalog = [
   {
     id: 'kit-random-order',
     label: 'Ordre aleatoire generique',
-    description: 'Ajoute un tirage d100 dedie a produire un ordre aleatoire quand aucun systeme d initiative specifique ne convient.',
+    description: 'Utilise un d100 générique quand une règle de campagne demande un ordre aléatoire.',
     familyTags: [randomKitFamilyTags.RANDOM_ORDER],
     presetIds: [],
     sourceIds: [standardSourceIds.D100],
     sources: [],
-    definitions: [singleDieTotalDefinition('kit-random-order-d100', 'Ordre aleatoire', standardSourceIds.D100)],
+    definitions: [singleDieTotalDefinition('kit-random-d100', 'd100', standardSourceIds.D100)],
     initiative: {
       mode: randomKitInitiativeModes.RANDOM_ORDER,
-      defaultDefinitionId: 'kit-random-order-d100',
+      defaultDefinitionId: 'kit-random-d100',
       tiebreaker: 'reroll-or-manual',
       order: 'desc',
     },
@@ -585,8 +677,8 @@ function kitInitiativeRoll(kit) {
     label: kit.initiative.defaultDefinitionId
       ? kit.definitions.find((definition) => definition.id === kit.initiative.defaultDefinitionId)?.name || kit.label
       : kit.initiative.defaultSourceId
-        ? `Initiative - ${kit.label}`
-      : kit.label,
+        ? kit.label
+        : kit.label,
     mode: kit.initiative.mode,
     tiebreaker: kit.initiative.tiebreaker,
     applicationPolicy: kit.applicationPolicy,

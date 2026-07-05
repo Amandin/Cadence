@@ -4,8 +4,8 @@
   width: 40px;
   height: 22px;
   margin: 0;
-  border: 1px solid var(--rs-border);
-  border-radius: 999px;
+  border: 1px solid var(--ui-control-border);
+  border-radius: var(--radius-pill);
   appearance: none;
   background: var(--rs-soft);
   cursor: pointer;
@@ -25,12 +25,12 @@
 }
 
 .random-system-page .global-switch input[type="checkbox"]:checked {
-  border-color: var(--rs-accent);
-  background: var(--rs-accent);
+  border-color: var(--ui-selected-border);
+  background: var(--ui-selected-bg);
 }
 
 .random-system-page .global-switch input[type="checkbox"]:checked::after {
-  background: var(--rs-surface);
+  background: var(--ui-primary-contrast);
   transform: translateX(18px);
 }
 
@@ -43,9 +43,9 @@
   min-width: 0;
   margin: 10px 0;
   padding: 8px 10px;
-  border: 1px solid var(--rs-border);
-  border-radius: 7px;
-  background: var(--rs-soft);
+  border: 1px solid var(--ui-control-border);
+  border-radius: var(--radius-control);
+  background: var(--ui-control-bg);
 }
 
 .rs-choice-control legend {
@@ -95,9 +95,9 @@
   grid-auto-columns: minmax(0, 1fr);
   gap: 3px;
   padding: 3px;
-  border: 1px solid var(--rs-border);
-  border-radius: 7px;
-  background: var(--rs-surface);
+  border: 1px solid var(--ui-control-border);
+  border-radius: var(--radius-control);
+  background: var(--ui-control-bg);
 }
 
 .rs-choice-segments button {
@@ -105,7 +105,7 @@
   min-height: 32px;
   padding: 5px 7px;
   border: 1px solid transparent;
-  border-radius: 5px;
+  border-radius: var(--radius-control);
   background: transparent;
   color: var(--rs-muted);
   overflow: hidden;
@@ -119,6 +119,6 @@
 .rs-choice-segments button.selected {
   border-color: var(--ui-selected-border);
   background: var(--ui-selected-bg);
-  color: var(--rs-accent);
+  color: var(--ui-primary-contrast);
   box-shadow: var(--ui-selected-shadow);
 }

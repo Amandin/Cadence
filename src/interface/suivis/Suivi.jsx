@@ -1,7 +1,8 @@
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { activeThresholds, applyBoxMarkAction, applyDelta, boxBlocks, boxVisualRank, isTriggeredClock, normalizeThresholds, sortBoxBlocks, thresholdValue, trackerBounds, trackerLimitMode } from '../../logic.js';
 import { t } from '../../i18n/index.js';
-import { uiGlyphs } from '../../uiAssets.js';
+import { uiGlyphs, uiSymbols } from '../../uiAssets.js';
+import { IconeMetronome } from '../icones/IconeMetronome.jsx';
 import { thresholdGlowColors, thresholdGlowStyle } from './thresholdUi.js';
 
 function TitreSuivi({ titre, avantTitre, suffixe = null }) {
@@ -13,23 +14,8 @@ function SeuilsActifs({ seuils }) {
   return <span className="threshold-chip-row">{seuils.map((seuil, index) => <span className={`threshold-chip threshold-${seuil.color || 'neutral'}`} key={`${seuil.label}-${index}`}>{seuil.label}</span>)}</span>;
 }
 
-function IconeMetronome({ fige = false }) {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className="metronome-icon">
-      <path d="M8 21h8l-2.4-14h-3.2L8 21Z" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
-      <path d="M12 7V3" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-      <path d={fige ? 'M12 13V7' : 'M12 12l4-3'} fill="none" stroke="currentColor" strokeWidth={fige ? '2.1' : '2.8'} strokeLinecap="round" />
-      <path d="M9.4 18h5.2" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function trackerCanFreeze(suivi) {
-  return suivi.autoReset !== 'never' && !!suivi.freezeAllowed;
-}
-
 function BoutonGelSuivi({ suivi, onToggle, title }) {
-  if (!trackerCanFreeze(suivi)) return null;
+  if (suivi.autoReset === 'never') return null;
   return <button className={`freeze-btn ${suivi.frozen ? 'active' : ''}`} onClick={onToggle} title={title} aria-label={title}><IconeMetronome fige={!!suivi.frozen} /></button>;
 }
 
@@ -50,7 +36,7 @@ function ControlePas({ valeur, onChange, className = '' }) {
     return <input className={`step-chip-input ${className}`.trim()} type="number" inputMode="numeric" min="1" value={saisie} autoFocus onChange={(event) => setSaisie(event.target.value)} onBlur={valider} onKeyDown={(event) => { if (event.key === 'Enter') valider(); if (event.key === 'Escape') setEdition(false); }} aria-label={t('trackers.step.label')} />;
   }
 
-  return <button className={`step-chip ${className}`.trim()} onClick={() => { setSaisie(String(normaliserPas(valeur))); setEdition(true); }} title={t('trackers.step.edit')} aria-label={t('trackers.step.editCurrent', { value: normaliserPas(valeur) })}>+/-{normaliserPas(valeur)}</button>;
+  return <button className={`step-chip ${className}`.trim()} onClick={() => { setSaisie(String(normaliserPas(valeur))); setEdition(true); }} title={t('trackers.step.edit')} aria-label={t('trackers.step.editCurrent', { value: normaliserPas(valeur) })}>{uiSymbols.add}/{uiSymbols.subtract}{normaliserPas(valeur)}</button>;
 }
 
 function lignesEquilibrees(elements, maxParLigne = 5) {
@@ -147,11 +133,11 @@ export const Suivi = memo(function Suivi({ suivi, onModifier, onSupprimer, avant
   }, [deltaOuvert]);
 
   if (suivi.type === 'clock') {
-    return <div className={`tracker ${classeSecret} ${classeSeuils} ${declenche ? 'triggered' : ''} ${suivi.frozen ? 'frozen' : ''}`} style={styleSeuil}><div className="tracker-top clock-top"><div className="clock-title-zone"><TitreSuivi titre={suivi.name} avantTitre={avantTitre} suffixe={suffixeHorloge} /><SeuilsActifs seuils={seuils} />{suivi.frozen && <span className="chip">{t('trackers.common.frozen')}</span>}{declenche && <span className="chip hot">{t('trackers.common.toResolve')}</span>}</div><div className="clock-inline"><button onClick={() => appliquerPas(-1)}>-</button><HorlogeSuivi suivi={suivi} /><button onClick={() => appliquerPas(1)}>+</button></div><BoutonGelSuivi suivi={suivi} onToggle={() => modifier({ frozen: !suivi.frozen })} title={titreGel} /></div>{declenche && <div className="stack" style={{ marginTop: 8 }}><button className="primary" onClick={() => modifier({ current: 0 })}>{t('trackers.common.resetToZero')}</button><button className="danger-btn" onClick={onSupprimer}>{t('common.delete')}</button></div>}</div>;
+    return <div className={`tracker ${classeSecret} ${classeSeuils} ${declenche ? 'triggered' : ''} ${suivi.frozen ? 'frozen' : ''}`} style={styleSeuil}><div className="tracker-top clock-top"><div className="clock-title-zone"><TitreSuivi titre={suivi.name} avantTitre={avantTitre} suffixe={suffixeHorloge} /><SeuilsActifs seuils={seuils} />{suivi.frozen && <span className="chip">{t('trackers.common.frozen')}</span>}{declenche && <span className="chip hot">{t('trackers.common.toResolve')}</span>}</div><div className="clock-inline"><button type="button" onClick={() => appliquerPas(-1)} aria-label={t('trackers.common.decrease', { name: suivi.name })}>{uiSymbols.subtract}</button><HorlogeSuivi suivi={suivi} /><button type="button" onClick={() => appliquerPas(1)} aria-label={t('trackers.common.increase', { name: suivi.name })}>{uiSymbols.add}</button></div><BoutonGelSuivi suivi={suivi} onToggle={() => modifier({ freezeAllowed: true, frozen: !suivi.frozen })} title={titreGel} /></div>{declenche && <div className="stack" style={{ marginTop: 8 }}><button className="primary" onClick={() => modifier({ current: 0 })}>{t('trackers.common.resetToZero')}</button><button className="danger-btn" onClick={onSupprimer}>{t('common.delete')}</button></div>}</div>;
   }
 
   if (suivi.type === 'boxes') {
-    return <div className={`tracker ${classeSecret}`}><div className="tracker-top"><TitreSuivi titre={suivi.name} avantTitre={avantTitre} suffixe={badgeSecret} /><div className="box-action-toggle" role="group" aria-label={t('trackers.boxes.actionGroup')}><button className={actionCases === 'fill' ? 'active' : ''} onClick={() => setActionCases('fill')} title={t('trackers.boxes.fill')}>+</button><button className={actionCases === 'empty' ? 'active' : ''} onClick={() => setActionCases('empty')} title={t('trackers.boxes.empty')}>-</button>{casesMultiNiveaux && <input className="box-action-step" type="number" inputMode="numeric" min="1" value={pasCases} onChange={(event) => changerPasCases(event.target.value)} onBlur={() => setPasCases(String(pasCasesEffectif))} aria-label={t('trackers.boxes.stepLabel')} title={t('trackers.boxes.stepLabel')} />}</div></div><CasesSuivi suivi={suivi} cocher={cocherCase} /></div>;
+    return <div className={`tracker ${classeSecret}`}><div className="tracker-top"><TitreSuivi titre={suivi.name} avantTitre={avantTitre} suffixe={badgeSecret} /><div className="box-action-toggle" role="group" aria-label={t('trackers.boxes.actionGroup')}><button type="button" className={actionCases === 'fill' ? 'active' : ''} onClick={() => setActionCases('fill')} title={t('trackers.boxes.fill')} aria-label={t('trackers.boxes.fill')}>{uiSymbols.add}</button><button type="button" className={actionCases === 'empty' ? 'active' : ''} onClick={() => setActionCases('empty')} title={t('trackers.boxes.empty')} aria-label={t('trackers.boxes.empty')}>{uiSymbols.subtract}</button>{casesMultiNiveaux && <input className="box-action-step" type="number" inputMode="numeric" min="1" value={pasCases} onChange={(event) => changerPasCases(event.target.value)} onBlur={() => setPasCases(String(pasCasesEffectif))} aria-label={t('trackers.boxes.stepLabel')} title={t('trackers.boxes.stepLabel')} />}</div></div><CasesSuivi suivi={suivi} cocher={cocherCase} /></div>;
   }
 
   if (suivi.type === 'number') {
@@ -159,7 +145,7 @@ export const Suivi = memo(function Suivi({ suivi, onModifier, onSupprimer, avant
   }
 
   if (suivi.type === 'bar') {
-    return <div className={`tracker ${classeSecret} ${classeSeuils} ${declenche ? 'triggered' : ''} ${suivi.frozen ? 'frozen' : ''}`} style={styleSeuil}><div className="tracker-top"><TitreSuivi titre={suivi.name} avantTitre={avantTitre} suffixe={badgeSecret} /><div className="tracker-top-actions"><SeuilsActifs seuils={seuils} />{suivi.frozen && <span className="chip">{t('trackers.common.frozen')}</span>}{declenche && <span className="chip hot">{t('trackers.common.toResolve')}</span>}<BoutonGelSuivi suivi={suivi} onToggle={() => modifier({ frozen: !suivi.frozen })} title={titreGel} /></div></div>{deltaOuvert && <div className="delta-pop tracker-action-pop"><label><small>{modeSaisieBarre === 'value' ? t('trackers.bar.newValue') : directionSaisieBarre < 0 ? t('trackers.bar.subtractValue') : t('trackers.bar.addValue')}</small><input ref={champDeltaRef} type="number" inputMode="numeric" min={modeSaisieBarre === 'delta' ? '0' : undefined} value={delta} onChange={(event) => setDelta(event.target.value)} onKeyDown={(event) => event.key === 'Enter' && appliquerSaisieBarre()} placeholder={modeSaisieBarre === 'value' ? '' : '3'} /></label><button onClick={appliquerSaisieBarre}>{t('common.ok')}</button></div>}<div className="controls bar-controls"><button onClick={() => ouvrirDelta(-1)}>-</button><button className="bar-action-zone" onClick={ouvrirValeurBarre} aria-label={t('trackers.bar.openValue', { name: suivi.name })}><BarreSuivi suivi={suivi} /></button><button onClick={() => ouvrirDelta(1)}>+</button></div>{declenche && <div className="stack" style={{ marginTop: 8 }}><button className="primary" onClick={() => modifier({ current: 0 })}>{t('trackers.common.resetToZero')}</button><button className="danger-btn" onClick={onSupprimer}>{t('common.delete')}</button></div>}</div>;
+    return <div className={`tracker ${classeSecret} ${classeSeuils} ${declenche ? 'triggered' : ''} ${suivi.frozen ? 'frozen' : ''}`} style={styleSeuil}><div className="tracker-top"><TitreSuivi titre={suivi.name} avantTitre={avantTitre} suffixe={badgeSecret} /><div className="tracker-top-actions"><SeuilsActifs seuils={seuils} />{suivi.frozen && <span className="chip">{t('trackers.common.frozen')}</span>}{declenche && <span className="chip hot">{t('trackers.common.toResolve')}</span>}<BoutonGelSuivi suivi={suivi} onToggle={() => modifier({ frozen: !suivi.frozen })} title={titreGel} /></div></div>{deltaOuvert && <div className="delta-pop tracker-action-pop"><label><small>{modeSaisieBarre === 'value' ? t('trackers.bar.newValue') : directionSaisieBarre < 0 ? t('trackers.bar.subtractValue') : t('trackers.bar.addValue')}</small><input ref={champDeltaRef} type="number" inputMode="numeric" min={modeSaisieBarre === 'delta' ? '0' : undefined} value={delta} onChange={(event) => setDelta(event.target.value)} onKeyDown={(event) => event.key === 'Enter' && appliquerSaisieBarre()} placeholder={modeSaisieBarre === 'value' ? '' : '3'} /></label><button onClick={appliquerSaisieBarre}>{t('common.ok')}</button></div>}<div className="controls bar-controls"><button type="button" onClick={() => ouvrirDelta(-1)} aria-label={t('trackers.common.decrease', { name: suivi.name })}>{uiSymbols.subtract}</button><button type="button" className="bar-action-zone" onClick={ouvrirValeurBarre} aria-label={t('trackers.bar.openValue', { name: suivi.name })}><BarreSuivi suivi={suivi} /></button><button type="button" onClick={() => ouvrirDelta(1)} aria-label={t('trackers.common.increase', { name: suivi.name })}>{uiSymbols.add}</button></div>{declenche && <div className="stack" style={{ marginTop: 8 }}><button className="primary" onClick={() => modifier({ current: 0 })}>{t('trackers.common.resetToZero')}</button><button className="danger-btn" onClick={onSupprimer}>{t('common.delete')}</button></div>}</div>;
   }
 
   return <div className={`tracker ${classeSecret} ${classeSeuils} ${declenche ? 'triggered' : ''} ${suivi.frozen ? 'frozen' : ''}`} style={styleSeuil}><div className="tracker-top"><TitreSuivi titre={suivi.name} avantTitre={avantTitre} suffixe={suffixePuces} /><div className="tracker-top-actions"><SeuilsActifs seuils={seuils} />{suivi.frozen && <span className="chip">{t('trackers.common.frozen')}</span>}{declenche && <span className="chip hot">{t('trackers.common.toResolve')}</span>}<BoutonGelSuivi suivi={suivi} onToggle={() => modifier({ frozen: !suivi.frozen })} title={titreGel} /></div></div><div className="points-controls"><PointsSuivi suivi={suivi} onModifier={modifier} /></div>{declenche && <div className="stack" style={{ marginTop: 8 }}><button className="primary" onClick={() => modifier({ current: 0 })}>{t('trackers.common.resetToZero')}</button><button className="danger-btn" onClick={onSupprimer}>{t('common.delete')}</button></div>}</div>;
@@ -196,11 +182,11 @@ function PointsSuivi({ suivi, onModifier }) {
   const modeBoucle = trackerLimitMode(suivi) === 'loop';
   const appliquerCycle = (direction) => onModifier(applyDelta(suivi, direction));
   const reserveCommandes = modeBoucle ? 72 : 0;
-  const maxParLigne = capaciteParLigne(largeurZone, { taille: 22, espace: 4, reserve: reserveCommandes, min: 3, max: 14, fallback: 8 });
+  const maxParLigne = capaciteParLigne(largeurZone, { taille: 24, espace: 4, reserve: reserveCommandes, min: 3, max: 14, fallback: 8 });
 
   const puces = Array.from({ length: max }, (_, i) => i);
 
-  return <div ref={zoneRef} className={`points-wrap ${modeBoucle ? 'with-cycle-controls' : ''}`}>{modeBoucle && <div className="points-cycle-slot"><button className="points-cycle-btn" onClick={() => appliquerCycle(-1)} aria-label={t('trackers.points.previousCycle')}>-</button></div>}<div className="dots balanced-token-rows">{lignesEquilibrees(puces, maxParLigne).map((ligne, rowIndex) => <div className="token-row" key={rowIndex}>{ligne.map((i) => <button key={i} className={`dot ${i < suivi.current ? 'on' : ''}`} onClick={() => onModifier({ current: i + 1 === suivi.current ? i : i + 1 })} />)}</div>)}</div>{modeBoucle && <div className="points-cycle-slot"><button className="points-cycle-btn" onClick={() => appliquerCycle(1)} aria-label={t('trackers.points.nextCycle')}>+</button></div>}</div>;
+  return <div ref={zoneRef} className={`points-wrap ${modeBoucle ? 'with-cycle-controls' : ''}`}>{modeBoucle && <div className="points-cycle-slot"><button type="button" className="points-cycle-btn" onClick={() => appliquerCycle(-1)} aria-label={t('trackers.points.previousCycle')}>{uiSymbols.subtract}</button></div>}<div className="dots balanced-token-rows">{lignesEquilibrees(puces, maxParLigne).map((ligne, rowIndex) => <div className="token-row" key={rowIndex}>{ligne.map((i) => <button type="button" key={i} className={`dot ${i < suivi.current ? 'on' : ''}`} onClick={() => onModifier({ current: i + 1 === suivi.current ? i : i + 1 })} aria-label={t('trackers.points.togglePoint', { name: suivi.name, value: i + 1 })} aria-pressed={i < courant} />)}</div>)}</div>{modeBoucle && <div className="points-cycle-slot"><button type="button" className="points-cycle-btn" onClick={() => appliquerCycle(1)} aria-label={t('trackers.points.nextCycle')}>{uiSymbols.add}</button></div>}</div>;
 }
 
 function CompteursSuivi({ suivi, onModifier }) {
@@ -229,7 +215,7 @@ function CompteursSuivi({ suivi, onModifier }) {
     setValeurManuelle(dejaOuvert ? '' : String(compteur.current ?? 0));
   };
 
-  return <div className="counter-wrap"><div className="counter-grid">{compteurs.map((compteur) => <div className={`counter-unit counter-size-${compteur.size || 'compact'}`} key={compteur.id}><button className="counter-edge" onClick={() => changer(compteur, -1)}>-</button><button className="counter-tile" onClick={() => ouvrir(compteur)} aria-label={t('trackers.counter.edit', { label: compteur.label || t('trackers.counter.defaultName') })}><span>{compteur.label || t('trackers.counter.defaultName')}</span><strong>{compteur.current ?? 0}</strong></button><button className="counter-edge" onClick={() => changer(compteur, 1)}>+</button>{compteurOuvert === compteur.id && <div className="counter-pop"><input type="number" inputMode="numeric" value={valeurManuelle} onChange={(event) => setValeurManuelle(event.target.value)} onKeyDown={(event) => event.key === 'Enter' && saisir(compteur, valeurManuelle)} /><button onClick={() => saisir(compteur, valeurManuelle)}>{t('common.ok')}</button></div>}</div>)}</div></div>;
+  return <div className="counter-wrap"><div className="counter-grid">{compteurs.map((compteur) => { const label = compteur.label || t('trackers.counter.defaultName'); return <div className={`counter-unit counter-size-${compteur.size || 'compact'}`} key={compteur.id}><button type="button" className="counter-edge" onClick={() => changer(compteur, -1)} aria-label={t('trackers.counter.decrease', { label })}>{uiSymbols.subtract}</button><button type="button" className="counter-tile" onClick={() => ouvrir(compteur)} aria-label={t('trackers.counter.edit', { label })}><span>{label}</span><strong>{compteur.current ?? 0}</strong></button><button type="button" className="counter-edge" onClick={() => changer(compteur, 1)} aria-label={t('trackers.counter.increase', { label })}>{uiSymbols.add}</button>{compteurOuvert === compteur.id && <div className="counter-pop"><input type="number" inputMode="numeric" value={valeurManuelle} onChange={(event) => setValeurManuelle(event.target.value)} onKeyDown={(event) => event.key === 'Enter' && saisir(compteur, valeurManuelle)} aria-label={t('trackers.counter.edit', { label })} /><button type="button" onClick={() => saisir(compteur, valeurManuelle)}>{t('common.ok')}</button></div>}</div>; })}</div></div>;
 }
 
 function HorlogeSuivi({ suivi }) {

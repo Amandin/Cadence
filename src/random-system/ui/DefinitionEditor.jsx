@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { t } from '../../i18n/index.js';
+import { uiSymbols } from '../../uiAssets.js';
 import {
   buildRandomDefinition,
   builderDefinitionKinds,
@@ -8,11 +9,13 @@ import {
   definitionToDraft,
 } from '../definitionBuilder.js';
 import { definitionIsReferenced } from '../combinations.js';
+import { randomDefinitionVisuals } from '../definitionVisuals.js';
 import { createResourceId } from '../resourceIds.js';
 import { isRandomRuleEnabled, randomRuleIds } from '../rulePool.js';
 import { CalculationEditor } from './definition/CalculationEditor.jsx';
 import { CombinationEditor } from './definition/CombinationEditor.jsx';
 import { ComponentEditor } from './definition/ComponentEditor.jsx';
+import { DefinitionVisual } from './DefinitionVisual.jsx';
 
 function DefinitionListGroup({
   definitions,
@@ -36,7 +39,8 @@ function DefinitionListGroup({
             key={definition.id}
           >
             <span className="rs-definition-list-name">
-              <span>{definition.name}</span>
+              <DefinitionVisual visualId={definition.visualId} className="compact" decorative />
+              <span className="rs-definition-list-label">{definition.name}</span>
               {unusedInternal && (
                 <span
                   className="rs-definition-warning"
@@ -147,7 +151,7 @@ export function DefinitionEditor({ definitions, sources, rulePool, actions, onOp
           <div>
             <span className="rs-section-kicker">{t('random.definition.listKicker')}</span>
             <div className="rs-heading-with-mark">
-              <span className="rs-heading-mark" aria-hidden="true">✦</span>
+              <span className="rs-heading-mark" aria-hidden="true">{uiSymbols.draw}</span>
               <h3>{t('random.config.definitions')}</h3>
             </div>
             <p className="muted compact-help">{t('random.definition.listHelp')}</p>
@@ -174,7 +178,7 @@ export function DefinitionEditor({ definitions, sources, rulePool, actions, onOp
           <div className="rs-section-copy">
             <span className="rs-section-kicker">{draft.kind === builderDefinitionKinds.COMBINATION ? t('random.definition.typeCombination') : t('random.definition.typeRoll')}</span>
             <div className="rs-heading-with-mark">
-              <span className="rs-heading-mark" aria-hidden="true">✦</span>
+              <span className="rs-heading-mark" aria-hidden="true">{uiSymbols.draw}</span>
               <h2>{selected ? t('random.definition.edit') : t('random.definition.new')}</h2>
             </div>
           </div>
@@ -206,6 +210,24 @@ export function DefinitionEditor({ definitions, sources, rulePool, actions, onOp
               <option value={builderDefinitionKinds.COMBINATION}>{t('random.definition.typeCombination')}</option>
             </select>
           </label>
+          <fieldset className="rs-definition-visual-picker">
+            <legend>{t('random.definition.visual')}</legend>
+            <div>
+              {randomDefinitionVisuals.map((visual) => (
+                <button
+                  type="button"
+                  className={draft.visualId === visual.id ? 'selected' : ''}
+                  aria-pressed={draft.visualId === visual.id}
+                  title={visual.label}
+                  onClick={() => setDraft((current) => ({ ...current, visualId: visual.id }))}
+                  key={visual.id}
+                >
+                  <DefinitionVisual visualId={visual.id} decorative />
+                  <span>{visual.label}</span>
+                </button>
+              ))}
+            </div>
+          </fieldset>
           <label className={`global-switch rs-exposure-toggle ${draft.exposed || draft.kind === builderDefinitionKinds.COMBINATION ? 'active' : ''}`}>
             <span>
               {draft.kind === builderDefinitionKinds.COMBINATION

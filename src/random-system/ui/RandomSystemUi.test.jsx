@@ -138,7 +138,7 @@ describe('RandomSystem definition UI', () => {
     );
 
     expect(html).not.toContain('Pool de d6');
-    expect(html).toContain('Initiative Shadowrun');
+    expect(html).toContain('d6 cumulés');
   });
 
   it('saves active rolls as a compact kit snapshot', () => {

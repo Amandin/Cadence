@@ -106,6 +106,32 @@ describe('RandomSystem state', () => {
     expect(migrated.sources.map((source) => source.id)).toContain('example-weather-d10');
   });
 
+  it('replaces retired initiative-specific kit rolls with generic dice mechanics', () => {
+    const current = createDefaultRandomSystemState();
+    const migrated = normalizeRandomSystemState({
+      ...current,
+      schemaVersion: 13,
+      sources: current.sources.filter((source) => source.id === 'standard-d100'),
+      definitions: [{
+        id: 'kit-d100-initiative',
+        name: 'Ordre d100',
+        exposed: true,
+        active: true,
+        components: [],
+        pipeline: [],
+      }],
+    });
+
+    expect(migrated.definitions.map((definition) => definition.id)).not.toContain('kit-d100-initiative');
+    expect(migrated.definitions).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'kit-d100-check', active: true }),
+      expect.objectContaining({ id: 'kit-d100-polyhedral', active: true }),
+    ]));
+    expect(migrated.sources.map((source) => source.id)).toContain('standard-d3');
+    expect(migrated.definitions.map((definition) => definition.name).join(' ').toLocaleLowerCase('fr'))
+      .not.toMatch(/initiative|ordre/);
+  });
+
   it('migrates legacy deck hands into card source discard piles', () => {
     const migrated = normalizeRandomSystemState({
       schemaVersion: RANDOM_SYSTEM_SCHEMA_VERSION - 1,
@@ -175,36 +201,42 @@ describe('RandomSystem state', () => {
     expect(migrated.lastResult.groups[0].draws[0].outcome.symbol).toBe(expectedWeather.symbols['5']);
   });
 
-  it('upgrades the built-in d20 rolls without changing their activation', () => {
+  it('upgrades the built-in d20 kit without reactivating an inactive kit', () => {
     const previous = createDefaultRandomSystemState();
     const resources = randomKitResources('kit-d20-generic');
-    const legacyDefinitions = resources.definitions.map((definition) => (
-      definition.id === 'kit-d20-initiative'
-        ? {
-          ...definition,
-          name: 'Initiative d20',
-          active: false,
-          parameters: [{ id: 'modifier', label: 'Modificateur', type: 'integer', defaultValue: 0 }],
-        }
-        : definition.id === 'kit-d20-check'
+    const legacyDefinitions = [
+      ...resources.definitions.map((definition) => (
+        definition.id === 'kit-d20-check'
           ? {
             ...definition,
+            active: false,
             options: definition.options.map((option) => ({
               ...option,
               choices: [...option.choices].reverse(),
             })),
           }
-          : definition
-    ));
+          : { ...definition, active: false }
+      )),
+      {
+        id: 'kit-d20-initiative',
+        name: 'Initiative d20',
+        exposed: true,
+        active: false,
+        components: [],
+        pipeline: [],
+      },
+    ];
     const migrated = normalizeRandomSystemState({
       ...previous,
       schemaVersion: 11,
       definitions: legacyDefinitions,
     });
-    const simple = migrated.definitions.find((definition) => definition.id === 'kit-d20-initiative');
     const check = migrated.definitions.find((definition) => definition.id === 'kit-d20-check');
+    const polyhedral = migrated.definitions.find((definition) => definition.id === 'kit-d20-polyhedral');
 
-    expect(simple).toMatchObject({ name: 'd20 simple', active: false, parameters: [], options: [] });
+    expect(migrated.definitions.map((definition) => definition.id)).not.toContain('kit-d20-initiative');
+    expect(check.active).toBe(false);
+    expect(polyhedral.active).toBe(false);
     expect(check.options[0].choices.map((choice) => choice.value))
       .toEqual(['disadvantage', 'normal', 'advantage']);
     expect(check.options[0].defaultValue).toBe('normal');

@@ -39,7 +39,7 @@ export function teinteEtatParticipant(participant) {
 }
 
 export function AvatarParticipant({ participant }) {
-  return <div className={`avatar ${participant.color || 'slate'}`}>{participant.symbol || uiGlyphs.avatarFallback}</div>;
+  return <div className={`avatar ${participant.color || 'slate'}`} aria-hidden="true">{participant.symbol || uiGlyphs.avatarFallback}</div>;
 }
 
 export function IconeRepliFichette({ repliee = false, className = '' }) {
@@ -141,12 +141,17 @@ export function fermetureExterieureSurDoubleClic(mode, pointerType) {
   return mode === 'double-mouse' && pointerType === 'mouse';
 }
 
+function fenetreSuperieure(element) {
+  const fenetres = document.querySelectorAll('[role="dialog"][aria-modal="true"]');
+  return fenetres.length > 0 && fenetres[fenetres.length - 1] === element;
+}
+
 export function Fenetre({ title, children, onClose, header, className = '', style, outsideCloseMode = 'single' }) {
   const pointerTypeRef = useRef('');
   const sheetRef = useRef(null);
   const previousFocusRef = useRef(null);
   const titleId = useId();
-  const entete = header ?? <div className="row" style={{ justifyContent: 'space-between', marginBottom: 10 }}><h2 id={titleId} style={{ margin: 0 }}>{title}</h2><button className="icon-btn" onClick={onClose} aria-label={t('common.close')}>{uiGlyphs.close}</button></div>;
+  const entete = header ?? <div className="row" style={{ justifyContent: 'space-between', marginBottom: 10 }}><h2 id={titleId} style={{ margin: 0 }}>{title}</h2><button type="button" className="icon-btn" onClick={onClose} aria-label={t('common.close')}>{uiGlyphs.close}</button></div>;
   const overlayClass = className ? `${className.split(' ')[0]}-overlay` : '';
   const typePointeur = (event) => pointerTypeRef.current || (event.nativeEvent?.sourceCapabilities?.firesTouchEvents ? 'touch' : 'mouse');
   useEffect(() => {
@@ -157,11 +162,34 @@ export function Fenetre({ title, children, onClose, header, className = '', styl
     };
   }, []);
   useEffect(() => {
-    const fermerSurEchap = (event) => {
-      if (event.key === 'Escape') onClose?.();
+    const gererClavier = (event) => {
+      const fenetre = sheetRef.current;
+      if (!fenetre || !fenetreSuperieure(fenetre)) return;
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onClose?.();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const controles = [...fenetre.querySelectorAll('a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])')]
+        .filter((element) => !element.disabled && element.getAttribute('aria-hidden') !== 'true' && element.getClientRects().length > 0);
+      if (!controles.length) {
+        event.preventDefault();
+        fenetre.focus();
+        return;
+      }
+      const premier = controles[0];
+      const dernier = controles[controles.length - 1];
+      if (event.shiftKey && (document.activeElement === premier || !fenetre.contains(document.activeElement))) {
+        event.preventDefault();
+        dernier.focus();
+      } else if (!event.shiftKey && (document.activeElement === dernier || !fenetre.contains(document.activeElement))) {
+        event.preventDefault();
+        premier.focus();
+      }
     };
-    document.addEventListener('keydown', fermerSurEchap);
-    return () => document.removeEventListener('keydown', fermerSurEchap);
+    document.addEventListener('keydown', gererClavier);
+    return () => document.removeEventListener('keydown', gererClavier);
   }, [onClose]);
   const memoriserPointeur = (event) => {
     if (event.target === event.currentTarget) pointerTypeRef.current = event.pointerType || '';

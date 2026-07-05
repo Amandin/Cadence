@@ -1,4 +1,5 @@
 import { t } from '../../../i18n/index.js';
+import { uiSymbols } from '../../../uiAssets.js';
 import { randomChoiceControlKinds, randomDefinitionKinds } from '../../engine.js';
 import { createResourceId } from '../../resourceIds.js';
 
@@ -106,8 +107,8 @@ export function CombinationEditor({
               </select>
             </label>
             <div className="rs-combination-choice-actions">
-            <button type="button" className="small-btn" disabled={index === 0} onClick={() => moveChoice(index, -1)} aria-label={t('random.definition.moveChoiceUp', { name: choice.label })}>↑</button>
-            <button type="button" className="small-btn" disabled={index === combination.choices.length - 1} onClick={() => moveChoice(index, 1)} aria-label={t('random.definition.moveChoiceDown', { name: choice.label })}>↓</button>
+            <button type="button" className="small-btn" disabled={index === 0} onClick={() => moveChoice(index, -1)} aria-label={t('random.definition.moveChoiceUp', { name: choice.label })}>{uiSymbols.moveUp}</button>
+            <button type="button" className="small-btn" disabled={index === combination.choices.length - 1} onClick={() => moveChoice(index, 1)} aria-label={t('random.definition.moveChoiceDown', { name: choice.label })}>{uiSymbols.moveDown}</button>
             </div>
           </div>
         </div>

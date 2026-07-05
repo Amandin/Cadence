@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { t } from '../../i18n/index.js';
+import { uiSymbols } from '../../uiAssets.js';
 import { parseRandomSourceCsv } from '../csv.js';
 import { createUniformSource, randomSourceKinds } from '../engine.js';
 import { createResourceId } from '../resourceIds.js';
@@ -393,22 +394,22 @@ export function SourceManager({ sources, definitions, actions }) {
           <div>
             <span className="rs-section-kicker">{t('random.source.listKicker')}</span>
             <div className="rs-heading-with-mark">
-              <span className="rs-heading-mark" aria-hidden="true">◈</span>
+              <span className="rs-heading-mark" aria-hidden="true">{uiSymbols.randomSource}</span>
               <h3>{t('random.config.sources')}</h3>
             </div>
             <p className="muted compact-help">{t('random.source.listHelp')}</p>
           </div>
         </div>
         <div className="rs-new-source-actions">
-          <button type="button" className="small-btn" onClick={() => createSource(randomSourceKinds.UNIFORM)}><span aria-hidden="true">⚀</span><span>{t('random.source.newUniform')}</span></button>
-          <button type="button" className="small-btn" onClick={() => createSource(randomSourceKinds.WEIGHTED, 'guided')}><span aria-hidden="true">◍</span><span>{t('random.source.newWeighted')}</span></button>
-          <button type="button" className="small-btn" onClick={() => createSource(randomSourceKinds.CARDS)}><span aria-hidden="true">♢</span><span>{t('random.source.newCards')}</span></button>
-          <button type="button" className="small-btn" onClick={() => createSource(randomSourceKinds.WEIGHTED, 'csv')}><span aria-hidden="true">☰</span><span>{t('random.source.importCsv')}</span></button>
+          <button type="button" className="small-btn" onClick={() => createSource(randomSourceKinds.UNIFORM)}><span aria-hidden="true">{uiSymbols.die1}</span><span>{t('random.source.newUniform')}</span></button>
+          <button type="button" className="small-btn" onClick={() => createSource(randomSourceKinds.WEIGHTED, 'guided')}><span aria-hidden="true">{uiSymbols.weightedTable}</span><span>{t('random.source.newWeighted')}</span></button>
+          <button type="button" className="small-btn" onClick={() => createSource(randomSourceKinds.CARDS)}><span aria-hidden="true">{uiSymbols.cards}</span><span>{t('random.source.newCards')}</span></button>
+          <button type="button" className="small-btn" onClick={() => createSource(randomSourceKinds.WEIGHTED, 'csv')}><span aria-hidden="true">{uiSymbols.csvImport}</span><span>{t('random.source.importCsv')}</span></button>
         </div>
         {sources.map((source) => (
           <button type="button" className={`rs-config-list-item ${source.id === selectedId ? 'selected' : ''}`} onClick={() => setSelectedId(source.id)} key={source.id}>
             <span className="rs-resource-title">
-              <span aria-hidden="true">{source.kind === randomSourceKinds.CARDS ? '♢' : source.kind === randomSourceKinds.WEIGHTED ? '◍' : '⚀'}</span>
+              <span aria-hidden="true">{source.kind === randomSourceKinds.CARDS ? uiSymbols.cards : source.kind === randomSourceKinds.WEIGHTED ? uiSymbols.weightedTable : uiSymbols.die1}</span>
               <span>{source.name}</span>
             </span>
             <small>
@@ -423,7 +424,7 @@ export function SourceManager({ sources, definitions, actions }) {
           <div>
             <span className="rs-section-kicker">{draft.kind === randomSourceKinds.CARDS ? t('random.source.cards') : t('random.source.random')}</span>
             <div className="rs-heading-with-mark">
-              <span className="rs-heading-mark" aria-hidden="true">{draft.kind === randomSourceKinds.CARDS ? '♢' : draft.kind === randomSourceKinds.WEIGHTED ? '◍' : '⚀'}</span>
+              <span className="rs-heading-mark" aria-hidden="true">{draft.kind === randomSourceKinds.CARDS ? uiSymbols.cards : draft.kind === randomSourceKinds.WEIGHTED ? uiSymbols.weightedTable : uiSymbols.die1}</span>
               <h2>{selected ? t('random.source.edit') : t('random.source.new')}</h2>
             </div>
           </div>

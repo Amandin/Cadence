@@ -84,7 +84,7 @@ export const SceneView = memo(function SceneView({
           onRetirerEtatScene={onRetirerEtatScene}
           performanceLow={performanceLow}
         />
-        <main className={`scene-main ${scene.reserve?.length ? 'with-reserve' : ''}`}>
+        <main className="scene-main with-reserve">
           <ListeInitiative
             scene={scene}
             participants={scene.participants}

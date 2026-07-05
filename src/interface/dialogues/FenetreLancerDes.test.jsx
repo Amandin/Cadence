@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { QuickRollResult } from './FenetreLancerDes.jsx';
+import { FenetreLancerDes, QuickRollResult } from './FenetreLancerDes.jsx';
 
 function comparisonResult() {
   const group = (index, value, selected) => ({
@@ -48,5 +48,31 @@ describe('QuickRollResult', () => {
 
   it('renders nothing before the first roll', () => {
     expect(renderToStaticMarkup(<QuickRollResult result={null} />)).toBe('');
+  });
+});
+
+describe('FenetreLancerDes', () => {
+  it('propose les tirages actifs sous forme de boutons', () => {
+    const definitions = [
+      { id: 'd20', name: 'Jet d20', active: true, exposed: true, parameters: [], options: [], components: [], pipeline: [] },
+      { id: 'd100', name: 'Jet percentile', active: true, exposed: true, parameters: [], options: [], components: [], pipeline: [] },
+    ];
+    const html = renderToStaticMarkup(
+      <FenetreLancerDes
+        randomSystem={{
+          state: { definitions, sources: [] },
+          actions: { runDefinitionTransient: () => null },
+        }}
+        onFermer={() => {}}
+      />,
+    );
+
+    expect(html).toContain('class="quick-roll-type-options" role="group"');
+    expect(html).toContain('aria-pressed="true"');
+    expect(html).toContain('aria-pressed="false"');
+    expect(html).toContain('visual-dice compact');
+    expect(html).toContain('<span>Jet d20</span>');
+    expect(html).toContain('<span>Jet percentile</span>');
+    expect(html).not.toContain('<select');
   });
 });

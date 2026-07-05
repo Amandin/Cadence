@@ -1,4 +1,5 @@
 import { t } from '../../i18n/index.js';
+import { uiSymbols } from '../../uiAssets.js';
 import { randomRuleCatalogue } from '../rulePool.js';
 
 const ruleGroups = [
@@ -14,7 +15,7 @@ export function RulePoolManager({ rulePool, actions, embedded = false }) {
         <div className="rs-section-copy">
           {!embedded && <span className="rs-section-kicker">{t('random.config.rules')}</span>}
           {!embedded && <div className="rs-heading-with-mark">
-            <span className="rs-heading-mark" aria-hidden="true">◌</span>
+            <span className="rs-heading-mark" aria-hidden="true">{uiSymbols.resultOptions}</span>
             <h2>{t('random.rules.title')}</h2>
           </div>}
           <p className="muted compact-help">{t('random.rules.help')}</p>

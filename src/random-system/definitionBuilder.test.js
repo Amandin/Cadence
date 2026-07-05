@@ -10,7 +10,7 @@ import {
   createDefinitionDraft,
   definitionToDraft,
 } from './definitionBuilder.js';
-import { createStandardSources } from './defaults.js';
+import { createStandardSources, standardSourceIds } from './defaults.js';
 import {
   executeRandomDefinition,
   randomAggregateOperations,
@@ -50,6 +50,7 @@ describe('RandomSystem definition builder', () => {
     const sources = createStandardSources();
     const draft = createDefinitionDraft(sources);
     draft.name = 'Deux sources';
+    draft.visualId = 'd10';
     draft.components[0].sourceMode = builderModes.REQUEST;
     draft.keepMode = 'lowest';
     draft.keepCount = 1;
@@ -57,6 +58,7 @@ describe('RandomSystem definition builder', () => {
 
     const first = buildRandomDefinition(draft);
     const second = buildRandomDefinition(definitionToDraft(first, sources));
+    expect(first.visualId).toBe('d10');
     expect(second).toEqual(first);
   });
 
@@ -221,6 +223,7 @@ describe('RandomSystem definition builder', () => {
   it('builds subtraction as a generic aggregate', () => {
     const sources = createStandardSources();
     const draft = createDefinitionDraft(sources);
+    draft.components[0].sourceId = standardSourceIds.D4;
     draft.components[0].count = 3;
     draft.resultMode = builderResultModes.SUBTRACT;
 

@@ -1,22 +1,21 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { APP_VERSION } from '../../constants.js';
 import { t } from '../../i18n/index.js';
-import { getCadenceLogo, uiGlyphs } from '../../uiAssets.js';
+import { getCadenceLogo, uiGlyphs, uiSymbols } from '../../uiAssets.js';
 import { OptionsContent, ThemeModeToggle } from '../app/MenuOptions.jsx';
 import { Fenetre } from '../commun/ComposantsCommuns.jsx';
 import { activeDefinitions } from '../../random-system/definitionAccess.js';
-import '../../random-system/styles/base.css';
-import '../../random-system/styles/choice-controls.css';
-import '../../random-system/styles/results.css';
 
 const OngletRegles = lazy(() => import('./OngletRegles.jsx').then((module) => ({ default: module.OngletRegles })));
 const OngletTemplates = lazy(() => import('./OngletTemplates.jsx').then((module) => ({ default: module.OngletTemplates })));
 const loadRandomUsePanel = () => import('../../random-system/ui/UsePanel.jsx');
 const loadRandomConfigurationPanel = () => import('../../random-system/ui/ConfigurationPanel.jsx');
 const loadRandomStatisticsPanel = () => import('../../random-system/ui/StatisticsPanel.jsx');
+const loadStyleReferencePage = () => import('../app/StyleReferencePage.jsx');
 const UsePanel = lazy(() => loadRandomUsePanel().then((module) => ({ default: module.UsePanel })));
 const ConfigurationPanel = lazy(() => loadRandomConfigurationPanel().then((module) => ({ default: module.ConfigurationPanel })));
 const StatisticsPanel = lazy(() => loadRandomStatisticsPanel().then((module) => ({ default: module.StatisticsPanel })));
+const StyleReferencePage = lazy(() => loadStyleReferencePage().then((module) => ({ default: module.StyleReferencePage })));
 
 const HUB_TAB_STORAGE_KEY = 'cadence:interface:hub-tab:v1';
 
@@ -31,13 +30,13 @@ function initialHubTab() {
 
 function OngletsHub({ onglet, setOnglet }) {
   return (
-    <div className="grid4 hub-tabs">
-      <button className={`choice ${onglet === 'scenes' ? 'selected' : ''}`} onClick={() => setOnglet('scenes')}>{t('hub.tabs.scenes')}</button>
-      <button className={`choice ${onglet === 'tirages' ? 'selected' : ''}`} onPointerEnter={loadRandomUsePanel} onFocus={loadRandomUsePanel} onClick={() => setOnglet('tirages')}>{t('hub.tabs.random')}</button>
-      <button className={`choice ${onglet === 'regles' ? 'selected' : ''}`} onClick={() => setOnglet('regles')}>{t('hub.tabs.rules')}</button>
-      <button className={`choice ${onglet === 'templates' ? 'selected' : ''}`} onClick={() => setOnglet('templates')}>{t('hub.tabs.templates')}</button>
-      <button className={`choice ${onglet === 'campagnes' ? 'selected' : ''}`} onClick={() => setOnglet('campagnes')}>{t('hub.tabs.campaigns')}</button>
-    </div>
+    <nav className="grid4 hub-tabs" aria-label={t('hub.navigation')}>
+      <button type="button" className={`choice ${onglet === 'scenes' ? 'selected' : ''}`} aria-current={onglet === 'scenes' ? 'page' : undefined} onClick={() => setOnglet('scenes')}>{t('hub.tabs.scenes')}</button>
+      <button type="button" className={`choice ${onglet === 'tirages' ? 'selected' : ''}`} aria-current={onglet === 'tirages' ? 'page' : undefined} onPointerEnter={loadRandomUsePanel} onFocus={loadRandomUsePanel} onClick={() => setOnglet('tirages')}>{t('hub.tabs.random')}</button>
+      <button type="button" className={`choice ${onglet === 'regles' ? 'selected' : ''}`} aria-current={onglet === 'regles' ? 'page' : undefined} onClick={() => setOnglet('regles')}>{t('hub.tabs.rules')}</button>
+      <button type="button" className={`choice ${onglet === 'templates' ? 'selected' : ''}`} aria-current={onglet === 'templates' ? 'page' : undefined} onClick={() => setOnglet('templates')}>{t('hub.tabs.templates')}</button>
+      <button type="button" className={`choice ${onglet === 'campagnes' ? 'selected' : ''}`} aria-current={onglet === 'campagnes' ? 'page' : undefined} onClick={() => setOnglet('campagnes')}>{t('hub.tabs.campaigns')}</button>
+    </nav>
   );
 }
 
@@ -52,7 +51,7 @@ function EnteteHub({ campaignName, sombre, themeState, onThemeModeChange }) {
       <div className="menu-brand campaign-brand-capsule">
         <img src={logo} alt="Cadence" />
         <div>
-          <strong className="brand-title">Cadence</strong>
+          <h1 className="brand-title">Cadence</h1>
           <span className="muted brand-meta">{campaignName || t('hub.brandFallback')} {uiGlyphs.middleDot} v{APP_VERSION}</span>
         </div>
         <ThemeModeToggle themeState={themeState} onThemeModeChange={onThemeModeChange} ariaLabel={t('hub.themeToggle')} />
@@ -102,7 +101,7 @@ function CarteScene({ scene, index, canDelete, editing, onEditer, onFermerEditio
                 {suppressionVisible ? (
                   <button className="danger-btn mini-danger scene-delete-confirm" onClick={() => onSupprimerScene(index)}>{t('common.delete')}</button>
                 ) : (
-                  <button className="small-btn scene-delete-reveal" onClick={() => setSuppressionVisible(true)} aria-label={t('hub.scene.deleteRevealAria', { title: scene.title || t('hub.scene.defaultTitle') })}>x</button>
+                  <button className="small-btn scene-delete-reveal" onClick={() => setSuppressionVisible(true)} aria-label={t('hub.scene.deleteRevealAria', { title: scene.title || t('hub.scene.defaultTitle') })}>{uiSymbols.remove}</button>
                 )}
               </div>
             )}
@@ -124,7 +123,7 @@ function OngletScenes({ scenes, editingSceneId, onEditerScene, onFermerEditionSc
     <div className="stack hub-section panel">
       <div className="hub-section-head">
         <div>
-          <h3>{t('hub.scenes.title')}</h3>
+          <h2>{t('hub.scenes.title')}</h2>
           <p className="muted compact-help">{t('hub.scenes.help')}</p>
         </div>
         <button className="small-btn" onClick={onNouvelleScene}>{t('hub.scenes.new')}</button>
@@ -165,13 +164,14 @@ function OngletReglesEtHasard({ scene, rulePresetSnapshot, ruleTemplates, initia
   return (
     <div className="stack hub-section panel rules-hub">
       <div className="hub-section-head">
-        <h3>{t('rules.navigation.title')}</h3>
+        <h2>{t('rules.navigation.title')}</h2>
       </div>
-      <div className="template-subtabs rules-subtabs">
+      <nav className="template-subtabs rules-subtabs" aria-label={t('rules.navigation.title')}>
         {rulesHubSections.map((entry) => (
           <button
             type="button"
             className={`choice ${section === entry.id ? 'selected' : ''}`}
+            aria-pressed={section === entry.id}
             onPointerEnter={['kits', 'definitions', 'sources'].includes(entry.id) ? loadRandomConfigurationPanel : undefined}
             onFocus={['kits', 'definitions', 'sources'].includes(entry.id) ? loadRandomConfigurationPanel : undefined}
             onClick={() => setSection(entry.id)}
@@ -180,7 +180,7 @@ function OngletReglesEtHasard({ scene, rulePresetSnapshot, ruleTemplates, initia
             {t(entry.labelKey)}
           </button>
         ))}
-      </div>
+      </nav>
       <Suspense fallback={<ChargementOnglet texte={t('random.loadingSection')} />}>
         <div className="rules-hub-content">
           {section === 'initiative' && <OngletRegles embedded scene={scene} rulePresetSnapshot={rulePresetSnapshot} onModifierRegles={onModifierReglesInitiative} ruleTemplates={ruleTemplates} initiativeTextPresets={initiativeTextPresets} cardSources={randomSystem.state.sources.filter((source) => source.kind === 'cards')} rollDefinitions={activeDefinitions(randomSystem.state.definitions)} onAppliquerTemplateRegles={onAppliquerTemplateRegles} onEnregistrerTemplateRegles={onEnregistrerTemplateRegles} onEnregistrerPresetInitiativeTextuelle={onEnregistrerPresetInitiativeTextuelle} onDupliquerTemplateRegles={onDupliquerTemplateRegles} onSupprimerTemplateRegles={onSupprimerTemplateRegles} />}
@@ -196,6 +196,7 @@ function OngletCampagnes({ campaignName, campaignEntries = [], fileSaveStatus, p
   const inputLibraryRef = useRef(null);
   const importEnCoursRef = useRef(false);
   const [statsOpen, setStatsOpen] = useState(false);
+  const [styleReferenceOpen, setStyleReferenceOpen] = useState(false);
   const statutVisible = fileSaveStatus?.mode !== 'local' || (fileSaveStatus?.message && fileSaveStatus.message !== t('hub.campaigns.status.local'));
 
   const ouvrirImport = async () => {
@@ -228,8 +229,16 @@ function OngletCampagnes({ campaignName, campaignEntries = [], fileSaveStatus, p
     event.target.value = '';
     if (file) await onImporterTemplates(file);
   };
+  if (styleReferenceOpen) {
+    return (
+      <Suspense fallback={<ChargementOnglet texte={t('styleReference.loading')} />}>
+        <StyleReferencePage onBack={() => setStyleReferenceOpen(false)} />
+      </Suspense>
+    );
+  }
   return (
     <div className="stack hub-options-tab">
+      <h2 className="visually-hidden">{t('hub.tabs.campaigns')}</h2>
       <OptionsContent performanceState={performanceState} themeState={themeState} onPerformancePreferenceChange={onPerformancePreferenceChange} onThemeModeChange={onThemeModeChange} />
       <section className="hub-section panel">
         <div className="hub-section-head">
@@ -290,6 +299,7 @@ function OngletCampagnes({ campaignName, campaignEntries = [], fileSaveStatus, p
         <input ref={inputLibraryRef} className="import-file-input" type="file" aria-label={t('hub.files.importLibrary')} accept=".cadlib,application/json,text/json,text/plain,application/octet-stream,*/*" onChange={importerBibliotheque} />
         <details className="advanced-options">
           <summary>{t('hub.campaigns.advanced')}</summary>
+          <button className="small-btn" type="button" onPointerEnter={loadStyleReferencePage} onFocus={loadStyleReferencePage} onClick={() => setStyleReferenceOpen(true)}>{t('hub.campaigns.styleReference')}</button>
           <button className="small-btn" onClick={onChargerCampagneTest}>{t('hub.campaigns.loadTest')}</button>
           <button className="danger-btn" onClick={onReinitialiser}>{t('hub.campaigns.reset')}</button>
         </details>
@@ -333,7 +343,7 @@ export function HubCampagne({ campaignName, scene, scenes, templates, trackerTem
         <OngletsHub onglet={onglet} setOnglet={changerOnglet} />
         {onglet === 'scenes' && <OngletScenes scenes={scenes} editingSceneId={editingSceneId} onEditerScene={setEditingSceneId} onFermerEditionScene={() => setEditingSceneId('')} onChoisirScene={onChoisirScene} onNouvelleScene={creerNouvelleScene} onModifierScene={onModifierScene} onDupliquerScene={dupliquerScene} onSupprimerScene={onSupprimerScene} />}
         {onglet === 'regles' && <OngletReglesEtHasard scene={scene} rulePresetSnapshot={rulePresetSnapshot} ruleTemplates={ruleTemplates} initiativeTextPresets={initiativeTextPresets} randomSystem={randomSystem} onModifierReglesInitiative={onModifierReglesInitiative} onAppliquerTemplateRegles={onAppliquerTemplateRegles} onEnregistrerTemplateRegles={onEnregistrerTemplateRegles} onEnregistrerPresetInitiativeTextuelle={onEnregistrerPresetInitiativeTextuelle} onDupliquerTemplateRegles={onDupliquerTemplateRegles} onSupprimerTemplateRegles={onSupprimerTemplateRegles} />}
-        {onglet === 'tirages' && <section className="random-system-page"><Suspense fallback={<ChargementOnglet texte={t('random.loadingSection')} />}><UsePanel state={randomSystem.state} actions={randomSystem.actions} /></Suspense></section>}
+        {onglet === 'tirages' && <section className="random-system-page"><h2 className="visually-hidden">{t('hub.tabs.random')}</h2><Suspense fallback={<ChargementOnglet texte={t('random.loadingSection')} />}><UsePanel state={randomSystem.state} actions={randomSystem.actions} /></Suspense></section>}
         {onglet === 'campagnes' && <OngletCampagnes campaignName={campaignName} campaignEntries={campaignEntries} fileSaveStatus={fileSaveStatus} performanceState={performanceState} themeState={themeState} randomSystem={randomSystem} onRenommerCampagne={onRenommerCampagne} onExporter={onExporter} onImporter={onImporter} onImporterTemplates={onImporterTemplates} onExporterBibliotheque={onExporterBibliotheque} onChargerCampagneTest={onChargerCampagneTest} onReinitialiser={onReinitialiser} onPerformancePreferenceChange={onPerformancePreferenceChange} onThemeModeChange={onThemeModeChange} />}
         {onglet === 'templates' && <Suspense fallback={<ChargementOnglet texte={t('hub.loading.templates')} />}><OngletTemplates categories={templateCategories} templates={templates} trackerTemplates={trackerTemplates} statusTemplates={statusTemplates} sceneCounterTemplates={sceneCounterTemplates} sceneStatusTemplates={sceneStatusTemplates} surpriseImpact={scene?.surpriseImpact} surpriseAdvanceOn={scene?.surpriseAdvanceOn} onAjouterTemplateCategorie={onAjouterTemplateCategorie} onAjouterCategorie={onAjouterCategorieTemplate} onRenommerCategorie={onRenommerCategorieTemplate} onSupprimerCategorie={onSupprimerCategorieTemplate} onDeplacerCategorie={onDeplacerCategorieTemplate} onChangerCategorieTemplate={onChangerCategorieTemplate} onEditerTemplate={onEditerTemplate} onDupliquerTemplate={onDupliquerTemplate} onSupprimerTemplate={onSupprimerTemplate} onAjouterTemplateSuivi={onAjouterTemplateSuivi} onModifierTemplateSuivi={onModifierTemplateSuivi} onDupliquerTemplateSuivi={onDupliquerTemplateSuivi} onSupprimerTemplateSuivi={onSupprimerTemplateSuivi} onAjouterTemplateEtat={onAjouterTemplateEtat} onModifierTemplateEtat={onModifierTemplateEtat} onDupliquerTemplateEtat={onDupliquerTemplateEtat} onSupprimerTemplateEtat={onSupprimerTemplateEtat} onAjouterTemplateCompteurScene={onAjouterTemplateCompteurScene} onModifierTemplateCompteurScene={onModifierTemplateCompteurScene} onDupliquerTemplateCompteurScene={onDupliquerTemplateCompteurScene} onSupprimerTemplateCompteurScene={onSupprimerTemplateCompteurScene} onAjouterTemplateEtatScene={onAjouterTemplateEtatScene} onModifierTemplateEtatScene={onModifierTemplateEtatScene} onDupliquerTemplateEtatScene={onDupliquerTemplateEtatScene} onSupprimerTemplateEtatScene={onSupprimerTemplateEtatScene} templatePersonnageId={templatePersonnageId} templatePersonnageOuvert={templatePersonnageOuvert} onFermerEditionTemplatePersonnage={onFermerEditionTemplatePersonnage} onDemanderChangementDepuisTemplatePersonnage={onDemanderChangementDepuisTemplatePersonnage} onTemplatePanelOpenChange={onTemplatePanelOpenChange} /></Suspense>}
       </main>

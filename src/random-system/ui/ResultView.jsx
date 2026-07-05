@@ -1,5 +1,6 @@
 import { memo, useEffect, useMemo, useState } from 'react';
 import { t } from '../../i18n/index.js';
+import { uiSymbols } from '../../uiAssets.js';
 
 const DEFAULT_VISIBLE_DRAWS = 120;
 
@@ -197,7 +198,7 @@ export const ResultView = memo(function ResultView({ result }) {
         <div>
           <span className="rs-section-kicker">{result?.kind === 'card-draw' ? t('random.resource.cards') : t('random.resource.rolls')}</span>
           <div className="rs-heading-with-mark">
-            <span className="rs-heading-mark" aria-hidden="true">{result?.kind === 'card-draw' ? '♢' : '✦'}</span>
+            <span className="rs-heading-mark" aria-hidden="true">{result?.kind === 'card-draw' ? uiSymbols.cards : uiSymbols.draw}</span>
             <h3>{t('random.result.title')}</h3>
           </div>
           {result && <span>{result.definitionName || result.sourceName}</span>}

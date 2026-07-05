@@ -79,6 +79,7 @@
   --skin-border-strong: rgba(199, 94, 25, .42);
   --skin-text: var(--theme-light-text);
   --skin-muted: var(--theme-light-muted);
+  --skin-focus: color-mix(in srgb, var(--theme-purple) 68%, var(--theme-orange-deep));
   --skin-primary: var(--theme-purple);
   --skin-primary-strong: var(--theme-purple-deep);
   --skin-primary-contrast: #fff7ed;
@@ -123,7 +124,14 @@
   --skin-selected-shadow: var(--skin-shadow-action);
   --skin-danger-contrast: var(--skin-danger);
   --skin-chip-bg: var(--skin-accent-soft);
-  --skin-chip-border: var(--skin-border);
+  --skin-chip-border: color-mix(in srgb, var(--skin-accent) 20%, var(--skin-border));
+  --skin-chip-text: var(--skin-primary-strong);
+  --skin-chip-subtle-bg: color-mix(in srgb, var(--skin-surface) 82%, var(--skin-accent-soft));
+  --skin-chip-subtle-border: color-mix(in srgb, var(--skin-accent) 24%, var(--skin-border));
+  --skin-chip-subtle-text: var(--skin-primary-strong);
+  --skin-chip-muted-bg: color-mix(in srgb, var(--skin-surface) 88%, var(--skin-primary) 6%);
+  --skin-chip-muted-border: color-mix(in srgb, var(--skin-primary) 14%, var(--skin-border));
+  --skin-chip-muted-text: color-mix(in srgb, var(--skin-primary-strong) 82%, var(--skin-text));
 
   /* UI aliases used by existing components. Keep these stable. */
   --ui-bg: var(--skin-bg);
@@ -136,6 +144,7 @@
   --ui-border-strong: var(--skin-border-strong);
   --ui-text: var(--skin-text);
   --ui-muted: var(--skin-muted);
+  --ui-focus: var(--skin-focus);
   --ui-primary: var(--skin-primary);
   --ui-primary-strong: var(--skin-primary-strong);
   --ui-primary-contrast: var(--skin-primary-contrast);
@@ -181,6 +190,13 @@
   --ui-danger-contrast: var(--skin-danger-contrast);
   --ui-chip-bg: var(--skin-chip-bg);
   --ui-chip-border: var(--skin-chip-border);
+  --ui-chip-text: var(--skin-chip-text);
+  --ui-chip-subtle-bg: var(--skin-chip-subtle-bg);
+  --ui-chip-subtle-border: var(--skin-chip-subtle-border);
+  --ui-chip-subtle-text: var(--skin-chip-subtle-text);
+  --ui-chip-muted-bg: var(--skin-chip-muted-bg);
+  --ui-chip-muted-border: var(--skin-chip-muted-border);
+  --ui-chip-muted-text: var(--skin-chip-muted-text);
 }
 
 :root.dark,
@@ -198,6 +214,7 @@
   --skin-border-strong: rgba(210, 164, 86, .44);
   --skin-text: var(--theme-dark-text);
   --skin-muted: var(--theme-dark-muted);
+  --skin-focus: var(--theme-gold);
   --skin-primary: var(--theme-purple);
   --skin-primary-strong: #3b1245;
   --skin-primary-contrast: var(--theme-dark-text);
@@ -245,7 +262,14 @@
   --skin-selected-shadow: 0 8px 18px rgba(0, 0, 0, .34), 0 0 16px rgba(164, 90, 177, .20);
   --skin-danger-contrast: #fff1f2;
   --skin-chip-bg: rgba(81, 22, 90, .48);
-  --skin-chip-border: rgba(210, 164, 86, .26);
+  --skin-chip-border: rgba(210, 164, 86, .34);
+  --skin-chip-text: var(--theme-dark-text);
+  --skin-chip-subtle-bg: color-mix(in srgb, rgba(81, 22, 90, .34) 72%, var(--skin-surface));
+  --skin-chip-subtle-border: color-mix(in srgb, var(--theme-gold) 30%, var(--skin-border));
+  --skin-chip-subtle-text: var(--theme-dark-text);
+  --skin-chip-muted-bg: color-mix(in srgb, rgba(81, 22, 90, .18) 48%, var(--skin-surface));
+  --skin-chip-muted-border: color-mix(in srgb, var(--theme-gold) 18%, var(--skin-border));
+  --skin-chip-muted-text: color-mix(in srgb, var(--theme-dark-text) 84%, var(--theme-dark-muted));
 }
 
 body {
@@ -256,16 +280,28 @@ body {
   font-size: 15.5px;
 }
 
-/* Future appearance scopes can target [data-skin="..."] on the app root. */
-.app[data-skin="cadence"],
-.app[data-theme="cadence"] {
-}
-
 button,
 input,
 select,
 textarea {
   font-family: var(--font-ui);
+}
+
+:where(button, a[href], input, select, textarea, summary, [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: 3px solid var(--ui-focus);
+  outline-offset: 2px;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0 0 0 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
 }
 
 .menu-brand strong,
@@ -277,6 +313,7 @@ textarea {
 .menu-brand .brand-title,
 .campaign-brand-capsule .brand-title {
   display: block;
+  margin: 0;
   font-family: var(--font-title);
   font-size: clamp(20px, 5.4vw, 28px);
   font-weight: 700;
@@ -297,12 +334,13 @@ textarea {
 .sheet > h1,
 .sheet > .row h2,
 .edit-sheet-header h2,
+.hub-section-head h2,
 .hub-section-head h3,
 .rules-panel > div > h3,
 .rule-group-head h3,
 .compact-option-title h3,
 .menu-scene-notes summary,
-.reserve h3 {
+.reserve h2 {
   font-family: var(--font-title);
   font-weight: 700;
   letter-spacing: 0;
@@ -340,8 +378,40 @@ textarea {
 
 .status {
   font-family: var(--font-ui);
-  font-size: 12px;
-  line-height: 1.2;
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+:where(.chip, .status) {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  padding: 5px 10px;
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+:where(.type-chip, .threshold-chip, .quick-stat-chip, .reserve-empty-chip, .rs-kit-summary > span) {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  padding: 2px 7px;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+:where(.empty-section, .campaign-save-status, .initiative-entry-warning) {
+  border: 1px solid var(--ui-border);
+  border-radius: 16px;
+  background: var(--ui-surface-soft);
+  padding: 10px 12px;
 }
 
 .round,
@@ -677,6 +747,39 @@ body:has(.app[data-mode="dark"]),
   border-radius: var(--radius-control);
 }
 
+:where(.icon-btn, .template-icon-btn, .counter-edge) {
+  display: inline-grid;
+  place-items: center;
+  line-height: 1;
+  flex: 0 0 auto;
+  padding: 0;
+}
+
+:where(.limit-switch-row, .reset-switch, .global-switch) > input[type="checkbox"] {
+  appearance: none;
+  position: relative;
+  margin: 0;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: background-color .16s ease, border-color .16s ease;
+}
+
+:where(.limit-switch-row, .reset-switch, .global-switch) > input[type="checkbox"]::after {
+  content: "";
+  position: absolute;
+  border-radius: var(--radius-pill);
+  transition: transform .16s ease;
+}
+
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) :where(.limit-switch-row, .reset-switch, .global-switch) > input[type="checkbox"]::after {
+  background: var(--ui-control-text);
+  box-shadow: 0 1px 3px color-mix(in srgb, black 34%, transparent);
+}
+
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .limit-switch-row {
+  color: var(--ui-text);
+}
+
 .icon-btn,
 .small-btn,
 .controls > button,
@@ -726,10 +829,8 @@ body:has(.app[data-mode="dark"]),
 }
 
 .choice.selected,
-.selected-toggle,
 .initiative-choice-action.primary-choice,
 .dark .choice.selected,
-.dark .selected-toggle,
 .dark .initiative-choice-action.primary-choice {
   background: var(--ui-primary);
   border-color: var(--ui-accent);
@@ -738,7 +839,6 @@ body:has(.app[data-mode="dark"]),
 }
 
 .dark .choice.selected,
-.dark .selected-toggle,
 .dark .initiative-choice-action.primary-choice {
   background: var(--ui-selected-bg);
   border-color: var(--ui-selected-border);
@@ -863,7 +963,6 @@ body:has(.app[data-mode="dark"]),
 }
 
 .app.dark .choice.selected,
-.app.dark .selected-toggle,
 .app.dark .initiative-choice-action.primary-choice,
 .app.dark .hub-tabs .choice.selected {
   background: var(--ui-selected-bg) !important;
@@ -1155,9 +1254,9 @@ body:has(.app[data-mode="dark"]),
 
   .controls > button,
   .clock-inline button:not(.clock-face) {
-    width: 32px;
-    height: 32px;
-    min-width: 32px;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
   }
 
   .clock-face {
@@ -1176,8 +1275,8 @@ body:has(.app[data-mode="dark"]),
   }
 
   .dot {
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
   }
 
   .box {
@@ -1398,6 +1497,7 @@ body:has(.app[data-mode="dark"]),
     align-items: center;
   }
 
+  .hub-section-head h2,
   .hub-section-head h3,
   .hub-section h3,
   .compact-option-title h3,
@@ -1410,8 +1510,8 @@ body:has(.app[data-mode="dark"]),
   .rule-option-note,
   .rule-warning,
   .rule-option-warning {
-    font-size: 11px;
-    line-height: 1.22;
+    font-size: 12px;
+    line-height: 1.3;
   }
 
   .scene-options,
@@ -1532,40 +1632,42 @@ body:has(.app[data-mode="dark"]),
   .template-row-actions .danger-btn {
     width: auto;
     min-width: 0;
-    min-height: 26px;
-    padding: 3px 6px;
-    font-size: 10px;
-    border-radius: 11px;
+    min-height: 34px;
+    padding: 5px 8px;
+    font-size: 11px;
+    border-radius: 13px;
     white-space: nowrap;
   }
 
   .template-row-actions .template-delete-reveal {
-    width: 24px;
-    min-width: 24px !important;
-    height: 24px;
+    width: 34px;
+    min-width: 34px !important;
+    height: 34px;
   }
 
   .template-category-title {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: auto minmax(0, 1fr);
     gap: 6px;
     padding-block: 4px;
   }
 
   .template-category-actions {
-    grid-column: auto;
+    grid-column: 1 / -1;
     display: flex;
     flex-wrap: nowrap;
-    gap: 4px;
-    width: auto;
+    gap: 6px;
+    width: 100%;
     justify-content: flex-end;
+    padding-top: 6px;
+    border-top: 1px solid color-mix(in srgb, var(--ui-border) 70%, transparent);
   }
 
   .template-category-actions .small-btn,
   .template-category-actions .danger-btn {
-    min-height: 24px;
-    padding: 2px 5px;
-    font-size: 10px;
+    min-height: 34px;
+    padding: 5px 8px;
+    font-size: 11px;
     white-space: nowrap;
   }
 
@@ -1679,6 +1781,24 @@ body:has(.app[data-mode="dark"]),
   }
 }
 
+@media (max-width: 520px) {
+  .grid4.hub-tabs {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .hub-tabs .choice {
+    grid-column: span 2;
+    min-height: 44px;
+    padding: 9px 5px;
+    font-size: 12px;
+  }
+
+  .hub-tabs .choice:nth-child(n + 4) {
+    grid-column: span 3;
+  }
+}
+
 @media (min-width: 768px) {
   :root {
     --layout-scene-max-width: 720px;
@@ -1758,17 +1878,18 @@ body:has(.app[data-mode="dark"]),
   }
 
   .scene-main.with-reserve {
-    grid-template-columns: minmax(0, 1fr);
-    align-items: stretch;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, var(--layout-reserve-width));
+    align-items: start;
     gap: 14px;
   }
 
   .scene-main.with-reserve .reserve {
-    position: static;
-    max-height: none;
-    margin-top: 18px;
+    position: sticky;
+    top: 12px;
+    max-height: calc(100vh - 124px);
+    margin-top: 0;
     padding: 10px;
-    overflow: visible;
+    overflow: auto;
     border: 1px solid var(--ui-border);
     border-radius: 24px;
     background: var(--ui-surface-soft);
@@ -1835,8 +1956,8 @@ body:has(.app[data-mode="dark"]),
   }
 
   .scene-main.with-reserve {
-    grid-template-columns: minmax(0, 760px);
-    justify-content: center;
+    grid-template-columns: minmax(0, 1fr) minmax(300px, var(--layout-reserve-width));
+    justify-content: stretch;
     gap: 14px;
   }
 
@@ -2128,7 +2249,6 @@ body:has(.app[data-mode="dark"]),
 }
 
 :is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .choice.selected,
-:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .selected-toggle,
 :is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .initiative-choice-action.primary-choice,
 :is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .hub-tabs .choice.selected {
   background: var(--ui-selected-bg) !important;
@@ -2393,7 +2513,7 @@ body:has(.app[data-mode="dark"]),
   gap: 5px;
   min-height: 26px;
   padding: 3px 9px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--ui-surface-soft) 74%, transparent);
   border: 1px solid var(--ui-border);
   color: var(--ui-muted);

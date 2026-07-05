@@ -27,7 +27,7 @@
   --theme-purple-soft: #7b2f87;
   --theme-purple-glow: #a45ab1;
   --theme-orange: #c75e19;
-  --theme-orange-deep: #c85919;
+  --theme-orange-deep: #c04f16;
   --theme-gold: #d2a456;
   --theme-mist: #dddbd9;
 
@@ -67,6 +67,8 @@ body { background: var(--ui-bg); color: var(--ui-text); }
   color: var(--ui-control-text);
   box-shadow: var(--ui-shadow-action);
 }
+.tracker .clock-inline button:not(.clock-face) { box-shadow: none; }
+.tracker .clock-inline { gap: 8px; }
 
 .primary,.turn-btn,.delta button,.delta-pop button {
   background: var(--ui-primary);
@@ -123,8 +125,8 @@ body { background: var(--ui-bg); color: var(--ui-text); }
   box-shadow: var(--ui-shadow-action);
 }
 
-.chip { background: var(--ui-accent-soft); color: var(--ui-primary-strong); }
-.dark .chip { background: var(--ui-accent-soft); color: var(--ui-text); border: 1px solid var(--ui-border); }
+.chip { background: var(--ui-chip-bg); border-color: var(--ui-chip-border); color: var(--ui-chip-text); }
+.dark .chip { background: var(--ui-chip-bg); color: var(--ui-chip-text); border: 1px solid var(--ui-chip-border); }
 .chip.hot { background: var(--ui-accent); color: var(--ui-primary-contrast); }
 .dark .chip.hot { background: var(--ui-accent); color: var(--ui-primary-contrast); border: 1px solid var(--ui-control-border); }
 
@@ -136,7 +138,7 @@ body { background: var(--ui-bg); color: var(--ui-text); }
   gap: 8px;
   align-self: flex-start;
   padding: 4px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--ui-surface-soft);
   border: 1px solid var(--ui-border);
   color: var(--ui-primary-strong);
@@ -205,34 +207,44 @@ body { background: var(--ui-bg); color: var(--ui-text); }
 .dark .dot.on { background: var(--ui-primary); }
 
 .clock-face {
-  background: conic-gradient(var(--ui-primary) var(--clock-progress), var(--ui-bg-soft) 0)!important;
+  background-image: conic-gradient(var(--ui-primary) var(--clock-progress), var(--ui-bg-soft) 0)!important;
   border-color: var(--ui-border-strong)!important;
   color: var(--ui-primary-strong);
 }
 .clock-face::before { background: var(--ui-surface-strong); }
 .dark .clock-face {
-  background: conic-gradient(var(--ui-primary) var(--clock-progress), var(--ui-control-bg) 0)!important;
+  background-image: conic-gradient(var(--ui-primary) var(--clock-progress), var(--ui-control-bg) 0)!important;
   border-color: var(--ui-control-border)!important;
   color: var(--ui-text);
 }
 .dark .clock-face::before { background: var(--ui-input-bg); }
-.clock-face.warning { background: conic-gradient(var(--ui-warning-text) var(--clock-progress), var(--ui-warning-bg) 0)!important; border-color: var(--ui-warning-border)!important; }
-.clock-face.near { background: conic-gradient(var(--ui-accent) var(--clock-progress), var(--ui-warning-bg) 0)!important; border-color: var(--ui-accent)!important; }
-.clock-face.triggered { background: conic-gradient(var(--ui-accent) var(--clock-progress), var(--ui-warning-bg) 0)!important; border-color: var(--ui-warning-border)!important; }
-.dark .clock-face.warning { background: conic-gradient(var(--ui-warning-text) var(--clock-progress), var(--ui-control-bg) 0)!important; border-color: var(--ui-warning-border)!important; }
-.dark .clock-face.near { background: conic-gradient(var(--ui-accent) var(--clock-progress), var(--ui-control-bg) 0)!important; border-color: var(--ui-warning-border)!important; }
-.dark .clock-face.triggered { background: conic-gradient(var(--ui-accent) var(--clock-progress), var(--ui-control-bg) 0)!important; border-color: var(--ui-warning-border)!important; }
+.clock-face.warning { background-image: conic-gradient(var(--ui-warning-text) var(--clock-progress), var(--ui-warning-bg) 0)!important; border-color: var(--ui-warning-border)!important; box-shadow: none; }
+.clock-face.near { background-image: conic-gradient(var(--ui-accent) var(--clock-progress), var(--ui-warning-bg) 0)!important; border-color: var(--ui-accent)!important; box-shadow: none; }
+.clock-face.triggered { background-image: conic-gradient(var(--ui-accent) var(--clock-progress), var(--ui-warning-bg) 0)!important; border-color: var(--ui-warning-border)!important; }
+.dark .clock-face.warning { background-image: conic-gradient(var(--ui-warning-text) var(--clock-progress), var(--ui-control-bg) 0)!important; border-color: var(--ui-warning-border)!important; }
+.dark .clock-face.near { background-image: conic-gradient(var(--ui-accent) var(--clock-progress), var(--ui-control-bg) 0)!important; border-color: var(--ui-warning-border)!important; }
+.dark .clock-face.triggered { background-image: conic-gradient(var(--ui-accent) var(--clock-progress), var(--ui-control-bg) 0)!important; border-color: var(--ui-warning-border)!important; }
+.clock-face,
+.clock-face.warning,
+.clock-face.near,
+.clock-face.triggered,
+.dark .clock-face,
+.dark .clock-face.warning,
+.dark .clock-face.near,
+.dark .clock-face.triggered {
+  background-clip: padding-box!important;
+}
 .clock-face.frozen { filter: saturate(.45) brightness(.9); }
-.clock-face.frozen::after { content: ""; position: absolute; inset: 9px; border-radius: 999px; border: 1px dashed currentColor; opacity: .38; z-index: 4; pointer-events: none; }
+.clock-face.frozen::after { content: ""; position: absolute; inset: 9px; border-radius: var(--radius-pill); border: 1px dashed currentColor; opacity: .38; z-index: 4; pointer-events: none; }
 
 .box { border-color: var(--ui-border-strong); background: var(--ui-surface-strong); color: var(--ui-primary-strong); }
 .box.full,.box.mark-5 { background: var(--ui-primary-strong); border-color: var(--ui-primary-strong); color: var(--ui-primary-strong); }
 .dark .box { background: var(--ui-input-bg); border-color: var(--ui-control-border); color: var(--ui-text); }
 .dark .box.full,.dark .box.mark-5 { background: var(--ui-primary); border-color: var(--ui-control-border); color: var(--ui-primary); }
 
-.status.permanent { background: var(--ui-primary-strong); }
-.status.temporary { background: var(--ui-accent); }
-.status.loop { background: var(--ui-primary); }
+.status.permanent { background: color-mix(in srgb, var(--ui-primary-strong) 92%, black 8%); border-color: var(--ui-control-border); }
+.status.temporary { background: color-mix(in srgb, var(--ui-accent) 88%, var(--ui-surface)); border-color: var(--ui-warning-border); }
+.status.loop { background: color-mix(in srgb, var(--ui-primary) 82%, var(--ui-surface)); border-color: color-mix(in srgb, var(--ui-control-border) 78%, var(--ui-accent) 22%); }
 .status.temporary.expired,
 .status.loop.expired {
   background: var(--ui-accent);
@@ -294,7 +306,7 @@ body { background: var(--ui-bg); color: var(--ui-text); }
 .clock-title-zone { display: flex; align-items: center; gap: 6px; min-width: 0; flex-wrap: wrap; }
 .clock-top .clock-inline { justify-self: center; }
 .clock-top .freeze-btn { justify-self: end; }
-.freeze-btn { width: 32px; height: 32px; display: grid; place-items: center; padding: 0; border-radius: 999px; border: 1px solid var(--ui-border); background: transparent; color: currentColor; opacity: .76; cursor: pointer; }
+.freeze-btn { width: 32px; height: 32px; display: grid; place-items: center; padding: 0; border-radius: var(--radius-pill); border: 1px solid var(--ui-border); background: transparent; color: currentColor; opacity: .76; cursor: pointer; }
 .freeze-btn .metronome-icon { width: 20px; height: 20px; display: block; }
 .freeze-btn.active { opacity: 1; background: var(--ui-warning-bg); border-color: var(--ui-warning-border); color: var(--ui-warning-text); }
 .dark .freeze-btn { border-color: var(--ui-border); }

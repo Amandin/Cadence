@@ -22,6 +22,7 @@ export const FichetteParticipant = memo(function FichetteParticipant({
   showInitiative = false,
   primaryAction = null,
   secondaryActions = null,
+  footerAction = null,
   onOuvrir,
   onSuivi,
   onSupprimerSuivi,
@@ -88,6 +89,7 @@ export const FichetteParticipant = memo(function FichetteParticipant({
         <div className="statuses status-control-row">
           {participant.statuses?.map((etat) => <EtiquetteEtat key={etat.id} etat={etat} onModifier={() => onModifierEtat?.(etat.id)} onRetirer={() => onRetirerEtat(etat.id)} />)}
           <button className="small-btn sheet-add-status-btn" onClick={onAjouterEtat}>{t('scene.status.add')}</button>
+          {footerAction}
           <BoutonRepliFichette onClick={() => { setRepliee(true); setRepliAutoIgnore(false); }} className="collapse-inline" />
         </div>
       </div>

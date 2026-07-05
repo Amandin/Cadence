@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { t } from '../../i18n/index.js';
-import { uiGlyphs } from '../../uiAssets.js';
+import { uiGlyphs, uiSymbols } from '../../uiAssets.js';
 
 export function BoutonIconeTemplate({ label, children, className = '', ...props }) {
   return (
@@ -26,7 +26,7 @@ export function LigneTemplateSimple({ template, detail, onEditer, onDupliquer, o
         {suppressionVisible ? (
           <button className="danger-btn mini-danger template-delete-confirm" onClick={() => onSupprimer(template.id)}>{t('templates.actions.deleteShort')}</button>
         ) : (
-          <button className="small-btn template-delete-reveal" onClick={() => setSuppressionVisible(true)} aria-label={t('templates.actions.deleteRevealAria', { name: template.name })}>x</button>
+          <button className="small-btn template-delete-reveal" onClick={() => setSuppressionVisible(true)} aria-label={t('templates.actions.deleteRevealAria', { name: template.name })}>{uiSymbols.remove}</button>
         )}
       </div>
     </div>

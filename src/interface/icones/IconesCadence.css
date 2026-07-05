@@ -1,0 +1,47 @@
+.cadence-vector-icon {
+  display: block;
+  width: 1.25rem;
+  height: 1.25rem;
+  overflow: visible;
+}
+
+.dice-roll-icon {
+  width: 1.4rem;
+  height: 1.4rem;
+}
+
+.bottom-quick-roll .dice-roll-icon {
+  width: 36px;
+  height: 32px;
+  transform: translateX(-3px);
+}
+
+.initiative-dice-roll-btn .dice-roll-icon {
+  width: 29px;
+  height: 22px;
+}
+
+.metronome-icon #metronome-bras {
+  transform-box: view-box;
+  transform-origin: 4.18px 12.74px;
+}
+
+.metronome-icon.is-running #metronome-bras {
+  animation: metronome-swing 1s ease-in-out infinite alternate;
+}
+
+@keyframes metronome-swing {
+  from {
+    transform: rotate(-20deg);
+  }
+
+  to {
+    transform: rotate(20deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .metronome-icon.is-running #metronome-bras {
+    animation: none;
+  }
+}

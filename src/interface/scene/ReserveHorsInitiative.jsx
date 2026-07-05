@@ -12,7 +12,7 @@ export function ReserveHorsInitiative({ scene, interactions, onModifierNotes }) 
   return (
     <section className="reserve">
       <div className="reserve-head">
-        <h3>{t('reserve.title')}</h3>
+        <h2>{t('reserve.title')}</h2>
       </div>
       {reserveTriee.length > 0
         ? reserveTriee.map((participant) => (

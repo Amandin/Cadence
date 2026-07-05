@@ -1,10 +1,11 @@
 import { randomSourceKinds } from './core/constants.js';
+import { uiSymbols } from '../uiAssets.js';
 
 const standardSuits = [
-  { id: 'pique', rankLabel: 'Pique', label: 'pique', symbol: '♠', color: 'noir' },
-  { id: 'coeur', rankLabel: 'Coeur', label: 'coeur', symbol: '♥', color: 'rouge' },
-  { id: 'carreau', rankLabel: 'Carreau', label: 'carreau', symbol: '♦', color: 'rouge' },
-  { id: 'trefle', rankLabel: 'Trefle', label: 'trefle', symbol: '♣', color: 'noir' },
+  { id: 'pique', rankLabel: 'Pique', label: 'pique', symbol: uiSymbols.spades, color: 'noir' },
+  { id: 'coeur', rankLabel: 'Coeur', label: 'coeur', symbol: uiSymbols.hearts, color: 'rouge' },
+  { id: 'carreau', rankLabel: 'Carreau', label: 'carreau', symbol: uiSymbols.diamonds, color: 'rouge' },
+  { id: 'trefle', rankLabel: 'Trefle', label: 'trefle', symbol: uiSymbols.clubs, color: 'noir' },
 ];
 
 const standardRanks = [
@@ -53,13 +54,13 @@ function suitedCards(ranks) {
 function joker(color) {
   return {
     id: `joker-${color}`,
-    label: '🃏',
+    label: uiSymbols.joker,
     comment: `Joker ${color}`,
     value: 'joker',
-    rank: '🃏',
+    rank: uiSymbols.joker,
     suit: '',
     color,
-    symbol: '🃏',
+    symbol: uiSymbols.joker,
     markers: ['joker', color],
   };
 }
@@ -88,26 +89,26 @@ export function createFrenchTarotCardSource() {
         const value = 21 - index;
         return {
           id: `atout-${value}`,
-          label: `${value}★`,
+          label: `${value}${uiSymbols.tarotTrump}`,
           comment: `Atout ${value}`,
           value,
           rank: String(value),
-          suit: '★',
+          suit: uiSymbols.tarotTrump,
           color: 'atout',
-          symbol: '★',
-          markers: [`rank:${value}`, 'suit:atout', 'atout', '★'],
+          symbol: uiSymbols.tarotTrump,
+          markers: [`rank:${value}`, 'suit:atout', 'atout', uiSymbols.tarotTrump],
         };
       }),
       {
         id: 'excuse',
-        label: '🃏★',
+        label: `${uiSymbols.joker}${uiSymbols.tarotTrump}`,
         comment: "L'Excuse",
         value: 'excuse',
-        rank: '🃏',
-        suit: '★',
+        rank: uiSymbols.joker,
+        suit: uiSymbols.tarotTrump,
         color: 'atout',
-        symbol: '🃏',
-        markers: ['excuse', 'joker', 'suit:atout', 'atout', '★'],
+        symbol: uiSymbols.joker,
+        markers: ['excuse', 'joker', 'suit:atout', 'atout', uiSymbols.tarotTrump],
       },
     ],
   };

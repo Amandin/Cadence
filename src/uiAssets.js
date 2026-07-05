@@ -28,6 +28,39 @@ export const uiGlyphs = {
   timer: '⏳',
 };
 
+export const uiSymbols = {
+  remove: 'x',
+  add: '+',
+  subtract: '-',
+  moveUp: '↑',
+  moveDown: '↓',
+  randomBack: '↩',
+  history: '↺',
+  draw: '✦',
+  randomSource: '◈',
+  resultOptions: '◌',
+  weightedTable: '◍',
+  cards: '♢',
+  statistics: '◔',
+  die1: '⚀',
+  die2: '⚁',
+  die3: '⚂',
+  die4: '⚃',
+  die5: '⚄',
+  die6: '⚅',
+  cardBack: '🂠',
+  roll: '🎲🎲',
+  spades: '♠',
+  hearts: '♥',
+  diamonds: '♦',
+  clubs: '♣',
+  joker: '🃏',
+  alert: '!',
+  csvImport: '☰',
+  tarotTrump: '★',
+  confirm: '✓',
+};
+
 export const participantSymbols = ['●●', '⚔', '🛡', '⚙', '⏳', '🗡', '🧪', '🔥'];
 
 export const defaultParticipantSymbol = uiGlyphs.avatarFallback;

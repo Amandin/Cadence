@@ -39,7 +39,6 @@ const APP_SKIN = 'cadence';
 function attributsApp(dark, performanceLevel = performanceLevels.NORMAL) {
   return {
     'data-skin': APP_SKIN,
-    'data-theme': APP_SKIN,
     'data-mode': dark ? 'dark' : 'light',
     'data-performance': performanceLevel,
   };
@@ -189,14 +188,12 @@ export default function App() {
     const root = document.documentElement;
     root.classList.toggle('dark', !!dark);
     root.dataset.skin = APP_SKIN;
-    root.dataset.theme = APP_SKIN;
     root.dataset.mode = dark ? 'dark' : 'light';
     root.dataset.performance = performanceLevel;
 
     return () => {
       root.classList.remove('dark');
       delete root.dataset.skin;
-      delete root.dataset.theme;
       delete root.dataset.mode;
       delete root.dataset.performance;
     };

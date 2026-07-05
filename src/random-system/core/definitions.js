@@ -6,6 +6,7 @@ import {
   randomParameterTypes,
 } from './constants.js';
 import { RandomSystemError } from './errors.js';
+import { normalizeRandomDefinitionVisualId } from '../definitionVisuals.js';
 import { normalizeValueReference } from './references.js';
 import { normalizeRandomSource } from './sources.js';
 import {
@@ -108,6 +109,7 @@ export function normalizeRandomDefinition(definition, index = 0) {
   return {
     id: cleanId(definition?.id, `definition-${index + 1}`),
     name: cleanLabel(definition?.name, `Définition ${index + 1}`),
+    visualId: normalizeRandomDefinitionVisualId(definition?.visualId, definition),
     kind,
     exposed: kind === randomDefinitionKinds.COMBINATION || definition?.exposed !== false,
     active: definition?.active !== undefined

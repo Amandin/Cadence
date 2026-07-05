@@ -25,8 +25,64 @@ import {
 } from './rulePool.js';
 import { normalizeRandomKits, randomKitResources } from './rulePresetKits.js';
 
-export const RANDOM_SYSTEM_SCHEMA_VERSION = 13;
+export const RANDOM_SYSTEM_SCHEMA_VERSION = 14;
 export const RANDOM_HISTORY_LIMIT = 20;
+
+const catalogKitDefinitionMigrations = [
+  {
+    kitId: 'kit-d20-generic',
+    definitionIds: ['kit-d20-check', 'kit-d20-damage', 'kit-d20-initiative'],
+  },
+  {
+    kitId: 'kit-d100-percentile',
+    definitionIds: ['kit-d100-check', 'kit-d100-initiative'],
+  },
+  {
+    kitId: 'kit-d6-pool',
+    definitionIds: ['kit-d6-pool-successes', 'kit-shadowrun-initiative'],
+  },
+  {
+    kitId: 'kit-cosmere-label-order',
+    definitionIds: ['kit-cosmere-d20-check', 'kit-cosmere-speed'],
+  },
+  {
+    kitId: 'kit-savage-step-cards',
+    definitionIds: ['kit-savage-step'],
+  },
+  {
+    kitId: 'kit-random-order',
+    definitionIds: ['kit-random-order-d100'],
+  },
+];
+
+function catalogKitIdsToUpgrade(definitions = []) {
+  const ids = new Set((Array.isArray(definitions) ? definitions : []).map((definition) => definition?.id));
+  return catalogKitDefinitionMigrations
+    .filter((migration) => migration.definitionIds.some((id) => ids.has(id)))
+    .map((migration) => migration.kitId);
+}
+
+function upgradeCatalogKitDefinitions(definitions, kitIds) {
+  let upgraded = definitions;
+  for (const kitId of kitIds) {
+    const migration = catalogKitDefinitionMigrations.find((item) => item.kitId === kitId);
+    const resources = randomKitResources(kitId);
+    const relatedIds = new Set([
+      ...migration.definitionIds,
+      ...resources.definitions.map((definition) => definition.id),
+    ]);
+    const previous = upgraded.filter((definition) => relatedIds.has(definition.id));
+    const active = previous.some((definition) => definition.exposed !== false && definition.active !== false);
+    upgraded = [
+      ...upgraded.filter((definition) => !relatedIds.has(definition.id)),
+      ...resources.definitions.map((definition) => ({
+        ...definition,
+        active: definition.exposed === false ? false : active,
+      })),
+    ];
+  }
+  return upgraded;
+}
 
 export function emptyRandomStatistics() {
   return {
@@ -341,6 +397,14 @@ export function normalizeRandomSystemState(state) {
     && !sources.some((source) => source.kind === randomSourceKinds.CARDS)) {
     sources = [...sources, ...cardTemplates];
   }
+  const catalogKitUpgrades = Number(state.schemaVersion) < 14
+    ? catalogKitIdsToUpgrade(state.definitions)
+    : [];
+  for (const kitId of catalogKitUpgrades) {
+    for (const source of randomKitResources(kitId).sources) {
+      if (!sources.some((current) => current.id === source.id)) sources.push(source);
+    }
+  }
   const normalizedDefinitions = normalizeDefinitionCollection(state.definitions);
   const withoutLegacyCombinations = Number(state.schemaVersion) < 4
     ? replaceLegacyCombinationMechanics(normalizedDefinitions)
@@ -348,9 +412,12 @@ export function normalizeRandomSystemState(state) {
   const upgradedCombinations = Number(state.schemaVersion) === 4
     ? upgradeGeneratedCombinationRolls(withoutLegacyCombinations)
     : withoutLegacyCombinations;
-  const definitions = Number(state.schemaVersion) < 13
+  const upgradedBuiltInDefinitions = Number(state.schemaVersion) < 13
     ? upgradeBuiltInD20Definitions(upgradedCombinations)
     : upgradedCombinations;
+  const definitions = Number(state.schemaVersion) < 14
+    ? upgradeCatalogKitDefinitions(upgradedBuiltInDefinitions, catalogKitUpgrades)
+    : upgradedBuiltInDefinitions;
   const cardSources = sources.filter((source) => source.kind === randomSourceKinds.CARDS);
   const sourceStates = Object.fromEntries(cardSources.map((source) => [
     source.id,

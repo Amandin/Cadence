@@ -120,7 +120,7 @@ describe('i18n', () => {
     expect(t('rules.categories.delete', { category: 'Brioche' })).toBe('Supprimer Brioche');
     expect(t('common.create')).toBe('Créer');
     expect(t('common.remove')).toBe('Retirer');
-    expect(t('common.expand')).toBe('Dérouler');
+    expect(t('common.expand')).toBe('Déplier');
     expect(t('characterAdd.title')).toBe('Ajouter un personnage');
     expect(t('export.defaultName')).toBe('Campagne Cadence');
     expect(t('initiativeCost.defaultParticipant')).toBe('ce personnage');

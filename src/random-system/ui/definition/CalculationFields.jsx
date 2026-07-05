@@ -28,15 +28,16 @@ export function CalculationFields({
         </select>
       </label>
       {calculation.resultMode === builderResultModes.SUCCESSES && (
-        <label className="field">
-          {t('random.definition.threshold')}
+        <div className="field">
+          <span>{t('random.definition.threshold')}</span>
           <ModeValueField
+            label={t('random.definition.threshold')}
             mode={calculation.thresholdMode}
             value={calculation.threshold}
             onModeChange={(thresholdMode) => onChange({ thresholdMode })}
             onValueChange={(threshold) => onChange({ threshold })}
           />
-        </label>
+        </div>
       )}
       {showKeep && (
         <label className="field">
@@ -49,9 +50,10 @@ export function CalculationFields({
         </label>
       )}
       {showKeep && calculation.keepMode !== 'none' && (
-        <label className="field">
-          {t('random.definition.keepCount')}
+        <div className="field">
+          <span>{t('random.definition.keepCount')}</span>
           <ModeValueField
+            label={t('random.definition.keepCount')}
             mode={calculation.keepCountMode}
             value={calculation.keepCount}
             min="1"
@@ -59,7 +61,7 @@ export function CalculationFields({
             onModeChange={(keepCountMode) => onChange({ keepCountMode })}
             onValueChange={(keepCount) => onChange({ keepCount })}
           />
-        </label>
+        </div>
       )}
       {numericResult && showModifier && (
         <label className={`global-switch rs-calculation-toggle ${calculation.modifierEnabled ? 'active' : ''}`}>

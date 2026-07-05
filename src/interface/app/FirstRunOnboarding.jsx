@@ -76,7 +76,7 @@ export function FirstRunOnboarding({ dark, genericPresets = [], systemPresets = 
   );
 
   return (
-    <div className={`app welcome-app ${dark ? 'dark' : ''}`} data-skin="cadence" data-theme="cadence" data-mode={dark ? 'dark' : 'light'}>
+    <div className={`app welcome-app ${dark ? 'dark' : ''}`} data-skin="cadence" data-mode={dark ? 'dark' : 'light'}>
       <main className="welcome-shell">
         <section className="panel welcome-panel">
           <div className="welcome-topbar">

@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { t } from '../../i18n/index.js';
+import { uiSymbols } from '../../uiAssets.js';
 import { randomSourceKinds, sourceOutcomes } from '../engine.js';
+import '../styles/base.css';
+import '../styles/results.css';
 
 const MAX_HISTOGRAM_ROWS = 200;
 
@@ -73,19 +76,19 @@ export function StatisticsPanel({ state, onReset }) {
   return (
     <div className="rs-statistics">
       <section className="rs-stat-summary">
-        <div><span>{t('random.stats.uses')}</span><strong>✦ {state.statistics.totalUses}</strong></div>
-        <div><span>{t('random.stats.draws')}</span><strong>◍ {state.statistics.totalDraws}</strong></div>
+        <div><span>{t('random.stats.uses')}</span><strong>{uiSymbols.draw} {state.statistics.totalUses}</strong></div>
+        <div><span>{t('random.stats.draws')}</span><strong>{uiSymbols.weightedTable} {state.statistics.totalDraws}</strong></div>
         <button type="button" className="small-btn" onClick={onReset}>{t('random.stats.reset')}</button>
       </section>
 
       <div className="rs-stat-grid">
         <section>
-          <div className="rs-section-head"><div className="rs-heading-with-mark"><span className="rs-heading-mark" aria-hidden="true">✦</span><h3>{t('random.stats.definitions')}</h3></div></div>
+          <div className="rs-section-head"><div className="rs-heading-with-mark"><span className="rs-heading-mark" aria-hidden="true">{uiSymbols.draw}</span><h3>{t('random.stats.definitions')}</h3></div></div>
           {definitionStats.length ? <UsageBars items={definitionStats} /> : <p className="muted">{t('random.stats.empty')}</p>}
         </section>
         <section>
           <div className="rs-section-head">
-            <div className="rs-heading-with-mark"><span className="rs-heading-mark" aria-hidden="true">◍</span><h3>{t('random.stats.distribution')}</h3></div>
+            <div className="rs-heading-with-mark"><span className="rs-heading-mark" aria-hidden="true">{uiSymbols.weightedTable}</span><h3>{t('random.stats.distribution')}</h3></div>
             <select value={selectedSource?.id || ''} onChange={(event) => setSourceId(event.target.value)}>
               {statisticalSources.map((source) => <option value={source.id} key={source.id}>{source.name}</option>)}
             </select>
@@ -94,7 +97,7 @@ export function StatisticsPanel({ state, onReset }) {
         </section>
         {cardSources.length > 0 && (
           <section>
-            <div className="rs-section-head"><div className="rs-heading-with-mark"><span className="rs-heading-mark" aria-hidden="true">♢</span><h3>{t('random.stats.cards')}</h3></div></div>
+            <div className="rs-section-head"><div className="rs-heading-with-mark"><span className="rs-heading-mark" aria-hidden="true">{uiSymbols.cards}</span><h3>{t('random.stats.cards')}</h3></div></div>
             {cardStats.length ? <UsageBars items={cardStats} /> : <p className="muted">{t('random.stats.empty')}</p>}
           </section>
         )}

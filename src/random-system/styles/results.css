@@ -88,17 +88,18 @@
   justify-content: space-between;
   gap: 6px;
   padding: 7px 8px;
-  border: 1px solid var(--rs-border);
-  border-radius: 10px;
+  border: 1px solid var(--ui-control-border);
+  border-radius: var(--radius-control);
   color: var(--rs-muted);
   font-size: 10px;
   font-weight: 800;
 }
 
 .rs-compared-groups > span.selected {
-  border-color: color-mix(in srgb, var(--rs-highlight) 40%, var(--rs-border));
-  background: var(--rs-accent-soft);
-  color: var(--rs-ink);
+  border-color: var(--ui-selected-border);
+  background: var(--ui-selected-bg);
+  color: var(--ui-primary-contrast);
+  box-shadow: var(--ui-selected-shadow);
 }
 
 .rs-result-draw-groups {
@@ -164,7 +165,7 @@
 
 .rs-draw-chip small {
   color: var(--rs-muted);
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .rs-draw-chip.is-success {
@@ -245,7 +246,7 @@
 .rs-aggregate-list small {
   grid-column: 1 / -1;
   color: var(--rs-muted);
-  font-size: 9px;
+  font-size: 10px;
 }
 
 .rs-card-result-grid {
@@ -294,7 +295,7 @@
 
 .rs-card-result small {
   color: var(--rs-muted);
-  font-size: 9px;
+  font-size: 10px;
 }
 
 .rs-statistics {
@@ -346,10 +347,10 @@
   min-width: 90px;
   max-width: 160px;
   padding: 6px 8px;
-  border: 1px solid var(--rs-border);
-  border-radius: 6px;
-  background: var(--rs-surface);
-  color: var(--rs-ink);
+  border: 1px solid var(--ui-input-border);
+  border-radius: var(--radius-control);
+  background: var(--ui-input-bg);
+  color: var(--ui-input-text);
 }
 
 .rs-stat-bars {
@@ -376,7 +377,7 @@
 
 .rs-stat-row > div {
   height: 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   overflow: hidden;
   background: var(--rs-soft);
 }
@@ -384,7 +385,7 @@
 .rs-stat-row i {
   display: block;
   height: 100%;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: linear-gradient(90deg, var(--rs-accent-strong), var(--rs-highlight));
 }
 

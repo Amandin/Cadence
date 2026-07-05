@@ -6,6 +6,7 @@ import {
   randomPipelineStepTypes,
 } from './engine.js';
 import { createResourceId } from './resourceIds.js';
+import { defaultRandomDefinitionVisualId } from './definitionVisuals.js';
 
 export const builderModes = {
   FIXED: 'fixed',
@@ -59,6 +60,7 @@ export function createDefinitionDraft(sources = [], definitions = []) {
   return {
     id: createResourceId('definition'),
     name: 'Nouveau lancer',
+    visualId: defaultRandomDefinitionVisualId,
     kind: randomDefinitionKinds.ROLL,
     exposed: true,
     active: true,
@@ -212,6 +214,7 @@ export function definitionToDraft(definition, sources = []) {
     ...createDefinitionDraft(sources),
     id: normalized.id,
     name: normalized.name,
+    visualId: normalized.visualId,
     kind: normalized.kind,
     exposed: normalized.exposed,
     active: normalized.active,

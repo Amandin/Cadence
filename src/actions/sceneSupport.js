@@ -91,12 +91,6 @@ export function optionsTri(scene) {
   };
 }
 
-export function valeurInitiativeRenseignee(valuesById, participantId) {
-  const raw = valuesById?.[participantId];
-  if (raw === '' || raw == null) return null;
-  return raw;
-}
-
 export function initiativesRenseignees(valuesById, participantId) {
   const raw = valuesById?.[participantId];
   const valeurs = Array.isArray(raw) ? raw : [raw];

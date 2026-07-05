@@ -3,6 +3,8 @@ import { participantKinds } from '../../constants.js';
 import { normaliserCreneauxAction } from '../../domain/initiative.js';
 import { initiativeLabelFromCardDraw, initiativeTextOrderEnabled, initiativeToNumber, normalizeInitiativeTextOrder } from '../../domain/initiativeTextOrder.js';
 import { t } from '../../i18n/index.js';
+import { uiSymbols } from '../../uiAssets.js';
+import { IconeJetDes } from '../icones/IconeJetDes.jsx';
 import { prepareCombinedDefinition } from '../../random-system/combinations.js';
 import { activeDefinitions } from '../../random-system/definitionAccess.js';
 import { randomParameterTypes, randomSourceKinds } from '../../random-system/engine.js';
@@ -142,7 +144,7 @@ function defaultRollOptions(definition = {}) {
 }
 
 function InitiativeRollButton({ label, card = false, disabled = false, onClick }) {
-  return <button className="initiative-dice-roll-btn" type="button" disabled={disabled} onClick={onClick} aria-label={label} title={label}>{card ? '\u{1F0A0}' : '\u{1F3B2}\u{1F3B2}'}</button>;
+  return <button className="initiative-dice-roll-btn" type="button" disabled={disabled} onClick={onClick} aria-label={label} title={label}>{card ? '\u{1F0A0}' : <IconeJetDes />}</button>;
 }
 
 function BoutonChoixInitiative({ titre, detail, onClick, disabled = false, variant = 'standard' }) {
@@ -188,7 +190,7 @@ function SectionSaisieInitiative({ titre, participants, inclureEnvironnements, c
                     return <label className={`initiative-roll-slot ${retraitPossible ? 'has-remove' : ''}`} key={index}>
                     <small>{t('initiative.entry.shortSlotLabel', { index: index + 1 })}</small>
                     <ChampInitiative valeur={valeur} textConfig={textConfig} onChange={(next) => changerValeur(participant.id, index, next)} />
-                    {retraitPossible && <button className="small-btn subtle-danger" onClick={() => retirerAction(participant.id, index)} type="button">x</button>}
+                    {retraitPossible && <button className="small-btn subtle-danger" onClick={() => retirerAction(participant.id, index)} type="button">{uiSymbols.remove}</button>}
                   </label>;
                   })}
                   {afficherAjoutAction && <button className="small-btn add-roll-slot" onClick={() => ajouterAction(participant.id)} type="button">{t('sheet.actions.add')}</button>}

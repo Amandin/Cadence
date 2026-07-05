@@ -1,23 +1,18 @@
 .random-system-page {
   --rs-ink: var(--ui-text);
   --rs-muted: var(--ui-muted);
-  --rs-border: var(--ui-border);
+  --rs-border: var(--ui-panel-border);
   --rs-surface: var(--ui-surface);
   --rs-soft: var(--ui-surface-soft);
-  --rs-surface-strong: var(--ui-surface-strong);
-  --rs-accent: var(--ui-primary-strong);
-  --rs-accent-soft: color-mix(in srgb, var(--theme-gold) 12%, var(--ui-surface));
-  --rs-accent-strong: color-mix(in srgb, var(--theme-purple-soft) 72%, var(--theme-purple));
-  --rs-highlight: var(--theme-gold);
-  --rs-warm: var(--theme-orange);
-  --rs-success: var(--ui-success, #16a34a);
-  --rs-warning: var(--ui-accent, #d97706);
-  --rs-group-default: var(--rs-accent);
-  --rs-action-gradient-start: color-mix(in srgb, var(--theme-purple) 92%, black);
-  --rs-action-gradient-end: color-mix(in srgb, var(--theme-purple-soft) 68%, var(--theme-purple));
-  --rs-action-shadow: 0 14px 26px color-mix(in srgb, var(--rs-accent-strong) 18%, transparent);
-  --rs-tab-shadow: 0 8px 18px color-mix(in srgb, var(--rs-accent-strong) 8%, transparent);
-  --rs-shadow: 0 16px 36px color-mix(in srgb, var(--rs-accent-strong) 8%, transparent);
+  --rs-accent: var(--ui-primary);
+  --rs-accent-soft: var(--ui-chip-subtle-bg);
+  --rs-accent-strong: var(--ui-primary-strong);
+  --rs-highlight: var(--ui-accent);
+  --rs-warm: var(--ui-accent);
+  --rs-success: var(--ui-success);
+  --rs-warning: var(--ui-warning-text);
+  --rs-tab-shadow: var(--ui-selected-shadow);
+  --rs-shadow: var(--ui-panel-shadow);
   min-height: calc(100vh - 120px);
   container-type: inline-size;
   color: var(--rs-ink);
@@ -33,14 +28,10 @@
   }
 }
 
-.dark .random-system-page {
-  --rs-accent: var(--theme-gold);
-  --rs-accent-soft: color-mix(in srgb, var(--theme-gold) 18%, var(--ui-surface));
-  --rs-accent-strong: color-mix(in srgb, var(--theme-gold) 64%, var(--theme-purple-soft));
-  --rs-warm: var(--theme-orange);
-  --rs-action-gradient-start: color-mix(in srgb, var(--theme-purple) 72%, black);
-  --rs-action-gradient-end: color-mix(in srgb, var(--theme-purple-soft) 64%, var(--theme-gold));
-  --rs-shadow: 0 18px 40px color-mix(in srgb, black 24%, transparent);
+@media (min-width: 1280px) {
+  .campaign-hub-page > .random-system-page {
+    grid-column: 2;
+  }
 }
 
 .rs-toolbar {
@@ -53,11 +44,9 @@
   align-items: center;
   margin-bottom: 16px;
   padding: 16px 18px;
-  border: 1px solid var(--rs-border);
-  border-radius: 18px;
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--theme-gold) 10%, transparent), transparent 45%),
-    linear-gradient(180deg, color-mix(in srgb, var(--rs-surface-strong) 70%, var(--ui-app-bg)), var(--rs-surface));
+  border: 1px solid var(--ui-panel-border);
+  border-radius: var(--radius-surface);
+  background: var(--ui-panel-bg);
   box-shadow: var(--rs-shadow);
 }
 
@@ -107,9 +96,9 @@
   grid-auto-columns: minmax(0, 1fr);
   gap: 2px;
   padding: 3px;
-  border: 1px solid var(--rs-border);
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--rs-soft) 88%, var(--ui-app-bg));
+  border: 1px solid var(--ui-control-border);
+  border-radius: var(--radius-control);
+  background: var(--ui-control-bg);
 }
 
 .rs-segmented button {
@@ -119,7 +108,8 @@
   gap: 8px;
   min-height: 36px;
   padding: 7px 12px;
-  border-radius: 5px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
   background: transparent;
   color: var(--rs-muted);
   font-size: 12px;
@@ -128,8 +118,9 @@
 }
 
 .rs-segmented button.selected {
-  background: linear-gradient(180deg, var(--rs-surface-strong), var(--rs-surface));
-  color: var(--rs-accent);
+  border-color: var(--ui-selected-border);
+  background: var(--ui-selected-bg);
+  color: var(--ui-primary-contrast);
   box-shadow: var(--rs-tab-shadow);
 }
 
@@ -201,10 +192,10 @@
   gap: 6px;
   width: fit-content;
   padding: 4px 9px;
-  border: 1px solid color-mix(in srgb, var(--rs-highlight) 35%, var(--rs-border));
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--rs-highlight) 10%, var(--rs-surface));
-  color: var(--rs-accent-strong);
+  border: 1px solid var(--ui-chip-subtle-border);
+  border-radius: var(--radius-pill);
+  background: var(--ui-chip-subtle-bg);
+  color: var(--ui-chip-subtle-text);
   font-size: 10px;
   font-weight: 900;
   text-transform: uppercase;
@@ -228,10 +219,10 @@
   width: 28px;
   height: 28px;
   flex: 0 0 auto;
-  border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--rs-highlight) 42%, var(--rs-border));
-  background: linear-gradient(180deg, color-mix(in srgb, var(--rs-highlight) 14%, var(--rs-surface)), var(--rs-surface));
-  color: var(--rs-accent-strong);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--ui-chip-border);
+  background: var(--ui-chip-bg);
+  color: var(--ui-chip-text);
   font-size: 14px;
 }
 
@@ -248,10 +239,9 @@
 .rs-history,
 .rs-stat-grid > section,
 .rs-stat-summary {
-  border: 1px solid var(--rs-border);
-  border-radius: 16px;
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--rs-surface-strong) 72%, transparent), var(--rs-surface));
+  border: 1px solid var(--ui-panel-border);
+  border-radius: var(--radius-surface);
+  background: var(--ui-panel-bg);
   box-shadow: var(--rs-shadow);
 }
 
@@ -280,7 +270,7 @@
   min-width: 0;
   padding: 10px;
   border-left: 3px solid transparent;
-  border-radius: 10px;
+  border-radius: var(--radius-control);
   background: transparent;
   color: var(--rs-ink);
   overflow: hidden;
@@ -299,9 +289,10 @@
 
 .rs-resource-list > button:hover,
 .rs-resource-list > button.selected {
-  border-left-color: var(--rs-accent);
-  border-color: color-mix(in srgb, var(--rs-highlight) 34%, var(--rs-border));
-  background: var(--rs-accent-soft);
+  border-left-color: var(--ui-selected-border);
+  border-color: var(--ui-selected-border);
+  background: var(--ui-selected-bg);
+  color: var(--ui-primary-contrast);
 }
 
 .rs-resource-title {
@@ -343,28 +334,21 @@
   min-height: 42px;
   margin: 10px 0;
   padding: 9px 10px;
-  border: 1px solid var(--rs-border);
-  border-radius: 7px;
-  background: var(--rs-soft);
+  border: 1px solid var(--ui-control-border);
+  border-radius: var(--radius-control);
+  background: var(--ui-control-bg);
 }
 
 .rs-option-toggle.active {
-  border-color: var(--rs-accent);
-  background: var(--rs-accent-soft);
+  border-color: var(--ui-selected-border);
+  background: var(--ui-selected-bg);
+  color: var(--ui-primary-contrast);
 }
 
 .rs-run-button,
 .rs-save-resource {
   width: 100%;
   margin-top: 12px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, var(--rs-action-gradient-start), var(--rs-action-gradient-end));
-  box-shadow: var(--rs-action-shadow);
-}
-
-.dark .rs-run-button,
-.dark .rs-save-resource {
-  background: linear-gradient(135deg, var(--rs-action-gradient-start), var(--rs-action-gradient-end));
 }
 
 .rs-error {
@@ -435,16 +419,16 @@
   width: 100%;
   min-width: 0;
   padding: 8px;
-  border: 1px solid transparent;
-  border-radius: 10px;
-  background: var(--rs-soft);
+  border: 1px solid var(--ui-control-border);
+  border-radius: var(--radius-control);
+  background: var(--ui-control-bg);
   color: var(--rs-ink);
   text-align: left;
 }
 
 .rs-history-list > button:hover {
-  border-color: color-mix(in srgb, var(--rs-highlight) 34%, var(--rs-border));
-  background: color-mix(in srgb, var(--rs-highlight) 10%, var(--rs-soft));
+  border-color: var(--ui-selected-border);
+  background: var(--ui-chip-subtle-bg);
 }
 
 .rs-history-list > button > span {
@@ -501,7 +485,6 @@
 @media (max-width: 680px) {
   .rs-toolbar {
     padding: 12px 14px;
-    border-radius: 16px;
   }
 
   .rs-toolbar-title {

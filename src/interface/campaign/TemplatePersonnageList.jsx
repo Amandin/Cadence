@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { t } from '../../i18n/index.js';
-import { uiGlyphs } from '../../uiAssets.js';
+import { uiGlyphs, uiSymbols } from '../../uiAssets.js';
 import { BoutonIconeTemplate } from './TemplateRows.jsx';
 
 function grouperTemplates(templates = [], categories = []) {
@@ -28,7 +28,7 @@ function NouvelleCategorieTemplate({ onAjouterCategorie }) {
 
   return (
     <div className="template-new-category">
-      <input value={nom} placeholder={t('templates.personnages.newCategoryPlaceholder')} onChange={(event) => setNom(event.target.value)} />
+      <input value={nom} aria-label={t('templates.personnages.newCategoryPlaceholder')} placeholder={t('templates.personnages.newCategoryPlaceholder')} onChange={(event) => setNom(event.target.value)} />
       <button className="small-btn" onClick={ajouter}>{t('templates.personnages.addCategory')}</button>
     </div>
   );
@@ -50,7 +50,7 @@ function EnteteCategorieTemplate({ groupe, index, total, onAjouterTemplateCatego
   if (renommage) {
     return (
       <div className="template-category-edit">
-        <input value={nom} onChange={(event) => setNom(event.target.value)} />
+        <input value={nom} aria-label={t('templates.personnages.renameCategoryAria')} onChange={(event) => setNom(event.target.value)} />
         <button className="primary" onClick={enregistrer}>{t('common.ok')}</button>
         <button className="small-btn" onClick={() => setRenommage(false)}>{t('common.cancel')}</button>
       </div>
@@ -65,9 +65,9 @@ function EnteteCategorieTemplate({ groupe, index, total, onAjouterTemplateCatego
         <BoutonIconeTemplate className="template-edit-icon" label={t('templates.personnages.renameCategoryAria')} onClick={() => setRenommage(true)}>{uiGlyphs.edit}</BoutonIconeTemplate>
       </span>
       <div className="compact-arrows template-category-actions">
-        <BoutonIconeTemplate label={t('templates.personnages.addTemplateAria')} onClick={() => onAjouterTemplateCategorie(groupe.categorie)}>+</BoutonIconeTemplate>
-        <button className="small-btn" onClick={() => onDeplacerCategorie(groupe.categorie, -1)} disabled={index <= 0}>↑</button>
-        <button className="small-btn" onClick={() => onDeplacerCategorie(groupe.categorie, 1)} disabled={index >= total - 1}>↓</button>
+        <BoutonIconeTemplate label={t('templates.personnages.addTemplateAria')} onClick={() => onAjouterTemplateCategorie(groupe.categorie)}>{uiSymbols.add}</BoutonIconeTemplate>
+        <button className="small-btn" onClick={() => onDeplacerCategorie(groupe.categorie, -1)} disabled={index <= 0} aria-label={t('templates.personnages.moveCategoryUp', { name: groupe.categorie })} title={t('templates.personnages.moveCategoryUp', { name: groupe.categorie })}>{uiSymbols.moveUp}</button>
+        <button className="small-btn" onClick={() => onDeplacerCategorie(groupe.categorie, 1)} disabled={index >= total - 1} aria-label={t('templates.personnages.moveCategoryDown', { name: groupe.categorie })} title={t('templates.personnages.moveCategoryDown', { name: groupe.categorie })}>{uiSymbols.moveDown}</button>
         {groupe.templates.length === 0 && <button className="danger-btn mini-danger" onClick={() => onSupprimerCategorie(groupe.categorie)}>{t('common.delete')}</button>}
       </div>
     </div>
@@ -91,7 +91,7 @@ function LigneTemplate({ template, onEditerTemplate, onDupliquerTemplate, onSupp
         {suppressionVisible ? (
           <button className="danger-btn mini-danger template-delete-confirm" onClick={() => onSupprimerTemplate(template.id)}>{t('common.delete')}</button>
         ) : (
-          <button className="small-btn template-delete-reveal" onClick={() => setSuppressionVisible(true)} aria-label={t('templates.personnages.deleteRevealAria', { name: template.name })}>x</button>
+          <button className="small-btn template-delete-reveal" onClick={() => setSuppressionVisible(true)} aria-label={t('templates.personnages.deleteRevealAria', { name: template.name })}>{uiSymbols.remove}</button>
         )}
       </div>
     </div>

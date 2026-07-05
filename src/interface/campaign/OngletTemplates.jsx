@@ -183,14 +183,14 @@ export function OngletTemplates({
   return (
     <div className="stack hub-section panel">
       <div className="hub-section-head">
-        <h3>{t('templates.hub.title')}</h3>
+        <h2>{t('templates.hub.title')}</h2>
       </div>
-      <div className="template-subtabs">
-        <button className={`choice ${sousPage === 'personnages' ? 'selected' : ''}`} onClick={() => changerSousPage('personnages')}>{t('templates.tabs.personnages')}</button>
-        <button className={`choice ${sousPage === 'suivis' ? 'selected' : ''}`} onClick={() => changerSousPage('suivis')}>{t('templates.tabs.suivis')}</button>
-        <button className={`choice ${sousPage === 'etats' ? 'selected' : ''}`} onClick={() => changerSousPage('etats')}>{t('templates.tabs.statuses')}</button>
-        <button className={`choice ${sousPage === 'scene' ? 'selected' : ''}`} onClick={() => changerSousPage('scene')}>{t('templates.tabs.scene')}</button>
-      </div>
+      <nav className="template-subtabs" aria-label={t('templates.hub.title')}>
+        <button type="button" className={`choice ${sousPage === 'personnages' ? 'selected' : ''}`} aria-pressed={sousPage === 'personnages'} onClick={() => changerSousPage('personnages')}>{t('templates.tabs.personnages')}</button>
+        <button type="button" className={`choice ${sousPage === 'suivis' ? 'selected' : ''}`} aria-pressed={sousPage === 'suivis'} onClick={() => changerSousPage('suivis')}>{t('templates.tabs.suivis')}</button>
+        <button type="button" className={`choice ${sousPage === 'etats' ? 'selected' : ''}`} aria-pressed={sousPage === 'etats'} onClick={() => changerSousPage('etats')}>{t('templates.tabs.statuses')}</button>
+        <button type="button" className={`choice ${sousPage === 'scene' ? 'selected' : ''}`} aria-pressed={sousPage === 'scene'} onClick={() => changerSousPage('scene')}>{t('templates.tabs.scene')}</button>
+      </nav>
       {sousPage === 'personnages' && (
         <OngletTemplatesPersonnages
           categories={categoriesAffichees}

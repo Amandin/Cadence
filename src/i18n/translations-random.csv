@@ -185,6 +185,7 @@ random.definition.listKicker,Ce que l’on peut lancer
 random.definition.listHelp,Un type de tirage combine des dés ou des tables avec les options nécessaires pour produire un résultat.
 random.definition.duplicate,Dupliquer
 random.definition.name,Nom du lancer
+random.definition.visual,Image du lancer
 random.definition.type,Type de tirage
 random.definition.typeRoll,Tirage simple
 random.definition.typeCombination,Tirage combiné
@@ -204,6 +205,8 @@ random.definition.groupColor,Couleur
 random.definition.useGroupColor,Utiliser une couleur
 random.definition.source,Source
 random.definition.count,Quantité
+random.definition.valueMode,Mode de {label}
+random.definition.value,Valeur de {label}
 random.definition.explosion,Explosion
 random.definition.explosionMode,Comportement
 random.definition.explosionTrigger,Déclenchement

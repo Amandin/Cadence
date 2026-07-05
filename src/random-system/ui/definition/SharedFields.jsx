@@ -10,15 +10,15 @@ const comparatorOptions = [
   ['gte', '≥'],
 ];
 
-export function ModeValueField({ mode, value, onModeChange, onValueChange, requestLabel, min, max }) {
+export function ModeValueField({ label, mode, value, onModeChange, onValueChange, requestLabel, min, max }) {
   return (
     <div className="rs-mode-value">
-      <select value={mode} onChange={(event) => onModeChange(event.target.value)}>
+      <select aria-label={t('random.definition.valueMode', { label })} value={mode} onChange={(event) => onModeChange(event.target.value)}>
         <option value={builderModes.FIXED}>{t('random.definition.fixed')}</option>
         <option value={builderModes.REQUEST}>{requestLabel || t('random.definition.requested')}</option>
       </select>
       {mode === builderModes.FIXED && (
-        <input type="number" min={min} max={max} value={value} onChange={(event) => onValueChange(event.target.value)} />
+        <input aria-label={t('random.definition.value', { label })} type="number" min={min} max={max} value={value} onChange={(event) => onValueChange(event.target.value)} />
       )}
     </div>
   );

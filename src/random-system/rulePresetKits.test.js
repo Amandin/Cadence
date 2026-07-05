@@ -152,7 +152,7 @@ describe('RandomSystem rule preset kits', () => {
     ]));
   });
 
-  it('includes common damage dice in the generic d20 kit', () => {
+  it('covers the complete polyhedral set used by generic d20 games', () => {
     const resources = randomKitResources('kit-d20-generic');
 
     expect(resources.sources.map((source) => source.id)).toEqual(expect.arrayContaining([
@@ -162,12 +162,10 @@ describe('RandomSystem rule preset kits', () => {
       'standard-d10',
       'standard-d12',
       'standard-d20',
+      'standard-d100',
     ]));
-    expect(resources.definitions.map((definition) => definition.id)).toContain('kit-d20-damage');
-    expect(resources.definitions.find((definition) => definition.id === 'kit-d20-damage'))
-      .toMatchObject({ name: 'Degats / des multiples', exposed: true, active: true });
-    expect(resources.definitions.find((definition) => definition.id === 'kit-d20-initiative'))
-      .toMatchObject({ name: 'd20 simple', parameters: [], options: [] });
+    expect(resources.definitions.find((definition) => definition.id === 'kit-d20-polyhedral'))
+      .toMatchObject({ name: 'Dés polyédriques', exposed: true, active: true });
     expect(resources.definitions.find((definition) => definition.id === 'kit-d20-check').options[0])
       .toMatchObject({
         defaultValue: 'normal',
@@ -179,15 +177,48 @@ describe('RandomSystem rule preset kits', () => {
       });
   });
 
+  it('covers the regular dice mechanics of every named system kit', () => {
+    const cthulhu = randomKitResources('kit-d100-percentile');
+    expect(cthulhu.sources.map((source) => source.id)).toEqual(expect.arrayContaining([
+      'standard-d3',
+      'standard-d4',
+      'standard-d6',
+      'standard-d8',
+      'standard-d10',
+      'standard-d20',
+      'standard-d100',
+    ]));
+    expect(cthulhu.definitions.map((definition) => definition.id)).toEqual(expect.arrayContaining([
+      'kit-d100-check',
+      'kit-d100-polyhedral',
+    ]));
+
+    expect(randomKitResources('kit-d6-pool').definitions.map((definition) => definition.id))
+      .toEqual(expect.arrayContaining(['kit-d6-pool-successes', 'kit-d6-total']));
+    expect(randomKitResources('kit-narrative-no-initiative').definitions.map((definition) => definition.id))
+      .toEqual(expect.arrayContaining(['kit-2d6-mod', 'kit-d10-pool-successes']));
+    expect(randomKitResources('kit-cosmere-label-order').definitions.map((definition) => definition.id))
+      .toEqual(expect.arrayContaining(['kit-cosmere-d20-check', 'kit-cosmere-plot', 'kit-cosmere-polyhedral']));
+    expect(randomKitResources('kit-savage-step-cards').definitions.map((definition) => definition.id))
+      .toEqual(expect.arrayContaining(['kit-savage-trait-wild', 'kit-savage-step']));
+  });
+
+  it('does not encode initiative or ordering as separate roll definitions', () => {
+    for (const definition of randomKitCatalog.flatMap((kit) => kit.definitions)) {
+      expect(`${definition.id} ${definition.name}`.toLocaleLowerCase('fr'))
+        .not.toMatch(/initiative|ordre|damage|dégâts|degats/);
+    }
+  });
+
   it('selects initiative rolls for numeric, card, label and no-initiative rules', () => {
     const d20Default = getDefaultInitiativeRoll(getPreset('systemes/d20-tactique-dd-pathfinder').rules);
     const savageDefault = getDefaultInitiativeRoll(getPreset('systemes/savage-worlds').rules);
     const cosmereDefault = getDefaultInitiativeRoll(getPreset('systemes/cosmere-rpg').rules);
     const narrativeDefault = getDefaultInitiativeRoll(getPreset('systemes/narratif-sans-initiative-pbta-vtm').rules);
 
-    expect(d20Default).toMatchObject({ mode: randomKitInitiativeModes.NUMERIC, definitionId: 'kit-d20-initiative' });
+    expect(d20Default).toMatchObject({ mode: randomKitInitiativeModes.NUMERIC, definitionId: 'kit-d20-check' });
     expect(savageDefault).toMatchObject({ mode: randomKitInitiativeModes.CARDS, sourceId: 'standard-54-cards' });
-    expect(cosmereDefault).toMatchObject({ mode: randomKitInitiativeModes.LABEL_ORDER, definitionId: 'kit-cosmere-speed' });
+    expect(cosmereDefault).toMatchObject({ mode: randomKitInitiativeModes.LABEL_ORDER, definitionId: null });
     expect(narrativeDefault).toMatchObject({ mode: randomKitInitiativeModes.NONE, definitionId: null });
     expect(getAvailableInitiativeRolls(getPreset('generiques/initiative-souple-sans-initiative').rules).length)
       .toBeGreaterThan(0);

@@ -70,9 +70,10 @@ export function ComponentEditor({
           )}
         </div>
       </label>
-      <label className="field">
-        {t('random.definition.count')}
+      <div className="field">
+        <span>{t('random.definition.count')}</span>
         <ModeValueField
+          label={t('random.definition.count')}
           mode={component.countMode}
           value={component.count}
           min="1"
@@ -81,7 +82,7 @@ export function ComponentEditor({
           onValueChange={(count) => onChange({ count })}
           requestLabel={t('random.definition.requestAtUse')}
         />
-      </label>
+      </div>
       {(explosionAvailable || rerollAvailable) && (
         <div className="rs-draw-treatments">
           <div className="rs-draw-treatment-toggles">

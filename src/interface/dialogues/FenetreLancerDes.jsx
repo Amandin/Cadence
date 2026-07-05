@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { t } from '../../i18n/index.js';
 import { activeDefinitions } from '../../random-system/definitionAccess.js';
 import { randomSourceKinds } from '../../random-system/engine.js';
+import { DefinitionVisual } from '../../random-system/ui/DefinitionVisual.jsx';
 import { DefinitionForm } from '../../random-system/ui/UsePanel.jsx';
 import { Fenetre } from '../commun/ComposantsCommuns.jsx';
 import '../../random-system/styles/choice-controls.css';
@@ -106,12 +107,26 @@ export function FenetreLancerDes({ randomSystem, onFermer }) {
       <div className="quick-roll-content">
         {definitions.length > 0 ? (
           <>
-            <label className="field quick-roll-type">
-              {t('random.quick.type')}
-              <select value={selected?.id || ''} onChange={(event) => chooseDefinition(event.target.value)}>
-                {definitions.map((definition) => <option value={definition.id} key={definition.id}>{definition.name}</option>)}
-              </select>
-            </label>
+            <div className="quick-roll-type">
+              <span className="quick-roll-type-label">{t('random.quick.type')}</span>
+              <div className="quick-roll-type-options" role="group" aria-label={t('random.quick.type')}>
+                {definitions.map((definition) => {
+                  const selectedDefinition = definition.id === selected?.id;
+                  return (
+                    <button
+                      type="button"
+                      className={selectedDefinition ? 'selected' : ''}
+                      aria-pressed={selectedDefinition}
+                      onClick={() => chooseDefinition(definition.id)}
+                      key={definition.id}
+                    >
+                      <DefinitionVisual visualId={definition.visualId} className="compact" decorative />
+                      <span>{definition.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
             {selected && (
               <DefinitionForm
                 className="quick-roll-form"

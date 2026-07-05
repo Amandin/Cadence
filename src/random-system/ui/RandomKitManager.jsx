@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { t } from '../../i18n/index.js';
+import { uiSymbols } from '../../uiAssets.js';
 import { IconeRepliFichette } from '../../interface/commun/ComposantsCommuns.jsx';
 import {
   randomKitIsLoaded,
@@ -171,7 +172,7 @@ export function RandomKitManager({ state, actions }) {
           <div className="rs-section-copy">
             <span className="rs-section-kicker">{t('random.config.kits')}</span>
             <div className="rs-heading-with-mark">
-              <span className="rs-heading-mark" aria-hidden="true">+</span>
+              <span className="rs-heading-mark" aria-hidden="true">{uiSymbols.add}</span>
               <h3>{t('random.kits.savedGroups')}</h3>
             </div>
             <p className="muted compact-help">{t('random.kits.savedGroupsHelp')}</p>
@@ -201,7 +202,7 @@ export function RandomKitManager({ state, actions }) {
           <div className="rs-section-copy">
             <span className="rs-section-kicker">{t('random.kits.availableKicker')}</span>
             <div className="rs-heading-with-mark">
-              <span className="rs-heading-mark" aria-hidden="true">+</span>
+              <span className="rs-heading-mark" aria-hidden="true">{uiSymbols.add}</span>
               <h2>{t('random.config.rollKits')}</h2>
             </div>
             <p className="muted compact-help">{t('random.kits.pageHelp')}</p>

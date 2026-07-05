@@ -47,15 +47,15 @@ export const FichetteInitiative = memo(function FichetteInitiative({ participant
       onModifierEtat={onModifierEtat}
       onRetirerEtat={onRetirerEtat}
       autoCollapsed={autoCollapsed}
-      primaryAction={(
+      primaryAction={boutonSouple && (
         <div className="card-actions">
-          <button className={`small-btn leave-initiative-btn ${sortieConseillee ? 'suggested' : ''}`} onClick={onQuitterInitiative} title={t('initiative.card.moveToReserve')} aria-label={t('initiative.card.moveParticipantToReserve', { name: participant.name })}><span className="cadence-arrow-icon forward" aria-hidden="true" /> <span>{t('reserve.title')}</span></button>
-          {boutonSouple && <div className={`flexible-action-row ${afficherRetourSouple ? 'has-undo' : ''}`}>
+          <div className={`flexible-action-row ${afficherRetourSouple ? 'has-undo' : ''}`}>
             {afficherRetourSouple && <button className="turn-btn compact previous-turn available flexible-play undo-played" onClick={onAnnulerAJoue} aria-label={t('initiative.card.undoResolved')} title={t('initiative.card.undoResolved')}><span className="cadence-arrow-icon back" aria-hidden="true" /></button>}
             {afficherActionSouple && <button className="primary flexible-play play-action" onClick={onMarquerAJoue} aria-label={actionsRestantes > 1 ? t('initiative.card.remainingActions', { count: actionsRestantes }) : t('initiative.card.markResolved')}>{flechesRestantes}</button>}
-          </div>}
+          </div>
         </div>
       )}
+      footerAction={sortieConseillee && <button className="small-btn leave-initiative-btn suggested" onClick={onQuitterInitiative} title={t('initiative.card.moveToReserve')} aria-label={t('initiative.card.moveParticipantToReserve', { name: participant.name })}><span className="cadence-arrow-icon forward" aria-hidden="true" /> <span>{t('reserve.title')}</span></button>}
     />
   );
 });

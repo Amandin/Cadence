@@ -15,8 +15,8 @@ common.off,OFF
 common.loading,Chargement
 common.create,Créer
 common.remove,Retirer
-common.expand,Dérouler
-common.collapse,Enrouler
+common.expand,Déplier
+common.collapse,Replier
 app.loading.preparing,Cadence se prépare...
 app.loading.hub,Chargement du hub...
 app.loading.scene,Chargement de la scène...
@@ -264,8 +264,13 @@ trackers.bar.openValue,Saisir une nouvelle valeur pour {name}
 trackers.bar.thresholdFallback,Seuil {value}
 trackers.points.previousCycle,Reculer au cycle precedent
 trackers.points.nextCycle,Avancer au cycle suivant
+trackers.points.togglePoint,Basculer le point {value} de {name}
 trackers.counter.defaultName,Compteur
 trackers.counter.edit,Modifier {label}
+trackers.counter.decrease,Diminuer {label}
+trackers.counter.increase,Augmenter {label}
+trackers.common.decrease,Diminuer {name}
+trackers.common.increase,Augmenter {name}
 status.add.title,Ajouter un état · {name}
 status.defaultName,Nouveau
 status.templateFallback,État
@@ -460,6 +465,8 @@ sheet.type,Type
 sheet.description,Description
 sheet.category,Catégorie
 sheet.symbol,Symbole
+sheet.symbol.custom,Personnalisé
+sheet.symbol.customPlaceholder,Ex. ⚡ ou 🐉
 sheet.color,Couleur
 sheet.currentValue,valeur actuelle : {value}
 sheet.defaultState,État par défaut
@@ -842,6 +849,8 @@ templates.personnages.editAria,Modifier {name}
 templates.personnages.kindFallback,Personnage
 templates.personnages.duplicateAria,Dupliquer {name}
 templates.personnages.deleteRevealAria,Afficher la suppression de {name}
+templates.personnages.moveCategoryUp,Monter la catégorie {name}
+templates.personnages.moveCategoryDown,Descendre la catégorie {name}
 templates.sections.suivis.help,Ces indicateurs pourront être ajoutés depuis l'édition d'une fiche.
 templates.sections.suivis.add,+ indicateur
 templates.sections.suivis.empty,Aucun modèle d'indicateur.
@@ -1018,3 +1027,11 @@ campaign.error.invalidCadenceFileDetailed,"Le fichier choisi n’est pas une cam
 campaign.error.invalidCadenceFile,Le fichier choisi n’est pas une campagne Cadence valide.
 campaign.error.invalidCadenceV2File,Le fichier choisi n'est pas une campagne Cadence v2 valide. Fichier : {fileName}.
 campaign.error.importTemplatesFailed,Impossible de lire les modèles de cette campagne.
+hub.campaigns.styleReference,Référence CSS et symboles
+hub.navigation,Navigation principale
+styleReference.loading,Chargement de la référence visuelle...
+styleReference.eyebrow,Outil interne
+styleReference.title,Référence visuelle Cadence
+styleReference.help,"Inventaire des styles, contrôles, couleurs et symboles actuellement utilisés dans Cadence."
+styleReference.back,Retour aux options
+styleReference.index,Sections de la référence visuelle

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { APP_VERSION } from '../../constants.js';
 import { activeGlobalTrackerThresholds, globalTrackerDisplayValue, globalTrackerTimerState } from '../../domain/globalTracker.js';
 import { t } from '../../i18n/index.js';
-import { getCadenceLogo, uiGlyphs } from '../../uiAssets.js';
+import { getCadenceLogo, uiGlyphs, uiSymbols } from '../../uiAssets.js';
 import { ThemeModeToggle } from '../app/MenuOptions.jsx';
 import { EtiquetteEtat, Fenetre } from '../commun/ComposantsCommuns.jsx';
 import { EditeurSeuilsCompteurScene } from '../suivis/CompteurGlobal.jsx';
@@ -201,7 +201,7 @@ function FenetreEditionIndicateurScene({ scene, compteur, onModifier, onChanger,
           <span>{t('dialogs.sceneIndicator.autoRound')}</span>
           <input type="checkbox" checked={avanceAuRound} onChange={(event) => modifier({ auto: event.target.checked, trigger: event.target.checked ? 'round' : 'manual', enabled: true })} />
         </label>}
-        {!tempsReel && <div className="grid2"><button className="small-btn" onClick={() => onChanger(-1)}>−1</button><button className="small-btn" onClick={() => onChanger(1)}>+1</button></div>}
+        {!tempsReel && <div className="grid2"><button className="small-btn" onClick={() => onChanger(-1)}>{uiSymbols.subtract}1</button><button className="small-btn" onClick={() => onChanger(1)}>{uiSymbols.add}1</button></div>}
         {tempsReel && <div className="timer-control-panel menu-timer-panel">
           <strong>{affichageTemps}</strong>
           {enPreparation && <p className="muted compact-help">{t('dialogs.sceneIndicator.prepHelp')}</p>}

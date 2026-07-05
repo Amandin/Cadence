@@ -3,7 +3,7 @@ import { defaultPhaseCount, phaseActionModes } from '../../constants.js';
 import { initiativesActionParticipant } from '../../domain/initiative.js';
 import { initiativeInputIsValid, initiativeValueForMode, normalizeInitiativeTextOrder } from '../../domain/initiativeTextOrder.js';
 import { t } from '../../i18n/index.js';
-import { uiGlyphs } from '../../uiAssets.js';
+import { uiGlyphs, uiSymbols } from '../../uiAssets.js';
 import { EtiquetteEtat, Fenetre, teinteEtatParticipant } from '../commun/ComposantsCommuns.jsx';
 import { IconeOeilMystiqueOuvert, IconeOeilMystiqueFerme } from '../icones/IconesOeilMystique.jsx';
 import { ChampInitiative } from '../initiative/ChampInitiative.jsx';
@@ -45,7 +45,7 @@ function FenetreInitiativesRapides({ participant, initiatives, initiativeTextOrd
         {brouillon.map((initiative, index) => (
           <div className="initiative-action-row" key={index}>
             <ChampInitiative label={t('initiative.entry.slotLabel', { index: index + 1 })} valeur={initiative} textConfig={textConfig} onChange={(valeur) => modifier(index, valeur)} autoFocus={index === 0} />
-            <button className="small-btn subtle-danger" type="button" onClick={() => retirer(index)} disabled={brouillon.length <= 1}>x</button>
+            <button className="small-btn subtle-danger" type="button" onClick={() => retirer(index)} disabled={brouillon.length <= 1}>{uiSymbols.remove}</button>
           </div>
         ))}
         {multipleActionSlots && <button className="small-btn" type="button" onClick={ajouter}>{t('sheet.actions.add')}</button>}

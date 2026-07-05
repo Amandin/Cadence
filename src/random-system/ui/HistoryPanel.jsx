@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import { t } from '../../i18n/index.js';
+import { uiSymbols } from '../../uiAssets.js';
 
 function historyValue(result) {
   if (result.kind === 'card-draw') return result.cards.map((card) => card.label).join(', ') || '—';
@@ -12,7 +13,7 @@ export const HistoryPanel = memo(function HistoryPanel({ history, onSelect, onCl
     <aside className="rs-history">
       <div className="rs-section-head">
         <div className="rs-heading-with-mark">
-          <span className="rs-heading-mark" aria-hidden="true">↺</span>
+          <span className="rs-heading-mark" aria-hidden="true">{uiSymbols.history}</span>
           <h3>{t('random.history.title')}</h3>
         </div>
         {history.length > 0 && <button type="button" className="small-btn" onClick={onClear}>{t('random.history.clear')}</button>}

@@ -113,6 +113,7 @@ function buildCombinationDefinition(draft) {
   return normalizeRandomDefinition({
     id: draft.id,
     name: String(draft.name || '').trim() || 'Combinaison sans nom',
+    visualId: draft.visualId,
     kind: randomDefinitionKinds.COMBINATION,
     exposed: true,
     active: draft.active !== false,
@@ -321,6 +322,7 @@ export function buildRandomDefinition(draft) {
   return normalizeRandomDefinition({
     id: draft.id,
     name: String(draft.name || '').trim() || 'Lancer sans nom',
+    visualId: draft.visualId,
     kind: randomDefinitionKinds.ROLL,
     exposed: draft.exposed,
     active: draft.active !== false,

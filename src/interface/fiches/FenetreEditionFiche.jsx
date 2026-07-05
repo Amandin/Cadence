@@ -4,7 +4,7 @@ import { normalizeInitiativeTextOrder } from '../../domain/initiativeTextOrder.j
 import { t } from '../../i18n/index.js';
 import { boxBlocks, boxVisualRank, clone, colors, cycleBoxMark, isBoxesTracker, isNumericTracker, isPointsTracker, isVisible, newTracker, normalizeBoxTracker, resetTracker, sortBoxBlocks, symbols, thresholdValue, uid } from '../../logic.js';
 import { instantiateTrackerCopy, instantiateTrackerTemplate, numberedCopyInsertIndex, numberedCopyName } from '../../templates.js';
-import { uiGlyphs } from '../../uiAssets.js';
+import { uiGlyphs, uiSymbols } from '../../uiAssets.js';
 import { Fenetre, MessageChangementTemplate } from '../commun/ComposantsCommuns.jsx';
 import { FenetreConfirmationSuppression } from '../dialogues/FenetreConfirmationSuppression.jsx';
 import { IconeOeilMystiqueFerme, IconeOeilMystiqueOuvert } from '../icones/IconesOeilMystique.jsx';
@@ -13,6 +13,8 @@ import { EditeurPhasesParticipant } from '../initiative/EditeurPhasesParticipant
 import { thresholdColorOptions, thresholdColorStyles, thresholdOperatorOptions, trackerThresholdBasisOptions } from '../suivis/thresholdUi.js';
 import { normaliserInfoRapide, normaliserInfosRapides } from './InfosRapides.jsx';
 import { brouillonCreneauxAction, entierPositif, nombreOuDefaut, normaliserFiche, texteCreneauxAction } from './ficheEditionModel.js';
+
+const customCharacterSymbolValue = '__custom-character-symbol__';
 
 function ApercuNiveaux({ niveaux, levelVisuals = null, emptyActive = true }) {
   const maximum = entierPositif(niveaux, 5);
@@ -80,14 +82,14 @@ function EditeurCases({ suivi, onChange, resetOptions = null }) {
           <div className="box-block-edit" key={bloc.id}>
             <div className="box-block-edit-head">
               <input value={bloc.label || ''} placeholder={t('sheet.boxes.blockName')} onChange={(e) => modifierBloc(bloc.id, (courant) => ({ ...courant, label: e.target.value || 'Bloc' }))} />
-              <button className="small-btn subtle-danger" onClick={() => retirerBloc(bloc.id)} disabled={blocs.length <= 1}>x</button>
+              <button className="small-btn subtle-danger" onClick={() => retirerBloc(bloc.id)} disabled={blocs.length <= 1}>{uiSymbols.remove}</button>
             </div>
             <div className="stack">
               {bloc.lines.map((ligne) => (
                 <div className={`free-box-edit-line box-line-edit ${bloc.lines.length <= 1 ? 'single-line' : ''}`} key={ligne.id}>
                   <input value={ligne.label || ''} placeholder={t('sheet.boxes.lineName')} disabled={bloc.lines.length <= 1} onChange={(e) => modifierLigne(bloc.id, ligne.id, (courante) => ({ ...courante, label: e.target.value || 'Ligne' }))} />
                   <input type="number" inputMode="numeric" min="1" value={(ligne.boxes || []).length || 1} onChange={(e) => modifierLigne(bloc.id, ligne.id, (courante) => ({ ...courante, boxes: creerCasesDepuis(courante.boxes, entierPositif(e.target.value, 1)) }))} />
-                  <button className="small-btn subtle-danger" onClick={() => retirerLigne(bloc.id, ligne.id)} disabled={bloc.lines.length <= 1}>x</button>
+                  <button className="small-btn subtle-danger" onClick={() => retirerLigne(bloc.id, ligne.id)} disabled={bloc.lines.length <= 1}>{uiSymbols.remove}</button>
                 </div>
               ))}
             </div>
@@ -123,7 +125,7 @@ function EditeurInfosRapides({ stats = [], onChange }) {
     if (normalisee.editable) modifier(index, normalisee);
   };
 
-  return <div className="stack quick-stats-editor">{lignes.map((info, index) => <div className={`quick-stat-row ${info.editable ? 'editable' : ''}`} key={index}>{info.editable ? <><input className="quick-stat-label-input" value={info.label} placeholder={t('sheet.quickInfo.label')} onChange={(e) => modifier(index, { label: e.target.value })} /><input className="quick-stat-value-input" value={info.value} placeholder={t('dialogs.sceneIndicator.value')} onChange={(e) => modifier(index, { value: e.target.value })} /></> : <input value={info.label} placeholder={t('sheet.quickInfo.placeholder')} onChange={(e) => changerTexte(index, e.target.value)} onBlur={() => separerValeurFinale(index)} />}<button className="small-btn subtle-danger" onClick={() => supprimer(index)} disabled={lignes.length <= 1 && !info.label && !info.value}>x</button></div>)}<button className="small-btn" onClick={ajouter}>{t('sheet.quickInfo.add')}</button></div>;
+  return <div className="stack quick-stats-editor">{lignes.map((info, index) => <div className={`quick-stat-row ${info.editable ? 'editable' : ''}`} key={index}>{info.editable ? <><input className="quick-stat-label-input" value={info.label} placeholder={t('sheet.quickInfo.label')} onChange={(e) => modifier(index, { label: e.target.value })} /><input className="quick-stat-value-input" value={info.value} placeholder={t('dialogs.sceneIndicator.value')} onChange={(e) => modifier(index, { value: e.target.value })} /></> : <input value={info.label} placeholder={t('sheet.quickInfo.placeholder')} onChange={(e) => changerTexte(index, e.target.value)} onBlur={() => separerValeurFinale(index)} />}<button className="small-btn subtle-danger" onClick={() => supprimer(index)} disabled={lignes.length <= 1 && !info.label && !info.value}>{uiSymbols.remove}</button></div>)}<button className="small-btn" onClick={ajouter}>{t('sheet.quickInfo.add')}</button></div>;
 }
 
 function thresholdOutOfBounds(seuil, suivi, bounds = {}) {
@@ -151,7 +153,7 @@ function EditeurSeuils({ suivi, onChange, field = 'thresholds', title, bounds = 
         const horsLimites = thresholdOutOfBounds(seuil, suivi, bounds);
         return (
           <div className={`threshold-edit-row ${choixCompteurs.length ? 'has-target' : ''} ${seuilsBarre ? 'has-basis' : ''} ${horsLimites ? 'out-of-bounds' : ''}`} key={index}>
-            <button className="small-btn subtle-danger threshold-delete" onClick={() => supprimer(index)}>x</button>
+            <button className="small-btn subtle-danger threshold-delete" onClick={() => supprimer(index)}>{uiSymbols.remove}</button>
             <div className="threshold-numeric-row">
               {choixCompteurs.length > 0 && <select className="threshold-target-select" value={seuil.counterId || '__main'} onChange={(e) => modifier(index, { counterId: e.target.value })}>{choixCompteurs.map((compteur) => <option key={compteur.id} value={compteur.id}>{compteur.label}</option>)}</select>}
               <select className="threshold-operator-select" value={seuil.operator || 'gte'} onChange={(e) => modifier(index, { operator: e.target.value })}>{thresholdOperatorOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
@@ -184,7 +186,7 @@ function EditeurCompteursMultiples({ suivi, onChange }) {
   const ajouter = () => onChange({ counters: [...secondaires, { id: uid('counter'), label: `${t('dialogs.sceneIndicator.counter')} ${secondaires.length + 2}`, current: 0, initial: 0 }] });
   const supprimer = (id) => onChange({ counters: secondaires.filter((compteur) => compteur.id !== id) });
 
-  return <div className="threshold-editor"><div className="line-count-row"><label>{t('sheet.counters.title')}</label><button className="small-btn" onClick={ajouter}>{t('sheet.counters.add')}</button></div><div className="counter-edit-grid">{compteurs.map((compteur) => <div className="counter-edit-tile" key={compteur.id}><input value={compteur.label || ''} placeholder={t('common.name')} onChange={(e) => modifier(compteur.id, { label: e.target.value })} /><div className="grid2"><ChampNombre label={t('sheet.counters.current')} valeur={compteur.current ?? 0} onChange={(valeur) => modifier(compteur.id, { current: valeur })} /><ChampNombre label={t('sheet.counters.initial')} valeur={compteur.initial ?? 0} onChange={(valeur) => modifier(compteur.id, { initial: valeur })} /></div><div className="grid2"><ChampNombre label={t('sheet.counters.min')} valeur={compteur.min ?? ''} placeholder="-" onChange={(valeur) => modifier(compteur.id, { min: valeur })} /><ChampNombre label={t('sheet.counters.max')} valeur={compteur.max ?? ''} placeholder="+" onChange={(valeur) => modifier(compteur.id, { max: valeur })} /></div><label className="field">{t('sheet.counters.size')}<select value={compteur.size || 'compact'} onChange={(e) => modifier(compteur.id, { size: e.target.value })}><option value="compact">{t('sheet.counters.size.compact')}</option><option value="normal">{t('sheet.counters.size.normal')}</option><option value="wide">{t('sheet.counters.size.wide')}</option></select></label>{compteur.id !== '__main' && <button className="small-btn subtle-danger" onClick={() => supprimer(compteur.id)}>x</button>}</div>)}</div></div>;
+  return <div className="threshold-editor"><div className="line-count-row"><label>{t('sheet.counters.title')}</label><button className="small-btn" onClick={ajouter}>{t('sheet.counters.add')}</button></div><div className="counter-edit-grid">{compteurs.map((compteur) => <div className="counter-edit-tile" key={compteur.id}><input value={compteur.label || ''} placeholder={t('common.name')} onChange={(e) => modifier(compteur.id, { label: e.target.value })} /><div className="grid2"><ChampNombre label={t('sheet.counters.current')} valeur={compteur.current ?? 0} onChange={(valeur) => modifier(compteur.id, { current: valeur })} /><ChampNombre label={t('sheet.counters.initial')} valeur={compteur.initial ?? 0} onChange={(valeur) => modifier(compteur.id, { initial: valeur })} /></div><div className="grid2"><ChampNombre label={t('sheet.counters.min')} valeur={compteur.min ?? ''} placeholder="-" onChange={(valeur) => modifier(compteur.id, { min: valeur })} /><ChampNombre label={t('sheet.counters.max')} valeur={compteur.max ?? ''} placeholder="+" onChange={(valeur) => modifier(compteur.id, { max: valeur })} /></div><label className="field">{t('sheet.counters.size')}<select value={compteur.size || 'compact'} onChange={(e) => modifier(compteur.id, { size: e.target.value })}><option value="compact">{t('sheet.counters.size.compact')}</option><option value="normal">{t('sheet.counters.size.normal')}</option><option value="wide">{t('sheet.counters.size.wide')}</option></select></label>{compteur.id !== '__main' && <button className="small-btn subtle-danger" onClick={() => supprimer(compteur.id)}>{uiSymbols.remove}</button>}</div>)}</div></div>;
 }
 
 function ToggleIconeSuivi({ suivi, onChange }) {
@@ -421,7 +423,7 @@ export function EditeurSuivi({ suivi, onChange, onDuplicate, onDelete, onSaveTem
                 {uiGlyphs.duplicate}
               </button>
             )}
-            <button className="danger-btn compact-danger tracker-delete-btn" onClick={onDelete} aria-label={t('common.delete')} title={t('common.delete')}>x</button>
+            <button className="danger-btn compact-danger tracker-delete-btn" onClick={onDelete} aria-label={t('common.delete')} title={t('common.delete')}>{uiSymbols.remove}</button>
           </div>
         </div>
         <input value={suivi.name} onChange={(e) => modifierSuivi({ name: e.target.value })} aria-label={t('sheet.tracker.nameAria')} />
@@ -457,6 +459,9 @@ export function FenetreEditionFiche({ participant, initiativeTextOrder, phaseAct
   const [confirmationSuppression, setConfirmationSuppression] = useState(false);
   const categoriesTemplateDisponibles = [...new Set([templateCategory, ...(templateCategories || [])].filter(Boolean))];
   const [categorieTemplate, setCategorieTemplate] = useState(templateCategory || categoriesTemplateDisponibles[0] || '');
+  const symboleCourant = typeof brouillon.symbol === 'string' ? brouillon.symbol : '';
+  const symbolePersonnalise = symboleCourant && !symbols.includes(symboleCourant);
+  const valeurSelectSymbole = symbolePersonnalise ? customCharacterSymbolValue : (symboleCourant || symbols[0]);
   useEffect(() => {
     setCategorieTemplate(templateCategory || categoriesTemplateDisponibles[0] || '');
   }, [templateCategory]);
@@ -532,21 +537,22 @@ export function FenetreEditionFiche({ participant, initiativeTextOrder, phaseAct
             {creneauxAction.slice(1).map((slot, index) => (
               <div className="initiative-action-row" key={slot.id || index}>
                 <ChampInitiative label={t('sheet.initiative.extra', { index: index + 2 })} valeur={slot.initiative} textConfig={textConfig} onChange={(valeur) => modifierCreneauAction(index + 1, valeur)} />
-                <button className="small-btn subtle-danger" onClick={() => retirerCreneauAction(index + 1)}>x</button>
+                <button className="small-btn subtle-danger" onClick={() => retirerCreneauAction(index + 1)}>{uiSymbols.remove}</button>
               </div>
             ))}
             <button className="small-btn" onClick={ajouterCreneauAction}>{t('sheet.actions.add')}</button>
           </div>}
           {!utiliserInitiative && creneauxAction.length > 1 && <div className="action-count-editor">
-            <button className="small-btn" type="button" onClick={() => retirerCreneauAction(creneauxAction.length - 1)} aria-label={t('sheet.actions.removeAria')}>-</button>
+            <button className="small-btn" type="button" onClick={() => retirerCreneauAction(creneauxAction.length - 1)} aria-label={t('sheet.actions.removeAria')}>{uiSymbols.subtract}</button>
             <strong>{t('sheet.actions.count', { count: creneauxAction.length })}</strong>
-            <button className="small-btn" type="button" onClick={ajouterCreneauAction} aria-label={t('sheet.actions.addAria')}>+</button>
+            <button className="small-btn" type="button" onClick={ajouterCreneauAction} aria-label={t('sheet.actions.addAria')}>{uiSymbols.add}</button>
           </div>}
         </div>}
         {modePhasesCochees && <EditeurPhasesParticipant phaseActions={brouillon.phaseActions} phaseCount={phaseCount} onChange={(phaseActions) => modifierChamp('phaseActions', phaseActions)} />}
         <details className="advanced-options">
           <summary>{t('sheet.advancedOptions')}</summary>
-          <div className="grid2"><label className="field">{t('sheet.symbol')}<select value={brouillon.symbol || symbols[0]} onChange={(e) => modifierChamp('symbol', e.target.value)}>{symbols.map((symbole) => <option key={symbole} value={symbole}>{symbole}</option>)}</select></label><label className="field">{t('sheet.color')}<select value={brouillon.color || colors[0]} onChange={(e) => modifierChamp('color', e.target.value)}>{colors.map((couleur) => <option key={couleur} value={couleur}>{colorNames[couleur] || couleur}</option>)}</select></label></div>
+          <div className="grid2"><label className="field">{t('sheet.symbol')}<select value={valeurSelectSymbole} onChange={(e) => modifierChamp('symbol', e.target.value === customCharacterSymbolValue ? '' : e.target.value)}>{symbols.map((symbole) => <option key={symbole} value={symbole}>{symbole}</option>)}<option value={customCharacterSymbolValue}>{t('sheet.symbol.custom')}</option></select></label><label className="field">{t('sheet.color')}<select value={brouillon.color || colors[0]} onChange={(e) => modifierChamp('color', e.target.value)}>{colors.map((couleur) => <option key={couleur} value={couleur}>{colorNames[couleur] || couleur}</option>)}</select></label></div>
+          {valeurSelectSymbole === customCharacterSymbolValue && <label className="field">{t('sheet.symbol.custom')}<input value={symboleCourant} placeholder={t('sheet.symbol.customPlaceholder')} onChange={(e) => modifierChamp('symbol', e.target.value)} /></label>}
           <label className="limit-switch-row character-secret-edit"><span><span aria-hidden="true">{uiGlyphs.stealth}</span> {t('sheet.character.hide')}</span><input type="checkbox" checked={!!brouillon.secret} onChange={(event) => modifierChamp('secret', event.target.checked)} /></label>
           {saveTemplateVisible && <button className="small-btn" style={{ width: '100%', marginTop: 12 }} onClick={enregistrerCommeTemplate}>{t('sheet.saveAsTemplate')}</button>}
         </details>
@@ -582,6 +588,6 @@ export function FenetreEditionFiche({ participant, initiativeTextOrder, phaseAct
   const modifierSuivi = (id, suivant) => setBrouillon((courant) => ({ ...courant, trackers: courant.trackers.map((suivi) => suivi.id === id ? suivant : suivi) }));
   const valider = () => onSave(normaliserFiche(brouillon, textConfig, { phaseActionMode: modePhasesCochees ? phaseActionModes.CHECKED : '', phaseCount, multipleActionSlots }), categorieTemplate);
   const enregistrerCommeTemplate = () => onSaveTemplate?.(normaliserFiche(brouillon, textConfig, { phaseActionMode: modePhasesCochees ? phaseActionModes.CHECKED : '', phaseCount, multipleActionSlots }));
-  const enteteMultiple = <div className="edit-sheet-header"><div className="template-edit-header-title"><h2>{title}</h2>{categoriesTemplateDisponibles.length > 0 && <label className="template-category-header-field"><span>{t('sheet.category')}</span><select value={categorieTemplate} onChange={(event) => setCategorieTemplate(event.target.value)}>{categoriesTemplateDisponibles.map((categorie) => <option key={categorie} value={categorie}>{categorie}</option>)}</select></label>}</div><button className="icon-btn validate-edit-btn" onClick={valider} aria-label={t('sheet.validateChanges')}>{'✓'}</button></div>;
+  const enteteMultiple = <div className="edit-sheet-header"><div className="template-edit-header-title"><h2>{title}</h2>{categoriesTemplateDisponibles.length > 0 && <label className="template-category-header-field"><span>{t('sheet.category')}</span><select value={categorieTemplate} onChange={(event) => setCategorieTemplate(event.target.value)}>{categoriesTemplateDisponibles.map((categorie) => <option key={categorie} value={categorie}>{categorie}</option>)}</select></label>}</div><button className="icon-btn validate-edit-btn" onClick={valider} aria-label={t('sheet.validateChanges')}>{uiSymbols.confirm}</button></div>;
   return renduEditionMultiple(enteteMultiple, valider, enregistrerCommeTemplate);
 }

@@ -1,0 +1,107 @@
+.rs-definition-visual {
+  position: relative;
+  display: inline-grid;
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  color: var(--ui-primary-contrast);
+  isolation: isolate;
+}
+
+.rs-definition-visual::before,
+.rs-definition-visual::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  z-index: -1;
+  border: 1px solid var(--ui-selected-border);
+  background: var(--ui-primary);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--ui-primary-contrast) 24%, transparent);
+}
+
+.rs-definition-visual > span {
+  max-width: 26px;
+  overflow: hidden;
+  font-size: 10px;
+  font-weight: 950;
+  line-height: 1;
+  text-overflow: clip;
+  white-space: nowrap;
+}
+
+.rs-definition-visual.visual-dice::before,
+.rs-definition-visual.visual-d6::before {
+  border-radius: 7px;
+}
+
+.rs-definition-visual.visual-d4::before {
+  inset: 2px 3px;
+  clip-path: polygon(50% 0, 100% 92%, 0 92%);
+}
+
+.rs-definition-visual.visual-d4 > span {
+  transform: translateY(5px);
+}
+
+.rs-definition-visual.visual-d8::before {
+  clip-path: polygon(50% 0, 96% 50%, 50% 100%, 4% 50%);
+}
+
+.rs-definition-visual.visual-d10::before {
+  inset: 1px 3px;
+  clip-path: polygon(50% 0, 96% 38%, 78% 100%, 22% 100%, 4% 38%);
+}
+
+.rs-definition-visual.visual-d12::before {
+  clip-path: polygon(50% 0, 88% 18%, 100% 58%, 72% 100%, 28% 100%, 0 58%, 12% 18%);
+}
+
+.rs-definition-visual.visual-d20::before,
+.rs-definition-visual.visual-percentile::before {
+  clip-path: polygon(50% 0, 90% 18%, 100% 62%, 68% 100%, 32% 100%, 0 62%, 10% 18%);
+}
+
+.rs-definition-visual.visual-dice-pool::before {
+  inset: 5px 1px 1px 9px;
+  border-radius: 5px;
+}
+
+.rs-definition-visual.visual-dice-pool::after {
+  inset: 1px 9px 5px 1px;
+  border-radius: 5px;
+  background: var(--ui-primary-strong);
+}
+
+.rs-definition-visual.visual-cards::before {
+  inset: 3px 5px 2px 9px;
+  border-radius: 4px;
+  transform: rotate(6deg);
+}
+
+.rs-definition-visual.visual-cards::after {
+  inset: 2px 9px 3px 5px;
+  border-radius: 4px;
+  background: var(--ui-surface);
+  transform: rotate(-6deg);
+}
+
+.rs-definition-visual.visual-cards > span {
+  color: var(--ui-primary-strong);
+  transform: translate(-2px, -1px);
+}
+
+.rs-definition-visual.compact {
+  width: 26px;
+  height: 26px;
+}
+
+.rs-definition-visual.compact::before,
+.rs-definition-visual.compact::after {
+  inset: 2px;
+}
+
+.rs-definition-visual.compact > span {
+  max-width: 20px;
+  font-size: 10px;
+}
