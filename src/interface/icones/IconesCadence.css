@@ -5,6 +5,162 @@
   overflow: visible;
 }
 
+.cadence-mask-icon {
+  --cadence-icon-size: 1.18em;
+  display: inline-block;
+  width: var(--cadence-icon-size);
+  height: var(--cadence-icon-size);
+  flex: 0 0 auto;
+  background: currentColor;
+  vertical-align: -0.18em;
+  -webkit-mask: var(--cadence-icon-url) center / contain no-repeat;
+  mask: var(--cadence-icon-url) center / contain no-repeat;
+}
+
+.icon-btn > .cadence-mask-icon,
+.small-btn > .cadence-mask-icon,
+.turn-btn > .cadence-mask-icon,
+.template-icon-btn > .cadence-mask-icon {
+  display: block;
+  margin: auto;
+}
+
+.cadence-mask-icon-close,
+.cadence-mask-icon-valid,
+.cadence-mask-icon-remove,
+.cadence-mask-icon-add {
+  --cadence-icon-size: 1.05em;
+}
+
+.cadence-mask-icon-menu,
+.cadence-mask-icon-settings,
+.cadence-mask-icon-save,
+.cadence-mask-icon-edit,
+.cadence-mask-icon-duplicate {
+  --cadence-icon-size: 1.2em;
+}
+
+.cadence-mask-icon-edit {
+  --cadence-icon-size: 1.24em;
+}
+
+.cadence-mask-icon-cardBack,
+.cadence-mask-icon-cardStack,
+.cadence-mask-icon-extraAction,
+.cadence-mask-icon-timer,
+.cadence-mask-icon-metronome {
+  --cadence-icon-size: 1.28em;
+}
+
+.cadence-mask-icon-dice {
+  --cadence-icon-size: 1.45em;
+}
+
+.cadence-mask-icon-nextStrong {
+  --cadence-icon-size: 1.16em;
+  transform-origin: center;
+}
+
+.cadence-mask-icon-nextStrong.down {
+  transform: rotate(180deg);
+}
+
+.cadence-mask-icon.reverse,
+.flexible-action-icon.reverse {
+  transform: rotate(180deg);
+}
+
+.bottom-next-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+.bottom-next-action > .cadence-mask-icon {
+  --cadence-icon-size: 1.05em;
+  flex: 0 0 auto;
+}
+
+.bottom-next-action.next-round > .cadence-mask-icon-nextSoft,
+.turn-btn.next-round > .cadence-mask-icon-nextSoft {
+  --cadence-icon-size: 1.22em;
+}
+
+.flexible-action-icon {
+  --cadence-icon-size: 1.3em;
+  display: block;
+  margin: auto;
+}
+
+.flexible-action-icon-stack {
+  --extra-action-count: 0;
+  --extra-action-step: 0.42em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: calc(1.3em + (var(--extra-action-count) * var(--extra-action-step)));
+  min-height: 1.36em;
+  line-height: 1;
+  position: relative;
+}
+
+.flexible-action-icon-stack .flexible-extra-action {
+  --cadence-icon-size: 1.18em;
+  margin-left: -0.78em;
+  opacity: .96;
+}
+
+.flexible-action-icon-stack.reverse {
+  flex-direction: row-reverse;
+}
+
+.flexible-action-icon-stack.reverse .flexible-extra-action {
+  margin-right: -0.78em;
+  margin-left: 0;
+}
+
+.status-duration {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+}
+
+.status-separator {
+  margin: 0 4px;
+}
+
+.status-duration-icon {
+  --cadence-icon-size: 1.05em;
+  vertical-align: -0.12em;
+}
+
+.cadence-mask-icon-avatarDefault,
+.cadence-mask-icon-avatarSubtle {
+  --cadence-icon-size: 1.5em;
+}
+
+.secret-icon {
+  --cadence-icon-size: 1.08em;
+  vertical-align: -0.16em;
+}
+
+.secret-chip .secret-icon {
+  --cadence-icon-size: 0.98em;
+  vertical-align: -0.12em;
+}
+
+.spy-toggle .secret-icon,
+.conceal-character-btn .secret-icon,
+.character-secret-edit .secret-icon {
+  --cadence-icon-size: 1.12em;
+}
+
+.character-secret-edit .secret-icon {
+  margin-right: 4px;
+}
+
 .dice-roll-icon {
   width: 1.4rem;
   height: 1.4rem;
@@ -21,9 +177,18 @@
   height: 22px;
 }
 
+.initiative-dice-roll-btn .cadence-mask-icon-cardBack {
+  --cadence-icon-size: 1.36em;
+}
+
+.initiative-draw-all-btn .cadence-mask-icon-cardStack,
+.initiative-group-roll-options .cadence-mask-icon-cardStack {
+  --cadence-icon-size: 1.22em;
+}
+
 .metronome-icon #metronome-bras {
-  transform-box: view-box;
-  transform-origin: 4.18px 12.74px;
+  transform-box: fill-box;
+  transform-origin: 50% 88%;
 }
 
 .metronome-icon.is-running #metronome-bras {

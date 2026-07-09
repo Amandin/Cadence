@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="24mm"
+   height="24mm"
+   viewBox="0 0 24.000001 24"
+   version="1.1"
+   id="svg1"
+   sodipodi:docname="dupliquer.svg"
+   inkscape:version="1.4.3 (0d15f75, 2025-12-25)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     inkscape:zoom="2.2586136"
+     inkscape:cx="40.732952"
+     inkscape:cy="107.36675"
+     inkscape:window-width="1920"
+     inkscape:window-height="1009"
+     inkscape:window-x="-8"
+     inkscape:window-y="828"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg1" />
+  <defs
+     id="defs1" />
+  <g
+     id="layer1"
+     transform="translate(-66.880223,-111.33036)" />
+  <g
+     id="g3"
+     transform="matrix(-1.8085854,0,0,1.8085854,136.80938,-198.8882)">
+    <path
+       id="path2"
+       style="fill:none;stroke:#000000;stroke-width:0.964897;stroke-linecap:round;stroke-dasharray:none"
+       d="m 66.621798,116.94092 3.479017,3.47902 3.479018,-3.47902 -3.479018,-3.47902 z"
+       sodipodi:nodetypes="ccccc" />
+  </g>
+  <g
+     id="g4"
+     transform="translate(-63.691137,-111.74453)" />
+  <path
+     id="path5"
+     style="fill:none;stroke:#000000;stroke-width:0.5817;stroke-linecap:round;stroke-dasharray:none"
+     d="M 12.385583,12.609435 10.026046,14.968969 7.6665079,12.609435 10.026046,10.249899 Z"
+     sodipodi:nodetypes="ccccc" />
+  <path
+     id="path6"
+     style="fill:none;stroke:#000000;stroke-width:0.872549;stroke-linecap:round;stroke-dasharray:none"
+     d="m 11.432175,7.2251712 3.608184,-3.6081857 6.842645,6.8426475 -6.842645,6.842652 -1.956746,-1.956743"
+     sodipodi:nodetypes="ccccc" />
+</svg>

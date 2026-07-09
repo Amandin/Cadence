@@ -118,6 +118,29 @@ export default function App() {
   const [initiativeMismatch, setInitiativeMismatch] = useState(null);
   const [declarationActionsOpen, setDeclarationActionsOpen] = useState(false);
   const [declarationAdditionTargetId, setDeclarationAdditionTargetId] = useState('');
+
+  useEffect(() => {
+    const timers = new WeakMap();
+    const switchSelector = '.limit-switch-row > input[type="checkbox"], .reset-switch > input[type="checkbox"], .global-switch > input[type="checkbox"]';
+    const animateSwitchChange = (event) => {
+      const input = event.target;
+      if (!(input instanceof HTMLInputElement) || !input.matches(switchSelector)) return;
+      window.clearTimeout(timers.get(input));
+      input.classList.remove('switch-transitioning', 'switch-transition-on', 'switch-transition-off');
+      void input.offsetWidth;
+      input.classList.add('switch-transitioning', input.checked ? 'switch-transition-on' : 'switch-transition-off');
+      timers.set(input, window.setTimeout(() => {
+        input.classList.remove('switch-transitioning', 'switch-transition-on', 'switch-transition-off');
+      }, 280));
+    };
+    document.addEventListener('change', animateSwitchChange, true);
+    return () => {
+      document.removeEventListener('change', animateSwitchChange, true);
+      document.querySelectorAll('.switch-transitioning').forEach((input) => {
+        input.classList.remove('switch-transitioning', 'switch-transition-on', 'switch-transition-off');
+      });
+    };
+  }, []);
   const [pendingNextAfterInitiativeAdjust, setPendingNextAfterInitiativeAdjust] = useState(false);
   const [templateTarget, setTemplateTarget] = useState(null);
   const [editingTemplateId, setEditingTemplateId] = useState('');

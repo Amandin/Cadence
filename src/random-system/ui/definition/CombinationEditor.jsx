@@ -1,5 +1,5 @@
 import { t } from '../../../i18n/index.js';
-import { uiSymbols } from '../../../uiAssets.js';
+import { IconeCadence } from '../../../interface/icones/IconeCadence.jsx';
 import { randomChoiceControlKinds, randomDefinitionKinds } from '../../engine.js';
 import { createResourceId } from '../../resourceIds.js';
 
@@ -85,12 +85,12 @@ export function CombinationEditor({
             <input type="text" value={choice.label} aria-label={t('random.definition.choiceName')} onChange={(event) => patchChoice(choice.id, { label: event.target.value })} />
             <button
               type="button"
-              className="small-btn"
+              className="small-btn subtle-danger"
               disabled={combination.choices.length <= 1}
               onClick={() => removeChoice(choice.id)}
               aria-label={t('random.definition.deleteChoice', { name: choice.label })}
             >
-              ×
+              <IconeCadence name="remove" />
             </button>
           </div>
           <div className="rs-combination-choice-roll">
@@ -107,8 +107,8 @@ export function CombinationEditor({
               </select>
             </label>
             <div className="rs-combination-choice-actions">
-            <button type="button" className="small-btn" disabled={index === 0} onClick={() => moveChoice(index, -1)} aria-label={t('random.definition.moveChoiceUp', { name: choice.label })}>{uiSymbols.moveUp}</button>
-            <button type="button" className="small-btn" disabled={index === combination.choices.length - 1} onClick={() => moveChoice(index, 1)} aria-label={t('random.definition.moveChoiceDown', { name: choice.label })}>{uiSymbols.moveDown}</button>
+            <button type="button" className="small-btn" disabled={index === 0} onClick={() => moveChoice(index, -1)} aria-label={t('random.definition.moveChoiceUp', { name: choice.label })}><IconeCadence name="nextStrong" className="up" /></button>
+            <button type="button" className="small-btn" disabled={index === combination.choices.length - 1} onClick={() => moveChoice(index, 1)} aria-label={t('random.definition.moveChoiceDown', { name: choice.label })}><IconeCadence name="nextStrong" className="down" /></button>
             </div>
           </div>
         </div>

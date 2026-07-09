@@ -4,6 +4,7 @@ import { t } from '../../i18n/index.js';
 import { colors } from '../../logic.js';
 import { uiGlyphs } from '../../uiAssets.js';
 import { Fenetre } from '../commun/ComposantsCommuns.jsx';
+import { IconeCadence } from '../icones/IconeCadence.jsx';
 import { SelecteurImpactEtat } from '../commun/SelecteurImpactEtat.jsx';
 
 const optionsDuree = [
@@ -111,9 +112,9 @@ export function FenetreEtat({ participant, initialStatus = null, onFermer, onVal
 
   const entete = onSaveTemplate ? (
     <div className="status-window-header">
-      <button className="icon-btn tracker-template-save-btn" type="button" onClick={enregistrerTemplate} disabled={!peutEnregistrer} title={t('templates.editor.status.saveCurrent')} aria-label={t('templates.editor.status.saveCurrent')}>{uiGlyphs.save}</button>
+      <button className="icon-btn tracker-template-save-btn" type="button" onClick={enregistrerTemplate} disabled={!peutEnregistrer} title={t('templates.editor.status.saveCurrent')} aria-label={t('templates.editor.status.saveCurrent')}><IconeCadence name="save" /></button>
       <h2>{t('status.add.title', { name: participant.name })}</h2>
-      <button className="icon-btn" onClick={onFermer} aria-label={t('common.close')}>{uiGlyphs.close}</button>
+      <button className="icon-btn" onClick={onFermer} aria-label={t('common.close')}><IconeCadence name="close" /></button>
     </div>
   ) : null;
 

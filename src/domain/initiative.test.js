@@ -160,6 +160,27 @@ describe('initiative sorting and simultaneous groups', () => {
     expect(grouped[1].simultaneous).toBe(false);
     expect(grouped[1].participants[0].id).toBe('c');
   });
+
+  it('uses action slot identity for duplicated participant display entries', () => {
+    const [first, second] = ordreCreneauxClassique([
+      participant({
+        id: 'runner',
+        kind: 'PJ',
+        initiative: 12,
+        actionSlots: [
+          { id: 'slot-a', initiative: 12 },
+          { id: 'slot-b', initiative: 12 },
+        ],
+      }),
+    ], { categoryOrder: baseOrder, equalityRule: equalityRules.STRICT });
+    const grouped = grouperAffichageParticipants([first, second], { categoryOrder: baseOrder, equalityRule: equalityRules.STRICT });
+
+    expect(first.actionSlotId).toBe('runner:slot-a');
+    expect(second.actionSlotId).toBe('runner:slot-b');
+    expect(grouped).toHaveLength(1);
+    expect(grouped[0].id).toContain('runner:slot-a');
+    expect(grouped[0].id).toContain('runner:slot-b');
+  });
 });
 
 describe('reserve sorting', () => {

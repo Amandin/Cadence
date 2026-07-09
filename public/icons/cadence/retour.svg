@@ -1,0 +1,16 @@
+<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+ <g id="layer1">
+  <g id="g1" transform="rotate(180 11.2678 11.9228)">
+   <g id="layer1-8" transform="matrix(.638848 0 0 .638848 -41.3586 -62.7234)">
+    <path id="path1" d="m72.8903 115.595-1.30463 1.30463-1.30463-1.30463 1.30463-1.30463z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width=".375"/>
+   </g>
+   <path id="path1-8" d="m6.59628 11.1239-2.22256 2.22256-2.22256-2.22256 2.22256-2.22256z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width=".6"/>
+  </g>
+  <path id="path3" d="m16.3211 10.8688c-1.6671-1.78971-3.68509-3.1873-6.26967-3.06086-2.57857 0.126153-4.53381 1.11452-6.88246 4.58609" fill="none" stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width=".6" style="paint-order:stroke markers fill"/>
+  <g id="g6" transform="matrix(-.579375 .890594 -.890594 -.579375 24.748 4.24869)">
+   <g id="g7">
+    <path id="path5" d="m15.8817 10.5851 3.34611 2.2286-3.34611 2.2286m1.26586-2.95017 0.355423-0.355423 1.07531 1.07531-1.07531 1.07531-0.360143-0.360144" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width=".282362"/>
+   </g>
+  </g>
+ </g>
+</svg>

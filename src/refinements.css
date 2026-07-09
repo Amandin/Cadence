@@ -727,8 +727,7 @@
 
 .hub-row .template-title-with-action,
 .template-category-label.template-title-with-action {
-  display: grid;
-  grid-template-columns: minmax(0, max-content) auto;
+  display: inline-flex;
   align-items: center;
   column-gap: 1ch;
   max-width: 100%;
@@ -2291,7 +2290,7 @@
 }
 
 .flexible-action-row.has-undo {
-  grid-template-columns: 34px minmax(42px, 1fr);
+  grid-template-columns: minmax(34px, auto) minmax(42px, 1fr);
 }
 
 .flexible-action-row .flexible-play {
@@ -2302,6 +2301,9 @@
 }
 
 .flexible-action-row .undo-played {
+  width: auto;
+  min-width: 34px;
+  padding-inline: 7px;
   font-size: 17px;
 }
 
@@ -2344,6 +2346,7 @@
 
 .flexible-action-row .play-action {
   gap: 2px;
+  min-width: max(42px, calc(34px + (var(--extra-action-count, 0) * 7px)));
 }
 
 .flexible-action-row .undo-played {
@@ -2372,10 +2375,6 @@
 
 .template-title-with-action .template-icon-btn {
   flex: 0 0 32px;
-}
-
-.template-edit-icon {
-  transform: scaleX(-1);
 }
 
 .template-edit-header-title {
@@ -2422,6 +2421,81 @@
   flex: 0 0 32px;
 }
 
+.cadence-arrow-icon {
+  --cadence-icon-url: url("/icons/cadence/fleche_N2.svg");
+  display: inline-block;
+  width: 1.12em;
+  height: 1.12em;
+  flex: 0 0 auto;
+  background: currentColor;
+  transform: translateY(-.02em);
+  vertical-align: -0.16em;
+  -webkit-mask: var(--cadence-icon-url) center / contain no-repeat;
+  mask: var(--cadence-icon-url) center / contain no-repeat;
+}
+
+.cadence-arrow-icon::before {
+  content: none;
+}
+
+.cadence-arrow-icon.back {
+  transform: translateY(-.02em) rotate(180deg);
+}
+
+.cadence-arrow-icon.vertical {
+  transform: rotate(90deg);
+}
+
+.cadence-arrow-icon.up {
+  transform: rotate(-90deg);
+}
+
+.cadence-arrow-icon.down {
+  transform: rotate(90deg);
+}
+
+.cadence-mask-icon-nextStrong.up {
+  transform: none;
+}
+
+.cadence-mask-icon-nextStrong.down {
+  transform: rotate(180deg);
+}
+
+.template-title-with-action .template-edit-icon {
+  width: 1.35em;
+  min-width: 1.35em;
+  height: 1.35em;
+  min-height: 1.35em;
+  flex: 0 0 1.35em;
+  padding: 0;
+  align-self: center;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: color-mix(in srgb, var(--ui-text) 62%, var(--ui-muted));
+}
+
+.dark .template-title-with-action .template-edit-icon,
+.dark .template-title-with-action .template-edit-icon:hover,
+.dark .template-title-with-action .template-edit-icon:focus-visible {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.template-title-with-action .template-edit-icon:hover,
+.template-title-with-action .template-edit-icon:focus-visible {
+  color: var(--ui-accent);
+  background: transparent;
+  box-shadow: none;
+}
+
+.template-title-with-action .template-edit-icon .cadence-mask-icon {
+  --cadence-icon-size: 1.05em;
+}
+
 @media (max-width: 520px) {
   .template-icon-btn,
   .template-title-with-action .template-icon-btn,
@@ -2434,6 +2508,14 @@
     flex-basis: 34px;
     font-size: 14px;
   }
+}
+
+.template-title-with-action .template-edit-icon {
+  width: 1.35em;
+  min-width: 1.35em;
+  height: 1.35em;
+  min-height: 1.35em;
+  flex-basis: 1.35em;
 }
 
 .initiative-cost-rule-fields {

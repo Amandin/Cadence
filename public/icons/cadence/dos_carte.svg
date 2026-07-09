@@ -1,0 +1,29 @@
+<svg aria-hidden="true" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(-84.164 -118.55)">
+<g transform="matrix(.55988 0 0 .55988 42.779 55.456)" stroke="currentColor" stroke-linecap="round">
+<g transform="translate(1 1)">
+<path d="m97.703 132.56-4.2096 4.2096-4.2096-4.2096 4.2096-4.2096z" fill="none" stroke-width="1.0717"/>
+<path d="m91.957 132.56 1.5786 1.5786 1.5786-1.5786-1.5786-1.5786z" fill="none" stroke-width=".35722"/>
+<path d="m92.746 140.5 0.7893 0.7893 0.7893-0.7893-0.7893-0.7893z" stroke-width=".2"/>
+<path d="m93.14 145.26 0.39465 0.39465 0.39465-0.39465-0.39465-0.39465z" stroke-width=".1"/>
+</g>
+<g transform="matrix(1 0 0 -1 1 266.12)">
+<path d="m92.746 140.5 0.7893 0.7893 0.7893-0.7893-0.7893-0.7893z" stroke-width=".2"/>
+<path d="m93.14 145.26 0.39465 0.39465 0.39465-0.39465-0.39465-0.39465z" stroke-width=".1"/>
+</g>
+</g>
+<path d="m101.65 121.69v16.796" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width=".3"/>
+<g transform="matrix(0 .55988 -.55988 0 170.46 77.327)">
+<g transform="translate(1 1)">
+<path d="m92.746 140.5 0.7893 0.7893 0.7893-0.7893-0.7893-0.7893z" stroke="currentColor" stroke-linecap="round" stroke-width=".2"/>
+</g>
+<g transform="matrix(1 0 0 -1 1 266.12)">
+<path d="m92.746 140.5 0.7893 0.7893 0.7893-0.7893-0.7893-0.7893z" stroke="currentColor" stroke-linecap="round" stroke-width=".2"/>
+</g>
+</g>
+<path d="m102.57 139.41v-16.796l-0.9168-0.9238h-11.891v16.796l0.91679 0.9238h11.891l-0.9168-0.9238h-11.891" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width=".3"/>
+<path d="m101.95 121.98v16.796m0 0h-11.891" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width=".027994"/>
+<path d="m102.11 122.15v16.796m0 0h-11.891" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width=".027994"/>
+<path d="m102.28 122.32v16.796m0 0h-11.891" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width=".027994"/>
+</g>
+</svg>

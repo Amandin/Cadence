@@ -34,7 +34,7 @@ const GroupeSimultane = memo(function GroupeSimultane({ groupe, actifId, interac
     <div className={`simultaneous-group ${actif ? 'active' : ''}`}>
       {groupe.participants.map((participant) => (
         <FichetteInitiative
-          key={participant.id}
+          key={participant.actionSlotId || participant.id}
           participant={participant}
           actif={actif}
           groupeSimultane

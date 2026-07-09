@@ -1,0 +1,28 @@
+<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+ <g id="g3" transform="matrix(-.291318 0 0 .291318 32.399 -22.0635)" fill="none" stroke="currentColor" stroke-linecap="round">
+  <path id="path2" d="m64.5051 116.941 5.59568 5.59568 5.59568-5.59568-5.59568-5.59568z" stroke-width="1.0298"/>
+  <path id="path3" d="m72.4293 116.941-2.36296 2.36297-2.36297-2.36297 2.36297-2.36297z" stroke-width=".343268"/>
+ </g>
+ <g id="g14" transform="matrix(.291318 0 0 -.291318 6.46303 14.4495)">
+  <g id="g15" fill="none" stroke="currentColor" stroke-linecap="round">
+   <path id="path1" transform="matrix(1 0 0 -1 3e-7 16.8169)" d="m13.8775 4.91602s-6.51475-9.33492-8.76378-14.4876c-1.90959-4.37502-3.00517-12.9494-3.00517-12.9494" stroke-width="1.37307"/>
+   <path id="path4" transform="matrix(1 0 0 -1 3e-7 16.8169)" d="m-1.49359-23.077h41.0004" stroke-width="2.05961"/>
+   <path id="path5" transform="matrix(1 0 0 -1 3e-7 16.8169)" d="m-2.02275 39.8939h42.0588" stroke-width="2.05961"/>
+   <path id="path6" transform="rotate(180 19.0066 8.40843)" d="m13.8775 4.91602s-6.51475-9.33492-8.76378-14.4876c-1.90959-4.37502-3.00517-12.9494-3.00517-12.9494" stroke-width="1.37307"/>
+   <path id="path9" transform="matrix(-1 0 0 1 38.0133 -1.04167e-7)" d="m13.8775 4.91602s-6.51475-9.33492-8.76378-14.4876c-1.90959-4.37502-3.00517-12.9494-3.00517-12.9494" stroke-width="1.37307"/>
+   <path id="path12" d="m13.8775 4.91602s-6.51475-9.33492-8.76378-14.4876c-1.90959-4.37502-3.00517-12.9494-3.00517-12.9494" stroke-width="1.37307"/>
+  </g>
+ </g>
+ <g id="g16" transform="matrix(-.0728295 0 0 .0728295 17.0828 6.26153)" fill="currentColor">
+  <path id="path15" d="m62.3885 121.174 7.71235 7.71236 7.71235-7.71236-7.71235-7.71236z" fill="currentColor" stroke="currentColor" stroke-linecap="round"/>
+ </g>
+ <g id="g17" transform="matrix(-.0728295 0 0 .0728295 17.0828 8.1114)" fill="currentColor">
+  <path id="path16" d="m64.5051 123.291 5.59568 5.59569 5.59568-5.59569-5.59568-5.59569z" fill="currentColor" stroke="currentColor" stroke-linecap="round"/>
+ </g>
+ <g id="g18" transform="matrix(-.0728295 0 0 .0728295 17.0828 10.5779)" fill="currentColor">
+  <path id="path17" d="m66.6218 116.941 3.47902 3.47902 3.47902-3.47902-3.47902-3.47902z" fill="currentColor" stroke="currentColor" stroke-linecap="round"/>
+ </g>
+ <g id="g19" transform="matrix(-.0728295 0 0 .0728295 17.0828 1.4827)" fill="currentColor">
+  <path id="path18" d="m60.2718 100.008 9.82902 9.82903 9.82902-9.82903-9.82902-9.82902z" fill="currentColor" stroke="currentColor" stroke-linecap="round"/>
+ </g>
+</svg>

@@ -74,7 +74,7 @@
   --skin-app-bg: radial-gradient(circle at top left, #fffdf9 0, var(--skin-bg-soft) 36%, var(--skin-bg) 100%);
   --skin-surface: var(--theme-light-surface);
   --skin-surface-strong: var(--theme-light-surface-strong);
-  --skin-surface-soft: rgba(255, 250, 245, .72);
+  --skin-surface-soft: rgba(250, 239, 229, .58);
   --skin-border: var(--theme-light-border);
   --skin-border-strong: rgba(199, 94, 25, .42);
   --skin-text: var(--theme-light-text);
@@ -209,7 +209,7 @@
   --skin-app-bg: radial-gradient(circle at top left, var(--theme-purple) 0, var(--theme-dark-bg) 38%, var(--theme-dark-bg-deep) 100%);
   --skin-surface: var(--theme-dark-surface);
   --skin-surface-strong: var(--theme-dark-surface-soft);
-  --skin-surface-soft: rgba(52, 23, 58, .52);
+  --skin-surface-soft: rgba(83, 35, 72, .36);
   --skin-border: var(--theme-dark-border);
   --skin-border-strong: rgba(210, 164, 86, .44);
   --skin-text: var(--theme-dark-text);
@@ -688,6 +688,8 @@ body:has(.app[data-mode="dark"]),
 .main-menu {
   display: grid;
   gap: 10px;
+  width: min(760px, calc(100vw - 24px));
+  max-width: min(760px, calc(100vw - 24px));
 }
 
 .main-menu-layout,
@@ -755,29 +757,221 @@ body:has(.app[data-mode="dark"]),
   padding: 0;
 }
 
-:where(.limit-switch-row, .reset-switch, .global-switch) > input[type="checkbox"] {
+:is(.limit-switch-row, .reset-switch, .global-switch) > input[type="checkbox"] {
   appearance: none;
   position: relative;
+  flex: 0 0 auto;
+  width: 42px;
+  height: 24px;
   margin: 0;
-  border-radius: var(--radius-pill);
+  border: 0;
+  border-radius: 0;
+  background: transparent url("/icons/cadence/switch_off.svg") center / contain no-repeat !important;
   cursor: pointer;
-  transition: background-color .16s ease, border-color .16s ease;
+  transform-origin: center;
+  transition: filter .18s ease, opacity .18s ease, background-image .18s ease;
+  will-change: filter;
 }
 
-:where(.limit-switch-row, .reset-switch, .global-switch) > input[type="checkbox"]::after {
+:is(.limit-switch-row, .reset-switch, .global-switch) > input[type="checkbox"]::before {
   content: "";
   position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 16px;
+  height: 16px;
+  border: 1px solid #7f4a70;
   border-radius: var(--radius-pill);
-  transition: transform .16s ease;
+  background:
+    radial-gradient(circle at 35% 28%, rgba(255, 255, 255, .95), transparent 34%),
+    linear-gradient(135deg, #fffdf6 0%, #f3d7a6 100%);
+  box-shadow: 0 1px 3px rgba(124, 45, 18, .22);
+  opacity: 0;
+  transform: translateX(0);
+  pointer-events: none;
 }
 
-:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) :where(.limit-switch-row, .reset-switch, .global-switch) > input[type="checkbox"]::after {
-  background: var(--ui-control-text);
-  box-shadow: 0 1px 3px color-mix(in srgb, black 34%, transparent);
+:is(.limit-switch-row, .reset-switch, .global-switch) > input[type="checkbox"]::after {
+  content: "";
+  position: absolute;
+  top: 9px;
+  left: 9px;
+  width: 6px;
+  height: 6px;
+  border: 1px solid #c46a44;
+  border-radius: 2px;
+  opacity: 0;
+  transform: translateX(0) rotate(45deg);
+  pointer-events: none;
+}
+
+:is(.limit-switch-row, .reset-switch, .global-switch) > input[type="checkbox"]:checked,
+:where(.limit-switch-row.active, .reset-switch.active, .global-switch.active) > input[type="checkbox"] {
+  color: var(--ui-accent);
+  background-image: url("/icons/cadence/switch_on.svg") !important;
+  filter: saturate(1.12) drop-shadow(0 2px 4px color-mix(in srgb, var(--ui-accent) 22%, transparent));
+}
+
+:is(.limit-switch-row, .reset-switch, .global-switch) > input[type="checkbox"]:checked::before,
+:where(.limit-switch-row.active, .reset-switch.active, .global-switch.active) > input[type="checkbox"]::before {
+  border-color: #51165a;
+  background:
+    radial-gradient(circle at 35% 28%, rgba(255, 255, 255, .9), transparent 34%),
+    linear-gradient(135deg, #fff7d6 0%, #f6c46a 100%);
+  box-shadow: 0 1px 4px rgba(81, 22, 90, .28);
+  transform: translateX(18px);
+}
+
+:is(.limit-switch-row, .reset-switch, .global-switch) > input[type="checkbox"]:checked::after,
+:where(.limit-switch-row.active, .reset-switch.active, .global-switch.active) > input[type="checkbox"]::after {
+  border-color: #c85f19;
+  transform: translateX(18px) rotate(45deg);
+}
+
+:is(.limit-switch-row, .reset-switch, .global-switch) > input[type="checkbox"].switch-transitioning {
+  background-image: url("/icons/cadence/switch_off_track.svg") !important;
+}
+
+:is(.limit-switch-row, .reset-switch, .global-switch) > input[type="checkbox"].switch-transitioning:checked,
+:where(.limit-switch-row.active, .reset-switch.active, .global-switch.active) > input[type="checkbox"].switch-transitioning {
+  background-image: url("/icons/cadence/switch_on_track.svg") !important;
+}
+
+:is(.limit-switch-row, .reset-switch, .global-switch) > input[type="checkbox"].switch-transition-on::before {
+  animation: cadence-switch-thumb-on .26s cubic-bezier(.2, .85, .2, 1) both;
+}
+
+:is(.limit-switch-row, .reset-switch, .global-switch) > input[type="checkbox"].switch-transition-on::after {
+  animation: cadence-switch-mark-on .26s cubic-bezier(.2, .85, .2, 1) both;
+}
+
+:is(.limit-switch-row, .reset-switch, .global-switch) > input[type="checkbox"].switch-transition-off::before {
+  animation: cadence-switch-thumb-off .26s cubic-bezier(.2, .85, .2, 1) both;
+}
+
+:is(.limit-switch-row, .reset-switch, .global-switch) > input[type="checkbox"].switch-transition-off::after {
+  animation: cadence-switch-mark-off .26s cubic-bezier(.2, .85, .2, 1) both;
+}
+
+:is(.limit-switch-row, .reset-switch, .global-switch) > input[type="checkbox"]:hover:not(:disabled)::before {
+  transform: translateX(1px) scale(1.05);
+}
+
+:is(.limit-switch-row, .reset-switch, .global-switch) > input[type="checkbox"]:checked:hover:not(:disabled)::before,
+:where(.limit-switch-row.active, .reset-switch.active, .global-switch.active) > input[type="checkbox"]:hover:not(:disabled)::before {
+  transform: translateX(17px) scale(1.05);
+}
+
+:is(.limit-switch-row, .reset-switch, .global-switch) > input[type="checkbox"]:active:not(:disabled)::before {
+  transform: translateX(2px) scale(.94);
+}
+
+:is(.limit-switch-row, .reset-switch, .global-switch) > input[type="checkbox"]:checked:active:not(:disabled)::before,
+:where(.limit-switch-row.active, .reset-switch.active, .global-switch.active) > input[type="checkbox"]:active:not(:disabled)::before {
+  transform: translateX(16px) scale(.94);
+}
+
+:is(.limit-switch-row, .reset-switch, .global-switch) > input[type="checkbox"]:disabled {
+  cursor: not-allowed;
+  opacity: .58;
+}
+
+:is(.limit-switch-row, .reset-switch, .global-switch) > input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--ui-focus);
+  outline-offset: 3px;
+}
+
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) :is(.limit-switch-row, .reset-switch, .global-switch) > input[type="checkbox"] {
+  filter: brightness(.94) saturate(1.08);
+}
+
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) :is(.limit-switch-row, .reset-switch, .global-switch) > input[type="checkbox"]:checked,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) :where(.limit-switch-row.active, .reset-switch.active, .global-switch.active) > input[type="checkbox"] {
+  filter: brightness(1.04) saturate(1.18) drop-shadow(0 2px 5px color-mix(in srgb, var(--ui-accent) 30%, transparent));
 }
 
 :is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .limit-switch-row {
   color: var(--ui-text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is(.limit-switch-row, .reset-switch, .global-switch) > input[type="checkbox"] {
+    transition: filter .01s linear, opacity .01s linear;
+    will-change: auto;
+  }
+
+  :is(.limit-switch-row, .reset-switch, .global-switch) > input[type="checkbox"]::before,
+  :is(.limit-switch-row, .reset-switch, .global-switch) > input[type="checkbox"]::after {
+    animation: none !important;
+  }
+}
+
+@keyframes cadence-switch-thumb-on {
+  0% {
+    opacity: 1;
+    transform: translateX(0) scale(.98);
+  }
+
+  72% {
+    opacity: 1;
+    transform: translateX(19px) scale(1.04);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(18px) scale(1);
+  }
+}
+
+@keyframes cadence-switch-mark-on {
+  0% {
+    opacity: 1;
+    transform: translateX(0) rotate(45deg) scale(.98);
+  }
+
+  72% {
+    opacity: 1;
+    transform: translateX(19px) rotate(45deg) scale(1.04);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(18px) rotate(45deg) scale(1);
+  }
+}
+
+@keyframes cadence-switch-thumb-off {
+  0% {
+    opacity: 1;
+    transform: translateX(18px) scale(.98);
+  }
+
+  72% {
+    opacity: 1;
+    transform: translateX(-1px) scale(1.04);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes cadence-switch-mark-off {
+  0% {
+    opacity: 1;
+    transform: translateX(18px) rotate(45deg) scale(.98);
+  }
+
+  72% {
+    opacity: 1;
+    transform: translateX(-1px) rotate(45deg) scale(1.04);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(0) rotate(45deg) scale(1);
+  }
 }
 
 .icon-btn,
@@ -2353,6 +2547,21 @@ body:has(.app[data-mode="dark"]),
   border: 1px solid var(--ui-border) !important;
   box-shadow: var(--ui-shadow-surface);
   overflow: visible !important;
+}
+
+.app .menu-brand img,
+.app .campaign-brand-capsule img,
+.sheet.main-menu .menu-brand img {
+  width: 54px !important;
+  height: 54px !important;
+  min-width: 54px !important;
+  object-fit: contain !important;
+  object-position: center !important;
+  display: block !important;
+}
+
+.sheet.main-menu .menu-brand-header {
+  grid-template-columns: 58px minmax(0, 1fr) auto auto;
 }
 
 .app.dark .hub-return-logo {

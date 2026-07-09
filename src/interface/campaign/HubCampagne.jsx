@@ -4,6 +4,7 @@ import { t } from '../../i18n/index.js';
 import { getCadenceLogo, uiGlyphs, uiSymbols } from '../../uiAssets.js';
 import { OptionsContent, ThemeModeToggle } from '../app/MenuOptions.jsx';
 import { Fenetre } from '../commun/ComposantsCommuns.jsx';
+import { IconeCadence } from '../icones/IconeCadence.jsx';
 import { activeDefinitions } from '../../random-system/definitionAccess.js';
 
 const OngletRegles = lazy(() => import('./OngletRegles.jsx').then((module) => ({ default: module.OngletRegles })));
@@ -101,7 +102,7 @@ function CarteScene({ scene, index, canDelete, editing, onEditer, onFermerEditio
                 {suppressionVisible ? (
                   <button className="danger-btn mini-danger scene-delete-confirm" onClick={() => onSupprimerScene(index)}>{t('common.delete')}</button>
                 ) : (
-                  <button className="small-btn scene-delete-reveal" onClick={() => setSuppressionVisible(true)} aria-label={t('hub.scene.deleteRevealAria', { title: scene.title || t('hub.scene.defaultTitle') })}>{uiSymbols.remove}</button>
+                  <button className="small-btn scene-delete-reveal" onClick={() => setSuppressionVisible(true)} aria-label={t('hub.scene.deleteRevealAria', { title: scene.title || t('hub.scene.defaultTitle') })}><IconeCadence name="remove" /></button>
                 )}
               </div>
             )}

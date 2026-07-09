@@ -252,18 +252,24 @@ export function grouperParInitiative(participants = [], options = {}) {
   }, []);
 }
 
+function clefAffichageParticipant(participant = {}) {
+  return participant.actionSlotId || participant.id;
+}
+
 export function grouperAffichageParticipants(participants = [], options = {}) {
   const groupesSimultanes = groupesEgaliteParfaite(participants, options);
   const groupeParId = new Map();
 
   groupesSimultanes.forEach((groupe, index) => {
-    groupe.forEach((participant) => groupeParId.set(participant.id, { id: `sim-${index}`, participants: groupe }));
+    const idGroupe = `sim-${index}-${groupe.map(clefAffichageParticipant).join('-')}`;
+    groupe.forEach((participant) => groupeParId.set(clefAffichageParticipant(participant), { id: idGroupe, participants: groupe }));
   });
 
   const vus = new Set();
   return participants.flatMap((participant) => {
-    const groupe = groupeParId.get(participant.id);
-    if (!groupe) return [{ id: participant.id, simultaneous: false, participants: [participant] }];
+    const clef = clefAffichageParticipant(participant);
+    const groupe = groupeParId.get(clef);
+    if (!groupe) return [{ id: clef, simultaneous: false, participants: [participant] }];
     if (vus.has(groupe.id)) return [];
     vus.add(groupe.id);
     return [{ ...groupe, simultaneous: true }];

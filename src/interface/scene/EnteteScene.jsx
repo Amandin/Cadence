@@ -3,6 +3,7 @@ import { t } from '../../i18n/index.js';
 import { getCadenceLogo, uiGlyphs } from '../../uiAssets.js';
 import { participantEstInactif, participantEstLimite } from '../../domain/statuses.js';
 import { BadgeRound, EtiquetteEtat } from '../commun/ComposantsCommuns.jsx';
+import { IconeCadence } from '../icones/IconeCadence.jsx';
 import { CompteurGlobal } from '../suivis/CompteurGlobal.jsx';
 
 export const EnteteScene = memo(function EnteteScene(props) {
@@ -43,6 +44,7 @@ export const EnteteScene = memo(function EnteteScene(props) {
   const suffixeTemporalite = `${temporaliteSouple ? ` ${uiGlyphs.middleDot} ${t('scene.header.flexible')}` : temporalitePhases ? ` ${uiGlyphs.middleDot} ${t('scene.header.phases')}` : ''}${temporaliteDeclaration ? ` ${uiGlyphs.middleDot} ${t('scene.header.declaration')}` : ''}`;
   const actionDeclaree = temporaliteDeclaration && actif && scene.declarationStage === 'resolution' && !(scene.declarationPlayedIds || []).includes(actif.id) ? scene.declarations?.[actif.id] : '';
   const statutActif = participantEstInactif(actif) ? t('scene.status.inactive') : participantEstLimite(actif) ? t('scene.status.limited') : t('scene.status.active');
+  const iconeSuivant = classeSuivant?.includes('next-round') ? 'nextSoft' : 'nextMedium';
   const libelleActivation = enPreparation
     ? t('scene.header.preparation')
     : horlogeABloquee
@@ -73,7 +75,7 @@ export const EnteteScene = memo(function EnteteScene(props) {
             <CompteurGlobal compteur={scene.globalTracker} onChanger={onModifierCompteurGlobal} onToggleTemps={onToggleCompteurTemps} animationTick={compteurGlobalAuto} tickIntervalMs={performanceLow ? 4000 : 1000} />
           </div>
         </div>
-        <button className={`turn-btn next ${classeSuivant}`} onClick={onTourSuivant} disabled={suivantDesactive} aria-label={libelleSuivant}>{horlogeABloquee ? uiGlyphs.pause : uiGlyphs.next}</button>
+        <button className={`turn-btn next ${classeSuivant}`} onClick={onTourSuivant} disabled={suivantDesactive} aria-label={libelleSuivant}>{horlogeABloquee ? uiGlyphs.pause : <IconeCadence name={iconeSuivant} />}</button>
       </div>
       <div className="statuses status-control-row scene-status-row">
         {(scene.statuses || []).map((etat) => <EtiquetteEtat key={etat.id} etat={etat} onModifier={() => onModifierEtatScene?.(etat.id)} onRetirer={() => onRetirerEtatScene?.(etat.id)} />)}

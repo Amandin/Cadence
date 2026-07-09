@@ -49,6 +49,11 @@ export const standardCardSourceIds = {
 };
 
 const cosmerePlotSourceId = 'kit-cosmere-plot-d6';
+const cosmerePlotImages = {
+  complication2: '/icons/cadence/special-dice/Cosmere_Complication_2.svg',
+  complication4: '/icons/cadence/special-dice/Cosmere_Complication_4.svg',
+  boon: '/icons/cadence/special-dice/Cosmere_Aubaine.svg',
+};
 
 function integerParameter(id, label, defaultValue, min = -999, max = 999) {
   return {
@@ -314,12 +319,12 @@ function createCosmerePlotSource() {
     id: cosmerePlotSourceId,
     name: 'Cosmere - dé d’intrigue',
     outcomes: [
-      { id: 'complication-1', value: 1, label: 'Complication', weight: 1 },
-      { id: 'complication-2', value: 2, label: 'Complication', weight: 1 },
-      { id: 'neutre-3', value: 3, label: 'Neutre', weight: 1 },
-      { id: 'neutre-4', value: 4, label: 'Neutre', weight: 1 },
-      { id: 'opportunite-5', value: 5, label: 'Opportunité', weight: 1 },
-      { id: 'opportunite-6', value: 6, label: 'Opportunité', weight: 1 },
+      { id: 'complication-2', value: 1, label: 'Complication 2', weight: 1, image: cosmerePlotImages.complication2 },
+      { id: 'complication-4', value: 2, label: 'Complication 4', weight: 1, image: cosmerePlotImages.complication4 },
+      { id: 'blank-3', value: 3, label: 'Face vierge', weight: 1 },
+      { id: 'blank-4', value: 4, label: 'Face vierge', weight: 1 },
+      { id: 'boon-5', value: 5, label: 'Aubaine', weight: 1, image: cosmerePlotImages.boon },
+      { id: 'boon-6', value: 6, label: 'Aubaine', weight: 1, image: cosmerePlotImages.boon },
     ],
   });
 }

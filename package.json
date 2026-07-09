@@ -1,7 +1,7 @@
 {
   "name": "cadence",
   "private": true,
-  "version": "0.13.1",
+  "version": "0.15.1",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
@@ -9,6 +9,7 @@
     "build:cloudflare": "npm test && npm run build",
     "preview": "vite preview --host 0.0.0.0",
     "test": "vitest run",
+    "test:uiux": "node tests/uiux/full-uiux-routine.mjs",
     "test:visual": "playwright test",
     "test:visual:update": "playwright test --update-snapshots",
     "verify": "npm test && npm run build"

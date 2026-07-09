@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import { t } from '../../i18n/index.js';
-import { uiSymbols } from '../../uiAssets.js';
 import {
   buildRandomDefinition,
   builderDefinitionKinds,
@@ -16,6 +15,7 @@ import { CalculationEditor } from './definition/CalculationEditor.jsx';
 import { CombinationEditor } from './definition/CombinationEditor.jsx';
 import { ComponentEditor } from './definition/ComponentEditor.jsx';
 import { DefinitionVisual } from './DefinitionVisual.jsx';
+import { RandomIcon } from './RandomIcons.jsx';
 
 function DefinitionListGroup({
   definitions,
@@ -151,7 +151,7 @@ export function DefinitionEditor({ definitions, sources, rulePool, actions, onOp
           <div>
             <span className="rs-section-kicker">{t('random.definition.listKicker')}</span>
             <div className="rs-heading-with-mark">
-              <span className="rs-heading-mark" aria-hidden="true">{uiSymbols.draw}</span>
+              <span className="rs-heading-mark" aria-hidden="true"><RandomIcon name="roll" /></span>
               <h3>{t('random.config.definitions')}</h3>
             </div>
             <p className="muted compact-help">{t('random.definition.listHelp')}</p>
@@ -178,7 +178,7 @@ export function DefinitionEditor({ definitions, sources, rulePool, actions, onOp
           <div className="rs-section-copy">
             <span className="rs-section-kicker">{draft.kind === builderDefinitionKinds.COMBINATION ? t('random.definition.typeCombination') : t('random.definition.typeRoll')}</span>
             <div className="rs-heading-with-mark">
-              <span className="rs-heading-mark" aria-hidden="true">{uiSymbols.draw}</span>
+              <span className="rs-heading-mark" aria-hidden="true"><RandomIcon name="roll" /></span>
               <h2>{selected ? t('random.definition.edit') : t('random.definition.new')}</h2>
             </div>
           </div>

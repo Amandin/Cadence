@@ -1,4 +1,4 @@
-const APP_VERSION = '0.13.1';
+const APP_VERSION = '0.15.1';
 const CACHE_PREFIX = 'cadence-pwa';
 const CACHE_NAME = `${CACHE_PREFIX}:${APP_VERSION}`;
 
@@ -14,6 +14,36 @@ const CORE_URLS = [
   '/icon-512.png',
   '/branding/logo-cadence-light.svg',
   '/branding/logo-cadence-dark.svg',
+  '/icons/cadence/action_sup.svg',
+  '/icons/cadence/ajouter.svg',
+  '/icons/cadence/avatar_defaut.svg',
+  '/icons/cadence/avatar_discret.svg',
+  '/icons/cadence/croix.svg',
+  '/icons/cadence/dos_carte.svg',
+  '/icons/cadence/dos_cartes_multiple.svg',
+  '/icons/cadence/dupliquer.svg',
+  '/icons/cadence/edit.svg',
+  '/icons/cadence/fleche_N1.svg',
+  '/icons/cadence/fleche_N2.svg',
+  '/icons/cadence/fleche_N3.svg',
+  '/icons/cadence/jet_des.svg',
+  '/icons/cadence/menu.svg',
+  '/icons/cadence/metronome.svg',
+  '/icons/cadence/oeil_ferme.svg',
+  '/icons/cadence/oeil_ouvert.svg',
+  '/icons/cadence/retour.svg',
+  '/icons/cadence/rouage.svg',
+  '/icons/cadence/sablier.svg',
+  '/icons/cadence/sauvegarde.svg',
+  '/icons/cadence/supprimer.svg',
+  '/icons/cadence/switch_off.svg',
+  '/icons/cadence/switch_off_track.svg',
+  '/icons/cadence/switch_on.svg',
+  '/icons/cadence/switch_on_track.svg',
+  '/icons/cadence/valid.svg',
+  '/icons/cadence/special-dice/Cosmere_Aubaine.svg',
+  '/icons/cadence/special-dice/Cosmere_Complication_2.svg',
+  '/icons/cadence/special-dice/Cosmere_Complication_4.svg',
   '/fonts/lato/lato-latin-400-normal.woff2',
   '/fonts/lato/lato-latin-700-normal.woff2',
   '/fonts/comfortaa/comfortaa-latin-700-normal.woff2',
@@ -30,6 +60,7 @@ function isCacheableAsset(request) {
   return /\.(?:js|mjs|css|png|jpe?g|gif|svg|webp|avif|ico|woff2?|ttf|otf)$/i.test(url.pathname)
     || url.pathname === '/manifest.webmanifest'
     || url.pathname.startsWith('/branding/')
+    || url.pathname.startsWith('/icons/')
     || url.pathname.startsWith('/fonts/');
 }
 

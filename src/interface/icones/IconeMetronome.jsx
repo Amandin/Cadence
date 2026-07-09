@@ -2,18 +2,24 @@ import './IconesCadence.css';
 
 export function IconeMetronome({ fige = false }) {
   return (
-    <svg viewBox="0 0 9.2521963 15.951361" aria-hidden="true" className={`cadence-vector-icon metronome-icon ${fige ? 'is-stopped' : 'is-running'}`}>
-      <g id="metronome-structure" transform="translate(-196.474168,-78.155034)">
-        <path d="m 200.64917,83.241078 v 6.541685" fill="none" stroke="currentColor" strokeWidth=".4" strokeLinecap="round" />
-        <path d="m 197.0119,90.8915 7.72576,0.06506" fill="none" stroke="currentColor" strokeWidth=".4" strokeLinecap="round" />
-        <path d="m 200.74622,85.539123 h 0.44295" fill="none" stroke="currentColor" strokeWidth=".4" strokeLinecap="round" />
-        <path d="m 200.79223,87.222123 h 0.39694" fill="none" stroke="currentColor" strokeWidth=".4" strokeLinecap="round" />
-        <path d="m 199.99917,89.783777 h 1.35" fill="none" stroke="currentColor" strokeWidth=".4" strokeLinecap="round" />
-        <path d="m 199.32738,81.506419 1.32179,1.641465 1.51122,-1.606223" fill="none" stroke="currentColor" strokeWidth=".4" strokeLinecap="round" strokeLinejoin="round" />
-        <path d="m 198.28055,93.376524 v 0.670346 h -1.30118 v -0.670346 l -0.39478,0.01951 c -0.25674,-1.71e-4 -0.11681,-0.401468 0.009,-0.908794 0.69857,-2.796008 1.74498,-7.455986 2.67865,-10.961461 0.21238,-0.639703 0.84146,-0.955851 1.41174,-0.966983 0.57325,-0.01119 1.24541,0.21507 1.45594,0.915902 1.3496,4.310758 2.08294,7.389115 3.15649,11.300645 0.0419,0.152626 0.0766,0.622206 -0.13607,0.620932 l -0.5632,0.01927 v 0.65132 h -1.08684 v -0.65132 z" fill="none" stroke="currentColor" strokeWidth=".4" strokeLinecap="round" strokeLinejoin="round" />
+    <svg viewBox="0 0 24 24" aria-hidden="true" className={`cadence-vector-icon metronome-icon ${fige ? 'is-stopped' : 'is-running'}`}>
+      <g id="metronome-structure" transform="matrix(1.1769481,0,0,1.1769481,-224.38544,-88.903732)">
+        <path id="metronome-ligne-centre" d="m 200.66528,82.874495 -0.0161,6.908268" fill="none" stroke="currentColor" strokeWidth="0.326082" strokeLinecap="round" />
+        <path id="metronome-ligne-basse" d="m 197.0119,90.8915 7.63461,0.0039" fill="none" stroke="currentColor" strokeWidth="0.4" strokeLinecap="round" />
+        <path id="metronome-grad-haut" d="m 200.74622,85.539123 h 0.44295" fill="none" stroke="currentColor" strokeWidth="0.326082" strokeLinecap="round" />
+        <path id="metronome-grad-mil" d="m 200.79223,87.222123 h 0.39694" fill="none" stroke="currentColor" strokeWidth="0.326082" strokeLinecap="round" />
+        <path id="metronome-grad-bas" d="m 199.99917,89.783777 h 1.35" fill="none" stroke="currentColor" strokeWidth="0.326082" strokeLinecap="round" />
+        <path id="metronome-tour" d="m 202.13992,81.474698 c 1.13777,3.957027 2.25808,8.026955 3.22551,11.938668 l -0.76829,0.0022 v 0.65132 h -1.08684 v -0.65132 l -5.22975,-0.03902 v 0.670346 h -1.30118 v -0.670346 l -0.6526,0.02757 c 0.4587,-1.68793 1.74966,-7.388618 2.94547,-11.878312" fill="none" stroke="currentColor" strokeWidth="0.326082" strokeLinecap="round" strokeLinejoin="round" />
       </g>
-      <g id="metronome-bras">
-        <path d="M 4.1822932,13.720064 C 4.1859272,13.144643 4.1557382,2.0494156 4.1557382,2.0494156 M 3.4552132,1.2793536 4.1351171,0.01672955 4.8549662,1.2526836 4.1672822,2.0303186 Z" fill="none" stroke="currentColor" strokeWidth=".418" strokeLinecap="round" strokeLinejoin="round" />
+      <g id="metronome-losange" transform="matrix(0.49571879,0,0,0.49571879,9.2975243,3.190413)">
+        <path id="metronome-losange-interne" d="m 6.302757,7.43791 -1.304631,1.30463 -1.304632,-1.30463 1.304632,-1.30463 z" fill="none" stroke="currentColor" strokeWidth="0.387096" strokeLinecap="round" strokeLinejoin="round" />
+        <path id="metronome-losange-externe" d="M 8.4962714,7.4831427 5.0172544,10.962162 1.5382364,7.4831427 5.0172544,4.0041226 Z" fill="none" stroke="currentColor" strokeWidth="1.16129" strokeLinecap="round" strokeLinejoin="round" />
+      </g>
+      <g id="metronome-bras" transform="matrix(0.95945263,0,0,0.95945263,1.2214534,2.1549117)">
+        <g transform="matrix(1.226687,0,0,1.226687,5.867677,0.91014477)">
+          <path id="metronome-pendule" d="M 4.1822932,13.720064 C 4.1859272,13.144643 4.196022,1.4532153 4.196022,1.4532153" fill="none" stroke="currentColor" strokeWidth="0.326082" strokeLinecap="round" strokeLinejoin="round" />
+        </g>
+        <path id="metronome-pointe" d="M 10.58916,2.6251798 10.12596,1.9119551 10.947478,-0.06147411 11.876136,1.8405269 11.411799,2.626326" fill="none" stroke="currentColor" strokeWidth="0.2" strokeLinecap="round" strokeLinejoin="round" />
       </g>
     </svg>
   );

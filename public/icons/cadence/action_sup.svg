@@ -1,0 +1,18 @@
+<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <g
+    id="action-sup"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="0.4"
+    stroke-linecap="round"
+    stroke-linejoin="round">
+    
+    <path
+      id="action-sup-chevron"
+      d="M 15.348153 9.541488 L 16.552731 8.336909 L 20.197084 11.981265 L 16.552731 15.625622 L 15.332155 14.405047" />
+    
+    <path
+      id="action-sup-outline"
+      d="M 11.058001 4.434 L 22.398414 11.987008 L 11.058 19.540014" />
+  </g>
+</svg>

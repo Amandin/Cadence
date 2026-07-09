@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
 import { initiativeTextOrderFromCardSource, initiativeTextOrderPresetIds, initiativeTextOrderPresets, normalizeInitiativeTextOrder, presetInitiativeTextOrder, sameInitiativeTextOrder } from '../../domain/initiativeTextOrder.js';
 import { t } from '../../i18n/index.js';
-import { uiSymbols } from '../../uiAssets.js';
 import { Fenetre } from '../commun/ComposantsCommuns.jsx';
+import { IconeCadence } from '../icones/IconeCadence.jsx';
 
 const nettoyer = (value) => String(value ?? '').trim();
 const separateur = (value) => String(value ?? '');
@@ -39,9 +39,9 @@ function ListeLibelles({ part, partIndex, totalParts, separatorAfter, onModifier
     <div className="scene-options compact-options advanced-rule-block">
       <div className="line-count-row initiative-part-head">
         <label>{t('initiativeText.partLabel', { index: partIndex + 1 })}</label>
-        <button className="small-btn" type="button" onClick={() => onDeplacerPartie(partIndex, -1)} disabled={partIndex <= 0}>{uiSymbols.moveUp}</button>
-        <button className="small-btn" type="button" onClick={() => onDeplacerPartie(partIndex, 1)} disabled={partIndex >= totalParts - 1}>{uiSymbols.moveDown}</button>
-        <button className="small-btn subtle-danger" type="button" onClick={() => onSupprimerPartie(partIndex)} disabled={totalParts <= 1}>{uiSymbols.remove}</button>
+        <button className="small-btn" type="button" onClick={() => onDeplacerPartie(partIndex, -1)} disabled={partIndex <= 0}><IconeCadence name="nextStrong" className="up" /></button>
+        <button className="small-btn" type="button" onClick={() => onDeplacerPartie(partIndex, 1)} disabled={partIndex >= totalParts - 1}><IconeCadence name="nextStrong" className="down" /></button>
+        <button className="small-btn subtle-danger" type="button" onClick={() => onSupprimerPartie(partIndex)} disabled={totalParts <= 1}><IconeCadence name="remove" /></button>
       </div>
       <label className="field">{t('initiativeText.partName')}<input type="text" value={part.label} onChange={(event) => onModifierPart(partIndex, { label: event.target.value })} /></label>
       {partIndex < totalParts - 1 && <label className="field">{t('initiativeText.separator')}<input type="text" value={separatorAfter ?? ''} onChange={(event) => onModifierSeparateur(partIndex, event.target.value)} placeholder={t('initiativeText.separatorPlaceholder')} /></label>}
@@ -50,9 +50,9 @@ function ListeLibelles({ part, partIndex, totalParts, separatorAfter, onModifier
           <div className="restore-row discreet" key={`${valeur}-${index}`}>
             <input type="text" value={valeur} onChange={(event) => onModifierValeur(partIndex, index, event.target.value)} />
             <div className="compact-arrows">
-              <button className="small-btn" type="button" onClick={() => onDeplacerValeur(partIndex, index, -1)} disabled={index <= 0}>{uiSymbols.moveUp}</button>
-              <button className="small-btn" type="button" onClick={() => onDeplacerValeur(partIndex, index, 1)} disabled={index >= part.values.length - 1}>{uiSymbols.moveDown}</button>
-              <button className="small-btn subtle-danger" type="button" onClick={() => onSupprimerValeur(partIndex, index)}>{uiSymbols.remove}</button>
+              <button className="small-btn" type="button" onClick={() => onDeplacerValeur(partIndex, index, -1)} disabled={index <= 0}><IconeCadence name="nextStrong" className="up" /></button>
+              <button className="small-btn" type="button" onClick={() => onDeplacerValeur(partIndex, index, 1)} disabled={index >= part.values.length - 1}><IconeCadence name="nextStrong" className="down" /></button>
+              <button className="small-btn subtle-danger" type="button" onClick={() => onSupprimerValeur(partIndex, index)}><IconeCadence name="remove" /></button>
             </div>
           </div>
         ))}
@@ -225,7 +225,7 @@ export function FenetreInitiativeTextuelleEdition({ config, cardSources = [], in
   const presetValue = selectedCustomPresetId
     ? `custom:${selectedCustomPresetId}`
     : presetOptionIds.includes(draft.preset) ? draft.preset : '';
-  const header = <div className="row" style={{ justifyContent: 'space-between', marginBottom: 10 }}><h2 style={{ margin: 0 }}>{t('initiativeText.title')}</h2><div className="row"><button className="small-btn" type="button" onClick={demanderFermeture}>{t('common.cancel')}</button><button className="icon-btn validate-edit-btn" type="button" onClick={valider} disabled={!canValidate} aria-label={t('initiativeText.saveLabels')}>{uiSymbols.confirm}</button></div></div>;
+  const header = <div className="row" style={{ justifyContent: 'space-between', marginBottom: 10 }}><h2 style={{ margin: 0 }}>{t('initiativeText.title')}</h2><div className="row"><button className="small-btn" type="button" onClick={demanderFermeture}>{t('common.cancel')}</button><button className="icon-btn validate-edit-btn" type="button" onClick={valider} disabled={!canValidate} aria-label={t('initiativeText.saveLabels')}><IconeCadence name="valid" /></button></div></div>;
 
   return (
     <>

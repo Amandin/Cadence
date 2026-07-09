@@ -1,0 +1,87 @@
+<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <g id="metronome-structure" transform="matrix(1.1769481,0,0,1.1769481,-224.38544,-88.903732)">
+    <path
+      id="metronome-ligne-centre"
+      d="m 200.66528,82.874495 -0.0161,6.908268"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="0.326082"
+      stroke-linecap="round" />
+    <path
+      id="metronome-ligne-basse"
+      d="m 197.0119,90.8915 7.63461,0.0039"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="0.4"
+      stroke-linecap="round" />
+    <path
+      id="metronome-grad-haut"
+      d="m 200.74622,85.539123 h 0.44295"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="0.326082"
+      stroke-linecap="round" />
+    <path
+      id="metronome-grad-mil"
+      d="m 200.79223,87.222123 h 0.39694"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="0.326082"
+      stroke-linecap="round" />
+    <path
+      id="metronome-grad-bas"
+      d="m 199.99917,89.783777 h 1.35"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="0.326082"
+      stroke-linecap="round" />
+    <path
+      id="metronome-tour"
+      d="m 202.13992,81.474698 c 1.13777,3.957027 2.25808,8.026955 3.22551,11.938668 l -0.76829,0.0022 v 0.65132 h -1.08684 v -0.65132 l -5.22975,-0.03902 v 0.670346 h -1.30118 v -0.670346 l -0.6526,0.02757 c 0.4587,-1.68793 1.74966,-7.388618 2.94547,-11.878312"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="0.326082"
+      stroke-linecap="round"
+      stroke-linejoin="round" />
+  </g>
+
+  <g id="metronome-losange" transform="matrix(0.49571879,0,0,0.49571879,9.2975243,3.190413)">
+    <path
+      id="metronome-losange-interne"
+      d="m 6.302757,7.43791 -1.304631,1.30463 -1.304632,-1.30463 1.304632,-1.30463 z"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="0.387096"
+      stroke-linecap="round"
+      stroke-linejoin="round" />
+    <path
+      id="metronome-losange-externe"
+      d="M 8.4962714,7.4831427 5.0172544,10.962162 1.5382364,7.4831427 5.0172544,4.0041226 Z"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.16129"
+      stroke-linecap="round"
+      stroke-linejoin="round" />
+  </g>
+
+  <g id="metronome-bras" transform="matrix(0.95945263,0,0,0.95945263,1.2214534,2.1549117)">
+    <g transform="matrix(1.226687,0,0,1.226687,5.867677,0.91014477)">
+      <path
+        id="metronome-pendule"
+        d="M 4.1822932,13.720064 C 4.1859272,13.144643 4.196022,1.4532153 4.196022,1.4532153"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="0.326082"
+        stroke-linecap="round"
+        stroke-linejoin="round" />
+    </g>
+    <path
+      id="metronome-pointe"
+      d="M 10.58916,2.6251798 10.12596,1.9119551 10.947478,-0.06147411 11.876136,1.8405269 11.411799,2.626326"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="0.2"
+      stroke-linecap="round"
+      stroke-linejoin="round" />
+  </g>
+</svg>

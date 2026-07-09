@@ -1518,10 +1518,11 @@
   width: 100%;
   height: auto;
   min-height: 0;
-  padding: 4px 0 0;
-  background: transparent;
-  border: 0;
-  border-radius: 0;
+  padding: 5px 2px;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: var(--radius-pill);
+  box-shadow: none !important;
   color: inherit;
   text-align: left;
 }
@@ -1529,19 +1530,24 @@
 .bar-controls > .bar-action-zone {
   width: 100%;
   height: auto;
-  background: transparent;
-  border: 0;
-  border-radius: 0;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: var(--radius-pill);
+  box-shadow: none !important;
 }
 
 .bar-action-zone .bar-bg {
-  transition: transform .14s ease, box-shadow .14s ease;
+  min-height: 18px;
+  border: 1px solid color-mix(in srgb, var(--tracker-neutral) 28%, transparent);
+  box-shadow: inset 0 1px 3px color-mix(in srgb, var(--tracker-ink) 12%, transparent), 0 1px 0 color-mix(in srgb, var(--tracker-paper) 70%, transparent);
+  transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease;
 }
 
 .bar-action-zone:hover .bar-bg,
 .bar-action-zone:focus-visible .bar-bg {
   transform: scaleY(1.18);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--tracker-sky) 14%, transparent);
+  border-color: color-mix(in srgb, var(--tracker-sky) 54%, transparent);
+  box-shadow: inset 0 1px 3px color-mix(in srgb, var(--tracker-ink) 12%, transparent), 0 0 0 3px color-mix(in srgb, var(--tracker-sky) 14%, transparent);
 }
 
 .bar-bg.under-zero {

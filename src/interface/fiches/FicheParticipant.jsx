@@ -3,8 +3,8 @@ import { defaultPhaseCount, phaseActionModes } from '../../constants.js';
 import { initiativesActionParticipant } from '../../domain/initiative.js';
 import { initiativeInputIsValid, initiativeValueForMode, normalizeInitiativeTextOrder } from '../../domain/initiativeTextOrder.js';
 import { t } from '../../i18n/index.js';
-import { uiGlyphs, uiSymbols } from '../../uiAssets.js';
-import { EtiquetteEtat, Fenetre, teinteEtatParticipant } from '../commun/ComposantsCommuns.jsx';
+import { EtiquetteEtat, Fenetre, IconeSecret, teinteEtatParticipant } from '../commun/ComposantsCommuns.jsx';
+import { IconeCadence } from '../icones/IconeCadence.jsx';
 import { IconeOeilMystiqueOuvert, IconeOeilMystiqueFerme } from '../icones/IconesOeilMystique.jsx';
 import { ChampInitiative } from '../initiative/ChampInitiative.jsx';
 import { EditeurPhasesParticipant, normaliserPhaseActions } from '../initiative/EditeurPhasesParticipant.jsx';
@@ -45,7 +45,7 @@ function FenetreInitiativesRapides({ participant, initiatives, initiativeTextOrd
         {brouillon.map((initiative, index) => (
           <div className="initiative-action-row" key={index}>
             <ChampInitiative label={t('initiative.entry.slotLabel', { index: index + 1 })} valeur={initiative} textConfig={textConfig} onChange={(valeur) => modifier(index, valeur)} autoFocus={index === 0} />
-            <button className="small-btn subtle-danger" type="button" onClick={() => retirer(index)} disabled={brouillon.length <= 1}>{uiSymbols.remove}</button>
+            <button className="small-btn subtle-danger" type="button" onClick={() => retirer(index)} disabled={brouillon.length <= 1}><IconeCadence name="remove" /></button>
           </div>
         ))}
         {multipleActionSlots && <button className="small-btn" type="button" onClick={ajouter}>{t('sheet.actions.add')}</button>}
@@ -92,16 +92,16 @@ export function FicheParticipant({ participant, enInitiative, initiativeTextOrde
   const boutonsSuivi = (suivi) => (
     <span className="sheet-tracker-quick-actions">
       {boutonOeil(suivi)}
-      <button className={`spy-toggle sheet-spy-toggle ${suivi.secret ? 'active' : ''}`} onClick={(event) => { event.stopPropagation(); basculerSecret(suivi); }} aria-pressed={!!suivi.secret} title={t('sheet.tracker.secret')} type="button"><span aria-hidden="true">{uiGlyphs.stealth}</span><b>{t('sheet.tracker.secret')}</b></button>
+      <button className={`spy-toggle sheet-spy-toggle ${suivi.secret ? 'active' : ''}`} onClick={(event) => { event.stopPropagation(); basculerSecret(suivi); }} aria-pressed={!!suivi.secret} title={t('sheet.tracker.secret')} type="button"><IconeSecret /><b>{t('sheet.tracker.secret')}</b></button>
     </span>
   );
   const enteteFiche = (
     <div className="character-sheet-header">
       <div className="character-sheet-title-row">
         <h2>{participant.name}</h2>
-        <button className="icon-btn" onClick={onFermer} aria-label={t('common.close')} type="button">{uiGlyphs.close}</button>
+        <button className="icon-btn" onClick={onFermer} aria-label={t('common.close')} type="button"><IconeCadence name="close" /></button>
       </div>
-      <button className={`conceal-character-btn discreet ${dissimule ? 'active' : ''}`} type="button" onClick={onBasculerDissimule} aria-pressed={dissimule} title={dissimule ? t('sheet.character.revealTitle') : t('sheet.character.hideTitle')}><span aria-hidden="true">{uiGlyphs.stealth}</span><b>{t('sheet.character.hide')}</b></button>
+      <button className={`conceal-character-btn discreet ${dissimule ? 'active' : ''}`} type="button" onClick={onBasculerDissimule} aria-pressed={dissimule} title={dissimule ? t('sheet.character.revealTitle') : t('sheet.character.hideTitle')}><IconeSecret /><b>{t('sheet.character.hide')}</b></button>
     </div>
   );
 

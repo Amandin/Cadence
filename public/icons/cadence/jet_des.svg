@@ -1,0 +1,17 @@
+<svg aria-hidden="true" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <g transform="matrix(1.40061 0 0 1.40061 -135.841 -195.68)" fill="none" stroke="currentColor" stroke-linecap="round">
+    <path d="m112.549 150.532-4.78237 2.77278-4.79249-2.75526-0.0102-5.52805 4.78238-2.77279 4.79249 2.75527z" stroke-width=".28559"/>
+    <path d="m112.549 150.532-4.78237 2.77278m-4.79249-2.75526 4.77221-8.30084 4.80265 8.28332m-0.0102-5.52805-4.77221 8.30083-4.80266-8.28331" stroke-dasharray="0.57117951,0.28559013,0.14279507,0.28559013" stroke-width=".142795"/>
+  </g>
+  <path d="m5.31348 20.5746 5.03452-3.00704m-8.24295 1.30105c0.227808-0.09118 4.76115-2.73367 4.76115-2.73367m-4.56394-0.878055 5.05729-2.89314" fill="none" stroke="currentColor" stroke-dasharray="0.06000009,0.40000096,0.50000051,0.30000048,0.16000019,0.30000048" stroke-linecap="round" stroke-width=".2"/>
+  <g transform="matrix(.559875 0 0 .559875 -37.7944 -63.4988)">
+    <g transform="translate(1 .999995)" stroke="currentColor" stroke-linecap="round">
+      <path d="m96.1876 132.558-2.69415 2.69416-2.69415-2.69416 2.69415-2.69415z" fill="none" stroke-width=".535834"/>
+      <path d="m92.5248 132.558 1.01031 1.0103 1.01031-1.0103-1.01031-1.0103z" fill="none" stroke-width=".178611"/>
+      <path d="m92.7458 139.55 0.789302 0.7893 0.789303-0.7893-0.789303-0.7893z" stroke-width=".2"/>
+    </g>
+    <g transform="matrix(1 0 0 -1 1 266.116)">
+      <path d="m92.7458 139.55 0.789302 0.7893 0.789303-0.7893-0.789303-0.7893z" stroke="currentColor" stroke-linecap="round" stroke-width=".2"/>
+    </g>
+  </g>
+</svg>

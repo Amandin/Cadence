@@ -5,6 +5,7 @@ import { t } from '../../i18n/index.js';
 import { getCadenceLogo, uiGlyphs, uiSymbols } from '../../uiAssets.js';
 import { ThemeModeToggle } from '../app/MenuOptions.jsx';
 import { EtiquetteEtat, Fenetre } from '../commun/ComposantsCommuns.jsx';
+import { IconeCadence } from '../icones/IconeCadence.jsx';
 import { EditeurSeuilsCompteurScene } from '../suivis/CompteurGlobal.jsx';
 
 function MenuEntete({ sombre, themeState, onThemeModeChange, onOpenOptions, onClose }) {
@@ -18,8 +19,8 @@ function MenuEntete({ sombre, themeState, onThemeModeChange, onOpenOptions, onCl
         <span className="muted brand-meta">{t('menu.brandMeta', { version: APP_VERSION })}</span>
       </div>
       <ThemeModeToggle themeState={themeState} onThemeModeChange={onThemeModeChange} ariaLabel={t('menu.toggleTheme')} />
-      <button className="icon-btn options-gear-btn" onClick={onOpenOptions} aria-label={t('options.open')}>{'\u2699'}</button>
-      <button className="icon-btn menu-close-btn" onClick={onClose} aria-label={t('common.close')}>{uiGlyphs.close}</button>
+      <button className="icon-btn options-gear-btn" onClick={onOpenOptions} aria-label={t('options.open')}><IconeCadence name="settings" /></button>
+      <button className="icon-btn menu-close-btn" onClick={onClose} aria-label={t('common.close')}><IconeCadence name="close" /></button>
     </div>
   );
 }

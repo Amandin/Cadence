@@ -1,0 +1,13 @@
+<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <g id="cosmere-aubaine" fill="none" stroke="#c85f19" stroke-width="1.33746" stroke-linecap="round" transform="translate(-165.2778,-143.22148)">
+    <path
+      id="cosmere-aubaine-circle"
+      d="m 184.08978,155.53449 a 6.6872964,6.6872964 0 0 1 -6.6873,6.68729 6.6872964,6.6872964 0 0 1 -6.6873,-6.68729 6.6872964,6.6872964 0 0 1 6.6873,-6.6873 6.6872964,6.6872964 0 0 1 6.6873,6.6873 z"
+      stroke-linejoin="round" />
+    <path
+      id="cosmere-aubaine-spark"
+      d="m 177.40248,161.9859 c -0.67293,-3.7803 -3.13585,-5.88479 -7.07743,-6.76443 3.96069,-1.03082 6.4045,-2.98412 7.07743,-6.76442 0.69469,3.73679 3.58411,5.77976 7.07743,6.76442 -3.37026,0.84624 -6.38274,3.02764 -7.07743,6.76443 z"
+      stroke-linejoin="miter"
+      stroke-miterlimit="10" />
+  </g>
+</svg>

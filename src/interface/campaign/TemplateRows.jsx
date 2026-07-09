@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { t } from '../../i18n/index.js';
-import { uiGlyphs, uiSymbols } from '../../uiAssets.js';
+import { IconeCadence } from '../icones/IconeCadence.jsx';
 
 export function BoutonIconeTemplate({ label, children, className = '', ...props }) {
   return (
@@ -17,16 +17,16 @@ export function LigneTemplateSimple({ template, detail, onEditer, onDupliquer, o
       <span className="template-row-main">
         <span className="template-title-with-action">
           <strong>{template.name}</strong>
-          <BoutonIconeTemplate className="template-edit-icon" label={t('templates.actions.editAria', { name: template.name })} onClick={() => onEditer(template.id)}>{uiGlyphs.edit}</BoutonIconeTemplate>
+          <BoutonIconeTemplate className="template-edit-icon" label={t('templates.actions.editAria', { name: template.name })} onClick={() => onEditer(template.id)}><IconeCadence name="edit" /></BoutonIconeTemplate>
         </span>
         <small>{detail}</small>
       </span>
       <div className="compact-arrows template-row-actions">
-        <BoutonIconeTemplate label={t('templates.actions.duplicateAria', { name: template.name })} onClick={() => onDupliquer(template.id)}>{uiGlyphs.duplicate}</BoutonIconeTemplate>
+        <BoutonIconeTemplate label={t('templates.actions.duplicateAria', { name: template.name })} onClick={() => onDupliquer(template.id)}><IconeCadence name="duplicate" /></BoutonIconeTemplate>
         {suppressionVisible ? (
           <button className="danger-btn mini-danger template-delete-confirm" onClick={() => onSupprimer(template.id)}>{t('templates.actions.deleteShort')}</button>
         ) : (
-          <button className="small-btn template-delete-reveal" onClick={() => setSuppressionVisible(true)} aria-label={t('templates.actions.deleteRevealAria', { name: template.name })}>{uiSymbols.remove}</button>
+          <button className="small-btn template-delete-reveal" onClick={() => setSuppressionVisible(true)} aria-label={t('templates.actions.deleteRevealAria', { name: template.name })}><IconeCadence name="remove" /></button>
         )}
       </div>
     </div>

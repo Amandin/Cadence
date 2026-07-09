@@ -2,6 +2,7 @@ import { useEffect, useId, useRef } from 'react';
 import { t } from '../../i18n/index.js';
 import { colorAccents } from '../../constants.js';
 import { uiGlyphs } from '../../uiAssets.js';
+import { IconeCadence } from '../icones/IconeCadence.jsx';
 
 export function couleurVersAccent(couleur) {
   return colorAccents[couleur] || colorAccents.default;
@@ -39,7 +40,11 @@ export function teinteEtatParticipant(participant) {
 }
 
 export function AvatarParticipant({ participant }) {
-  return <div className={`avatar ${participant.color || 'slate'}`} aria-hidden="true">{participant.symbol || uiGlyphs.avatarFallback}</div>;
+  return <div className={`avatar ${participant.color || 'slate'}`} aria-hidden="true">{participant.symbol || <IconeCadence name="avatarDefault" />}</div>;
+}
+
+export function IconeSecret({ className = '' }) {
+  return <IconeCadence name="avatarSubtle" className={`secret-icon ${className}`.trim()} />;
 }
 
 export function IconeRepliFichette({ repliee = false, className = '' }) {
@@ -61,8 +66,8 @@ export function BoutonRepliFichette({ repliee = false, onClick, className = '' }
 function libelleEtat(etat) {
   if (etat.duration == null) return uiGlyphs.infinity;
   if (etat.expired && etat.loop) return `${uiGlyphs.loop} 0`;
-  if (etat.expired) return `${uiGlyphs.close} 0`;
-  return `${uiGlyphs.timer} ${etat.remaining}`;
+  if (etat.expired) return <><IconeCadence name="close" className="status-duration-icon" /> 0</>;
+  return <><IconeCadence name="timer" className="status-duration-icon" /> {etat.remaining}</>;
 }
 
 function typeEtat(etat) {
@@ -97,12 +102,12 @@ export function EtiquetteEtat({ etat, onRetirer, onModifier }) {
         onClick={modifier}
         onKeyDown={modifierAuClavier}
       >
-        {marqueurImpact}{etat.name}{` ${uiGlyphs.middleDot} `}{libelleEtat(etat)}
-        <button onClick={(event) => { event.stopPropagation(); onRetirer?.(); }} aria-label={t('common.remove')}>{uiGlyphs.close}</button>
+        {marqueurImpact}{etat.name}<span className="status-separator">{uiGlyphs.middleDot}</span><span className="status-duration">{libelleEtat(etat)}</span>
+        <button onClick={(event) => { event.stopPropagation(); onRetirer?.(); }} aria-label={t('common.remove')}><IconeCadence name="close" /></button>
       </span>
     );
   }
-  return <span className={`status ${typeEtat(etat)} ${couleurEtat ? 'colored-status' : ''} ${etat.advanceOn === 'round' ? 'round-status' : ''} ${etat.inactive ? 'inactive-status' : ''} ${etat.limited ? 'limited-status' : ''} ${etat.expired ? 'expired' : ''}`} style={couleurEtat ? { '--status-color': couleurEtat } : undefined}>{marqueurImpact}{etat.name} {uiGlyphs.middleDot} {libelleEtat(etat)}<button onClick={onRetirer} aria-label={t('common.remove')}>{uiGlyphs.close}</button></span>;
+  return <span className={`status ${typeEtat(etat)} ${couleurEtat ? 'colored-status' : ''} ${etat.advanceOn === 'round' ? 'round-status' : ''} ${etat.inactive ? 'inactive-status' : ''} ${etat.limited ? 'limited-status' : ''} ${etat.expired ? 'expired' : ''}`} style={couleurEtat ? { '--status-color': couleurEtat } : undefined}>{marqueurImpact}{etat.name}<span className="status-separator">{uiGlyphs.middleDot}</span><span className="status-duration">{libelleEtat(etat)}</span><button onClick={onRetirer} aria-label={t('common.remove')}><IconeCadence name="close" /></button></span>;
 }
 
 export function BadgeRound({ round, effect, phase, surpriseRound = false }) {
@@ -151,7 +156,7 @@ export function Fenetre({ title, children, onClose, header, className = '', styl
   const sheetRef = useRef(null);
   const previousFocusRef = useRef(null);
   const titleId = useId();
-  const entete = header ?? <div className="row" style={{ justifyContent: 'space-between', marginBottom: 10 }}><h2 id={titleId} style={{ margin: 0 }}>{title}</h2><button type="button" className="icon-btn" onClick={onClose} aria-label={t('common.close')}>{uiGlyphs.close}</button></div>;
+  const entete = header ?? <div className="row" style={{ justifyContent: 'space-between', marginBottom: 10 }}><h2 id={titleId} style={{ margin: 0 }}>{title}</h2><button type="button" className="icon-btn" onClick={onClose} aria-label={t('common.close')}><IconeCadence name="close" /></button></div>;
   const overlayClass = className ? `${className.split(' ')[0]}-overlay` : '';
   const typePointeur = (event) => pointerTypeRef.current || (event.nativeEvent?.sourceCapabilities?.firesTouchEvents ? 'touch' : 'mouse');
   useEffect(() => {

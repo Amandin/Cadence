@@ -1,10 +1,28 @@
 import { memo, useMemo } from 'react';
 import { hasTriggeredClock, isVisible } from '../../logic.js';
 import { t } from '../../i18n/index.js';
+import { IconeCadence } from '../icones/IconeCadence.jsx';
 import { FichetteParticipant } from './FichetteParticipant.jsx';
 
 function aDuContenuOperationnel(participant, indicateursVisibles) {
   return indicateursVisibles.length > 0 || (participant.statuses || []).length > 0;
+}
+
+function IconesActionSouple({ totalActions = 1, reverse = false }) {
+  const extras = Math.max(0, Number(totalActions || 0) - 1);
+  return (
+    <span className={`flexible-action-icon-stack ${reverse ? 'reverse' : ''}`} style={{ '--extra-action-count': extras }}>
+      <IconeCadence name="nextMedium" className={`flexible-action-icon ${reverse ? 'reverse' : ''}`.trim()} />
+      {Array.from({ length: extras }, (_, index) => (
+        <IconeCadence
+          key={index}
+          name="extraAction"
+          className={`flexible-action-icon flexible-extra-action ${reverse ? 'reverse' : ''}`.trim()}
+          style={{ '--extra-action-index': index }}
+        />
+      ))}
+    </span>
+  );
 }
 
 export const FichetteInitiative = memo(function FichetteInitiative({ participant, actif, groupeSimultane, temporaliteSouple, montrerInitiative = true, afficherActionsSouples = true, dejaJoue, actionsRestantes = 0, actionsJouees = 0, onMarquerAJoue, onAnnulerAJoue, onOuvrir, onSuivi, onSupprimerSuivi, onAjouterEtat, onModifierEtat, onRetirerEtat, onQuitterInitiative, performanceLow = false }) {
@@ -30,7 +48,8 @@ export const FichetteInitiative = memo(function FichetteInitiative({ participant
   ].filter(Boolean);
   const afficherRetourSouple = boutonSouple && actionsJouees > 0;
   const afficherActionSouple = boutonSouple && actionsRestantes > 0;
-  const flechesRestantes = Array.from({ length: Math.max(1, actionsRestantes) }, (_, index) => <span className="cadence-arrow-icon forward" key={index} aria-hidden="true" />);
+  const iconeActionSuivante = <IconesActionSouple totalActions={actionsRestantes} />;
+  const iconeActionAnnulee = <IconesActionSouple totalActions={actionsJouees} reverse />;
   const autoCollapsed = performanceLow && !actif && !declenchee;
 
   return (
@@ -50,8 +69,8 @@ export const FichetteInitiative = memo(function FichetteInitiative({ participant
       primaryAction={boutonSouple && (
         <div className="card-actions">
           <div className={`flexible-action-row ${afficherRetourSouple ? 'has-undo' : ''}`}>
-            {afficherRetourSouple && <button className="turn-btn compact previous-turn available flexible-play undo-played" onClick={onAnnulerAJoue} aria-label={t('initiative.card.undoResolved')} title={t('initiative.card.undoResolved')}><span className="cadence-arrow-icon back" aria-hidden="true" /></button>}
-            {afficherActionSouple && <button className="primary flexible-play play-action" onClick={onMarquerAJoue} aria-label={actionsRestantes > 1 ? t('initiative.card.remainingActions', { count: actionsRestantes }) : t('initiative.card.markResolved')}>{flechesRestantes}</button>}
+            {afficherRetourSouple && <button className="turn-btn compact previous-turn available flexible-play undo-played" style={{ '--extra-action-count': Math.max(0, actionsJouees - 1) }} onClick={onAnnulerAJoue} aria-label={t('initiative.card.undoResolved')} title={t('initiative.card.undoResolved')}>{iconeActionAnnulee}</button>}
+            {afficherActionSouple && <button className="primary flexible-play play-action" style={{ '--extra-action-count': Math.max(0, actionsRestantes - 1) }} onClick={onMarquerAJoue} aria-label={actionsRestantes > 1 ? t('initiative.card.remainingActions', { count: actionsRestantes }) : t('initiative.card.markResolved')}>{iconeActionSuivante}</button>}
           </div>
         </div>
       )}

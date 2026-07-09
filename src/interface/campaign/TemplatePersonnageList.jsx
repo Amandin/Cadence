@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { t } from '../../i18n/index.js';
-import { uiGlyphs, uiSymbols } from '../../uiAssets.js';
+import { uiSymbols } from '../../uiAssets.js';
+import { IconeCadence } from '../icones/IconeCadence.jsx';
 import { BoutonIconeTemplate } from './TemplateRows.jsx';
 
 function grouperTemplates(templates = [], categories = []) {
@@ -62,12 +63,12 @@ function EnteteCategorieTemplate({ groupe, index, total, onAjouterTemplateCatego
       <strong>{groupe.templates.length}</strong>
       <span className="template-category-label template-title-with-action">
         <span>{groupe.categorie}</span>
-        <BoutonIconeTemplate className="template-edit-icon" label={t('templates.personnages.renameCategoryAria')} onClick={() => setRenommage(true)}>{uiGlyphs.edit}</BoutonIconeTemplate>
+        <BoutonIconeTemplate className="template-edit-icon" label={t('templates.personnages.renameCategoryAria')} onClick={() => setRenommage(true)}><IconeCadence name="edit" /></BoutonIconeTemplate>
       </span>
       <div className="compact-arrows template-category-actions">
-        <BoutonIconeTemplate label={t('templates.personnages.addTemplateAria')} onClick={() => onAjouterTemplateCategorie(groupe.categorie)}>{uiSymbols.add}</BoutonIconeTemplate>
-        <button className="small-btn" onClick={() => onDeplacerCategorie(groupe.categorie, -1)} disabled={index <= 0} aria-label={t('templates.personnages.moveCategoryUp', { name: groupe.categorie })} title={t('templates.personnages.moveCategoryUp', { name: groupe.categorie })}>{uiSymbols.moveUp}</button>
-        <button className="small-btn" onClick={() => onDeplacerCategorie(groupe.categorie, 1)} disabled={index >= total - 1} aria-label={t('templates.personnages.moveCategoryDown', { name: groupe.categorie })} title={t('templates.personnages.moveCategoryDown', { name: groupe.categorie })}>{uiSymbols.moveDown}</button>
+        <BoutonIconeTemplate label={t('templates.personnages.addTemplateAria')} onClick={() => onAjouterTemplateCategorie(groupe.categorie)}><IconeCadence name="add" /></BoutonIconeTemplate>
+        <button className="small-btn" onClick={() => onDeplacerCategorie(groupe.categorie, -1)} disabled={index <= 0} aria-label={t('templates.personnages.moveCategoryUp', { name: groupe.categorie })} title={t('templates.personnages.moveCategoryUp', { name: groupe.categorie })}><IconeCadence name="nextStrong" className="up" /></button>
+        <button className="small-btn" onClick={() => onDeplacerCategorie(groupe.categorie, 1)} disabled={index >= total - 1} aria-label={t('templates.personnages.moveCategoryDown', { name: groupe.categorie })} title={t('templates.personnages.moveCategoryDown', { name: groupe.categorie })}><IconeCadence name="nextStrong" className="down" /></button>
         {groupe.templates.length === 0 && <button className="danger-btn mini-danger" onClick={() => onSupprimerCategorie(groupe.categorie)}>{t('common.delete')}</button>}
       </div>
     </div>
@@ -82,16 +83,16 @@ function LigneTemplate({ template, onEditerTemplate, onDupliquerTemplate, onSupp
       <span className="template-row-main">
         <span className="template-title-with-action">
           <strong>{template.name}</strong>
-          <BoutonIconeTemplate className="template-edit-icon" label={t('templates.personnages.editAria', { name: template.name })} onClick={() => onEditerTemplate(template.id)}>{uiGlyphs.edit}</BoutonIconeTemplate>
+          <BoutonIconeTemplate className="template-edit-icon" label={t('templates.personnages.editAria', { name: template.name })} onClick={() => onEditerTemplate(template.id)}><IconeCadence name="edit" /></BoutonIconeTemplate>
         </span>
         <small>{template.participant?.kind || t('templates.personnages.kindFallback')}</small>
       </span>
       <div className="compact-arrows template-row-actions">
-        <BoutonIconeTemplate label={t('templates.personnages.duplicateAria', { name: template.name })} onClick={() => onDupliquerTemplate(template.id)}>{uiGlyphs.duplicate}</BoutonIconeTemplate>
+        <BoutonIconeTemplate label={t('templates.personnages.duplicateAria', { name: template.name })} onClick={() => onDupliquerTemplate(template.id)}><IconeCadence name="duplicate" /></BoutonIconeTemplate>
         {suppressionVisible ? (
           <button className="danger-btn mini-danger template-delete-confirm" onClick={() => onSupprimerTemplate(template.id)}>{t('common.delete')}</button>
         ) : (
-          <button className="small-btn template-delete-reveal" onClick={() => setSuppressionVisible(true)} aria-label={t('templates.personnages.deleteRevealAria', { name: template.name })}>{uiSymbols.remove}</button>
+          <button className="small-btn template-delete-reveal" onClick={() => setSuppressionVisible(true)} aria-label={t('templates.personnages.deleteRevealAria', { name: template.name })}><IconeCadence name="remove" /></button>
         )}
       </div>
     </div>

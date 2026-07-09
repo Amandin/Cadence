@@ -1,7 +1,8 @@
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { activeThresholds, applyBoxMarkAction, applyDelta, boxBlocks, boxVisualRank, isTriggeredClock, normalizeThresholds, sortBoxBlocks, thresholdValue, trackerBounds, trackerLimitMode } from '../../logic.js';
 import { t } from '../../i18n/index.js';
-import { uiGlyphs, uiSymbols } from '../../uiAssets.js';
+import { uiSymbols } from '../../uiAssets.js';
+import { IconeSecret } from '../commun/ComposantsCommuns.jsx';
 import { IconeMetronome } from '../icones/IconeMetronome.jsx';
 import { thresholdGlowColors, thresholdGlowStyle } from './thresholdUi.js';
 
@@ -94,7 +95,7 @@ export const Suivi = memo(function Suivi({ suivi, onModifier, onSupprimer, avant
   const cyclesPuces = Number(suivi.cycles ?? suivi.cyclesInitial ?? 0) || 0;
   const cyclesHorloge = Number(suivi.cycles ?? suivi.cyclesInitial ?? 0) || 0;
   const titreGel = suivi.frozen ? t('trackers.common.unfreezeAutomation') : t('trackers.common.freezeAutomation');
-  const badgeSecret = suivi.secret && afficherBadgeSecret ? <span className="chip secret-chip" title={t('sheet.tracker.secret')} aria-label={t('sheet.tracker.secret')}>{uiGlyphs.stealth}</span> : null;
+  const badgeSecret = suivi.secret && afficherBadgeSecret ? <span className="chip secret-chip" title={t('sheet.tracker.secret')} aria-label={t('sheet.tracker.secret')}><IconeSecret /></span> : null;
   const suffixePuces = (suivi.type === 'points' || suivi.type === 'dots') && suivi.limitMode === 'loop'
     ? <><span className={`title-counter color-${couleur || 'slate'}`}>{cyclesPuces}</span>{badgeSecret}</>
     : badgeSecret;

@@ -1,6 +1,5 @@
 import { memo, useEffect, useMemo, useState } from 'react';
 import { t } from '../../i18n/index.js';
-import { uiSymbols } from '../../uiAssets.js';
 import {
   combinationTargetDefinition,
   definitionCombination,
@@ -10,14 +9,15 @@ import { randomOptionTypes, randomParameterTypes, randomSourceKinds } from '../e
 import { ChoiceOptionControl } from './ChoiceOptionControl.jsx';
 import { DefinitionVisual } from './DefinitionVisual.jsx';
 import { HistoryPanel } from './HistoryPanel.jsx';
+import { RandomIcon } from './RandomIcons.jsx';
 import { ResultView } from './ResultView.jsx';
 import '../styles/base.css';
 import '../styles/choice-controls.css';
 import '../styles/results.css';
 
 const resourceKindMeta = {
-  definitions: { icon: uiSymbols.draw, labelKey: 'random.resource.rolls' },
-  cards: { icon: uiSymbols.cards, labelKey: 'random.resource.cards' },
+  definitions: { icon: 'roll', labelKey: 'random.resource.rolls' },
+  cards: { icon: 'cards', labelKey: 'random.resource.cards' },
 };
 
 function initialInputs(definition) {
@@ -178,7 +178,7 @@ export function CardSourceForm({ source, sourceState, actions }) {
         <div>
           <span className="rs-section-kicker">{t('random.resource.cards')}</span>
           <div className="rs-heading-with-mark">
-            <span className="rs-heading-mark" aria-hidden="true">{uiSymbols.cards}</span>
+            <span className="rs-heading-mark" aria-hidden="true"><RandomIcon name="cards" /></span>
             <h3>{source.name}</h3>
           </div>
           {source.note && <span>{source.note}</span>}
@@ -252,8 +252,8 @@ export function UsePanel({ state, actions }) {
     <div className="rs-use-layout">
       <aside className="rs-resource-picker">
         <div className="rs-segmented">
-          <button type="button" className={resourceKind === 'definitions' ? 'selected' : ''} onClick={() => setResourceKind('definitions')}><span aria-hidden="true">{resourceKindMeta.definitions.icon}</span><span>{t(resourceKindMeta.definitions.labelKey)}</span></button>
-          {cardSources.length > 0 && <button type="button" className={resourceKind === 'cards' ? 'selected' : ''} onClick={() => setResourceKind('cards')}><span aria-hidden="true">{resourceKindMeta.cards.icon}</span><span>{t(resourceKindMeta.cards.labelKey)}</span></button>}
+          <button type="button" className={resourceKind === 'definitions' ? 'selected' : ''} onClick={() => setResourceKind('definitions')}><span aria-hidden="true"><RandomIcon name={resourceKindMeta.definitions.icon} /></span><span>{t(resourceKindMeta.definitions.labelKey)}</span></button>
+          {cardSources.length > 0 && <button type="button" className={resourceKind === 'cards' ? 'selected' : ''} onClick={() => setResourceKind('cards')}><span aria-hidden="true"><RandomIcon name={resourceKindMeta.cards.icon} /></span><span>{t(resourceKindMeta.cards.labelKey)}</span></button>}
         </div>
         <div className="rs-resource-list">
           {resources.map((resource) => (
@@ -266,7 +266,7 @@ export function UsePanel({ state, actions }) {
               <span className="rs-resource-title">
                 {resourceKind === 'definitions'
                   ? <DefinitionVisual visualId={resource.visualId} className="compact" decorative />
-                  : <span aria-hidden="true">{resourceKindMeta.cards.icon}</span>}
+                  : <span aria-hidden="true"><RandomIcon name={resourceKindMeta.cards.icon} /></span>}
                 <span>{resource.name}</span>
               </span>
               {resource.note && <small>{resource.note}</small>}

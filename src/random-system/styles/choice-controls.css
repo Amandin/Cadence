@@ -1,42 +1,113 @@
 .random-system-page .global-switch input[type="checkbox"] {
   position: relative;
   flex: 0 0 auto;
-  width: 40px;
-  height: 22px;
+  width: 42px;
+  height: 24px;
   margin: 0;
-  border: 1px solid var(--ui-control-border);
-  border-radius: var(--radius-pill);
+  border: 0;
+  border-radius: 0;
   appearance: none;
-  background: var(--rs-soft);
+  background: transparent url("/icons/cadence/switch_off.svg") center / contain no-repeat !important;
   cursor: pointer;
-  transition: background-color 140ms ease, border-color 140ms ease;
+  transform-origin: center;
+  transition: filter 180ms ease, opacity 180ms ease, background-image 180ms ease;
+  will-change: filter;
+}
+
+.random-system-page .global-switch input[type="checkbox"]::before {
+  content: "";
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 16px;
+  height: 16px;
+  border: 1px solid #7f4a70;
+  border-radius: var(--radius-pill);
+  background:
+    radial-gradient(circle at 35% 28%, rgba(255, 255, 255, .95), transparent 34%),
+    linear-gradient(135deg, #fffdf6 0%, #f3d7a6 100%);
+  box-shadow: 0 1px 3px rgba(124, 45, 18, .22);
+  opacity: 0;
+  transform: translateX(0);
+  pointer-events: none;
 }
 
 .random-system-page .global-switch input[type="checkbox"]::after {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: var(--rs-muted);
   content: "";
-  transition: transform 140ms ease, background-color 140ms ease;
+  position: absolute;
+  top: 9px;
+  left: 9px;
+  width: 6px;
+  height: 6px;
+  border: 1px solid #c46a44;
+  border-radius: 2px;
+  opacity: 0;
+  transform: translateX(0) rotate(45deg);
+  pointer-events: none;
 }
 
 .random-system-page .global-switch input[type="checkbox"]:checked {
-  border-color: var(--ui-selected-border);
-  background: var(--ui-selected-bg);
+  background-image: url("/icons/cadence/switch_on.svg") !important;
+  filter: saturate(1.14) drop-shadow(0 2px 4px color-mix(in srgb, var(--rs-accent) 22%, transparent));
+}
+
+.random-system-page .global-switch input[type="checkbox"]:checked::before {
+  border-color: #51165a;
+  background:
+    radial-gradient(circle at 35% 28%, rgba(255, 255, 255, .9), transparent 34%),
+    linear-gradient(135deg, #fff7d6 0%, #f6c46a 100%);
+  box-shadow: 0 1px 4px rgba(81, 22, 90, .28);
+  transform: translateX(18px);
 }
 
 .random-system-page .global-switch input[type="checkbox"]:checked::after {
-  background: var(--ui-primary-contrast);
-  transform: translateX(18px);
+  border-color: #c85f19;
+  transform: translateX(18px) rotate(45deg);
+}
+
+.random-system-page .global-switch input[type="checkbox"].switch-transitioning {
+  background-image: url("/icons/cadence/switch_off_track.svg") !important;
+}
+
+.random-system-page .global-switch input[type="checkbox"].switch-transitioning:checked {
+  background-image: url("/icons/cadence/switch_on_track.svg") !important;
+}
+
+.random-system-page .global-switch input[type="checkbox"].switch-transition-on::before {
+  animation: cadence-switch-thumb-on 260ms cubic-bezier(.2, .85, .2, 1) both;
+}
+
+.random-system-page .global-switch input[type="checkbox"].switch-transition-on::after {
+  animation: cadence-switch-mark-on 260ms cubic-bezier(.2, .85, .2, 1) both;
+}
+
+.random-system-page .global-switch input[type="checkbox"].switch-transition-off::before {
+  animation: cadence-switch-thumb-off 260ms cubic-bezier(.2, .85, .2, 1) both;
+}
+
+.random-system-page .global-switch input[type="checkbox"].switch-transition-off::after {
+  animation: cadence-switch-mark-off 260ms cubic-bezier(.2, .85, .2, 1) both;
 }
 
 .random-system-page .global-switch input[type="checkbox"]:focus-visible {
   outline: 2px solid var(--rs-accent);
   outline-offset: 2px;
+}
+
+.random-system-page .global-switch input[type="checkbox"]:hover:not(:disabled)::before {
+  transform: translateX(1px) scale(1.05);
+}
+
+.random-system-page .global-switch input[type="checkbox"]:checked:hover:not(:disabled)::before {
+  transform: translateX(17px) scale(1.05);
+}
+
+.random-system-page .global-switch input[type="checkbox"]:active:not(:disabled)::before {
+  transform: translateX(2px) scale(.94);
+}
+
+.random-system-page .global-switch input[type="checkbox"]:checked:active:not(:disabled)::before {
+  transform: translateX(16px) scale(.94);
 }
 
 .rs-choice-control {
