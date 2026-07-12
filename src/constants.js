@@ -1,8 +1,10 @@
-export const APP_VERSION = '0.15.1';
+export const APP_VERSION = '0.15.2';
 export const STORAGE_KEY = 'cadence:campaign:v1';
 export const TEMPLATE_STORAGE_KEY = 'cadence:templates:v1';
 
-export const participantKinds = ['PJ', 'Allié', 'Opposant', 'Environnement'];
+export const participantKinds = ['PJ', 'Compagnon', 'Allié', 'Élite', 'Opposant', 'Environnement'];
+export const tacticalRoles = ['normal', 'group', 'boss'];
+export const defaultTacticalRole = 'normal';
 
 export const legacyParticipantKinds = {
   Opposition: 'Opposant',
@@ -10,6 +12,8 @@ export const legacyParticipantKinds = {
   Autre: 'Environnement',
 };
 
+// Kept in its historical order so loading an old campaign never changes initiative visibly.
+// The two newer standard profiles remain available and can be inserted anywhere by the user.
 export const defaultCategoryOrder = ['PJ', 'Opposant', 'Allié', 'Environnement'];
 export const defaultTiebreakerVisible = true;
 export const defaultTiebreakerLabel = 'Départage';
@@ -42,6 +46,8 @@ export const activationAdvancePolicies = { ONCE_PER_ROUND: 'once-per-round', EVE
 export const defaultActivationAdvancePolicy = activationAdvancePolicies.ONCE_PER_ROUND;
 export const multipleActionModes = { NONE: 'none', MANUAL: 'manual', INITIATIVE_COST: 'initiative-cost' };
 export const defaultMultipleActionMode = multipleActionModes.NONE;
+export const manualMultipleActionScopes = { ALL: 'all', ELITE_ONLY: 'elite-only' };
+export const defaultManualMultipleActionScope = manualMultipleActionScopes.ALL;
 export const defaultInitiativeCostThreshold = 0;
 export const defaultInitiativeCostQuickCosts = [1, 2, 3, 5];
 export const defaultInitiativeCostLimitToCurrent = false;
