@@ -30,7 +30,7 @@ const uniq = (value) => {
     return true;
   });
 };
-const opt = (scene) => ({ categoryOrder: scene.categoryOrder, equalityRule: scene.equalityRule, initiativeOrder: scene.initiativeOrder, initiativeTextOrder: scene.initiativeTextOrder, initiativeEnabled: scene.temporalite !== temporalityModes.FLEXIBLE || scene.flexibleUseInitiative !== false, tiebreakerVisible: scene.tiebreakerVisible !== false, multipleActionSlots: rulesAllowMultipleSlots(scene) });
+const opt = (scene) => ({ categoryOrder: scene.categoryOrder, equalityRule: scene.equalityRule, initiativeOrder: scene.initiativeOrder, initiativeTextOrder: scene.initiativeTextOrder, initiativeEnabled: scene.temporalite !== temporalityModes.FLEXIBLE || scene.flexibleUseInitiative !== false, tiebreakerVisible: scene.tiebreakerVisible !== false, multipleActionSlots: (participant) => rulesAllowMultipleSlots(scene, participant) });
 
 export const isDeclarationMode = (scene) => !!scene?.declarationMode || scene?.temporalite === temporalityModes.DECLARATION;
 export const isCheckedPhaseMode = (scene) => scene?.phaseActionMode === phaseActionModes.CHECKED;

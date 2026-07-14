@@ -87,7 +87,7 @@ export function optionsTri(scene) {
     initiativeTextOrder: scene.initiativeTextOrder,
     initiativeEnabled: scene.temporalite !== 'souple' || scene.flexibleUseInitiative !== false,
     tiebreakerVisible: scene.tiebreakerVisible !== false,
-    multipleActionSlots: rulesAllowMultipleSlots(scene),
+    multipleActionSlots: (participant) => rulesAllowMultipleSlots(scene, participant),
   };
 }
 

@@ -3,7 +3,9 @@ import {
   defaultInitiativeCostLimitToCurrent,
   defaultInitiativeCostThreshold,
   multipleActionModes,
+  manualMultipleActionScopes,
 } from '../constants.js';
+import { resolveParticipantBehavior } from './participantTypes.js';
 
 export const INITIATIVE_COST_SLOT_KIND = 'initiative-cost';
 
@@ -27,8 +29,11 @@ export function isInitiativeCostMode(rules = {}) {
   return multipleActionModeFromRules(rules) === multipleActionModes.INITIATIVE_COST;
 }
 
-export function rulesAllowMultipleSlots(rules = {}) {
-  return multipleActionModeFromRules(rules) !== multipleActionModes.NONE;
+export function rulesAllowMultipleSlots(rules = {}, participant = null) {
+  const mode = multipleActionModeFromRules(rules);
+  if (mode === multipleActionModes.NONE) return false;
+  if (mode !== multipleActionModes.MANUAL || rules.manualMultipleActionScope !== manualMultipleActionScopes.ELITE_ONLY || !participant) return true;
+  return resolveParticipantBehavior(participant.kind, rules.participantTypes).behaviorType === 'Élite';
 }
 
 export function normalizeInitiativeCostThreshold(value) {

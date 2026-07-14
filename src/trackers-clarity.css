@@ -374,13 +374,36 @@
 
 .quick-stat-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
   gap: 6px;
   align-items: center;
 }
 
 .quick-stat-row.editable {
-  grid-template-columns: minmax(0, 1.2fr) minmax(72px, .8fr) auto;
+  grid-template-columns: minmax(0, 1.2fr) minmax(72px, .8fr) auto auto auto;
+}
+
+.quick-stat-roll-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.quick-stat-roll-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: inherit;
+  cursor: pointer;
+}
+
+
+.quick-stat-roll-trigger .dice-roll-icon {
+  width: 14px;
+  height: 14px;
 }
 
 .quick-stats-editor input {
@@ -829,14 +852,22 @@
   min-width: 34px;
   min-height: 34px;
   border-radius: var(--radius-pill);
-  background: var(--tracker-paper);
-  border: 1px solid var(--tracker-border);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--tracker-blue-soft) 52%, var(--tracker-paper)), color-mix(in srgb, var(--tracker-paper) 84%, var(--tracker-blue-soft)));
+  border: 1px solid color-mix(in srgb, var(--tracker-blue) 34%, var(--tracker-border));
+  color: color-mix(in srgb, var(--tracker-blue-text) 86%, var(--tracker-ink));
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 5px;
   padding: 0 9px;
   font-weight: 900;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tracker-blue) 12%, transparent);
+}
+
+.spy-toggle .secret-icon {
+  flex: 0 0 auto;
+  filter: drop-shadow(0 1px 0 color-mix(in srgb, white 68%, transparent));
 }
 
 .spy-toggle b {
@@ -844,9 +875,15 @@
 }
 
 .spy-toggle.active {
-  background: var(--tracker-warning-soft);
-  border-color: var(--tracker-warning);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--tracker-warning-soft) 88%, white), color-mix(in srgb, var(--tracker-warning) 24%, var(--tracker-warning-soft)));
+  border-color: color-mix(in srgb, var(--tracker-warning) 78%, var(--tracker-secret-text));
+  color: var(--tracker-secret-text);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--tracker-warning) 16%, transparent);
+}
+
+.spy-toggle.active .secret-icon {
+  filter: drop-shadow(0 1px 0 color-mix(in srgb, white 50%, transparent));
 }
 
 .spy-toggle.sheet-spy-toggle {
@@ -1792,6 +1829,28 @@
   background: var(--tracker-ink-deep);
   color: var(--tracker-paper-muted);
   border-color: var(--tracker-neutral-deep);
+}
+
+.dark .spy-toggle {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--tracker-blue) 24%, var(--tracker-ink-deep)), color-mix(in srgb, var(--tracker-violet) 12%, var(--tracker-ink)));
+  border-color: color-mix(in srgb, var(--tracker-blue) 48%, var(--tracker-neutral-deep));
+  color: color-mix(in srgb, var(--tracker-dark-blue-soft) 90%, var(--tracker-paper-soft));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tracker-blue) 18%, transparent);
+}
+
+.dark .spy-toggle .secret-icon {
+  filter: drop-shadow(0 1px 0 color-mix(in srgb, black 42%, transparent));
+}
+
+.dark .spy-toggle.active {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--tracker-warning) 42%, var(--tracker-ink-deep)), color-mix(in srgb, var(--tracker-dark-amber-deep) 74%, var(--tracker-ink)));
+  border-color: color-mix(in srgb, var(--tracker-warning) 72%, var(--tracker-ink));
+  color: #fff7ed;
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--tracker-warning) 22%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--tracker-warning) 24%, transparent);
 }
 
 .dark .threshold-color-select.threshold-neutral { --select-dot: var(--tracker-neutral); --select-bg: var(--tracker-ink-soft); --select-text: var(--tracker-paper-muted); }

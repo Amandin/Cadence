@@ -3,6 +3,7 @@ import { BarreActionBas } from './BarreActionBas.jsx';
 import { EnteteScene } from './EnteteScene.jsx';
 import { ListeInitiative } from './ListeInitiative.jsx';
 import { ReserveHorsInitiative } from './ReserveHorsInitiative.jsx';
+import { SceneTutorial } from './SceneTutorial.jsx';
 
 export const SceneView = memo(function SceneView({
   scene,
@@ -46,8 +47,10 @@ export const SceneView = memo(function SceneView({
   onSaisirInitiatives,
   onOuvrirLanceurDes,
   onOuvrirMenu,
+  tutorial = null,
   performanceLow = false,
 }) {
+  const interactions = useMemo(() => ({ ...characters, openQuickRoll: onOuvrirLanceurDes }), [characters, onOuvrirLanceurDes]);
   const actifId = useMemo(() => scene.round < 0 ? '' : temporalitePhases ? phaseActiveId : scene.activeId, [phaseActiveId, scene.activeId, scene.round, temporalitePhases]);
   const prochainRound = useMemo(
     () => declarationEnDeclaration ? false : temporaliteSouple ? toutLeMondeAJoueSouple : temporalitePhases ? phaseDemarreNouveauRound : nextStartsRound,
@@ -55,7 +58,7 @@ export const SceneView = memo(function SceneView({
   );
 
   return (
-    <div className={`app scene-app ${dark ? 'dark' : ''} ${characters.selected ? 'has-character-panel' : ''}`}>
+    <div className={`app scene-app ${dark ? 'dark' : ''} ${characters.selected ? 'has-character-panel' : ''} ${tutorial?.active ? `scene-tutorial-step-${tutorial.step}` : ''}`}>
       <div className="shell scene-shell">
         <EnteteScene
           scene={scene}
@@ -89,7 +92,7 @@ export const SceneView = memo(function SceneView({
             scene={scene}
             participants={scene.participants}
             actifId={actifId}
-            interactions={characters}
+            interactions={interactions}
             temporaliteSouple={temporaliteSouple}
             temporalitePhases={temporalitePhases}
             temporaliteDeclaration={temporaliteDeclaration}
@@ -97,8 +100,9 @@ export const SceneView = memo(function SceneView({
             performanceLow={performanceLow}
             onMarquerAJoue={onMarquerAJoue}
             onAnnulerAJoue={onAnnulerAJoue}
+            onToggleSurprisePreparation={onToggleSurprisePreparation}
           />
-          <ReserveHorsInitiative scene={scene} interactions={characters} onModifierNotes={onModifierNotesReserve} />
+          <ReserveHorsInitiative scene={scene} interactions={interactions} onModifierNotes={onModifierNotesReserve} />
         </main>
       </div>
       <BarreActionBas
@@ -119,6 +123,7 @@ export const SceneView = memo(function SceneView({
         onOuvrirLanceurDes={onOuvrirLanceurDes}
         onOuvrirMenu={onOuvrirMenu}
       />
+      {tutorial?.active && <SceneTutorial step={tutorial.step} onPrevious={tutorial.onPrevious} onNext={tutorial.onNext} onFinish={tutorial.onFinish} />}
     </div>
   );
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { rulePresetCatalog } from './rulePresets.js';
+import { createRulePresetSnapshot, normalizeRulePresetSnapshot, rulePresetCatalog } from './rulePresets.js';
 import { normalizeTemplateStore } from './templates.js';
 
 describe('rule preset catalog', () => {
@@ -63,5 +63,22 @@ describe('rule preset catalog', () => {
     expect(store.statusTemplates).toEqual([]);
     expect(store.sceneStatusTemplates).toEqual([]);
     expect(store.sceneCounterTemplates).toEqual([]);
+  });
+
+  it('keeps the selected system, edition and initiative profile in a preset snapshot', () => {
+    const preset = rulePresetCatalog.find((item) => item.catalogId === 'systemes/shadowrun-5');
+    const snapshot = createRulePresetSnapshot(preset, preset.rules, {
+      systemProfileId: 'system/shadowrun',
+      editionId: 'sr-5',
+      initiativeProfileId: 'initiative/shadowrun-5-decrement',
+      randomQuickRollProfileIds: ['quick-roll/d6-pool'],
+    });
+
+    expect(normalizeRulePresetSnapshot(snapshot, preset.rules)).toMatchObject({
+      systemProfileId: 'system/shadowrun',
+      editionId: 'sr-5',
+      initiativeProfileId: 'initiative/shadowrun-5-decrement',
+      randomQuickRollProfileIds: ['quick-roll/d6-pool'],
+    });
   });
 });

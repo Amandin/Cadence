@@ -118,7 +118,11 @@ export function useCharacterInteractions(scene, actions) {
     const cleanInitiative = String(initiative ?? '').trim();
     const initiativeValue = cleanInitiative ? (Number.isFinite(Number(cleanInitiative)) ? Number(cleanInitiative) : cleanInitiative) : participant.initiative;
     const phasePatch = scene.temporalite === temporalityModes.PHASES && scene.phaseActionMode === phaseActionModes.CHECKED && !Array.isArray(participant.phaseActions) ? { phaseActions: ['1'] } : {};
-    const nextParticipant = placement === 'init' ? { ...participant, ...phasePatch, initiative: initiativeValue, actionSlots: [{ id: 'slot-1', initiative: initiativeValue, order: 0 }] } : { ...participant, ...phasePatch };
+    const nextParticipant = placement === 'init'
+      ? { ...participant, ...phasePatch, initiative: initiativeValue, actionSlots: [{ id: 'slot-1', initiative: initiativeValue, order: 0 }], initiativePending: false }
+      : placement === 'pending'
+        ? { ...participant, ...phasePatch, initiativePending: true, actionSlots: [] }
+        : { ...participant, ...phasePatch };
     const dynamicAdditionKind = placement === 'init' ? classerAjoutDynamique(scene, nextParticipant) : null;
     actions.addParticipant(nextParticipant, placement === 'reserve' ? 'reserve' : 'init');
     if (dynamicAdditionKind) setLateInitiativeAddition({ participantId: nextParticipant.id, editAfterAdd, kind: dynamicAdditionKind });

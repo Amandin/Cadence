@@ -26,6 +26,7 @@ export function ReserveHorsInitiative({ scene, interactions, onModifierNotes }) 
               onAjouterEtat={() => interactions.requestStatus(participant.id)}
               onModifierEtat={(statusId) => interactions.requestStatus(participant.id, statusId)}
               onRetirerEtat={(statusId) => interactions.removeCharacterStatus(participant.id, statusId)}
+              onLancerJetRapide={interactions.openQuickRoll}
             />
           ))
         : <div className="quick-stats-full reserve-empty"><span className="chip reserve-empty-chip">{t('reserve.empty')}</span></div>}

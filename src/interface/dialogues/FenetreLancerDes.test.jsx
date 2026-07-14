@@ -37,11 +37,11 @@ describe('QuickRollResult', () => {
   it('shows a compact total, modifier and both compared dice', () => {
     const html = renderToStaticMarkup(<QuickRollResult result={comparisonResult()} />);
 
-    expect(html).toContain('<span>Total</span><strong>16</strong>');
+    expect(html).toContain('<span>Résultat</span><strong>16</strong>');
     expect(html).toContain('Modificateur <strong>+0</strong>');
     expect(html).toContain('quick-roll-die is-discarded');
     expect(html).toContain('quick-roll-die is-kept');
-    expect(html).toContain('<strong>2</strong>');
+    expect(html).toContain('is-rolling');
     expect(html).toContain('<strong>16</strong>');
     expect(html).not.toContain('SÃ©rie');
   });
@@ -61,7 +61,7 @@ describe('FenetreLancerDes', () => {
       <FenetreLancerDes
         randomSystem={{
           state: { definitions, sources: [] },
-          actions: { runDefinitionTransient: () => null },
+          actions: { runDefinition: () => null },
         }}
         onFermer={() => {}}
       />,

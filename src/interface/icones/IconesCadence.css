@@ -142,8 +142,16 @@
 }
 
 .secret-icon {
-  --cadence-icon-size: 1.08em;
+  --cadence-icon-size: 1.22em;
   vertical-align: -0.16em;
+}
+
+.secret-icon-inactive {
+  --cadence-icon-size: 1.18em;
+}
+
+.secret-icon-active {
+  --cadence-icon-size: 1.26em;
 }
 
 .secret-chip .secret-icon {
@@ -154,7 +162,7 @@
 .spy-toggle .secret-icon,
 .conceal-character-btn .secret-icon,
 .character-secret-edit .secret-icon {
-  --cadence-icon-size: 1.12em;
+  --cadence-icon-size: 1.28em;
 }
 
 .character-secret-edit .secret-icon {

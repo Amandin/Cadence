@@ -1,11 +1,25 @@
+// NOTE AUDIT / DEV TOOL:
+// Cette page de référence visuelle est une surface de développement temporaire.
+// Elle documente l'état du vocabulaire UI pendant les audits, puis pourra être
+// retirée. Elle n'a pas vocation à être harmonisée finement avec l'UI produit
+// de Cadence, ni à être entièrement couverte par l'i18n, l'accessibilité produit
+// ou les règles de polish visuel standard.
 import { useState } from 'react';
+import { colorNames } from '../../constants.js';
 import { t } from '../../i18n/index.js';
+import { newTracker } from '../../logic.js';
 import { participantSymbols, uiGlyphs, uiSymbols } from '../../uiAssets.js';
 import '../../random-system/styles/base.css';
 import '../../random-system/styles/choice-controls.css';
 import '../../random-system/styles/configuration.css';
 import '../../random-system/styles/results.css';
+import { EtiquetteEtat } from '../commun/ComposantsCommuns.jsx';
+import { EditeurSuivi } from '../fiches/FenetreEditionFiche.jsx';
 import { IconeCadence, cadenceIconPaths } from '../icones/IconeCadence.jsx';
+import { CompteurGlobal, EditeurCompteurGlobal } from '../suivis/CompteurGlobal.jsx';
+import { Suivi } from '../suivis/Suivi.jsx';
+import { ThemeModeToggle } from './MenuOptions.jsx';
+import { SceneTutorial } from '../scene/SceneTutorial.jsx';
 import './StyleReferencePage.css';
 
 const glyphLabels = {
@@ -385,6 +399,7 @@ function SurfaceSamples() {
       <article className="initiative-entry-warning"><ReferenceTag>SURF-04</ReferenceTag><strong>Avertissement</strong></article>
       <article className="rule-option-warning"><ReferenceTag>SURF-05</ReferenceTag><strong>Erreur ou incompatibilité</strong></article>
       <article className="campaign-save-status status-local"><ReferenceTag>SURF-06</ReferenceTag><strong>État de sauvegarde</strong></article>
+      <article className="style-reference-tutorial-surface"><ReferenceTag>SURF-07</ReferenceTag><SceneTutorial step={1} onNext={() => {}} onAddParticipant={() => {}} onStartScene={() => {}} onFinish={() => {}} /></article>
     </div>
   );
 }
@@ -427,6 +442,7 @@ function FormSamples() {
       <Sample refId="FORM-05" title="Thème">
         <button type="button" className={`theme-toggle ${themeOn ? 'dark-on' : 'light-on'}`} onClick={() => setThemeOn((current) => !current)} aria-label="Basculer le témoin de thème"><span>{uiGlyphs.themeLight}</span><span>{uiGlyphs.themeDark}</span><i /></button>
       </Sample>
+      <Sample refId="FORM-06" title="Portée des actions multiples"><div className="advanced-radio-list"><label className="advanced-radio"><input type="radio" name="style-reference-multiple-scope" /><span><strong>Tous les participants</strong><small>Tous les Types peuvent recevoir plusieurs créneaux.</small></span></label><label className="advanced-radio selected"><input type="radio" name="style-reference-multiple-scope" defaultChecked /><span><strong>Actions multiples pour les Élites</strong><small>Élite et Types hérités uniquement.</small></span></label></div></Sample>
     </div>
   );
 }
@@ -453,15 +469,161 @@ function BadgeSamples() {
   );
 }
 
+const trackerWorkbenchColors = ['slate', 'red', 'amber', 'emerald', 'blue', 'violet', 'rose'];
+
+function demoTracker(type = 'bar') {
+  const tracker = newTracker(type);
+  if (type === 'bar') return { ...tracker, name: 'Vitalité', current: 12, max: 20, thresholds: [{ value: 5, label: 'Blessé', color: 'red', operator: 'lte' }] };
+  if (type === 'points') return { ...tracker, name: 'Effort', current: 3, max: 6, limitMode: 'loop', cycles: 1, thresholds: [{ value: 5, label: 'Haut', color: 'warning', operator: 'gte' }] };
+  if (type === 'clock') return { ...tracker, name: 'Rituel', current: 4, max: 6, limitMode: 'manual', thresholds: [{ value: 6, label: 'Résoudre', color: 'danger', operator: 'gte' }] };
+  if (type === 'boxes') return { ...tracker, name: 'Blessures', fillLevels: 2, levelLabels: ['Léger', 'Grave'], levelVisuals: [2, 5] };
+  return { ...tracker, name: 'Élan', current: 4, step: 1, counterSize: 'compact', counters: [{ id: 'secondary', label: 'Charge', current: 2, size: 'compact' }] };
+}
+
+function demoSceneCounter(mode = 'clock') {
+  const base = {
+    enabled: true,
+    name: mode === 'timer' ? 'Durée restante' : mode === 'stopwatch' ? 'Temps écoulé' : mode === 'counter' ? 'Tension' : 'Menace',
+    mode,
+    current: mode === 'counter' ? 4 : 5,
+    max: mode === 'timer' ? 180 : 8,
+    min: 0,
+    step: 1,
+    direction: 'progression',
+    limitMode: mode === 'timer' ? 'overflow' : 'clamp',
+    trigger: 'manual',
+    auto: false,
+    running: false,
+    elapsedMs: mode === 'stopwatch' ? 42000 : 0,
+    startedAt: null,
+    thresholds: [{ basis: 'fixed', value: mode === 'timer' ? 30 : 6, label: 'Alerte', color: 'warning', sound: 'none' }],
+  };
+  return base;
+}
+
+function StyleReferenceTrackerWorkbench() {
+  const [trackerType, setTrackerType] = useState('bar');
+  const [trackerColor, setTrackerColor] = useState('blue');
+  const [tracker, setTracker] = useState(() => demoTracker('bar'));
+  const [sceneCounter, setSceneCounter] = useState(() => demoSceneCounter('clock'));
+  const [sceneStatus, setSceneStatus] = useState({
+    id: 'style-scene-status',
+    name: 'Brume épaisse',
+    duration: 2,
+    color: 'blue',
+    advanceOn: 'round',
+    limited: true,
+    inactive: false,
+    loop: false,
+  });
+
+  const changerTracker = (suivant) => {
+    setTrackerType(suivant.type || trackerType);
+    setTracker(suivant);
+  };
+  const modifierCompteurScene = (delta) => setSceneCounter((current) => ({ ...current, current: Number(current.current || 0) + delta }));
+  const basculerTemps = () => setSceneCounter((current) => ({ ...current, running: !current.running, startedAt: current.running ? null : Date.now() }));
+
+  return (
+    <div className="style-reference-tracker-workbench">
+      <section className="style-reference-tracker-controls">
+        <div>
+          <ReferenceTag>TRACK-LAB-01</ReferenceTag>
+          <h3>Suivi personnage réel</h3>
+          <p className="muted compact-help">Même éditeur que dans la fenêtre “modifier”, avec aperçu live du composant de fiche.</p>
+        </div>
+        <div className="style-reference-editor-layout">
+          <div className="style-reference-inline-editor">
+            <EditeurSuivi
+              suivi={tracker}
+              onChange={changerTracker}
+              onDuplicate={() => setTracker((current) => ({ ...current, id: `${current.id || 'style-tracker'}-copy`, name: `${current.name || 'Suivi'} copie` }))}
+              onDelete={() => setTracker(demoTracker(trackerType))}
+              allowActivationAutomation
+            />
+          </div>
+          <div className="style-reference-live-column">
+            <div className="style-reference-control-grid compact">
+              <button className="small-btn" type="button" onClick={() => setTracker(demoTracker(trackerType))}>Réinitialiser le cas démo</button>
+              <label className="field">Couleur participant / aperçu
+                <select value={trackerColor} onChange={(event) => setTrackerColor(event.target.value)}>
+                  {trackerWorkbenchColors.map((color) => <option value={color} key={color}>{colorNames[color] || color}</option>)}
+                </select>
+              </label>
+            </div>
+            <div className="style-reference-live-preview">
+              <Suivi suivi={tracker} couleur={trackerColor} onModifier={changerTracker} onSupprimer={() => setTracker(demoTracker(trackerType))} />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="style-reference-tracker-controls">
+        <div>
+          <ReferenceTag>TRACK-LAB-02</ReferenceTag>
+          <h3>Suivi de scène réel</h3>
+          <p className="muted compact-help">Même éditeur que la fenêtre du compteur global, intégré inline pour tester tous les modes et seuils.</p>
+        </div>
+        <div className="style-reference-editor-layout">
+          <div className="style-reference-inline-editor">
+            <EditeurCompteurGlobal
+              compteur={sceneCounter}
+              onModifier={setSceneCounter}
+              onChanger={modifierCompteurScene}
+              onFermer={() => {}}
+              afficherValidation={false}
+            />
+          </div>
+          <div className="style-reference-live-column">
+            <div className="style-reference-control-grid compact">
+              <button className="small-btn" type="button" onClick={() => setSceneCounter(demoSceneCounter(sceneCounter.mode || 'clock'))}>Réinitialiser le cas démo</button>
+            </div>
+            <div className="style-reference-live-preview">
+              <CompteurGlobal compteur={sceneCounter} onChanger={modifierCompteurScene} onToggleTemps={basculerTemps} animationTick={0} />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="style-reference-tracker-controls">
+        <div>
+          <ReferenceTag>TRACK-LAB-03</ReferenceTag>
+          <h3>État de scène</h3>
+          <p className="muted compact-help">Aperçu des états de scène, utile pour vérifier teinte, durée, boucle et impact.</p>
+        </div>
+        <div className="style-reference-control-grid">
+          <label className="field">Couleur
+            <select value={sceneStatus.color || ''} onChange={(event) => setSceneStatus((current) => ({ ...current, color: event.target.value }))}>
+              <option value="">Aucune</option>
+              {trackerWorkbenchColors.map((color) => <option value={color} key={color}>{colorNames[color] || color}</option>)}
+            </select>
+          </label>
+          <label className="field">Nom<input value={sceneStatus.name} onChange={(event) => setSceneStatus((current) => ({ ...current, name: event.target.value }))} /></label>
+          <label className="field">Durée<input type="number" min="0" value={sceneStatus.duration ?? ''} onChange={(event) => setSceneStatus((current) => ({ ...current, duration: event.target.value === '' ? null : Number(event.target.value) || 0 }))} /></label>
+          <label className={`global-switch ${sceneStatus.loop ? 'active' : ''}`}><span>Boucle</span><input type="checkbox" checked={!!sceneStatus.loop} onChange={(event) => setSceneStatus((current) => ({ ...current, loop: event.target.checked }))} /></label>
+          <label className={`global-switch ${sceneStatus.limited ? 'active' : ''}`}><span>Limité</span><input type="checkbox" checked={!!sceneStatus.limited} onChange={(event) => setSceneStatus((current) => ({ ...current, limited: event.target.checked, inactive: event.target.checked ? false : current.inactive }))} /></label>
+          <label className={`global-switch ${sceneStatus.inactive ? 'active' : ''}`}><span>Inactif</span><input type="checkbox" checked={!!sceneStatus.inactive} onChange={(event) => setSceneStatus((current) => ({ ...current, inactive: event.target.checked, limited: event.target.checked ? false : current.limited }))} /></label>
+        </div>
+        <div className="style-reference-live-preview statuses">
+          <EtiquetteEtat etat={sceneStatus} onModifier={() => {}} onRetirer={() => setSceneStatus((current) => ({ ...current, expired: !current.expired }))} />
+        </div>
+      </section>
+    </div>
+  );
+}
+
 function TrackerSamples() {
   return (
-    <div className="style-reference-grid">
-      <Sample refId="TRACK-01" title="Barre"><div className="controls"><button type="button">{uiSymbols.subtract}</button><div className="bar-bg"><div className="bar-fill" style={{ width: '62%' }} /></div><button type="button">{uiSymbols.add}</button></div></Sample>
-      <Sample refId="TRACK-02" title="Points"><div className="dots"><button type="button" className="dot on" aria-label="Point actif 1" /><button type="button" className="dot on" aria-label="Point actif 2" /><button type="button" className="dot" aria-label="Point vide 3" /><button type="button" className="dot" aria-label="Point vide 4" /></div></Sample>
-      <Sample refId="TRACK-03" title="Horloges"><button type="button" className="clock-face" style={{ '--clock-progress': '62%' }}><span>5</span><small>/ 8</small></button><button type="button" className="clock-face warning" style={{ '--clock-progress': '75%' }}><span>6</span><small>/ 8</small></button></Sample>
-      <Sample refId="TRACK-04" title="Cases, du vide au plein"><div className="boxes"><button type="button" className="box mark-0" aria-label="Case vide" /><button type="button" className="box mark-1" aria-label="Case niveau 1" /><button type="button" className="box mark-2" aria-label="Case niveau 2" /><button type="button" className="box mark-3" aria-label="Case niveau 3" /><button type="button" className="box mark-4" aria-label="Case niveau 4" /><button type="button" className="box mark-5 full" aria-label="Case pleine" /></div></Sample>
-      <Sample refId="TRACK-05" title="Compteur"><div className="counter-unit counter-size-compact"><button type="button" className="counter-edge">{uiSymbols.subtract}</button><button type="button" className="counter-tile"><span>Élan</span><strong>4</strong></button><button type="button" className="counter-edge">{uiSymbols.add}</button></div></Sample>
-    </div>
+    <>
+      <StyleReferenceTrackerWorkbench />
+      <div className="style-reference-grid">
+        <Sample refId="TRACK-01" title="Barre"><div className="controls"><button type="button">{uiSymbols.subtract}</button><div className="bar-bg"><div className="bar-fill" style={{ width: '62%' }} /></div><button type="button">{uiSymbols.add}</button></div></Sample>
+        <Sample refId="TRACK-02" title="Points"><div className="dots"><button type="button" className="dot on" aria-label="Point actif 1" /><button type="button" className="dot on" aria-label="Point actif 2" /><button type="button" className="dot" aria-label="Point vide 3" /><button type="button" className="dot" aria-label="Point vide 4" /></div></Sample>
+        <Sample refId="TRACK-03" title="Horloges"><button type="button" className="clock-face" style={{ '--clock-progress': '62%' }}><span>5</span><small>/ 8</small></button><button type="button" className="clock-face warning" style={{ '--clock-progress': '75%' }}><span>6</span><small>/ 8</small></button></Sample>
+        <Sample refId="TRACK-04" title="Cases, du vide au plein"><div className="boxes"><button type="button" className="box mark-0" aria-label="Case vide" /><button type="button" className="box mark-1" aria-label="Case niveau 1" /><button type="button" className="box mark-2" aria-label="Case niveau 2" /><button type="button" className="box mark-3" aria-label="Case niveau 3" /><button type="button" className="box mark-4" aria-label="Case niveau 4" /><button type="button" className="box mark-5 full" aria-label="Case pleine" /></div></Sample>
+        <Sample refId="TRACK-05" title="Compteur"><div className="counter-unit counter-size-compact"><button type="button" className="counter-edge">{uiSymbols.subtract}</button><button type="button" className="counter-tile"><span>Élan</span><strong>4</strong></button><button type="button" className="counter-edge">{uiSymbols.add}</button></div></Sample>
+      </div>
+    </>
   );
 }
 
@@ -757,7 +919,7 @@ function AuditSamples() {
   );
 }
 
-export function StyleReferencePage({ onBack }) {
+export function StyleReferencePage({ onBack, themeState, onThemeModeChange }) {
   return (
     <div className="style-reference-page">
       <header className="style-reference-header">
@@ -766,7 +928,10 @@ export function StyleReferencePage({ onBack }) {
           <h1>{t('styleReference.title')}</h1>
           <p className="muted">{t('styleReference.help')}</p>
         </div>
-        <button type="button" className="small-btn" onClick={onBack}><span aria-hidden="true">{uiSymbols.randomBack}</span> {t('styleReference.back')}</button>
+        <div className="style-reference-sticky-actions">
+          {themeState && onThemeModeChange && <ThemeModeToggle themeState={themeState} onThemeModeChange={onThemeModeChange} ariaLabel={t('hub.themeToggle')} />}
+          <button type="button" className="small-btn" onClick={onBack}><span aria-hidden="true">{uiSymbols.randomBack}</span> {t('styleReference.back')}</button>
+        </div>
       </header>
       <nav className="style-reference-index" aria-label={t('styleReference.index')}>
         {[

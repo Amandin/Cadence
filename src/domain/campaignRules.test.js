@@ -76,6 +76,11 @@ describe('campaign rules', () => {
     });
   });
 
+  it('normalizes the manual multiple-action scope', () => {
+    expect(normalizeCampaignRules({ multipleActionMode: 'manual', manualMultipleActionScope: 'elite-only' }).manualMultipleActionScope).toBe('elite-only');
+    expect(normalizeCampaignRules({ multipleActionMode: 'manual', manualMultipleActionScope: 'invalid' }).manualMultipleActionScope).toBe('all');
+  });
+
   it('keeps the configured surprise impact', () => {
     expect(applyInitiativeRules({ participants: [], reserve: [] }, {
       surpriseImpact: 'inactive',

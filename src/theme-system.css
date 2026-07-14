@@ -519,6 +519,7 @@ body:has(.app[data-mode="dark"]),
   display: grid;
   gap: 14px;
   padding: 18px;
+  min-height: min(670px, calc(100vh - 44px));
 }
 
 .welcome-topbar {
@@ -563,6 +564,20 @@ body:has(.app[data-mode="dark"]),
   gap: 8px;
 }
 
+.onboarding-step-progress {
+  color: var(--ui-muted);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.onboarding-step {
+  min-height: 0;
+  overflow: auto;
+  padding-inline: 2px;
+}
+
 .onboarding-family-switch {
   gap: 8px;
 }
@@ -596,6 +611,10 @@ body:has(.app[data-mode="dark"]),
   background: color-mix(in srgb, var(--ui-surface) 90%, white 10%);
 }
 
+.welcome-app:not(.dark) .onboarding-preset-card:not(.selected) {
+  border-color: color-mix(in srgb, var(--ui-border) 58%, transparent);
+}
+
 .onboarding-preset-name {
   font-family: var(--font-ui);
   font-size: 15px;
@@ -615,6 +634,130 @@ body:has(.app[data-mode="dark"]),
 .welcome-actions {
   display: grid;
   gap: 8px;
+}
+
+.onboarding-step-actions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.onboarding-step-actions > .primary:only-child {
+  grid-column: 1 / -1;
+}
+
+.onboarding-start-choice {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.onboarding-start-choice > p {
+  margin: 0;
+  color: var(--ui-muted);
+  font: 800 12px/1.35 var(--font-ui);
+  text-align: center;
+}
+
+.onboarding-start-choice > button {
+  width: 100%;
+  min-height: 46px;
+}
+
+.scene-tutorial {
+  position: fixed;
+  z-index: 70;
+  right: max(12px, env(safe-area-inset-right));
+  bottom: calc(76px + env(safe-area-inset-bottom));
+  width: min(360px, calc(100vw - 24px));
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--ui-accent) 55%, var(--ui-border));
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--ui-surface) 94%, transparent);
+  box-shadow: var(--shadow-strong);
+  backdrop-filter: blur(14px);
+}
+
+.scene-tutorial-progress {
+  color: var(--ui-accent);
+  font: 900 11px/1 var(--font-ui);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.scene-tutorial > strong {
+  font: 900 17px/1.15 var(--font-title);
+}
+
+.scene-tutorial > p {
+  margin: 0;
+  color: var(--ui-muted);
+  font: 700 13px/1.4 var(--font-ui);
+}
+
+.scene-tutorial-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  align-items: center;
+}
+
+.scene-tutorial-actions > button {
+  min-width: 0;
+}
+
+.scene-tutorial-wait {
+  grid-column: 2 / -1;
+  color: var(--ui-accent);
+  font: 900 11px/1.3 var(--font-ui);
+  text-align: right;
+}
+
+body:has(.scene-tutorial[data-step="0"]) .bottom-add-participant,
+body:has(.scene-tutorial[data-step="1"]) .character-add-sheet .choice,
+body:has(.scene-tutorial[data-step="1"]) .character-add-sheet .primary,
+body:has(.scene-tutorial[data-step="2"]) .character-edit-sheet .character-identity-fields,
+body:has(.scene-tutorial[data-step="3"]) .character-edit-sheet .quick-info-editor,
+body:has(.scene-tutorial[data-step="4"]) .character-edit-sheet .add-tracker-btn,
+body:has(.scene-tutorial[data-step="5"]) .character-edit-sheet .tracker-add-panel,
+body:has(.scene-tutorial[data-step="6"]) .character-edit-sheet .validate-edit-btn,
+body:has(.scene-tutorial[data-step="6"]) .character-edit-sheet .edit-actions-row .primary,
+body:has(.scene-tutorial[data-step="7"]) .initiative-card:first-of-type {
+  outline: 3px solid color-mix(in srgb, var(--ui-accent) 75%, white);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 7px color-mix(in srgb, var(--ui-accent) 18%, transparent);
+}
+
+.scene-tutorial[data-step="1"],
+.scene-tutorial[data-step="2"],
+.scene-tutorial[data-step="3"],
+.scene-tutorial[data-step="4"],
+.scene-tutorial[data-step="5"],
+.scene-tutorial[data-step="6"] {
+  top: max(10px, env(safe-area-inset-top));
+  bottom: auto;
+}
+
+@media (max-width: 520px) {
+  .scene-tutorial {
+    right: 8px;
+    bottom: calc(70px + env(safe-area-inset-bottom));
+    width: calc(100vw - 16px);
+    padding: 12px;
+  }
+
+  .scene-tutorial-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  body:has(.scene-tutorial:is([data-step="1"], [data-step="2"], [data-step="3"], [data-step="4"], [data-step="5"], [data-step="6"])) .overlay {
+    padding-top: 188px;
+  }
+
+  body:has(.scene-tutorial:is([data-step="1"], [data-step="2"], [data-step="3"], [data-step="4"], [data-step="5"], [data-step="6"])) .overlay .sheet {
+    max-height: calc(100vh - 208px);
+  }
 }
 
 .welcome-actions .primary {
@@ -882,12 +1025,49 @@ body:has(.app[data-mode="dark"]),
 }
 
 :is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) :is(.limit-switch-row, .reset-switch, .global-switch) > input[type="checkbox"] {
-  filter: brightness(.94) saturate(1.08);
+  background-image: url("/icons/cadence/switch_off_dark.svg") !important;
+  filter: brightness(.98) saturate(1.08);
+}
+
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) :is(.limit-switch-row, .reset-switch, .global-switch) > input[type="checkbox"].switch-transitioning {
+  background-image: url("/icons/cadence/switch_off_dark_track.svg") !important;
+}
+
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) :is(.limit-switch-row, .reset-switch, .global-switch) > input[type="checkbox"]::before {
+  border-color: #304e88;
+  background:
+    radial-gradient(circle at 35% 28%, rgba(255, 255, 255, .96), transparent 34%),
+    linear-gradient(135deg, #f8fcff 0%, #a8c9ec 100%);
+  box-shadow: 0 1px 4px rgba(22, 33, 63, .34);
+}
+
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) :is(.limit-switch-row, .reset-switch, .global-switch) > input[type="checkbox"]::after {
+  border-color: #5b76c9;
 }
 
 :is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) :is(.limit-switch-row, .reset-switch, .global-switch) > input[type="checkbox"]:checked,
 :is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) :where(.limit-switch-row.active, .reset-switch.active, .global-switch.active) > input[type="checkbox"] {
+  background-image: url("/icons/cadence/switch_on.svg") !important;
   filter: brightness(1.04) saturate(1.18) drop-shadow(0 2px 5px color-mix(in srgb, var(--ui-accent) 30%, transparent));
+}
+
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) :is(.limit-switch-row, .reset-switch, .global-switch) > input[type="checkbox"].switch-transitioning:checked,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) :where(.limit-switch-row.active, .reset-switch.active, .global-switch.active) > input[type="checkbox"].switch-transitioning {
+  background-image: url("/icons/cadence/switch_on_track.svg") !important;
+}
+
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) :is(.limit-switch-row, .reset-switch, .global-switch) > input[type="checkbox"]:checked::before,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) :where(.limit-switch-row.active, .reset-switch.active, .global-switch.active) > input[type="checkbox"]::before {
+  border-color: #51165a;
+  background:
+    radial-gradient(circle at 35% 28%, rgba(255, 255, 255, .9), transparent 34%),
+    linear-gradient(135deg, #fff7d6 0%, #f6c46a 100%);
+  box-shadow: 0 1px 4px rgba(81, 22, 90, .28);
+}
+
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) :is(.limit-switch-row, .reset-switch, .global-switch) > input[type="checkbox"]:checked::after,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) :where(.limit-switch-row.active, .reset-switch.active, .global-switch.active) > input[type="checkbox"]::after {
+  border-color: #c85f19;
 }
 
 :is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .limit-switch-row {

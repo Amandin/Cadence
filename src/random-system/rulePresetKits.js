@@ -147,6 +147,18 @@ function d20RollDefinition(id, name) {
   };
 }
 
+function d20SimpleRollDefinition(id, name) {
+  return {
+    id,
+    name,
+    visualId: 'd20',
+    parameters: [integerParameter('modifier', 'Modificateur', 0)],
+    components: [{ id: 'd20', label: 'd20', source: fixedValue(standardSourceIds.D20), count: fixedValue(1) }],
+    pipeline: [totalStep(), modifierStep()],
+    primaryAggregateId: 'total',
+  };
+}
+
 function singleDieTotalDefinition(id, name, sourceId) {
   return {
     id,
@@ -358,6 +370,7 @@ export const randomKitCatalog = [
     ],
     sources: [],
     definitions: [
+      d20SimpleRollDefinition('kit-d20-check-simple', 'Jet d20 simple'),
       d20RollDefinition('kit-d20-check', 'Jet d20'),
       mixedDiceTotalDefinition('kit-d20-polyhedral', 'Dés polyédriques', standardSourceIds.D6, standardSourceIds.D4),
     ],
@@ -848,6 +861,26 @@ export function ensureRandomKitInState(state, kitOrId) {
     ...loaded,
     definitions: loaded.definitions.map((definition) => (
       activatedDefinitionIds.has(definition.id)
+        ? { ...definition, active: true }
+        : definition
+    )),
+  };
+}
+
+export function enableRandomKitDefinitionsInState(state, kitOrId, definitionIds = []) {
+  const loaded = loadRandomKitInState(state, kitOrId);
+  const { kit, definitions } = randomKitResources(kitOrId, loaded?.randomKits);
+  if (!kit) return state;
+  const availableDefinitionIds = new Set(definitions
+    .filter((definition) => definition.exposed !== false)
+    .map((definition) => definition.id));
+  const requestedDefinitionIds = new Set((Array.isArray(definitionIds) ? definitionIds : [])
+    .filter((definitionId) => availableDefinitionIds.has(definitionId)));
+  const activeDefinitionIds = requestedDefinitionIds.size ? requestedDefinitionIds : availableDefinitionIds;
+  return {
+    ...loaded,
+    definitions: loaded.definitions.map((definition) => (
+      activeDefinitionIds.has(definition.id)
         ? { ...definition, active: true }
         : definition
     )),

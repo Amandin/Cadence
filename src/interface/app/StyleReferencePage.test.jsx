@@ -37,7 +37,7 @@ describe('StyleReferencePage', () => {
   it('rend les principales familles de styles et les symboles littéraux', () => {
     const html = renderToStaticMarkup(<StyleReferencePage onBack={() => {}} />);
 
-    for (const reference of ['CAT-01', 'BTN-01', 'FORM-01', 'TRACK-01', 'RAND-01', 'COLOR-01', 'SYM-LIT-06', 'SYM-GRP-06', 'ICON-NEW-06', 'CAT-11', 'AUDIT-03', 'AUDIT-04']) {
+    for (const reference of ['CAT-01', 'SURF-07', 'BTN-01', 'FORM-01', 'TRACK-LAB-01', 'TRACK-LAB-02', 'TRACK-LAB-03', 'TRACK-01', 'RAND-01', 'COLOR-01', 'SYM-LIT-06', 'SYM-GRP-06', 'ICON-NEW-06', 'CAT-11', 'AUDIT-03', 'AUDIT-04']) {
       expect(html).toContain(reference);
     }
     for (const symbol of ['+', '-']) {

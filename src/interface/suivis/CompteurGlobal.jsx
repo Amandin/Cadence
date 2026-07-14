@@ -371,7 +371,7 @@ export const CompteurGlobal = memo(function CompteurGlobal({ compteur, onChanger
   );
 });
 
-export function FenetreCompteurGlobal({ compteur, sceneCounterTemplates = [], onModifier, onChanger, onFermer, onSaveTemplate }) {
+export function EditeurCompteurGlobal({ compteur, sceneCounterTemplates = [], onModifier, onChanger, onFermer, onSaveTemplate, afficherValidation = true }) {
   const [templateId, setTemplateId] = useState(sceneCounterTemplates[0]?.id || '');
   const [templateMessage, setTemplateMessage] = useState('');
   const courant = { ...COMPTEUR_GLOBAL_PAR_DEFAUT, ...(compteur || {}) };
@@ -405,57 +405,63 @@ export function FenetreCompteurGlobal({ compteur, sceneCounterTemplates = [], on
   }, [sceneCounterTemplates, templateId]);
 
   return (
-    <Fenetre title={t('trackers.global.title')} onClose={onFermer}>
-      <div className="stack">
-        {sceneCounterTemplates.length > 0 && (
-          <div className="template-picker-row">
-            <select value={templateId} onChange={(event) => setTemplateId(event.target.value)} aria-label={t('trackers.global.templateLabel')}>
-              {sceneCounterTemplates.map((template) => <option key={template.id} value={template.id}>{template.name}</option>)}
-            </select>
-            <button className="small-btn" onClick={appliquerTemplate} disabled={!templateChoisi}>{t('common.use')}</button>
-          </div>
-        )}
-        <label className="row"><input type="checkbox" checked={!!courant.enabled} onChange={(event) => modifier({ enabled: event.target.checked })} /> {t('trackers.global.visibleHeader')}</label>
-        <label className="field">{t('common.name')}<input value={courant.name || ''} onChange={(event) => modifier({ name: event.target.value })} placeholder={t('trackers.global.defaultName')} /></label>
-        <div className="grid2">
-          <label className="field">{t('trackers.global.mode')}<select value={mode} onChange={(event) => modifier({ mode: event.target.value, running: false, startedAt: null, trigger: ['stopwatch', 'timer'].includes(event.target.value) ? 'realtime' : 'manual' })}><option value="clock">{t('trackers.global.mode.clock')}</option><option value="counter">{t('trackers.global.mode.counter')}</option><option value="stopwatch">{t('trackers.global.mode.stopwatch')}</option><option value="timer">{t('trackers.global.mode.timer')}</option></select></label>
-          {estCompteur && <label className="field">{t('trackers.global.value')}<input type="number" inputMode="numeric" value={courant.current ?? 0} onChange={(event) => modifier({ current: event.target.value === '' ? 0 : Number(event.target.value) })} /></label>}
-          {estHorloge && <label className="field">{t('trackers.global.valueCurrent')}<input type="number" inputMode="numeric" value={courant.current ?? 0} onChange={(event) => modifier({ current: event.target.value === '' ? 0 : Number(event.target.value) })} /></label>}
-          {estMinuteur && <ChampsTemps prefixe={t('trackers.global.durationPrefix')} totalSecondes={courant.max ?? 60} onChanger={(value) => modifier({ max: Math.max(1, value) })} />}
+    <div className="stack">
+      {sceneCounterTemplates.length > 0 && (
+        <div className="template-picker-row">
+          <select value={templateId} onChange={(event) => setTemplateId(event.target.value)} aria-label={t('trackers.global.templateLabel')}>
+            {sceneCounterTemplates.map((template) => <option key={template.id} value={template.id}>{template.name}</option>)}
+          </select>
+          <button className="small-btn" onClick={appliquerTemplate} disabled={!templateChoisi}>{t('common.use')}</button>
         </div>
-        {estHorloge && <label className="field">{t('trackers.global.segments')}<input type="number" inputMode="numeric" min="1" value={courant.max ?? 10} onChange={(event) => modifier({ max: Math.max(1, Number(event.target.value) || 1) })} /></label>}
-        {estHorloge && <div className="grid2">
-          <label className="field">{t('trackers.global.direction')}<select value={courant.direction || 'progression'} onChange={(event) => modifier({ direction: event.target.value })}><option value="progression">{t('trackers.global.direction.progression')}</option><option value="countdown">{t('trackers.global.direction.countdown')}</option></select></label>
-          <label className="field">{t('trackers.global.advanceWhen')}<select value={courant.trigger || (courant.auto ? 'round' : 'manual')} onChange={(event) => modifier({ trigger: event.target.value, auto: event.target.value === 'round' })}><option value="manual">{t('trackers.global.trigger.manual')}</option><option value="round">{t('trackers.global.trigger.round')}</option>{courant.trigger === 'phase' && <option value="phase" disabled>{t('trackers.global.trigger.legacyPhase')}</option>}</select></label>
-        </div>}
-        {estHorloge && courant.trigger === 'phase' && <p className="rule-warning">{t('trackers.global.trigger.legacyHelp')}</p>}
-        {estHorloge && <label className="field">{t('trackers.global.limit')}<select value={courant.limitMode || 'clamp'} onChange={(event) => modifier({ limitMode: event.target.value })}><option value="clamp">{t('trackers.global.limit.clamp')}</option><option value="overflow">{t('trackers.global.limit.overflow')}</option><option value="loop">{t('trackers.global.limit.loop')}</option><option value="restart">{t('trackers.global.limit.restart')}</option></select></label>}
-        {estHorloge && courant.limitMode === 'loop' && <div className="grid2"><label className="field">{t('trackers.global.loop.total')}<input type="number" inputMode="numeric" value={courant.total ?? courant.current ?? 0} onChange={(event) => modifier({ total: Math.max(0, Number(event.target.value) || 0) })} /></label><label className="field">{t('trackers.global.loop.count')}<input type="number" inputMode="numeric" value={courant.loops ?? 0} onChange={(event) => modifier({ loops: Math.max(0, Number(event.target.value) || 0) })} /></label></div>}
-        {estMinuteur && <label className="field">{t('trackers.global.timer.label')}<select value={courant.limitMode || 'clamp'} onChange={(event) => modifier({ limitMode: event.target.value })}><option value="clamp">{t('trackers.global.limit.clamp')}</option><option value="restart">{t('trackers.global.limit.restart')}</option><option value="loop">{t('trackers.global.limit.loop')}</option><option value="overflow">{t('trackers.global.limit.overflow')}</option></select></label>}
-        {estMinuteur && <div className="threshold-sound-toggle completion-sound-toggle">
-          <span>{t('trackers.global.timer.completeSound')}</span>
-          <SelecteurSon
-            soundId={courant.soundOnComplete ? courant.completeSoundId || 'beep' : 'none'}
-            soundUrl={courant.completeSoundUrl || ''}
-            onChanger={(patch) => modifier({ soundOnComplete: patch.soundId !== 'none', completeSoundId: patch.soundId === 'none' ? 'beep' : patch.soundId, completeSoundUrl: patch.soundUrl || '' })}
-          />
-        </div>}
-        {tempsReel && <div className="timer-control-panel">
-          <strong>{temps.affichage}</strong>
-          {estChronometre && <p className="muted compact-help">{t('trackers.global.timer.elapsedHelp')}</p>}
-          <div className="grid2">
-            <button className="primary" onClick={courant.running ? pause : demarrer}>{courant.running ? t('trackers.global.actions.pause') : courant.elapsedMs > 0 ? t('trackers.global.actions.resume') : t('trackers.global.actions.start')}</button>
-            <button className="small-btn" onClick={resetTemps}>{t('trackers.global.actions.reset')}</button>
-          </div>
-        </div>}
-        <details className="advanced-options" open>
-          <summary>{t('trackers.global.thresholds.summary')}</summary>
-          <EditeurSeuilsCompteurScene compteur={courant} onModifier={modifier} />
-        </details>
-        {onSaveTemplate && <button className="small-btn" onClick={enregistrerTemplate}>{t('templates.editor.sceneCounter.saveCurrent')}</button>}
-        {templateMessage && <p className="export-feedback">{templateMessage}</p>}
-        <button className="primary" onClick={onFermer}>{t('trackers.global.actions.validate')}</button>
+      )}
+      <label className="row"><input type="checkbox" checked={!!courant.enabled} onChange={(event) => modifier({ enabled: event.target.checked })} /> {t('trackers.global.visibleHeader')}</label>
+      <label className="field">{t('common.name')}<input value={courant.name || ''} onChange={(event) => modifier({ name: event.target.value })} placeholder={t('trackers.global.defaultName')} /></label>
+      <div className="grid2">
+        <label className="field">{t('trackers.global.mode')}<select value={mode} onChange={(event) => modifier({ mode: event.target.value, running: false, startedAt: null, trigger: ['stopwatch', 'timer'].includes(event.target.value) ? 'realtime' : 'manual' })}><option value="clock">{t('trackers.global.mode.clock')}</option><option value="counter">{t('trackers.global.mode.counter')}</option><option value="stopwatch">{t('trackers.global.mode.stopwatch')}</option><option value="timer">{t('trackers.global.mode.timer')}</option></select></label>
+        {estCompteur && <label className="field">{t('trackers.global.value')}<input type="number" inputMode="numeric" value={courant.current ?? 0} onChange={(event) => modifier({ current: event.target.value === '' ? 0 : Number(event.target.value) })} /></label>}
+        {estHorloge && <label className="field">{t('trackers.global.valueCurrent')}<input type="number" inputMode="numeric" value={courant.current ?? 0} onChange={(event) => modifier({ current: event.target.value === '' ? 0 : Number(event.target.value) })} /></label>}
+        {estMinuteur && <ChampsTemps prefixe={t('trackers.global.durationPrefix')} totalSecondes={courant.max ?? 60} onChanger={(value) => modifier({ max: Math.max(1, value) })} />}
       </div>
+      {estHorloge && <label className="field">{t('trackers.global.segments')}<input type="number" inputMode="numeric" min="1" value={courant.max ?? 10} onChange={(event) => modifier({ max: Math.max(1, Number(event.target.value) || 1) })} /></label>}
+      {estHorloge && <div className="grid2">
+        <label className="field">{t('trackers.global.direction')}<select value={courant.direction || 'progression'} onChange={(event) => modifier({ direction: event.target.value })}><option value="progression">{t('trackers.global.direction.progression')}</option><option value="countdown">{t('trackers.global.direction.countdown')}</option></select></label>
+        <label className="field">{t('trackers.global.advanceWhen')}<select value={courant.trigger || (courant.auto ? 'round' : 'manual')} onChange={(event) => modifier({ trigger: event.target.value, auto: event.target.value === 'round' })}><option value="manual">{t('trackers.global.trigger.manual')}</option><option value="round">{t('trackers.global.trigger.round')}</option>{courant.trigger === 'phase' && <option value="phase" disabled>{t('trackers.global.trigger.legacyPhase')}</option>}</select></label>
+      </div>}
+      {estHorloge && courant.trigger === 'phase' && <p className="rule-warning">{t('trackers.global.trigger.legacyHelp')}</p>}
+      {estHorloge && <label className="field">{t('trackers.global.limit')}<select value={courant.limitMode || 'clamp'} onChange={(event) => modifier({ limitMode: event.target.value })}><option value="clamp">{t('trackers.global.limit.clamp')}</option><option value="overflow">{t('trackers.global.limit.overflow')}</option><option value="loop">{t('trackers.global.limit.loop')}</option><option value="restart">{t('trackers.global.limit.restart')}</option></select></label>}
+      {estHorloge && courant.limitMode === 'loop' && <div className="grid2"><label className="field">{t('trackers.global.loop.total')}<input type="number" inputMode="numeric" value={courant.total ?? courant.current ?? 0} onChange={(event) => modifier({ total: Math.max(0, Number(event.target.value) || 0) })} /></label><label className="field">{t('trackers.global.loop.count')}<input type="number" inputMode="numeric" value={courant.loops ?? 0} onChange={(event) => modifier({ loops: Math.max(0, Number(event.target.value) || 0) })} /></label></div>}
+      {estMinuteur && <label className="field">{t('trackers.global.timer.label')}<select value={courant.limitMode || 'clamp'} onChange={(event) => modifier({ limitMode: event.target.value })}><option value="clamp">{t('trackers.global.limit.clamp')}</option><option value="restart">{t('trackers.global.limit.restart')}</option><option value="loop">{t('trackers.global.limit.loop')}</option><option value="overflow">{t('trackers.global.limit.overflow')}</option></select></label>}
+      {estMinuteur && <div className="threshold-sound-toggle completion-sound-toggle">
+        <span>{t('trackers.global.timer.completeSound')}</span>
+        <SelecteurSon
+          soundId={courant.soundOnComplete ? courant.completeSoundId || 'beep' : 'none'}
+          soundUrl={courant.completeSoundUrl || ''}
+          onChanger={(patch) => modifier({ soundOnComplete: patch.soundId !== 'none', completeSoundId: patch.soundId === 'none' ? 'beep' : patch.soundId, completeSoundUrl: patch.soundUrl || '' })}
+        />
+      </div>}
+      {tempsReel && <div className="timer-control-panel">
+        <strong>{temps.affichage}</strong>
+        {estChronometre && <p className="muted compact-help">{t('trackers.global.timer.elapsedHelp')}</p>}
+        <div className="grid2">
+          <button className="primary" onClick={courant.running ? pause : demarrer}>{courant.running ? t('trackers.global.actions.pause') : courant.elapsedMs > 0 ? t('trackers.global.actions.resume') : t('trackers.global.actions.start')}</button>
+          <button className="small-btn" onClick={resetTemps}>{t('trackers.global.actions.reset')}</button>
+        </div>
+      </div>}
+      <details className="advanced-options" open>
+        <summary>{t('trackers.global.thresholds.summary')}</summary>
+        <EditeurSeuilsCompteurScene compteur={courant} onModifier={modifier} />
+      </details>
+      {onSaveTemplate && <button className="small-btn" onClick={enregistrerTemplate}>{t('templates.editor.sceneCounter.saveCurrent')}</button>}
+      {templateMessage && <p className="export-feedback">{templateMessage}</p>}
+      {afficherValidation && <button className="primary" onClick={onFermer}>{t('trackers.global.actions.validate')}</button>}
+    </div>
+  );
+}
+
+export function FenetreCompteurGlobal({ compteur, sceneCounterTemplates = [], onModifier, onChanger, onFermer, onSaveTemplate }) {
+  return (
+    <Fenetre title={t('trackers.global.title')} onClose={onFermer}>
+      <EditeurCompteurGlobal compteur={compteur} sceneCounterTemplates={sceneCounterTemplates} onModifier={onModifier} onChanger={onChanger} onFermer={onFermer} onSaveTemplate={onSaveTemplate} />
     </Fenetre>
   );
 }

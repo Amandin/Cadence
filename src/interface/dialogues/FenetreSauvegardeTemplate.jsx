@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { t } from '../../i18n/index.js';
 import { numberedCopyName } from '../../templates.js';
 import { Fenetre } from '../commun/ComposantsCommuns.jsx';
+import { resolveParticipantBehavior } from '../../domain/participantTypes.js';
 
 const NOUVELLE_CATEGORIE = '__new__';
 
 function devinerCategorie(participant, categories) {
-  if (participant.kind === 'PJ' && categories.includes('PJ')) return 'PJ';
+  if (resolveParticipantBehavior(participant.kind).behaviorType === 'PJ' && categories.includes('PJ')) return 'PJ';
   if (participant.kind === 'Horloge' && categories.includes('Horloge')) return 'Horloge';
   if (participant.kind === 'Opposition' && categories.includes('Créature')) return 'Créature';
   if (participant.kind === 'Autre' && categories.includes('Autre')) return 'Autre';

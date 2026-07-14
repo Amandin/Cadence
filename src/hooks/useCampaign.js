@@ -7,11 +7,13 @@ import { applyInitiativeRules, campaignRulesFromPayload, normalizeCampaignRules,
 import { normalizeGlobalTracker, stepGlobalTracker } from '../domain/globalTracker.js';
 import { hasCompletedFirstRunOnboarding, markFirstRunOnboardingComplete, resetFirstRunOnboarding, shouldShowFirstRunOnboarding } from '../firstRunOnboarding.js';
 import { normaliserCreneauxAction, trierParInitiative } from '../domain/initiative.js';
-import { isManualMultipleActionMode, rulesAllowMultipleSlots } from '../domain/initiativeCost.js';
+import { rulesAllowMultipleSlots } from '../domain/initiativeCost.js';
 import { hasTriggeredClock, makeTestCampaign, nextTurnInfo } from '../logic.js';
 import { addOnboardingTrackerTemplates } from '../onboardingTrackerTemplates.js';
-import { createRulePresetSnapshot } from '../rulePresets.js';
-import { DEFAULT_CAMPAIGN_NAME, campaignNameFromPayload, campaignTemplatesFromPayload, createCampaignPayload, loadCampaign, normalizeCampaignPayload, normalizeCampaignScene, normalizeCampaignScenes, rulePresetSnapshotFromPayload, saveCampaign, serializeCampaign } from '../storage.js';
+import { createRulePresetSnapshot, rulePresetCatalog } from '../rulePresets.js';
+import { initiativeProfileById, initiativeProfileStatuses, systemProfileById } from '../domain/systemProfiles.js';
+import { enableQuickRollProfilesInState } from '../random-system/quickRollProfiles.js';
+import { DEFAULT_CAMPAIGN_NAME, campaignNameFromPayload, campaignProfileFromPayload, campaignTemplatesFromPayload, createCampaignPayload, loadCampaign, normalizeCampaignPayload, normalizeCampaignScene, normalizeCampaignScenes, rulePresetSnapshotFromPayload, saveCampaign, serializeCampaign } from '../storage.js';
 import { removeLocalCampaignPayload } from '../localCampaignStorage.js';
 import { campaignEntryFromPayload, copiedCampaignNames, readCadenceFile, writeCadenceFile } from './campaignFilePersistence.js';
 import { normalizeTemplateStore } from '../templates.js';
@@ -52,7 +54,7 @@ function initiativeOptions(scene = {}) {
     initiativeTextOrder: scene.initiativeTextOrder,
     initiativeEnabled: scene.temporalite !== 'souple' || scene.flexibleUseInitiative !== false,
     tiebreakerVisible: scene.tiebreakerVisible !== false,
-    multipleActionSlots: rulesAllowMultipleSlots(scene),
+    multipleActionSlots: (participant) => rulesAllowMultipleSlots(scene, participant),
   };
 }
 
@@ -72,6 +74,7 @@ export function useCampaign() {
   const initialEntry = campaignEntryFromPayload(initialCampaign, { source: 'locale' });
   const [campaignRules, setCampaignRules] = useState(() => normalizeCampaignRules(campaignRulesFromPayload(initialCampaign)));
   const [rulePresetSnapshot, setRulePresetSnapshot] = useState(() => rulePresetSnapshotFromPayload(initialCampaign, campaignRulesFromPayload(initialCampaign)));
+  const [campaignProfile, setCampaignProfile] = useState(() => campaignProfileFromPayload(initialCampaign));
   const [scenes, setScenes] = useState(() => normalizeScenesWithCampaignRules(initialCampaign.scenes, campaignRulesFromPayload(initialCampaign)));
   const [templateStore, setTemplateStore] = useState(() => campaignTemplatesFromPayload(initialCampaign));
   const [randomSystemState, setRandomSystemState] = useState(() => normalizeRandomSystemState(initialCampaign.randomSystem || loadRandomSystemState()));
@@ -135,13 +138,14 @@ export function useCampaign() {
 
   useEffect(() => {
     if (!persistenceEnabled) return undefined;
-    const inputs = { syncedScenes, campaignName, templateStore, campaignRules, rulePresetSnapshot, randomSystemState, activeCampaignEntryId };
+    const inputs = { syncedScenes, campaignName, templateStore, campaignRules, campaignProfile, rulePresetSnapshot, randomSystemState, activeCampaignEntryId };
     const previousInputs = lastPersistenceInputsRef.current;
     const unchanged = previousInputs
       && previousInputs.syncedScenes === syncedScenes
       && previousInputs.campaignName === campaignName
       && previousInputs.templateStore === templateStore
       && previousInputs.campaignRules === campaignRules
+      && previousInputs.campaignProfile === campaignProfile
       && previousInputs.rulePresetSnapshot === rulePresetSnapshot
       && previousInputs.randomSystemState === randomSystemState
       && previousInputs.activeCampaignEntryId === activeCampaignEntryId;
@@ -152,15 +156,15 @@ export function useCampaign() {
     lastPersistenceInputsRef.current = inputs;
 
     const timer = window.setTimeout(() => {
-      const signature = JSON.stringify({ scenes: syncedScenes, campaignName, templateStore, campaignRules, rulePresetSnapshot, randomSystemState, activeCampaignEntryId });
+      const signature = JSON.stringify({ scenes: syncedScenes, campaignName, templateStore, campaignRules, campaignProfile, rulePresetSnapshot, randomSystemState, activeCampaignEntryId });
       if (signature === lastPersistenceSignatureRef.current) return;
       lastPersistenceSignatureRef.current = signature;
 
       const activeEntry = campaignEntriesRef.current.find((entry) => entry.id === activeCampaignEntryIdRef.current);
       const meta = activeEntry ? { id: activeEntry.id, name: campaignName, fileName: activeEntry.fileName, folderName: activeEntry.folderName } : {};
-      const content = serializeCampaign(syncedScenes, dark, campaignName, templateStore, campaignRules, rulePresetSnapshot, meta, randomSystemState);
+      const content = serializeCampaign(syncedScenes, dark, campaignName, templateStore, campaignRules, rulePresetSnapshot, meta, randomSystemState, campaignProfile);
       const snapshot = JSON.parse(content);
-      saveCampaign(syncedScenes, dark, campaignName, templateStore, campaignRules, rulePresetSnapshot, meta, randomSystemState);
+      saveCampaign(syncedScenes, dark, campaignName, templateStore, campaignRules, rulePresetSnapshot, meta, randomSystemState, campaignProfile);
 
       setCampaignEntries((entries) => entries.map((entry) => entry.id === activeCampaignEntryIdRef.current
         ? { ...entry, name: campaignName, fileName: snapshot.campaign.fileName, folderName: snapshot.campaign.folderName, updatedAt: snapshot.savedAt, snapshot }
@@ -180,7 +184,7 @@ export function useCampaign() {
       }, 650);
     }, LOCAL_PERSISTENCE_DEBOUNCE_MS);
     return () => window.clearTimeout(timer);
-  }, [syncedScenes, dark, campaignName, templateStore, campaignRules, rulePresetSnapshot, randomSystemState, activeCampaignEntryId, persistenceEnabled]);
+  }, [syncedScenes, dark, campaignName, templateStore, campaignRules, campaignProfile, rulePresetSnapshot, randomSystemState, activeCampaignEntryId, persistenceEnabled]);
 
   useEffect(() => { removeLegacyThemePreference(); }, []);
 
@@ -195,11 +199,12 @@ export function useCampaign() {
   }, [themePreference]);
 
   const sceneActions = useMemo(() => createSceneActions({ scene, sceneIndex, blocked, restorePoints, setScenes, setRestorePoints, setRoundEffect }), [blocked, scene, restorePoints, sceneIndex]);
-  const campaignActions = useMemo(() => createCampaignActions({ scenes: syncedScenes, campaignRules, rulePresetSnapshot, setCampaignRules, setRulePresetSnapshot, sceneIndex, dark, campaignName, templateStore, randomSystemState, setScenes, setSceneIndex, setDark: setManualTheme, setCampaignNameState: setCampaignName, setTemplateStore, setRandomSystemState }), [campaignName, campaignRules, rulePresetSnapshot, dark, sceneIndex, setManualTheme, syncedScenes, templateStore, randomSystemState]);
+  const campaignActions = useMemo(() => createCampaignActions({ scenes: syncedScenes, campaignRules, campaignProfile, rulePresetSnapshot, setCampaignRules, setCampaignProfile, setRulePresetSnapshot, sceneIndex, dark, campaignName, templateStore, randomSystemState, setScenes, setSceneIndex, setDark: setManualTheme, setCampaignNameState: setCampaignName, setTemplateStore, setRandomSystemState }), [campaignName, campaignRules, campaignProfile, rulePresetSnapshot, dark, sceneIndex, setManualTheme, syncedScenes, templateStore, randomSystemState]);
 
   const loadCampaignIntoState = (payload) => {
     const campaign = normalizeCampaignPayload(payload);
     setCampaignRules(campaign.initiativeRules);
+    setCampaignProfile(campaign.campaignProfile);
     setRulePresetSnapshot(campaign.rulePresetSnapshot || null);
     setScenes(campaign.scenes);
     setCampaignName(campaignNameFromPayload(campaign));
@@ -220,6 +225,7 @@ export function useCampaign() {
     rulePresetSnapshot,
     entry ? { id: entry.id, name, fileName: entry.fileName, folderName: entry.folderName } : {},
     randomSystemState,
+    campaignProfile,
   );
 
   const extraCampaignActions = useMemo(() => ({
@@ -291,15 +297,16 @@ export function useCampaign() {
       setPendingFileChoice(null);
       setFileSaveStatus({ mode: 'local', message: t('campaign.status.loadedNoLinkedFile') });
     },
-    startFirstRunCampaign(preset) {
+    startFirstRunCampaign(preset, profileSelection = {}) {
       if (!preset?.rules) return { ok: false, message: t('campaign.error.presetMissing') };
       const nextRules = normalizeCampaignRules(preset.rules);
       const blankScene = createBlankScene(nextRules);
       const nextTemplateStore = addOnboardingTrackerTemplates(templateStore, preset);
-      const nextRandomSystem = normalizeRandomSystemState(null);
-      const snapshot = createCampaignPayload([blankScene], dark, DEFAULT_CAMPAIGN_NAME, nextTemplateStore, nextRules, createRulePresetSnapshot(preset, nextRules), {}, nextRandomSystem);
+      const nextRandomSystem = enableQuickRollProfilesInState(normalizeRandomSystemState(null), profileSelection.randomQuickRollProfileIds);
+      const snapshot = createCampaignPayload([blankScene], dark, DEFAULT_CAMPAIGN_NAME, nextTemplateStore, nextRules, createRulePresetSnapshot(preset, nextRules, profileSelection), {}, nextRandomSystem, profileSelection);
       const entry = campaignEntryFromPayload(snapshot, { source: 'local' });
       setCampaignRules(nextRules);
+      setCampaignProfile(snapshot.campaignProfile);
       setRulePresetSnapshot(snapshot.rulePresetSnapshot || null);
       setScenes([blankScene]);
       setTemplateStore(nextTemplateStore);
@@ -318,14 +325,25 @@ export function useCampaign() {
       setPersistenceEnabled(true);
       return { ok: true };
     },
+    startFirstRunProfile({ systemProfileId, editionId = '', initiativeProfileId, randomQuickRollProfileIds = [] } = {}) {
+      const systemProfile = systemProfileById(systemProfileId);
+      const initiativeProfile = initiativeProfileById(initiativeProfileId);
+      if (!systemProfile || !initiativeProfile || initiativeProfile.status !== initiativeProfileStatuses.AVAILABLE || !initiativeProfile.rulePresetId) {
+        return { ok: false, message: t('campaign.error.presetMissing') };
+      }
+      const preset = rulePresetCatalog.find((item) => item.catalogId === initiativeProfile.rulePresetId);
+      if (!preset) return { ok: false, message: t('campaign.error.presetMissing') };
+      return this.startFirstRunCampaign(preset, { systemProfileId: systemProfile.id, editionId, initiativeProfileId: initiativeProfile.id, randomQuickRollProfileIds });
+    },
     startFirstRunCustomCampaign() {
       const nextRules = normalizeCampaignRules(campaignRules);
       const blankScene = createBlankScene(nextRules);
       const nextTemplateStore = addOnboardingTrackerTemplates(templateStore, null);
       const nextRandomSystem = normalizeRandomSystemState(null);
-      const snapshot = createCampaignPayload([blankScene], dark, DEFAULT_CAMPAIGN_NAME, nextTemplateStore, nextRules, null, {}, nextRandomSystem);
+      const snapshot = createCampaignPayload([blankScene], dark, DEFAULT_CAMPAIGN_NAME, nextTemplateStore, nextRules, null, {}, nextRandomSystem, {});
       const entry = campaignEntryFromPayload(snapshot, { source: 'local' });
       setCampaignRules(nextRules);
+      setCampaignProfile(snapshot.campaignProfile);
       setRulePresetSnapshot(null);
       setScenes([blankScene]);
       setTemplateStore(nextTemplateStore);
@@ -368,6 +386,7 @@ export function useCampaign() {
       }
       resetFirstRunOnboarding();
       setCampaignRules(normalizeCampaignRules({}));
+      setCampaignProfile({});
       setRulePresetSnapshot(null);
       setScenes([]);
       setSceneIndex(0);
@@ -383,7 +402,7 @@ export function useCampaign() {
       setPersistenceEnabled(false);
       lastPersistenceSignatureRef.current = '';
     },
-  }), [campaignName, campaignRules, dark, pendingFileChoice, syncedScenes, templateStore, randomSystemState]);
+  }), [campaignName, campaignRules, campaignProfile, dark, pendingFileChoice, syncedScenes, templateStore, randomSystemState]);
 
   const extraSceneActions = useMemo(() => ({
     updateSceneField(key, value) {
@@ -400,7 +419,7 @@ export function useCampaign() {
       if (!clean) return;
       setScenes((list) => list.map((s, i) => {
         if (i !== sceneIndex) return s;
-        const options = { ...initiativeOptions(s), multipleActionSlots: isManualMultipleActionMode(s) || rulesAllowMultipleSlots(s) };
+        const options = { ...initiativeOptions(s), multipleActionSlots: (participant) => rulesAllowMultipleSlots(s, participant) };
         const participantsAjustes = (s.participants || []).map((participant) => participant.id === participantId ? participantAvecInitiativeAjustee(participant, clean, slotId, options) : participant);
         return { ...s, participants: trierParInitiative(participantsAjustes, options) };
       }));
@@ -419,6 +438,7 @@ export function useCampaign() {
   return {
     scenes: syncedScenes,
     campaignRules,
+    campaignProfile,
     rulePresetSnapshot,
     templateStore,
     randomSystemState,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { instantiateTrackerCopy, makeInitiativeTextPreset, mergeTemplateStores, normalizeTemplateStore, numberedCopyInsertIndex, numberedCopyName } from './templates.js';
+import { createBlankParticipant, instantiateTemplate, instantiateTrackerCopy, makeInitiativeTextPreset, makeTemplateFromParticipant, mergeTemplateStores, normalizeTemplateStore, numberedCopyInsertIndex, numberedCopyName } from './templates.js';
 
 describe('numberedCopyName', () => {
   it('starts copied names at 1 and increments the suffix', () => {
@@ -13,6 +13,26 @@ describe('numberedCopyName', () => {
 
   it('continues after the largest existing suffix instead of filling old gaps', () => {
     expect(numberedCopyName(['Astre', 'Astre 2'], 'Astre')).toBe('Astre 3');
+  });
+});
+
+describe('participant tactical roles', () => {
+  it('defaults blank and legacy template participants to the normal role', () => {
+    expect(createBlankParticipant()).toMatchObject({ tacticalRole: 'normal' });
+
+    const legacy = normalizeTemplateStore({
+      templates: [{ name: 'Ancien modele', category: 'PNJ', participant: { name: 'Ancien modele', kind: 'Creature maison' } }],
+    });
+    expect(legacy.templates[0].participant).toMatchObject({ kind: 'Creature maison', tacticalRole: 'normal' });
+    expect(instantiateTemplate(legacy.templates[0])).toMatchObject({ kind: 'Creature maison', tacticalRole: 'normal' });
+  });
+
+  it('keeps the tactical role independently from the participant kind in templates', () => {
+    const template = makeTemplateFromParticipant({ name: 'Hydre', kind: 'Opposant personnalise', tacticalRole: 'boss' }, { name: 'Hydre', category: 'Creatures' });
+    const restored = instantiateTemplate(template);
+
+    expect(template.participant).toMatchObject({ kind: 'Opposant personnalise', tacticalRole: 'boss' });
+    expect(restored).toMatchObject({ kind: 'Opposant personnalise', tacticalRole: 'boss' });
   });
 });
 

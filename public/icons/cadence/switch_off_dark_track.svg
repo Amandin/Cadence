@@ -1,0 +1,19 @@
+<svg viewBox="0 0 44 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <defs>
+    <linearGradient id="switch-off-dark-bg" x1="2" y1="4" x2="42" y2="20" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#d9efff" />
+      <stop offset=".48" stop-color="#82addd" />
+      <stop offset="1" stop-color="#5c5a9f" />
+    </linearGradient>
+  </defs>
+  <path id="switch-track-fill" d="M 32.989394,21.55869 H 11.506341 c -5.279122,0 -9.558695,-4.27957 -9.558695,-9.55869 0,-5.27912 4.279573,-9.55869 9.558695,-9.55869 h 21.483053 l 1.061496,0.12621 c 4.538449,0.74361 8.001464,4.68363 8.001464,9.43248 0,4.81835 -3.565123,8.80402 -8.201414,9.46307 z" fill="url(#switch-off-dark-bg)" />
+  <path id="switch-track-glow" d="m 9.2,5.2 c 7.4,-1.1 17.6,-1.1 25.4,0" fill="none" stroke="#f0fbff" stroke-width="1" stroke-linecap="round" opacity=".52" />
+  <g id="switch-track" fill="none" stroke-linecap="round">
+    <path id="switch-track-outer" d="M 32.989394,21.55869 H 11.506341 c -5.279122,0 -9.558695,-4.27957 -9.558695,-9.55869 0,-5.27912 4.279573,-9.55869 9.558695,-9.55869 h 21.483053 l 1.061496,0.12621 c 4.538449,0.74361 8.001464,4.68363 8.001464,9.43248 0,4.81835 -3.565123,8.80402 -8.201414,9.46307 z" stroke="#304e88" stroke-width="0.9" />
+    <path id="switch-track-inner" d="m 14.884919,5.00333 c 12.034259,0.004 4.889619,-0.007 16.923874,0.003 3.863097,0 6.994758,3.13165 6.994755,6.99475 -0.000002,3.8631 -3.13166,6.99475 -6.994755,6.99475 -12.014793,0.004 -4.850685,0.002 -16.865482,0.002" stroke="#d8edff" stroke-width="0.7" opacity=".82" />
+  </g>
+  <g id="switch-markers" fill="#d8edff" stroke="#d8edff" stroke-linecap="round" stroke-linejoin="round" opacity=".88">
+    <path id="switch-marker-large" d="m 21.600127,12.13847 1.009138,1.00914 1.009137,-1.00914 -1.009137,-1.00912 z" stroke-width="0.26" />
+    <path id="switch-marker-small" d="m 27.457006,12.13847 0.756851,0.75685 0.756854,-0.75685 -0.756854,-0.75684 z" stroke-width="0.2" opacity=".72" />
+  </g>
+</svg>

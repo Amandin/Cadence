@@ -43,8 +43,8 @@ export function AvatarParticipant({ participant }) {
   return <div className={`avatar ${participant.color || 'slate'}`} aria-hidden="true">{participant.symbol || <IconeCadence name="avatarDefault" />}</div>;
 }
 
-export function IconeSecret({ className = '' }) {
-  return <IconeCadence name="avatarSubtle" className={`secret-icon ${className}`.trim()} />;
+export function IconeSecret({ className = '', active = true }) {
+  return <IconeCadence name={active ? 'avatarSubtle' : 'avatarDefault'} className={`secret-icon ${active ? 'secret-icon-active' : 'secret-icon-inactive'} ${className}`.trim()} />;
 }
 
 export function IconeRepliFichette({ repliee = false, className = '' }) {

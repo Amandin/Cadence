@@ -12,12 +12,13 @@ import { useRandomSystem } from './random-system/useRandomSystem.js';
 import { createBlankParticipant } from './templates.js';
 import { activateWaitingServiceWorker, primePwaShellCache, registerCadencePwa } from './pwa.js';
 import { t } from './i18n/index.js';
-import { rulePresetCatalog, rulePresetFamilies } from './rulePresets.js';
+import { effectiveSystemProfileCatalog } from './domain/systemProfiles.js';
 import { keepScreenAwakeWhileForeground } from './screenWakeLock.js';
 import { teinteEtats } from './interface/commun/ComposantsCommuns.jsx';
 import { MenuOptions } from './interface/app/MenuOptions.jsx';
 import { HubCampagne } from './interface/campaign/HubCampagne.jsx';
 import { getCadenceLogo } from './uiAssets.js';
+import { advanceSceneTutorial, readSceneTutorial, resetSceneTutorial, sceneTutorialSteps, writeSceneTutorial } from './sceneTutorial.js';
 import {
   PERFORMANCE_PREFERENCE_STORAGE_KEY,
   detectHardwarePerformanceRisk,
@@ -95,16 +96,18 @@ function initiativesDeclarees(participant = {}, multipleActionSlots = true) {
 
 function participantsInitiativeIncompatible(scene = {}) {
   if (scene.temporalite === temporalityModes.FLEXIBLE && scene.flexibleUseInitiative === false) return [];
-  return (scene.participants || []).filter((participant) => initiativesDeclarees(participant, rulesAllowMultipleSlots(scene)).some((initiative) => !initiativeMatchesMode(initiative, scene.initiativeTextOrder)));
+  return (scene.participants || []).filter((participant) => initiativesDeclarees(participant, rulesAllowMultipleSlots(scene, participant)).some((initiative) => !initiativeMatchesMode(initiative, scene.initiativeTextOrder)));
 }
 
 export default function App() {
   const campaign = useCampaign();
-  const { scenes, templateStore, setTemplateStore, randomSystemState, campaignName, campaignEntries, pendingFileChoice, fileSaveStatus, scene, restorePoints, dark, active, blocked, nextStartsRound, nextClass, roundEffect, rulePresetSnapshot, firstRunOnboardingNeeded, themeState, actions } = campaign;
+  const { scenes, templateStore, setTemplateStore, randomSystemState, campaignName, campaignEntries, pendingFileChoice, fileSaveStatus, scene, restorePoints, dark, active, blocked, nextStartsRound, nextClass, roundEffect, campaignProfile, rulePresetSnapshot, firstRunOnboardingNeeded, themeState, actions } = campaign;
   const characters = useCharacterInteractions(scene, actions);
   const templates = useTemplates(templateStore, setTemplateStore);
   const randomSystem = useRandomSystem({ state: randomSystemState, setState: actions.setRandomSystemState });
   const [currentView, setCurrentView] = useState(initialView);
+  const [campaignProfileWizardOpen, setCampaignProfileWizardOpen] = useState(false);
+  const [sceneTutorial, setSceneTutorial] = useState(readSceneTutorial);
   const [openMenu, setOpenMenu] = useState(false);
   const [addSheetOpen, setAddSheetOpen] = useState(false);
   const [notice, setNotice] = useState(null);
@@ -152,6 +155,7 @@ export default function App() {
   const [timerDoneOpen, setTimerDoneOpen] = useState(false);
   const [sceneStatusOpen, setSceneStatusOpen] = useState(false);
   const [quickRollOpen, setQuickRollOpen] = useState(false);
+  const [quickRollInfo, setQuickRollInfo] = useState(null);
   const [pwaUpdateAvailable, setPwaUpdateAvailable] = useState(false);
   const [chargementInitialVisible, setChargementInitialVisible] = useState(true);
   const [sceneVisualTick, setSceneVisualTick] = useState(0);
@@ -276,15 +280,6 @@ export default function App() {
       <button className="small-btn suggested" type="button" onClick={rechargerMiseAJourPwa}>{t('errors.reload')}</button>
     </div>
   ) : null;
-
-  useEffect(() => {
-    if (currentView !== 'scene' || scene.round < 0 || !scene.activeId) return;
-    const element = document.querySelector(`[data-participant-id="${scene.activeId}"]`);
-    if (!element) return;
-    const rect = element.getBoundingClientRect();
-    const bottomLimit = window.innerHeight - 110;
-    if (rect.bottom > bottomLimit) element.scrollIntoView({ block: 'nearest', behavior: performanceLow ? 'auto' : 'smooth' });
-  }, [currentView, performanceLow, scene.activeId, scene.round]);
 
   useEffect(() => {
     if (currentView !== 'scene') return undefined;
@@ -477,14 +472,19 @@ export default function App() {
     request?.execute?.();
   };
   const loadTestCampaign = () => { actions.loadTestCampaign?.(); setOpenMenu(false); characters.closeCharacterPanels(); setCurrentView('hub'); };
-  const startFirstRunPreset = (preset) => {
-    const result = actions.startFirstRunCampaign(preset);
-    if (result?.ok !== false) setCurrentView('scene');
+  const updateSceneTutorial = useCallback((next) => setSceneTutorial((current) => writeSceneTutorial(typeof next === 'function' ? next(current) : next)), []);
+  const finishSceneTutorial = useCallback(() => updateSceneTutorial({ active: false, step: 0 }), [updateSceneTutorial]);
+  const startFirstRunProfile = (selection, tutorial = false) => {
+    const result = actions.startFirstRunProfile(selection);
+    if (result?.ok !== false) {
+      updateSceneTutorial(tutorial ? { active: true, step: sceneTutorialSteps.ADD_PARTICIPANT } : { active: false, step: 0 });
+      setCurrentView('scene');
+    }
     return result;
   };
   const startFirstRunCustomRules = () => {
     const result = actions.startFirstRunCustomCampaign();
-    if (result?.ok !== false) setCurrentView('scene');
+    if (result?.ok !== false) { finishSceneTutorial(); setCurrentView('scene'); }
     return result;
   };
   const askResetCadence = () => { setResetConfirmationOpen(true); setOpenMenu(false); characters.closeCharacterPanels(); };
@@ -508,6 +508,8 @@ export default function App() {
     setTemplatePanelOpen(false);
     setTemplateSwitchRequest(null);
     characters.closeCharacterPanels();
+    resetSceneTutorial();
+    setSceneTutorial({ active: false, step: 0 });
     setCurrentView('hub');
   };
   const restoreScene = (pointId) => { actions.restoreScene(pointId); setOpenMenu(false); characters.closeCharacterPanels(); };
@@ -597,6 +599,25 @@ export default function App() {
     || characters.initiativeEditParticipant
   );
 
+  useEffect(() => {
+    if (!sceneTutorial.active || currentView !== 'scene') return;
+    const next = advanceSceneTutorial(sceneTutorial, scene, { addSheetOpen, editingCharacter: !!characters.editing });
+    if (next.step !== sceneTutorial.step) updateSceneTutorial(next);
+  }, [addSheetOpen, characters.editing, currentView, scene, sceneTutorial, updateSceneTutorial]);
+
+  useEffect(() => {
+    if (!sceneTutorial.active || currentView !== 'scene') return undefined;
+    const suivreActionReelle = (event) => {
+      if (sceneTutorial.step === sceneTutorialSteps.ADD_INDICATOR && event.target.closest('.add-tracker-btn')) {
+        updateSceneTutorial({ active: true, step: sceneTutorialSteps.CONFIGURE_INDICATOR });
+      } else if (sceneTutorial.step === sceneTutorialSteps.CONFIGURE_INDICATOR && event.target.closest('.confirm-add-tracker-btn')) {
+        updateSceneTutorial({ active: true, step: sceneTutorialSteps.SAVE_CHARACTER });
+      }
+    };
+    document.addEventListener('click', suivreActionReelle, true);
+    return () => document.removeEventListener('click', suivreActionReelle, true);
+  }, [currentView, sceneTutorial, updateSceneTutorial]);
+
   const fenetresCommunes = overlayVisible ? (
     <Suspense fallback={null}>
       <AppOverlays
@@ -612,7 +633,7 @@ export default function App() {
         templates={templates}
         actions={actions}
         ui={ui}
-        overlayState={{ addSheetOpen, openMenu, notice, globalSheetOpen, clockModalOpen, initiativeEntryOpen, initiativeEntryScopeIds, initiativeEntryInitialLaunch, initiativeAdjustOpen, initiativeCostOpen, declarationActionsOpen, declarationAdditionTargetId, exportOpen, resetConfirmationOpen, timerDoneOpen, pendingFileChoice, sceneStatusOpen, quickRollOpen, participantsIncompatibles }}
+        overlayState={{ addSheetOpen, openMenu, notice, globalSheetOpen, clockModalOpen, initiativeEntryOpen, initiativeEntryScopeIds, initiativeEntryInitialLaunch, initiativeAdjustOpen, initiativeCostOpen, declarationActionsOpen, declarationAdditionTargetId, exportOpen, resetConfirmationOpen, timerDoneOpen, pendingFileChoice, sceneStatusOpen, quickRollOpen, quickRollInfo, participantsIncompatibles }}
         overlayActions={{
           openAddCharacter,
           openInitiativeEntry,
@@ -626,7 +647,7 @@ export default function App() {
           fermerCompteurGlobal: () => setGlobalSheetOpen(false),
           fermerResolutionHorloge: () => setClockModalOpen(false),
           fermerEtatScene: () => setSceneStatusOpen(false),
-          fermerLanceurDes: () => setQuickRollOpen(false),
+          fermerLanceurDes: () => { setQuickRollOpen(false); setQuickRollInfo(null); },
           validerEtatScene: (data) => {
             if (sceneStatusOpen?.statusId) actions.updateSceneStatus(sceneStatusOpen.statusId, data);
             else actions.addSceneStatus(data);
@@ -718,7 +739,7 @@ export default function App() {
   const modifierEtatScene = useCallback((statusId) => setSceneStatusOpen({ statusId }), []);
   const modifierNotesReserve = useCallback((notes) => actions.updateSceneField('reserveNotes', notes), [actions]);
   const ouvrirMenuScene = useCallback(() => setOpenMenu(true), []);
-  const ouvrirLanceurDes = useCallback(() => setQuickRollOpen(true), []);
+  const ouvrirLanceurDes = useCallback((info = null) => { setQuickRollInfo(info); setQuickRollOpen(true); }, []);
   const sceneView = useMemo(() => (
     <SceneView
       scene={scene}
@@ -763,19 +784,22 @@ export default function App() {
       onSaisirInitiatives={openInitiativeEntry}
       onOuvrirLanceurDes={ouvrirLanceurDes}
       onOuvrirMenu={ouvrirMenuScene}
+      tutorial={{ ...sceneTutorial, onPrevious: () => updateSceneTutorial((current) => ({ active: true, step: Math.max(sceneTutorialSteps.IDENTITY, current.step - 1) })), onNext: () => updateSceneTutorial((current) => ({ active: true, step: Math.min(sceneTutorialSteps.ADD_INDICATOR, current.step + 1) })), onFinish: finishSceneTutorial }}
     />
-  ), [actions.removeSceneStatus, actions.stepGlobal, active, activeGroup, ajouterEtatScene, annulerAJoue, changerSurprisePreparation, characters, classeSuivantEffective, dark, declarationEnDeclaration, globalAutoTick, horlogesBloquantesActives, libelleBas, marquerAJoue, modifierEtatScene, modifierNotesReserve, nextLabel, nextStartsRound, openAddCharacter, openInitiativeEntry, ouvrirLanceurDes, ouvrirMenuScene, performanceLow, phaseActive, phaseActiveId, phaseAttendRelanceInitiative, phaseDemarreNouveauRound, retourHub, retourPossible, retourPreparationVisible, returnToPreparation, roundEffect, scene, suivantDesactive, temporaliteDeclaration, temporalitePhases, temporaliteSouple, toggleGlobalRealtime, tourPrecedent, tourSuivant, toutLeMondeAJoueSouple]);
+  ), [actions.removeSceneStatus, actions.stepGlobal, active, activeGroup, ajouterEtatScene, annulerAJoue, changerSurprisePreparation, characters, classeSuivantEffective, dark, declarationEnDeclaration, finishSceneTutorial, globalAutoTick, horlogesBloquantesActives, libelleBas, marquerAJoue, modifierEtatScene, modifierNotesReserve, nextLabel, nextStartsRound, openAddCharacter, openInitiativeEntry, ouvrirLanceurDes, ouvrirMenuScene, performanceLow, phaseActive, phaseActiveId, phaseAttendRelanceInitiative, phaseDemarreNouveauRound, retourHub, retourPossible, retourPreparationVisible, returnToPreparation, roundEffect, scene, sceneTutorial, suivantDesactive, temporaliteDeclaration, temporalitePhases, temporaliteSouple, toggleGlobalRealtime, tourPrecedent, tourSuivant, toutLeMondeAJoueSouple, updateSceneTutorial]);
 
 
   if (chargementInitialVisible) return <>{pwaUpdateBanner}<ChargementVue dark={dark} performanceLevel={performanceLevel} texte={t('app.loading.preparing')} /></>;
 
   if (firstRunOnboardingNeeded) {
-    const genericPresets = rulePresetCatalog.filter((preset) => preset.family === rulePresetFamilies.GENERIC);
-    const systemPresets = rulePresetCatalog.filter((preset) => preset.family === rulePresetFamilies.SYSTEM);
-    return <>{pwaUpdateBanner}<Suspense fallback={<ChargementVue dark={dark} performanceLevel={performanceLevel} texte={t('app.loading.hub')} />}><FirstRunOnboarding dark={dark} genericPresets={genericPresets} systemPresets={systemPresets} onToggleTheme={actions.setDark} onStartPreset={startFirstRunPreset} onStartCustomRules={startFirstRunCustomRules} /></Suspense></>;
+    return <>{pwaUpdateBanner}<Suspense fallback={<ChargementVue dark={dark} performanceLevel={performanceLevel} texte={t('app.loading.hub')} />}><FirstRunOnboarding dark={dark} systemProfiles={effectiveSystemProfileCatalog()} onToggleTheme={actions.setDark} onStartProfile={startFirstRunProfile} onStartCustomRules={startFirstRunCustomRules} /></Suspense></>;
   }
 
-  if (currentView === 'hub') return <>{pwaUpdateBanner}<div className={`app hub-app ${dark ? 'dark' : ''} ${templatePanelVisible ? 'has-template-panel' : ''}`} {...attributsApp(dark, performanceLevel)}><HubCampagne campaignName={campaignName} scene={scene} scenes={scenes} templates={templates.templates} trackerTemplates={templates.trackerTemplates} statusTemplates={templates.statusTemplates} sceneCounterTemplates={templates.sceneCounterTemplates} sceneStatusTemplates={templates.sceneStatusTemplates} ruleTemplates={templates.rulePresets} initiativeTextPresets={templates.initiativeTextPresets} rulePresetSnapshot={rulePresetSnapshot} randomSystem={randomSystem} templateCategories={templates.categories} campaignEntries={campaignEntries} fileSaveStatus={fileSaveStatus} dark={dark} performanceState={{ preference: performancePreference, level: performanceLevel, automatic: automaticPerformanceLow }} themeState={themeState} onChoisirScene={chooseScene} onNouvelleScene={newScene} onModifierScene={actions.updateSceneMeta} onDupliquerScene={actions.duplicateScene} onSupprimerScene={actions.deleteScene} onModifierReglesInitiative={actions.updateCampaignInitiativeRules} onRenommerCampagne={actions.setCampaignName} onExporter={() => setExportOpen(true)} onImporter={importCampaign} onChargerCampagneTest={loadTestCampaign} onReinitialiser={askResetCadence} onAjouterTemplateCategorie={createTemplateInCategory} onAjouterCategorieTemplate={addTemplateCategory} onRenommerCategorieTemplate={renameTemplateCategory} onSupprimerCategorieTemplate={deleteTemplateCategory} onDeplacerCategorieTemplate={templates.moveCategory} onChangerCategorieTemplate={templates.setTemplateCategory} onEditerTemplate={ouvrirEditionTemplatePersonnage} onDupliquerTemplate={duplicateTemplate} onSupprimerTemplate={templates.deleteTemplate} onAjouterTemplateSuivi={templates.createTrackerTemplate} onModifierTemplateSuivi={templates.updateTrackerTemplate} onDupliquerTemplateSuivi={templates.duplicateTrackerTemplate} onSupprimerTemplateSuivi={templates.deleteTrackerTemplate} onAjouterTemplateEtat={templates.createStatusTemplate} onModifierTemplateEtat={templates.updateStatusTemplate} onDupliquerTemplateEtat={templates.duplicateStatusTemplate} onSupprimerTemplateEtat={templates.deleteStatusTemplate} onAjouterTemplateCompteurScene={templates.createSceneCounterTemplate} onModifierTemplateCompteurScene={templates.updateSceneCounterTemplate} onDupliquerTemplateCompteurScene={templates.duplicateSceneCounterTemplate} onSupprimerTemplateCompteurScene={templates.deleteSceneCounterTemplate} onAjouterTemplateEtatScene={templates.createSceneStatusTemplate} onModifierTemplateEtatScene={templates.updateSceneStatusTemplate} onDupliquerTemplateEtatScene={templates.duplicateSceneStatusTemplate} onSupprimerTemplateEtatScene={templates.deleteSceneStatusTemplate} onAppliquerTemplateRegles={actions.applyCampaignRulePreset} onEnregistrerTemplateRegles={templates.saveRuleTemplate} onEnregistrerPresetInitiativeTextuelle={templates.saveInitiativeTextPreset} onDupliquerTemplateRegles={templates.duplicateRuleTemplate} onSupprimerTemplateRegles={templates.deleteRuleTemplate} onImporterTemplates={importTemplatesFromCampaign} onExporterBibliotheque={exportTemplateLibrary} onFermerEditeursTemplates={fermerEditeursTemplates} templatePersonnageId={editingTemplateId} templatePersonnageOuvert={!!editingTemplate} onFermerEditionTemplatePersonnage={fermerEditionTemplatePersonnage} onDemanderChangementDepuisTemplatePersonnage={setTemplateSwitchRequest} onTemplatePanelOpenChange={setTemplatePanelOpen} onPerformancePreferenceChange={setPerformancePreference} onThemeModeChange={actions.setThemeMode} />{fenetresCommunes}{menuOptions}</div></>;
+  if (campaignProfileWizardOpen) {
+    return <Suspense fallback={<ChargementVue dark={dark} performanceLevel={performanceLevel} texte={t('app.loading.hub')} />}><FirstRunOnboarding dark={dark} systemProfiles={effectiveSystemProfileCatalog()} initialProfile={campaignProfile} onToggleTheme={actions.setDark} showCustomRules={false} offerSceneTutorial={false} onCancel={() => setCampaignProfileWizardOpen(false)} onStartProfile={(profile) => { actions.applyCampaignProfile(profile); setCampaignProfileWizardOpen(false); }} /></Suspense>;
+  }
+
+  if (currentView === 'hub') return <>{pwaUpdateBanner}<div className={`app hub-app ${dark ? 'dark' : ''} ${templatePanelVisible ? 'has-template-panel' : ''}`} {...attributsApp(dark, performanceLevel)}><HubCampagne campaignName={campaignName} scene={scene} scenes={scenes} templates={templates.templates} trackerTemplates={templates.trackerTemplates} statusTemplates={templates.statusTemplates} sceneCounterTemplates={templates.sceneCounterTemplates} sceneStatusTemplates={templates.sceneStatusTemplates} ruleTemplates={templates.rulePresets} initiativeTextPresets={templates.initiativeTextPresets} campaignProfile={campaignProfile} rulePresetSnapshot={rulePresetSnapshot} randomSystem={randomSystem} templateCategories={templates.categories} campaignEntries={campaignEntries} fileSaveStatus={fileSaveStatus} dark={dark} performanceState={{ preference: performancePreference, level: performanceLevel, automatic: automaticPerformanceLow }} themeState={themeState} onChoisirScene={chooseScene} onNouvelleScene={newScene} onModifierScene={actions.updateSceneMeta} onDupliquerScene={actions.duplicateScene} onSupprimerScene={actions.deleteScene} onModifierReglesInitiative={actions.updateCampaignInitiativeRules} onOuvrirProfilCampagne={() => setCampaignProfileWizardOpen(true)} onRenommerCampagne={actions.setCampaignName} onExporter={() => setExportOpen(true)} onImporter={importCampaign} onChargerCampagneTest={loadTestCampaign} onReinitialiser={askResetCadence} onAjouterTemplateCategorie={createTemplateInCategory} onAjouterCategorieTemplate={addTemplateCategory} onRenommerCategorieTemplate={renameTemplateCategory} onSupprimerCategorieTemplate={deleteTemplateCategory} onDeplacerCategorieTemplate={templates.moveCategory} onChangerCategorieTemplate={templates.setTemplateCategory} onEditerTemplate={ouvrirEditionTemplatePersonnage} onDupliquerTemplate={duplicateTemplate} onSupprimerTemplate={templates.deleteTemplate} onAjouterTemplateSuivi={templates.createTrackerTemplate} onModifierTemplateSuivi={templates.updateTrackerTemplate} onDupliquerTemplateSuivi={templates.duplicateTrackerTemplate} onSupprimerTemplateSuivi={templates.deleteTrackerTemplate} onAjouterTemplateEtat={templates.createStatusTemplate} onModifierTemplateEtat={templates.updateStatusTemplate} onDupliquerTemplateEtat={templates.duplicateStatusTemplate} onSupprimerTemplateEtat={templates.deleteStatusTemplate} onAjouterTemplateCompteurScene={templates.createSceneCounterTemplate} onModifierTemplateCompteurScene={templates.updateSceneCounterTemplate} onDupliquerTemplateCompteurScene={templates.duplicateSceneCounterTemplate} onSupprimerTemplateCompteurScene={templates.deleteSceneCounterTemplate} onAjouterTemplateEtatScene={templates.createSceneStatusTemplate} onModifierTemplateEtatScene={templates.updateSceneStatusTemplate} onDupliquerTemplateEtatScene={templates.duplicateSceneStatusTemplate} onSupprimerTemplateEtatScene={templates.deleteSceneStatusTemplate} onAppliquerTemplateRegles={actions.applyCampaignRulePreset} onEnregistrerTemplateRegles={templates.saveRuleTemplate} onEnregistrerPresetInitiativeTextuelle={templates.saveInitiativeTextPreset} onDupliquerTemplateRegles={templates.duplicateRuleTemplate} onSupprimerTemplateRegles={templates.deleteRuleTemplate} onImporterTemplates={importTemplatesFromCampaign} onExporterBibliotheque={exportTemplateLibrary} onFermerEditeursTemplates={fermerEditeursTemplates} templatePersonnageId={editingTemplateId} templatePersonnageOuvert={!!editingTemplate} onFermerEditionTemplatePersonnage={fermerEditionTemplatePersonnage} onDemanderChangementDepuisTemplatePersonnage={setTemplateSwitchRequest} onTemplatePanelOpenChange={setTemplatePanelOpen} onPerformancePreferenceChange={setPerformancePreference} onThemeModeChange={actions.setThemeMode} />{fenetresCommunes}{menuOptions}</div></>;
 
   return <><Suspense fallback={<ChargementVue dark={dark} performanceLevel={performanceLevel} texte={t('app.loading.scene')} />}><div className={`app scene-app ${dark ? 'dark' : ''} ${teinteScene ? 'scene-status-tinted' : ''}`} style={teinteScene ? { '--scene-status-tint-gradient': teinteScene.gradient } : undefined} {...attributsApp(dark, performanceLevel)}>{sceneView}{fenetresCommunes}{menuOptions}</div></Suspense></>;
 }

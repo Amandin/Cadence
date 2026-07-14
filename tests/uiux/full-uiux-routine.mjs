@@ -79,6 +79,7 @@ function campaignForRules(name, rulesPatch = {}, scenePatch = {}) {
   ];
   firstScene.participants = (firstScene.participants || []).map((participant, index) => ({
     ...participant,
+    kind: rulesPatch.manualMultipleActionScope === 'elite-only' && index === 0 ? 'Élite' : participant.kind,
     actionSlots: index === 0 ? [
       { id: `${participant.id}-slot-a`, value: Number(participant.initiative || 12), played: false },
       { id: `${participant.id}-slot-b`, value: Math.max(0, Number(participant.initiative || 12) - 5), played: false },
@@ -172,6 +173,13 @@ const scenarios = [
     interactions: ['rules-scan'],
   },
   {
+    id: 'rules-manual-elite-only',
+    view: 'hub',
+    tab: 'regles',
+    campaign: campaignForRules('manual-elite-only', { temporalite: 'classique', multipleActionMode: 'manual', multipleActionSlots: true, manualMultipleActionScope: 'elite-only' }),
+    interactions: ['rules-scan', 'elite-manual-scope'],
+  },
+  {
     id: 'models',
     view: 'hub',
     tab: 'templates',
@@ -190,6 +198,13 @@ const scenarios = [
     view: 'scene',
     tab: 'scenes',
     campaign: campaignForRules('scene-classic', { temporalite: 'classique', multipleActionMode: 'manual', multipleActionSlots: true }),
+    interactions: ['scene-dialogs'],
+  },
+  {
+    id: 'scene-manual-elite-only',
+    view: 'scene',
+    tab: 'scenes',
+    campaign: campaignForRules('scene-manual-elite-only', { temporalite: 'classique', multipleActionMode: 'manual', multipleActionSlots: true, manualMultipleActionScope: 'elite-only' }),
     interactions: ['scene-dialogs'],
   },
   {
@@ -446,9 +461,28 @@ async function runInteractions(page, scenario, report) {
     if (group === 'onboarding-scan') {
       report.surfaces.push(await auditSurface(page, `${scenario.id}/welcome`));
       await clickVisibleButton(page, report, 'onboarding theme toggle', { aria: 'Basculer thème clair ou sombre', exact: true });
-      await clickVisibleButton(page, report, 'onboarding generic family', { text: 'Génériques', exact: true });
-      await clickVisibleButton(page, report, 'onboarding system family', { text: 'Systèmes', exact: true });
-      report.surfaces.push(await auditSurface(page, `${scenario.id}/families`));
+      for (let step = 1; step <= 5; step += 1) {
+        const fastSlow = page.getByRole('button', { name: /Rapide \/ lent à chaque round/ });
+        if (await fastSlow.count() === 1 && await fastSlow.isVisible()) await safeClick(page, report, 'onboarding select fast/slow initiative', fastSlow);
+        const simpleD20 = page.getByRole('button', { name: /d20 simple/ });
+        if (await simpleD20.count() === 1 && await simpleD20.isVisible()) {
+          const advantageD20 = page.getByRole('button', { name: /d20 avec avantage \/ désavantage/ });
+          const plotDie = page.getByRole('button', { name: /Dé d’intrigue du Cosmere RPG/ });
+          report.actions.push({ label: 'onboarding d20 simple proposal', status: 'ok' });
+          report.actions.push({ label: 'onboarding d20 advantage proposal', status: await advantageD20.count() === 1 ? 'ok' : 'error' });
+          report.actions.push({ label: 'onboarding plot die for fast/slow', status: await plotDie.count() === 1 ? 'ok' : 'error' });
+        }
+        const next = page.getByRole('button', { name: 'Étape suivante', exact: true });
+        if (await next.count() !== 1 || !await next.isVisible()) break;
+        await safeClick(page, report, `onboarding next step ${step}`, next);
+        report.surfaces.push(await auditSurface(page, `${scenario.id}/step-${step}`));
+      }
+      await safeClick(page, report, 'onboarding choose first-scene tutorial', page.getByRole('button', { name: 'Suivre le tutoriel', exact: true }));
+      await page.locator('.scene-tutorial').waitFor({ state: 'visible', timeout: 3_000 });
+      report.surfaces.push(await auditSurface(page, `${scenario.id}/scene-tutorial-welcome`));
+      await safeClick(page, report, 'tutorial use real Add control', page.locator('.bottom-add-participant'));
+      await page.locator('.character-add-sheet').waitFor({ state: 'visible', timeout: 3_000 });
+      report.surfaces.push(await auditSurface(page, `${scenario.id}/scene-tutorial-character-add`));
     }
 
     if (group === 'hub-tabs') {
@@ -478,6 +512,12 @@ async function runInteractions(page, scenario, report) {
       report.surfaces.push(await auditSurface(page, `${scenario.id}/details-open`));
     }
 
+    if (group === 'elite-manual-scope') {
+      const eliteScope = page.getByRole('radio', { name: /Actions multiples pour les Élites/ });
+      await safeClick(page, report, 'manual actions Elite-only scope', eliteScope);
+      report.surfaces.push(await auditSurface(page, `${scenario.id}/elite-only-selected`));
+    }
+
     if (group === 'models-scan') {
       await clickVisibleButton(page, report, 'models create first visible', { aria: 'Ajouter un modèle', exact: true });
       report.surfaces.push(await auditSurface(page, `${scenario.id}/after-create-attempt`));
@@ -489,6 +529,31 @@ async function runInteractions(page, scenario, report) {
       await page.waitForTimeout(650);
       report.surfaces.push(await auditSurface(page, `${scenario.id}/statistics`));
       await closeDialog(page, report, 'statistics');
+      await page.evaluate(() => {
+        document.querySelectorAll('details').forEach((details) => {
+          if (details.textContent.includes('Actions avanc')) details.open = true;
+        });
+      });
+      await clickVisibleButton(page, report, 'options admin presets', { text: 'Admin presets règles/tirages', exact: true });
+      await page.waitForTimeout(650);
+      report.surfaces.push(await auditSurface(page, `${scenario.id}/admin-presets`));
+      const adminActionMode = page.getByLabel('Actions multiples');
+      if (await adminActionMode.count() === 1) {
+        await adminActionMode.selectOption('manual');
+        report.actions.push({ label: 'admin rules manual action mode', status: 'ok' });
+        const adminScope = page.getByLabel('Portée manuelle');
+        await adminScope.selectOption('elite-only');
+        report.actions.push({ label: 'admin rules Elite-only scope', status: 'ok' });
+        report.surfaces.push(await auditSurface(page, `${scenario.id}/admin-rules-elite-only`));
+      } else {
+        report.actions.push({ label: 'admin rules manual action mode', status: 'error', reason: `locator count ${await adminActionMode.count()}` });
+      }
+      await clickVisibleButton(page, report, 'admin presets back', { text: 'Retour aux options' });
+      await page.evaluate(() => {
+        document.querySelectorAll('details').forEach((details) => {
+          if (details.textContent.includes('Actions avanc')) details.open = true;
+        });
+      });
       await clickVisibleButton(page, report, 'options style reference', { text: 'Référence CSS et symboles', exact: true });
       await page.waitForTimeout(650);
       report.surfaces.push(await auditSurface(page, `${scenario.id}/style-reference`));

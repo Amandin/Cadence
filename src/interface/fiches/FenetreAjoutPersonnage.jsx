@@ -14,7 +14,7 @@ function listerCategories(categories, templates) {
   return [...new Set([...connues, ...utilisees])].sort((a, b) => a.localeCompare(b, 'fr'));
 }
 
-export function FenetreAjoutPersonnage({ templates = [], categories = [], initiativeTextOrder, utiliserInitiative = true, onFermer, onCreerVierge, onCreerDepuisTemplate }) {
+export function FenetreAjoutPersonnage({ templates = [], categories = [], initiativeTextOrder, utiliserInitiative = true, preparation = false, onFermer, onCreerVierge, onCreerDepuisTemplate }) {
   const templatesTries = useMemo(() => trierTemplates(templates), [templates]);
   const categoriesDisponibles = useMemo(() => listerCategories(categories, templatesTries), [categories, templatesTries]);
   const textConfig = useMemo(() => normalizeInitiativeTextOrder(initiativeTextOrder), [initiativeTextOrder]);
@@ -60,7 +60,7 @@ export function FenetreAjoutPersonnage({ templates = [], categories = [], initia
   const categorieVide = mode === 'template' && categorie && templatesCategorie.length === 0;
 
   return (
-    <Fenetre title={t('characterAdd.title')} onClose={onFermer}>
+    <Fenetre title={t('characterAdd.title')} onClose={onFermer} className="character-add-sheet">
       <div className="stack">
         <div className="grid2">
           <button className={`choice ${mode === 'blank' ? 'selected' : ''}`} onClick={() => setMode('blank')}>{t('characterAdd.blank')}</button>
@@ -74,6 +74,7 @@ export function FenetreAjoutPersonnage({ templates = [], categories = [], initia
         <div className="grid2">
           <button className={`choice ${placement === 'init' ? 'selected' : ''}`} onClick={() => setPlacement('init')}>{t('characterAdd.placement.init')}</button>
           <button className={`choice ${placement === 'reserve' ? 'selected' : ''}`} onClick={() => setPlacement('reserve')}>{t('characterAdd.placement.reserve')}</button>
+          {preparation && utiliserInitiative && <button className={`choice ${placement === 'pending' ? 'selected' : ''}`} onClick={() => setPlacement('pending')}>{t('characterAdd.placement.pending')}</button>}
         </div>
         {placement === 'init' && utiliserInitiative && <ChampInitiative label={t('characterAdd.initiative')} valeur={initiative} textConfig={textConfig} onChange={setInitiative} />}
         <p className="muted" style={{ margin: 0, fontSize: 12 }}>{t('characterAdd.help')}</p>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { defaultPhaseCount, phaseActionModes } from '../../constants.js';
 import { initiativesActionParticipant } from '../../domain/initiative.js';
 import { initiativeInputIsValid, initiativeValueForMode, normalizeInitiativeTextOrder } from '../../domain/initiativeTextOrder.js';
@@ -10,10 +10,32 @@ import { ChampInitiative } from '../initiative/ChampInitiative.jsx';
 import { EditeurPhasesParticipant, normaliserPhaseActions } from '../initiative/EditeurPhasesParticipant.jsx';
 import { Suivi } from '../suivis/Suivi.jsx';
 import { InfosRapides } from './InfosRapides.jsx';
+import { activeDefinitions } from '../../random-system/definitionAccess.js';
+import { QuickRollResult } from '../dialogues/FenetreLancerDes.jsx';
 
 function valeurNumerique(valeur, defaut = 0) {
   const nombre = Number(valeur);
   return Number.isFinite(nombre) ? nombre : defaut;
+}
+
+function FenetreJetInfoRapide({ info, randomSystem, onFermer }) {
+  const definitions = useMemo(() => activeDefinitions(randomSystem?.state?.definitions || []), [randomSystem?.state?.definitions]);
+  const definition = definitions.find((item) => item.id === info.quickRollDefinitionId);
+  const [result, setResult] = useState(null);
+  const [rolling] = useState(false);
+  const launchedRef = useRef(false);
+  useEffect(() => {
+    if (!definition || launchedRef.current) return undefined;
+    launchedRef.current = true;
+    const timer = window.setTimeout(() => {
+      setResult(randomSystem.actions.runDefinition(definition.id, info.quickRollParameters || {}, info.quickRollOptions || {}));
+    }, 450);
+    return () => window.clearTimeout(timer);
+  }, [definition?.id, randomSystem.actions]);
+  if (!definition) return null;
+  return <Fenetre title={`${t('sheet.quickInfo.roll')} — ${info.label}`} onClose={onFermer} className="quick-roll-dialog"><div className="quick-roll-content">
+    <QuickRollResult result={result} rolling={rolling} />
+  </div></Fenetre>;
 }
 
 function formatBonusInitiative(valeur) {
@@ -22,6 +44,7 @@ function formatBonusInitiative(valeur) {
 }
 
 function FenetreInitiativesRapides({ participant, initiatives, initiativeTextOrder, phaseActionMode, phaseCount = defaultPhaseCount, multipleActionSlots = true, onFermer, onValider }) {
+  multipleActionSlots = typeof multipleActionSlots === 'function' ? multipleActionSlots(participant) : multipleActionSlots;
   const textConfig = normalizeInitiativeTextOrder(initiativeTextOrder);
   const modePhasesCochees = phaseActionMode === phaseActionModes.CHECKED;
   const [brouillon, setBrouillon] = useState(() => (multipleActionSlots ? initiatives : initiatives.slice(0, 1)).map(String));
@@ -80,9 +103,11 @@ function MiniCompteurInitiative({ participant, departage, initiativeTextOrder, p
   );
 }
 
-export function FicheParticipant({ participant, enInitiative, initiativeTextOrder, phaseActionMode, phaseCount = defaultPhaseCount, multipleActionSlots = true, utiliserInitiative = true, initiativeBonusEnabled = true, tiebreakerVisible = true, onFermer, onModifier, onBasculerDissimule, onChangerInitiatives, onRejoindreInitiative, onQuitterInitiative, onInfoRapide, onSuivi, onSupprimerSuivi, onAjouterEtat, onModifierEtat, onRetirerEtat, onNote }) {
+export function FicheParticipant({ participant, enInitiative, initiativeTextOrder, phaseActionMode, phaseCount = defaultPhaseCount, multipleActionSlots = true, utiliserInitiative = true, initiativeBonusEnabled = true, tiebreakerVisible = true, randomSystem = null, onFermer, onModifier, onBasculerDissimule, onChangerInitiatives, onRejoindreInitiative, onQuitterInitiative, onInfoRapide, onSuivi, onSupprimerSuivi, onAjouterEtat, onModifierEtat, onRetirerEtat, onNote }) {
+  multipleActionSlots = typeof multipleActionSlots === 'function' ? multipleActionSlots(participant) : multipleActionSlots;
   const teinteEtat = teinteEtatParticipant(participant);
   const dissimule = !!participant.secret;
+  const [quickRollInfo, setQuickRollInfo] = useState(null);
   const basculerVisibilite = (suivi) => onSuivi(suivi.id, { ...suivi, visible: suivi.visible === false });
   const basculerSecret = (suivi) => onSuivi(suivi.id, { ...suivi, secret: !suivi.secret });
   const boutonOeil = (suivi) => {
@@ -92,7 +117,7 @@ export function FicheParticipant({ participant, enInitiative, initiativeTextOrde
   const boutonsSuivi = (suivi) => (
     <span className="sheet-tracker-quick-actions">
       {boutonOeil(suivi)}
-      <button className={`spy-toggle sheet-spy-toggle ${suivi.secret ? 'active' : ''}`} onClick={(event) => { event.stopPropagation(); basculerSecret(suivi); }} aria-pressed={!!suivi.secret} title={t('sheet.tracker.secret')} type="button"><IconeSecret /><b>{t('sheet.tracker.secret')}</b></button>
+      <button className={`spy-toggle sheet-spy-toggle ${suivi.secret ? 'active' : ''}`} onClick={(event) => { event.stopPropagation(); basculerSecret(suivi); }} aria-pressed={!!suivi.secret} title={t('sheet.tracker.secret')} type="button"><IconeSecret active={!!suivi.secret} /><b>{t('sheet.tracker.secret')}</b></button>
     </span>
   );
   const enteteFiche = (
@@ -113,12 +138,13 @@ export function FicheParticipant({ participant, enInitiative, initiativeTextOrde
         {enInitiative && utiliserInitiative && <MiniCompteurInitiative participant={participant} departage={participant.departage} initiativeTextOrder={initiativeTextOrder} phaseActionMode={phaseActionMode} phaseCount={phaseCount} multipleActionSlots={multipleActionSlots} initiativeBonusEnabled={initiativeBonusEnabled} tiebreakerVisible={tiebreakerVisible} onChangerInitiatives={onChangerInitiatives} />}
         {enInitiative ? <button className="small-btn" onClick={onQuitterInitiative}>{t('initiative.leave')}</button> : <button className="small-btn join-init-wide" onClick={onRejoindreInitiative}>{t('initiative.join')}</button>}
       </div>
-      <InfosRapides stats={participant.stats || []} editable onChanger={onInfoRapide} />
+      <InfosRapides stats={participant.stats || []} editable onChanger={onInfoRapide} onLancerJetRapide={randomSystem?.actions?.runDefinition ? (info) => setQuickRollInfo({ ...info, characterName: participant.name }) : undefined} />
       <h3>{t('sheet.trackers.title')}</h3>
       <div className="stack sheet-trackers">{participant.trackers.map((suivi) => <Suivi key={suivi.id} suivi={suivi} avantTitre={boutonsSuivi(suivi)} couleur={participant.color} afficherBadgeSecret={false} onModifier={(suivant) => onSuivi(suivi.id, suivant)} onSupprimer={() => onSupprimerSuivi(suivi.id)} />)}</div>
       <h3>{t('sheet.statuses.title')}</h3>
       <div className="statuses">{participant.statuses?.map((etat) => <EtiquetteEtat key={etat.id} etat={etat} onModifier={() => onModifierEtat?.(etat.id)} onRetirer={() => onRetirerEtat(etat.id)} />)}<button className="small-btn sheet-add-status-btn" onClick={onAjouterEtat}>{t('scene.status.add')}</button></div>
       <label className="field">{t('sheet.note')}<textarea value={participant.note || ''} onChange={(event) => onNote(event.target.value)} /></label>
+      {quickRollInfo && <FenetreJetInfoRapide info={quickRollInfo} randomSystem={randomSystem} onFermer={() => setQuickRollInfo(null)} />}
     </Fenetre>
   );
 }

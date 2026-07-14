@@ -13,11 +13,15 @@ function createHarness(overrides = {}) {
   let campaignName = overrides.campaignName || 'Campagne test';
   let templates = overrides.templates || null;
   let randomSystem = overrides.randomSystem || createDefaultRandomSystemState();
+  let campaignProfile = overrides.campaignProfile || {};
+  let rulePresetSnapshot = overrides.rulePresetSnapshot || null;
   let sceneIndex = 0;
   let dark = overrides.dark ?? true;
 
   const calls = {
     setCampaignRules: vi.fn((next) => { rules = next; }),
+    setCampaignProfile: vi.fn((next) => { campaignProfile = typeof next === 'function' ? next(campaignProfile) : next; }),
+    setRulePresetSnapshot: vi.fn((next) => { rulePresetSnapshot = typeof next === 'function' ? next(rulePresetSnapshot) : next; }),
     setScenes: vi.fn((next) => { scenes = typeof next === 'function' ? next(scenes) : next; }),
     setSceneIndex: vi.fn((next) => { sceneIndex = next; }),
     setDark: vi.fn((next) => { dark = next; }),
@@ -28,11 +32,15 @@ function createHarness(overrides = {}) {
 
   return {
     calls,
-    state: () => ({ scenes, rules, campaignName, templates, randomSystem, sceneIndex, dark }),
+    state: () => ({ scenes, rules, campaignProfile, rulePresetSnapshot, campaignName, templates, randomSystem, sceneIndex, dark }),
     actions: createCampaignActions({
       scenes,
       campaignRules: rules,
+      campaignProfile,
+      rulePresetSnapshot,
       setCampaignRules: calls.setCampaignRules,
+      setCampaignProfile: calls.setCampaignProfile,
+      setRulePresetSnapshot: calls.setRulePresetSnapshot,
       sceneIndex,
       dark,
       campaignName,
@@ -74,7 +82,8 @@ describe('campaign actions export/import', () => {
 
   it('exports a current .cad file without storing the visual theme', async () => {
     const capture = stubSavePicker();
-    const { actions, calls } = createHarness({ dark: true });
+    const campaignProfile = { systemProfileId: 'system/shadowrun', editionId: 'sr-5', initiativeProfileId: 'initiative/shadowrun-5-decrement', randomQuickRollProfileIds: ['quick-roll/d6-pool'] };
+    const { actions, calls } = createHarness({ dark: true, campaignProfile });
 
     const result = await actions.exportCampaign('Chroniques test');
     const payload = JSON.parse(await capture.blob.text());
@@ -84,12 +93,14 @@ describe('campaign actions export/import', () => {
     expect(capture.types[0].accept['application/json']).toEqual(['.cad']);
     expect(isValidCampaign(payload)).toBe(true);
     expect(payload.settings).toBeUndefined();
+    expect(payload.campaignProfile).toEqual(campaignProfile);
     expect(payload.campaign.fileName).toBe('chroniques-test.cad');
     expect(calls.setCampaignNameState).toHaveBeenCalledWith('Chroniques test');
   });
 
   it('imports only current Cadence campaign files and never applies the saved theme', async () => {
-    const payload = JSON.parse(serializeCampaign([scene], true, 'Campagne importee'));
+    const campaignProfile = { systemProfileId: 'system/shadowrun', editionId: 'sr-5', initiativeProfileId: 'initiative/shadowrun-5-decrement', randomQuickRollProfileIds: ['quick-roll/d6-pool'] };
+    const payload = JSON.parse(serializeCampaign([scene], true, 'Campagne importee', null, null, null, {}, null, campaignProfile));
     const file = {
       name: 'campagne-importee.cad',
       type: 'application/json',
@@ -102,6 +113,7 @@ describe('campaign actions export/import', () => {
 
     expect(result).toEqual({ ok: true });
     expect(calls.setCampaignRules).toHaveBeenCalled();
+    expect(calls.setCampaignProfile).toHaveBeenCalledWith(campaignProfile);
     expect(calls.setScenes).toHaveBeenCalled();
     expect(calls.setCampaignNameState).toHaveBeenCalledWith('Campagne importee');
     expect(calls.setTemplateStore).toHaveBeenCalled();
@@ -224,5 +236,31 @@ describe('campaign actions export/import', () => {
     actions.duplicateScene(0);
 
     expect(state().scenes.map((item) => item.title)).toEqual(['Bal', 'Bal 2', 'Bal 1']);
+  });
+
+  it('applies an available campaign profile explicitly and keeps random rolls additive', () => {
+    const { actions, state } = createHarness();
+
+    expect(actions.applyCampaignProfile({
+      systemProfileId: 'system/shadowrun',
+      editionId: 'sr-5',
+      initiativeProfileId: 'initiative/shadowrun-5-decrement',
+      randomQuickRollProfileIds: ['quick-roll/d6-pool'],
+    })).toBe(true);
+
+    expect(state().rules).toMatchObject({ temporalite: 'phases', phaseDecrement: 10 });
+    expect(state().campaignProfile).toEqual({
+      systemProfileId: 'system/shadowrun',
+      editionId: 'sr-5',
+      initiativeProfileId: 'initiative/shadowrun-5-decrement',
+      randomQuickRollProfileIds: ['quick-roll/d6-pool'],
+    });
+    expect(state().rulePresetSnapshot).toMatchObject({
+      systemProfileId: 'system/shadowrun',
+      editionId: 'sr-5',
+      initiativeProfileId: 'initiative/shadowrun-5-decrement',
+      randomQuickRollProfileIds: ['quick-roll/d6-pool'],
+    });
+    expect(state().randomSystem.definitions.find((definition) => definition.id === 'kit-d6-pool-successes')?.active).toBe(true);
   });
 });

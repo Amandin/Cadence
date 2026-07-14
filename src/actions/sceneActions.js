@@ -210,15 +210,15 @@ function appliquerInitiativesRenseignees(scene, valuesById, departagesById = {},
     const departage = departageRenseigne(departagesById, participant.id);
     const bonus = bonusInitiativeRenseigne(bonusActifs, participant.id);
     if (!initiatives) return { ...participant, ...departage, ...bonus };
-    const actionSlots = actionSlotsDepuisInitiatives(initiatives, rulesAllowMultipleSlots(scene));
-    return { ...participant, ...departage, ...bonus, initiative: actionSlots[0]?.initiative ?? participant.initiative, actionSlots };
+    const actionSlots = actionSlotsDepuisInitiatives(initiatives, rulesAllowMultipleSlots(scene, participant));
+    return { ...participant, ...departage, ...bonus, initiativePending: false, initiative: actionSlots[0]?.initiative ?? participant.initiative, actionSlots };
   });
   const reserveJointe = [];
   const reserve = (scene.reserve || []).flatMap((participant) => {
     const initiatives = initiativesRenseignees(valuesById, participant.id);
     const participantAvecDepartage = { ...participant, ...departageRenseigne(departagesById, participant.id), ...bonusInitiativeRenseigne(bonusActifs, participant.id) };
     if (!initiatives) return [placerEnReserve(participantAvecDepartage)];
-    const actionSlots = actionSlotsDepuisInitiatives(initiatives, rulesAllowMultipleSlots(scene));
+    const actionSlots = actionSlotsDepuisInitiatives(initiatives, rulesAllowMultipleSlots(scene, participant));
     reserveJointe.push(preparerParticipantPhases(scene, { ...participantAvecDepartage, initiative: actionSlots[0]?.initiative ?? 0, actionSlots }));
     return [];
   });
@@ -760,7 +760,7 @@ export function createSceneActions({ scene, sceneIndex, blocked, restorePoints, 
       if (!participant || !initiative) return;
 
       updateScene((s) => {
-        const actionSlots = actionSlotsDepuisInitiatives([initiative], rulesAllowMultipleSlots(s));
+        const actionSlots = actionSlotsDepuisInitiatives([initiative], rulesAllowMultipleSlots(s, participant));
         const participantActif = preparerParticipantPhases(s, { ...participant, initiative: actionSlots[0]?.initiative ?? initiative, actionSlots });
         const participants = trierParInitiative([...s.participants, participantActif], optionsTri(s));
         return recalerActifPhaseSiBesoin({

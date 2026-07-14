@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { colorNames, defaultPhaseCount, participantKinds, phaseActionModes, trackerTypeLabels } from '../../constants.js';
+import { useEffect, useMemo, useState } from 'react';
+import { colorNames, defaultPhaseCount, participantKinds, phaseActionModes, tacticalRoles, trackerTypeLabels } from '../../constants.js';
 import { normalizeInitiativeTextOrder } from '../../domain/initiativeTextOrder.js';
 import { t } from '../../i18n/index.js';
 import { boxBlocks, boxVisualRank, clone, colors, cycleBoxMark, isBoxesTracker, isNumericTracker, isPointsTracker, isVisible, newTracker, normalizeBoxTracker, resetTracker, sortBoxBlocks, symbols, thresholdValue, uid } from '../../logic.js';
@@ -14,6 +14,9 @@ import { EditeurPhasesParticipant } from '../initiative/EditeurPhasesParticipant
 import { thresholdColorOptions, thresholdColorStyles, thresholdOperatorOptions, trackerThresholdBasisOptions } from '../suivis/thresholdUi.js';
 import { normaliserInfoRapide, normaliserInfosRapides } from './InfosRapides.jsx';
 import { brouillonCreneauxAction, entierPositif, nombreOuDefaut, normaliserFiche, texteCreneauxAction } from './ficheEditionModel.js';
+import { activeDefinitions } from '../../random-system/definitionAccess.js';
+import { randomSourceKinds } from '../../random-system/engine.js';
+import { DefinitionForm } from '../../random-system/ui/UsePanel.jsx';
 
 const customCharacterSymbolValue = '__custom-character-symbol__';
 
@@ -106,8 +109,20 @@ function EditeurCases({ suivi, onChange, resetOptions = null }) {
   );
 }
 
-function EditeurInfosRapides({ stats = [], onChange }) {
+function FenetreConfigurationJetRapide({ info, definitions, sources, onFermer, onValider }) {
+  const [definitionId, setDefinitionId] = useState(info.quickRollDefinitionId || definitions[0]?.id || '');
+  const [inputs, setInputs] = useState(() => ({ parameters: info.quickRollParameters || {}, options: info.quickRollOptions || {} }));
+  const definition = definitions.find((item) => item.id === definitionId);
+  return <Fenetre title={t('sheet.quickInfo.rollConfigTitle')} onClose={onFermer}><div className="stack quick-roll-config-dialog">
+    <p className="muted">{t('sheet.quickInfo.rollConfigHelp')}</p>
+    {definitions.length ? <><label className="field">{t('sheet.quickInfo.rollDefinition')}<select value={definitionId} onChange={(event) => { setDefinitionId(event.target.value); setInputs({ parameters: {}, options: {} }); }}>{definitions.map((definition) => <option key={definition.id} value={definition.id}>{definition.name}</option>)}</select></label>{definition && <DefinitionForm key={definitionId} definition={definition} definitions={definitions} sources={sources} initialParameters={inputs.parameters} initialOptions={inputs.options} onInputsChange={setInputs} hideRun showHeader={false} />}</> : <p className="muted">{t('sheet.quickInfo.rollUnavailable')}</p>}
+    <div className="grid2"><button type="button" className="primary" disabled={!definitionId} onClick={() => onValider(definitionId, inputs)}>{t('common.validate')}</button><button type="button" className="small-btn" onClick={onFermer}>{t('common.cancel')}</button></div>
+  </div></Fenetre>;
+}
+
+function EditeurInfosRapides({ stats = [], onChange, definitions = [], sources = [] }) {
   const lignes = stats.length ? stats : [{ label: '', value: '', editable: false }];
+  const [configurationIndex, setConfigurationIndex] = useState(null);
   const modifier = (index, patch) => onChange(lignes.map((info, position) => position === index ? { ...info, ...patch } : info));
   const supprimer = (index) => {
     const info = lignes[index];
@@ -117,7 +132,7 @@ function EditeurInfosRapides({ stats = [], onChange }) {
     }
     onChange(lignes.filter((_, position) => position !== index));
   };
-  const ajouter = () => onChange([...lignes, { label: '', value: '', editable: false }]);
+  const ajouter = () => onChange([...lignes, { label: '', value: '', editable: false, quickRollEnabled: false, quickRollDefinitionId: '' }]);
   const changerTexte = (index, texte) => modifier(index, { label: texte, value: '', editable: false });
   const separerValeurFinale = (index) => {
     const info = lignes[index];
@@ -126,7 +141,7 @@ function EditeurInfosRapides({ stats = [], onChange }) {
     if (normalisee.editable) modifier(index, normalisee);
   };
 
-  return <div className="stack quick-stats-editor">{lignes.map((info, index) => <div className={`quick-stat-row ${info.editable ? 'editable' : ''}`} key={index}>{info.editable ? <><input className="quick-stat-label-input" value={info.label} aria-label={`${t('sheet.quickInfo.label')} ${index + 1}`} placeholder={t('sheet.quickInfo.label')} onChange={(e) => modifier(index, { label: e.target.value })} /><input className="quick-stat-value-input" value={info.value} aria-label={`${t('dialogs.sceneIndicator.value')} ${index + 1}`} placeholder={t('dialogs.sceneIndicator.value')} onChange={(e) => modifier(index, { value: e.target.value })} /></> : <input value={info.label} aria-label={`${t('sheet.quickInfo.label')} ${index + 1}`} placeholder={t('sheet.quickInfo.placeholder')} onChange={(e) => changerTexte(index, e.target.value)} onBlur={() => separerValeurFinale(index)} />}<button className="small-btn subtle-danger" onClick={() => supprimer(index)} disabled={lignes.length <= 1 && !info.label && !info.value} aria-label={`${t('common.delete')} ${t('sheet.quickInfo.title')} ${index + 1}`} title={`${t('common.delete')} ${t('sheet.quickInfo.title')} ${index + 1}`}><IconeCadence name="remove" /></button></div>)}<button className="small-btn" onClick={ajouter}>{t('sheet.quickInfo.add')}</button></div>;
+  return <div className="stack quick-stats-editor">{lignes.map((info, index) => <div className={`quick-stat-row ${info.editable ? 'editable' : ''}`} key={index}>{info.editable ? <><input className="quick-stat-label-input" value={info.label} aria-label={`${t('sheet.quickInfo.label')} ${index + 1}`} placeholder={t('sheet.quickInfo.label')} onChange={(e) => modifier(index, { label: e.target.value })} /><input className="quick-stat-value-input" value={info.value} aria-label={`${t('dialogs.sceneIndicator.value')} ${index + 1}`} placeholder={t('dialogs.sceneIndicator.value')} onChange={(e) => modifier(index, { value: e.target.value })} /></> : <input value={info.label} aria-label={`${t('sheet.quickInfo.label')} ${index + 1}`} placeholder={t('sheet.quickInfo.placeholder')} onChange={(e) => changerTexte(index, e.target.value)} onBlur={() => separerValeurFinale(index)} />}<label className="quick-stat-roll-option"><input type="checkbox" checked={!!info.quickRollEnabled} disabled={!definitions.length} onChange={(event) => event.target.checked ? setConfigurationIndex(index) : modifier(index, { quickRollEnabled: false, quickRollDefinitionId: '' })} /> {t('sheet.quickInfo.roll')}</label>{info.quickRollEnabled && <button type="button" className="small-btn quick-stat-roll-config" onClick={() => setConfigurationIndex(index)}>{t('sheet.quickInfo.rollConfigure')}</button>}<button className="small-btn subtle-danger" onClick={() => supprimer(index)} disabled={lignes.length <= 1 && !info.label && !info.value} aria-label={`${t('common.delete')} ${t('sheet.quickInfo.title')} ${index + 1}`} title={`${t('common.delete')} ${t('sheet.quickInfo.title')} ${index + 1}`}><IconeCadence name="remove" /></button></div>)}<button className="small-btn" onClick={ajouter}>{t('sheet.quickInfo.add')}</button>{configurationIndex !== null && <FenetreConfigurationJetRapide info={lignes[configurationIndex]} definitions={definitions} sources={sources} onFermer={() => setConfigurationIndex(null)} onValider={(quickRollDefinitionId, rollInputs) => { modifier(configurationIndex, { quickRollEnabled: true, quickRollDefinitionId, quickRollParameters: rollInputs.parameters, quickRollOptions: rollInputs.options }); setConfigurationIndex(null); }} />}</div>;
 }
 
 function thresholdOutOfBounds(seuil, suivi, bounds = {}) {
@@ -191,7 +206,7 @@ function EditeurCompteursMultiples({ suivi, onChange }) {
 }
 
 function ToggleIconeSuivi({ suivi, onChange }) {
-  return <div className="tracker-option-icons"><button className={`eye-toggle ${isVisible(suivi) ? 'active' : 'inactive'}`} onClick={() => onChange({ visible: suivi.visible === false })} title={isVisible(suivi) ? t('sheet.tracker.visible') : t('sheet.tracker.hidden')} type="button">{isVisible(suivi) ? <IconeOeilMystiqueOuvert /> : <IconeOeilMystiqueFerme />}</button><button className={`spy-toggle ${suivi.secret ? 'active' : ''}`} onClick={() => onChange({ secret: !suivi.secret })} title={t('sheet.tracker.secret')} type="button"><IconeSecret /><b>{t('sheet.tracker.secret')}</b></button></div>;
+  return <div className="tracker-option-icons"><button className={`eye-toggle ${isVisible(suivi) ? 'active' : 'inactive'}`} onClick={() => onChange({ visible: suivi.visible === false })} title={isVisible(suivi) ? t('sheet.tracker.visible') : t('sheet.tracker.hidden')} type="button">{isVisible(suivi) ? <IconeOeilMystiqueOuvert /> : <IconeOeilMystiqueFerme />}</button><button className={`spy-toggle ${suivi.secret ? 'active' : ''}`} onClick={() => onChange({ secret: !suivi.secret })} title={t('sheet.tracker.secret')} type="button"><IconeSecret active={!!suivi.secret} /><b>{t('sheet.tracker.secret')}</b></button></div>;
 }
 
 function OptionsReset({ suivi, onChange, allowActivationAutomation = true }) {
@@ -357,7 +372,7 @@ function SelectEtatDefautNumerique({ suivi, onChange }) {
           <option value="full">{t('sheet.defaultState.max')}</option>
           <option value="custom">{t('sheet.defaultState.custom')}</option>
         </select>
-        {mode === 'custom' && <input type="number" inputMode="numeric" value={suivi.initial ?? 0} onChange={(event) => onChange({ initial: event.target.value === '' ? '' : Number(event.target.value), resetDefaultMode: 'custom' })} />}
+        {mode === 'custom' && <input type="number" inputMode="numeric" value={suivi.initial ?? 0} aria-label={t('sheet.reset.default.customValue')} onChange={(event) => onChange({ initial: event.target.value === '' ? '' : Number(event.target.value), resetDefaultMode: 'custom' })} />}
       </div>
     </div>
   );
@@ -448,11 +463,14 @@ export function EditeurSuivi({ suivi, onChange, onDuplicate, onDelete, onSaveTem
   );
 }
 
-export function FenetreEditionFiche({ participant, initiativeTextOrder, phaseActionMode, phaseCount = defaultPhaseCount, multipleActionSlots = true, utiliserInitiative = true, initiativeBonusEnabled = true, allowActivationAutomation = true, categoryOrder = participantKinds, tiebreakerVisible = true, tiebreakerLabel = t('sheet.tiebreaker.default'), trackerTemplates = [], title = t('sheet.edit.defaultTitle'), templateCategory = '', templateCategories = [], saveTemplateVisible = true, deleteLabel = t('sheet.edit.deleteCharacter'), className = 'character-edit-sheet', templateSwitchRequest = null, onAnnulerChangementTemplate, onAbandonnerChangementTemplate, onValiderChangementTemplate, onClose, onSave, onDelete, onSaveTemplate, onSaveTrackerTemplate }) {
+export function FenetreEditionFiche({ participant, initiativeTextOrder, phaseActionMode, phaseCount = defaultPhaseCount, multipleActionSlots = true, utiliserInitiative = true, initiativeBonusEnabled = true, allowActivationAutomation = true, categoryOrder = participantKinds, tiebreakerVisible = true, tiebreakerLabel = t('sheet.tiebreaker.default'), trackerTemplates = [], randomSystem = null, title = t('sheet.edit.defaultTitle'), templateCategory = '', templateCategories = [], saveTemplateVisible = true, deleteLabel = t('sheet.edit.deleteCharacter'), className = 'character-edit-sheet', templateSwitchRequest = null, onAnnulerChangementTemplate, onAbandonnerChangementTemplate, onValiderChangementTemplate, onClose, onSave, onDelete, onSaveTemplate, onSaveTrackerTemplate }) {
+  multipleActionSlots = typeof multipleActionSlots === 'function' ? multipleActionSlots(participant) : multipleActionSlots;
   const textConfig = normalizeInitiativeTextOrder(initiativeTextOrder);
   const modePhasesCochees = phaseActionMode === phaseActionModes.CHECKED;
   const typesDisponibles = [...new Set([...participantKinds, ...(categoryOrder || []), participant.kind].filter(Boolean))];
   const [brouillon, setBrouillon] = useState({ ...clone(participant), phaseActions: modePhasesCochees ? (Array.isArray(participant.phaseActions) ? participant.phaseActions : ['1']) : participant.phaseActions, _actionSlotsInput: texteCreneauxAction(participant), _actionSlotsDraft: multipleActionSlots ? brouillonCreneauxAction(participant) : brouillonCreneauxAction(participant).slice(0, 1), stats: normaliserInfosRapides(participant.stats || []) });
+  const quickRollDefinitions = activeDefinitions(randomSystem?.state?.definitions || []);
+  const quickRollSources = useMemo(() => (randomSystem?.state?.sources || []).filter((source) => source.kind !== randomSourceKinds.CARDS), [randomSystem?.state?.sources]);
   const [trackerTemplateId, setTrackerTemplateId] = useState(trackerTemplates[0]?.id || '');
   const [trackerPersonnaliseType, setTrackerPersonnaliseType] = useState('bar');
   const [trackerPersonnaliseNom, setTrackerPersonnaliseNom] = useState('');
@@ -522,10 +540,11 @@ export function FenetreEditionFiche({ participant, initiativeTextOrder, phaseAct
     <>
       <Fenetre title={title} onClose={onClose} header={entete} className={className} outsideCloseMode="double-mouse">
         {templateSwitchRequest && <MessageChangementTemplate onAnnuler={onAnnulerChangementTemplate} onValider={() => onValiderChangementTemplate?.(normaliserFiche(brouillon, textConfig, { phaseActionMode: modePhasesCochees ? phaseActionModes.CHECKED : '', phaseCount, multipleActionSlots }), categorieTemplate)} onAbandonner={onAbandonnerChangementTemplate} />}
-        <div className="grid2">
+        <div className="grid2 character-identity-fields">
           <label className="field">{t('common.name')}<input value={brouillon.name} onChange={(e) => modifierChamp('name', e.target.value)} /></label>
           <label className="field">{t('sheet.type')}<select value={brouillon.kind} onChange={(e) => modifierChamp('kind', e.target.value)}>{typesDisponibles.map((type) => <option key={type}>{type}</option>)}</select></label>
         </div>
+        <label className="field">{t('sheet.tacticalRole')}<select value={brouillon.tacticalRole || 'normal'} onChange={(e) => modifierChamp('tacticalRole', e.target.value)}>{tacticalRoles.map((role) => <option key={role} value={role}>{t(`sheet.tacticalRole.${role}`)}</option>)}</select></label>
         <label className="field">{t('sheet.description')}<textarea value={brouillon.description || ''} onChange={(e) => modifierChamp('description', e.target.value)} /></label>
         {utiliserInitiative && <div className="initiative-core-grid">
           <ChampInitiative label={t('sheet.initiative.primary')} valeur={creneauxAction[0]?.initiative ?? brouillon.initiative ?? 0} textConfig={textConfig} onChange={(valeur) => modifierCreneauAction(0, valeur)} />
@@ -558,7 +577,7 @@ export function FenetreEditionFiche({ participant, initiativeTextOrder, phaseAct
           {saveTemplateVisible && <button className="small-btn" style={{ width: '100%', marginTop: 12 }} onClick={enregistrerCommeTemplate}>{t('sheet.saveAsTemplate')}</button>}
         </details>
         <h3 className="sheet-section-title">{t('sheet.quickInfo.title')}</h3>
-        <EditeurInfosRapides stats={brouillon.stats || []} onChange={(stats) => modifierChamp('stats', stats)} />
+        <div className="quick-info-editor"><EditeurInfosRapides stats={brouillon.stats || []} definitions={quickRollDefinitions} sources={quickRollSources} onChange={(stats) => modifierChamp('stats', stats)} /></div>
         <h3 className="sheet-section-title">{t('sheet.trackers.title')}</h3>
         <div className="stack tracker-list">
           {(brouillon.trackers || []).map((suivi) => <EditeurSuivi key={suivi.id} suivi={suivi} onChange={(suivant) => modifierSuivi(suivi.id, suivant)} onDuplicate={() => dupliquerSuivi(suivi.id)} onDelete={() => setBrouillon((courant) => ({ ...courant, trackers: (courant.trackers || []).filter((item) => item.id !== suivi.id) }))} onSaveTemplate={onSaveTrackerTemplate} allowActivationAutomation={allowActivationAutomation} />)}
@@ -575,7 +594,7 @@ export function FenetreEditionFiche({ participant, initiativeTextOrder, phaseAct
               <label className="field">{t('sheet.trackers.titleLabel')}<input value={trackerPersonnaliseNom} placeholder={trackerTypeLabels[trackerPersonnaliseType] || t('sheet.trackers.defaultName')} onChange={(event) => setTrackerPersonnaliseNom(event.target.value)} /></label>
             </div>}
             <div className="grid2">
-              <button className="small-btn" type="button" onClick={ajoutIndicateurPersonnalise ? ajouterSuiviPersonnalise : ajouterSuiviDepuisTemplate}>{t('common.add')}</button>
+              <button className="small-btn confirm-add-tracker-btn" type="button" onClick={ajoutIndicateurPersonnalise ? ajouterSuiviPersonnalise : ajouterSuiviDepuisTemplate}>{t('common.add')}</button>
               <button className="small-btn" type="button" onClick={() => setAjoutIndicateurOuvert(false)}>{t('common.cancel')}</button>
             </div>
           </div>}

@@ -3,6 +3,7 @@ import { hasTriggeredClock, isVisible } from '../../logic.js';
 import { t } from '../../i18n/index.js';
 import { IconeCadence } from '../icones/IconeCadence.jsx';
 import { FichetteParticipant } from './FichetteParticipant.jsx';
+import { resolveParticipantBehavior } from '../../domain/participantTypes.js';
 
 function aDuContenuOperationnel(participant, indicateursVisibles) {
   return indicateursVisibles.length > 0 || (participant.statuses || []).length > 0;
@@ -25,12 +26,12 @@ function IconesActionSouple({ totalActions = 1, reverse = false }) {
   );
 }
 
-export const FichetteInitiative = memo(function FichetteInitiative({ participant, actif, groupeSimultane, temporaliteSouple, montrerInitiative = true, afficherActionsSouples = true, dejaJoue, actionsRestantes = 0, actionsJouees = 0, onMarquerAJoue, onAnnulerAJoue, onOuvrir, onSuivi, onSupprimerSuivi, onAjouterEtat, onModifierEtat, onRetirerEtat, onQuitterInitiative, performanceLow = false }) {
+export const FichetteInitiative = memo(function FichetteInitiative({ participant, participantTypes = [], actif, groupeSimultane, temporaliteSouple, montrerInitiative = true, afficherActionsSouples = true, dejaJoue, actionsRestantes = 0, actionsJouees = 0, onMarquerAJoue, onAnnulerAJoue, onOuvrir, onSuivi, onSupprimerSuivi, onAjouterEtat, onModifierEtat, onRetirerEtat, onQuitterInitiative, onLancerJetRapide, performanceLow = false }) {
   const declenchee = useMemo(() => hasTriggeredClock(participant), [participant]);
-  const estPJ = participant.kind === 'PJ';
+  const behavior = resolveParticipantBehavior(participant.kind, participantTypes);
   const indicateursVisibles = useMemo(() => (participant.trackers || []).filter(isVisible), [participant.trackers]);
   const contenuOperationnel = aDuContenuOperationnel(participant, indicateursVisibles);
-  const sortieConseillee = !estPJ && !contenuOperationnel;
+  const sortieConseillee = behavior.suggestReserveWhenEmpty && !contenuOperationnel;
   const boutonSouple = temporaliteSouple && afficherActionsSouples && !groupeSimultane;
   const creneauJoue = !!participant.actionSlotPlayed;
   const afficherActivationActive = actif && !temporaliteSouple && !creneauJoue;
@@ -55,7 +56,7 @@ export const FichetteInitiative = memo(function FichetteInitiative({ participant
   return (
     <FichetteParticipant
       participant={participant}
-      className={`initiative-card ${temporaliteSouple && !montrerInitiative ? 'flexible-without-initiative' : ''} ${temporaliteSouple && estPJ ? 'soft-pj-highlight' : ''} ${declenchee ? 'triggered' : ''} ${groupeSimultane ? 'in-simultaneous-group' : ''} ${dejaJoue ? 'already-played' : ''} ${creneauJoue ? 'played-slot' : ''}`}
+      className={`initiative-card ${temporaliteSouple && !montrerInitiative ? 'flexible-without-initiative' : ''} ${temporaliteSouple && behavior.highlightInFlexible ? 'soft-pj-highlight' : ''} ${declenchee ? 'triggered' : ''} ${groupeSimultane ? 'in-simultaneous-group' : ''} ${dejaJoue ? 'already-played' : ''} ${creneauJoue ? 'played-slot' : ''}`}
       active={afficherActivationActive}
       badges={badges}
       showInitiative={montrerInitiative}
@@ -65,6 +66,7 @@ export const FichetteInitiative = memo(function FichetteInitiative({ participant
       onAjouterEtat={onAjouterEtat}
       onModifierEtat={onModifierEtat}
       onRetirerEtat={onRetirerEtat}
+      onLancerJetRapide={onLancerJetRapide}
       autoCollapsed={autoCollapsed}
       primaryAction={boutonSouple && (
         <div className="card-actions">

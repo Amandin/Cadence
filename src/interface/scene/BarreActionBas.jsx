@@ -18,7 +18,7 @@ export function BarreActionBas({ classeSuivant, prochainRound, round, horlogeBlo
           : <BoutonTourPrecedent compact disabled={retourDesactive} onClick={onTourPrecedent} />}
       <button className={`primary bottom-next-action ${classeSuivant}`} style={{ minWidth: 0, padding: '10px 11px', fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} onClick={onTourSuivant} disabled={suivantDesactive}>{horlogeBloquee ? null : <IconeCadence name={iconeSuivant} />}{texteSuivant}</button>
       <button className="small-btn bottom-quick-roll" type="button" onClick={onOuvrirLanceurDes} aria-label={t('random.quick.open')} title={t('random.quick.open')}><IconeJetDes /></button>
-      <button className="small-btn" onClick={onOuvrirMenu} aria-label={t('menu.open')}><IconeCadence name="menu" /></button>
+      <button className="small-btn bottom-menu-btn" onClick={onOuvrirMenu} aria-label={t('menu.open')}><IconeCadence name="menu" /></button>
     </div>
   );
 }

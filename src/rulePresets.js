@@ -41,6 +41,18 @@ function systemFromSource(source = {}, family = rulePresetFamilies.GENERIC) {
   return String(source.system || source.game || source.category || '').trim();
 }
 
+function profileSelectionFromSource(source = {}) {
+  const randomQuickRollProfileIds = Array.isArray(source.randomQuickRollProfileIds)
+    ? [...new Set(source.randomQuickRollProfileIds.map((profileId) => String(profileId || '').trim()).filter(Boolean))]
+    : [];
+  return {
+    systemProfileId: String(source.systemProfileId || '').trim(),
+    editionId: String(source.editionId || '').trim(),
+    initiativeProfileId: String(source.initiativeProfileId || '').trim(),
+    randomQuickRollProfileIds,
+  };
+}
+
 function sortPresets(left, right) {
   const familyOrder = {
     [rulePresetFamilies.GENERIC]: 0,
@@ -98,12 +110,13 @@ export function normalizeRulePresetSnapshot(source = {}, activeRules = null) {
     source: String(source.source || '').trim() || 'snapshot',
     readOnly: !!source.readOnly,
     rules,
+    ...profileSelectionFromSource(source),
     modified: activeRules == null ? !!source.modified : !sameCampaignRules(rules, activeRules),
   };
   return snapshot;
 }
 
-export function createRulePresetSnapshot(preset, activeRules = null) {
+export function createRulePresetSnapshot(preset, activeRules = null, profileSelection = {}) {
   if (!preset) return null;
   return normalizeRulePresetSnapshot({
     presetId: preset.id || '',
@@ -117,6 +130,7 @@ export function createRulePresetSnapshot(preset, activeRules = null) {
     readOnly: !!preset.readOnly,
     rules: preset.rules,
     modified: false,
+    ...profileSelectionFromSource(profileSelection),
   }, activeRules ?? preset.rules);
 }
 

@@ -1,4 +1,4 @@
-import { TEMPLATE_STORAGE_KEY } from './constants.js';
+import { TEMPLATE_STORAGE_KEY, defaultTacticalRole, tacticalRoles } from './constants.js';
 import { normalizeCampaignRules } from './domain/campaignRules.js';
 import { normalizeGlobalTracker } from './domain/globalTracker.js';
 import { normalizeInitiativeTextOrder } from './domain/initiativeTextOrder.js';
@@ -36,6 +36,10 @@ const legacySurprisedStatusTemplate = {
   },
 };
 
+function normalizeTacticalRole(role) {
+  return tacticalRoles.includes(role) ? role : defaultTacticalRole;
+}
+
 export const defaultRuleTemplates = [];
 export const defaultInitiativeTextPresets = [];
 
@@ -54,6 +58,7 @@ export function createBlankParticipant() {
     id: uid('p'),
     name: t('templates.fallback.character'),
     kind: 'Opposant',
+    tacticalRole: defaultTacticalRole,
     symbol,
     color,
     initiative: 1,
@@ -122,6 +127,7 @@ function normalizeTemplate(template) {
     participant: {
       ...clone(template.participant),
       id: 'template-participant',
+      tacticalRole: normalizeTacticalRole(template.participant.tacticalRole),
     },
   };
 }
@@ -410,6 +416,7 @@ export function makeTemplateFromParticipant(participant, { name, category }) {
     participant: {
       ...clone(participant),
       id: 'template-participant',
+      tacticalRole: normalizeTacticalRole(participant.tacticalRole),
     },
   };
 }
@@ -480,6 +487,7 @@ export function instantiateTemplate(template) {
     ...clone(source),
     id: uid('p'),
     name: source.name || template.name || t('templates.fallback.character'),
+    tacticalRole: normalizeTacticalRole(source.tacticalRole),
     statuses: [],
     trackers: resetTrackerIds(source.trackers || []),
   };

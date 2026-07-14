@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { t } from '../../i18n/index.js';
 import { activeDefinitions } from '../../random-system/definitionAccess.js';
 import { randomSourceKinds } from '../../random-system/engine.js';
@@ -40,16 +40,68 @@ function aggregateValue(value) {
   return value.map((item) => item?.symbol || item?.label || item?.value || item).join(', ');
 }
 
-export function QuickRollResult({ result }) {
+function DeResultatAnime({ values, delay = 0, className = '' }) {
+  const [rolling, setRolling] = useState(true);
+  const [displayed, setDisplayed] = useState(() => values.map(() => '·'));
+  useEffect(() => {
+    const interval = window.setInterval(() => setDisplayed(values.map((value) => {
+      const maximum = Math.max(2, Number(value) || 20);
+      return String(1 + Math.floor(Math.random() * maximum));
+    })), 65);
+    const timeout = window.setTimeout(() => {
+      window.clearInterval(interval);
+      setDisplayed(values);
+      setRolling(false);
+    }, 700 + delay);
+    return () => { window.clearInterval(interval); window.clearTimeout(timeout); };
+  }, [delay, values]);
+  return <div className={`quick-roll-die ${className} ${rolling ? 'is-rolling' : ''}`}>{displayed.map((value, index) => <strong key={index}>{String(value)}</strong>)}</div>;
+}
+
+function TotalAnime({ aggregate, diceCount }) {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setVisible(true), 500 + Math.max(0, diceCount - 1) * 90);
+    return () => window.clearTimeout(timer);
+  }, [diceCount]);
+  return <div className={`quick-roll-total ${visible ? 'is-revealed' : ''}`}>
+    <span>{t('random.result.title')}</span>
+    <strong>{aggregateValue(aggregate?.value)}</strong>
+  </div>;
+}
+
+function ResultatDefilant() {
+  const [values, setValues] = useState(() => [0, 0, 0]);
+  useEffect(() => {
+    const timer = window.setInterval(() => setValues(Array.from({ length: 3 }, () => Math.floor(Math.random() * 10))), 70);
+    return () => window.clearInterval(timer);
+  }, []);
+  return <section className="quick-roll-result quick-roll-rolling" aria-live="polite"><span>{t('random.use.run')}</span><div className="quick-roll-slot-values">{values.map((value, index) => <strong key={index}>{value}</strong>)}</div></section>;
+}
+
+export function QuickRollResult({ result, rolling = false }) {
+  if (rolling) return <ResultatDefilant />;
   if (!result) return null;
   const aggregate = result.primaryAggregate;
   const dice = resultDice(result);
   return (
     <section className="quick-roll-result" aria-live="polite">
-      <div className="quick-roll-total">
-        <span>{aggregate?.label || t('random.result.title')}</span>
-        <strong>{aggregateValue(aggregate?.value)}</strong>
-      </div>
+      {dice.length > 0 && (
+        <div className="quick-roll-dice">
+          {dice.map((die, index) => {
+            const stateClass = die.kept === true ? 'is-kept' : die.kept === false ? 'is-discarded' : '';
+            const stateLabel = die.kept === true
+              ? t('random.quick.kept')
+              : die.kept === false
+                ? t('random.quick.discarded')
+                : '';
+            return (
+              <DeResultatAnime key={die.id} values={die.values.map((value) => String(value ?? '-'))} delay={index * 90} className={stateClass} />
+            );
+          })}
+        </div>
+      )}
+      <TotalAnime aggregate={aggregate} diceCount={dice.length} />
       {(aggregate?.adjustments || []).length > 0 && (
         <div className="quick-roll-adjustments">
           {aggregate.adjustments.map((adjustment, index) => (
@@ -59,28 +111,11 @@ export function QuickRollResult({ result }) {
           ))}
         </div>
       )}
-      {dice.length > 0 && (
-        <div className="quick-roll-dice">
-          {dice.map((die) => {
-            const stateClass = die.kept === true ? 'is-kept' : die.kept === false ? 'is-discarded' : '';
-            const stateLabel = die.kept === true
-              ? t('random.quick.kept')
-              : die.kept === false
-                ? t('random.quick.discarded')
-                : '';
-            return (
-              <div className={`quick-roll-die ${stateClass}`} aria-label={stateLabel || undefined} title={stateLabel} key={die.id}>
-                {die.values.map((value, index) => <strong key={`${die.id}-${index}`}>{String(value ?? '-')}</strong>)}
-              </div>
-            );
-          })}
-        </div>
-      )}
     </section>
   );
 }
 
-export function FenetreLancerDes({ randomSystem, onFermer }) {
+export function FenetreLancerDes({ randomSystem, quickRollInfo = null, onFermer }) {
   const definitions = useMemo(
     () => activeDefinitions(randomSystem?.state?.definitions || []),
     [randomSystem?.state?.definitions],
@@ -89,25 +124,35 @@ export function FenetreLancerDes({ randomSystem, onFermer }) {
     () => (randomSystem?.state?.sources || []).filter((source) => source.kind !== randomSourceKinds.CARDS),
     [randomSystem?.state?.sources],
   );
-  const [selectedId, setSelectedId] = useState(definitions[0]?.id || '');
+  const [selectedId, setSelectedId] = useState(quickRollInfo?.quickRollDefinitionId || definitions[0]?.id || '');
   const [result, setResult] = useState(null);
+  const quickRollLaunchedRef = useRef(false);
   const selected = definitions.find((definition) => definition.id === selectedId) || definitions[0] || null;
   const chooseDefinition = (definitionId) => {
     setSelectedId(definitionId);
     setResult(null);
   };
   const run = (definitionId, parameters, options) => {
-    const next = randomSystem?.actions?.runDefinitionTransient?.(definitionId, parameters, options);
+    const next = randomSystem?.actions?.runDefinition?.(definitionId, parameters, options);
     setResult(next);
     return next;
   };
+  useEffect(() => {
+    if (!quickRollInfo || quickRollLaunchedRef.current) return;
+    const definitionId = quickRollInfo.quickRollDefinitionId;
+    if (!definitions.some((definition) => definition.id === definitionId)) return;
+    quickRollLaunchedRef.current = true;
+    setSelectedId(definitionId);
+    run(definitionId, quickRollInfo.quickRollParameters || {}, quickRollInfo.quickRollOptions || {});
+    return undefined;
+  }, [definitions, quickRollInfo]);
 
   return (
-    <Fenetre title={t('random.quick.title')} onClose={onFermer} className="quick-roll-dialog">
+    <Fenetre title={quickRollInfo?.characterName ? `${quickRollInfo.characterName} — ${quickRollInfo.label}` : t('random.quick.title')} onClose={onFermer} className="quick-roll-dialog">
       <div className="quick-roll-content">
         {definitions.length > 0 ? (
           <>
-            <div className="quick-roll-type">
+            {!quickRollInfo && <div className="quick-roll-type">
               <span className="quick-roll-type-label">{t('random.quick.type')}</span>
               <div className="quick-roll-type-options" role="group" aria-label={t('random.quick.type')}>
                 {definitions.map((definition) => {
@@ -126,8 +171,8 @@ export function FenetreLancerDes({ randomSystem, onFermer }) {
                   );
                 })}
               </div>
-            </div>
-            {selected && (
+            </div>}
+            {selected && !quickRollInfo && (
               <DefinitionForm
                 className="quick-roll-form"
                 definition={selected}

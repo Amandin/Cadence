@@ -16,7 +16,7 @@ function optionsEgalite(scene) {
     initiativeTextOrder: scene?.initiativeTextOrder,
     initiativeEnabled: scene?.temporalite !== 'souple' || scene?.flexibleUseInitiative !== false,
     tiebreakerVisible: scene?.tiebreakerVisible !== false,
-    multipleActionSlots: rulesAllowMultipleSlots(scene),
+    multipleActionSlots: (participant) => rulesAllowMultipleSlots(scene, participant),
   };
 }
 
@@ -27,7 +27,7 @@ function changerInfoRapide(interactions, participant, index, valeur) {
   }));
 }
 
-const GroupeSimultane = memo(function GroupeSimultane({ groupe, actifId, interactions, performanceLow }) {
+const GroupeSimultane = memo(function GroupeSimultane({ groupe, participantTypes, actifId, interactions, performanceLow }) {
   const actif = useMemo(() => groupe.participants.some((participant) => participant.id === actifId), [actifId, groupe.participants]);
 
   return (
@@ -36,6 +36,7 @@ const GroupeSimultane = memo(function GroupeSimultane({ groupe, actifId, interac
         <FichetteInitiative
           key={participant.actionSlotId || participant.id}
           participant={participant}
+          participantTypes={participantTypes}
           actif={actif}
           groupeSimultane
           onOuvrir={() => interactions.openCharacter(participant.id)}
@@ -45,6 +46,7 @@ const GroupeSimultane = memo(function GroupeSimultane({ groupe, actifId, interac
           onAjouterEtat={() => interactions.requestStatus(participant.id)}
           onModifierEtat={(statusId) => interactions.requestStatus(participant.id, statusId)}
           onRetirerEtat={(statusId) => interactions.removeCharacterStatus(participant.id, statusId)}
+          onLancerJetRapide={interactions.openQuickRoll}
           onQuitterInitiative={() => interactions.leaveInit(participant.id)}
           performanceLow={performanceLow}
         />
@@ -73,6 +75,7 @@ const FichetteLibre = memo(function FichetteLibre({ scene, participant, actifId,
   return (
     <FichetteInitiative
       participant={participant}
+      participantTypes={scene.participantTypes}
       actif={actif}
       temporaliteSouple={temporaliteSouple}
       montrerInitiative={!temporaliteSouple || scene.flexibleUseInitiative !== false}
@@ -89,6 +92,7 @@ const FichetteLibre = memo(function FichetteLibre({ scene, participant, actifId,
       onAjouterEtat={ajouterEtat}
       onModifierEtat={modifierEtat}
       onRetirerEtat={retirerEtat}
+      onLancerJetRapide={interactions.openQuickRoll}
       onQuitterInitiative={quitterInitiative}
       performanceLow={performanceLow}
     />
@@ -134,7 +138,7 @@ const ListeParPaliers = memo(function ListeParPaliers({ scene, participants, act
       <div className="initiative-tier-cards">
         {grouperAffichageParticipants(groupe.participants, options).map((bloc) => (
           bloc.simultaneous
-            ? <GroupeSimultane key={bloc.id} groupe={bloc} actifId={actifId} interactions={interactions} performanceLow={performanceLow} />
+            ? <GroupeSimultane key={bloc.id} groupe={bloc} participantTypes={scene.participantTypes} actifId={actifId} interactions={interactions} performanceLow={performanceLow} />
             : <FichetteLibre
                 key={bloc.id}
                 scene={scene}
@@ -159,6 +163,16 @@ function EnteteSectionSouple({ titre, compteur, variant }) {
   );
 }
 
+function SurprisePreparationToggle({ scene, onToggleSurprisePreparation }) {
+  if (scene.round >= 0) return null;
+  return (
+    <label className={`reset-switch preparation-surprise-toggle initiative-surprise-toggle ${scene.preparationSurprise ? 'active' : ''}`}>
+      <span>{t('scene.header.surprise')}</span>
+      <input type="checkbox" checked={!!scene.preparationSurprise} onChange={(event) => onToggleSurprisePreparation?.(event.target.checked)} />
+    </label>
+  );
+}
+
 const ListeDeclaration = memo(function ListeDeclaration({ scene, participants, interactions, performanceLow = false }) {
   const declarations = useMemo(() => normalizeDeclarations(scene.declarations, participants), [participants, scene.declarations]);
   const ordreDeclaration = useMemo(() => trierParInitiative(participants, optionsEgalite(scene)).reverse(), [participants, scene]);
@@ -179,7 +193,7 @@ const ListeDeclaration = memo(function ListeDeclaration({ scene, participants, i
   );
 });
 
-export const ListeInitiative = memo(function ListeInitiative({ scene, participants, actifId, interactions, temporaliteSouple, temporalitePhases, temporaliteDeclaration, phaseAttendRelanceInitiative, onMarquerAJoue, onAnnulerAJoue, performanceLow = false }) {
+export const ListeInitiative = memo(function ListeInitiative({ scene, participants, actifId, interactions, temporaliteSouple, temporalitePhases, temporaliteDeclaration, phaseAttendRelanceInitiative, onMarquerAJoue, onAnnulerAJoue, onToggleSurprisePreparation, performanceLow = false }) {
   const containerRef = useRef(null);
   const previousFocusKeyRef = useRef(null);
   const focusKey = useMemo(() => [
@@ -195,7 +209,22 @@ export const ListeInitiative = memo(function ListeInitiative({ scene, participan
     previousFocusKeyRef.current = focusKey;
     const frame = requestAnimationFrame(() => {
       const activeCard = containerRef.current?.querySelector('.active-turn');
-      activeCard?.scrollIntoView({ behavior: performanceLow ? 'auto' : 'smooth', block: 'start', inline: 'nearest' });
+      if (!activeCard) return;
+
+      const rect = activeCard.getBoundingClientRect();
+      const fixedHeader = document.querySelector('.scene-app .top')?.getBoundingClientRect();
+      const fixedFooter = document.querySelector('.scene-app .bottom')?.getBoundingClientRect();
+      const topLimit = (fixedHeader?.bottom || 0) + 12;
+      const bottomLimit = (fixedFooter?.top || window.innerHeight) - 12;
+      const availableHeight = bottomLimit - topLimit;
+
+      let delta = 0;
+      if (rect.height > availableHeight || rect.top < topLimit) delta = rect.top - topLimit;
+      else if (rect.bottom > bottomLimit) delta = rect.bottom - bottomLimit;
+
+      if (Math.abs(delta) > 1) {
+        window.scrollBy({ top: delta, behavior: performanceLow ? 'auto' : 'smooth' });
+      }
     });
     return () => cancelAnimationFrame(frame);
   }, [focusKey, performanceLow]);
@@ -226,6 +255,7 @@ export const ListeInitiative = memo(function ListeInitiative({ scene, participan
 
     return (
       <div className="initiative-list flexible-list phase-list" ref={containerRef}>
+        <SurprisePreparationToggle scene={scene} onToggleSurprisePreparation={onToggleSurprisePreparation} />
         <section className="flexible-section phase-section">
           <EnteteSectionSouple titre={t('initiative.phase', { phase: scene.phase || 1 })} compteur={actifs.length} />
           {phaseAttendRelanceInitiative
@@ -245,6 +275,7 @@ export const ListeInitiative = memo(function ListeInitiative({ scene, participan
   if (!temporaliteSouple) {
     return (
       <div className="initiative-list" ref={containerRef}>
+        <SurprisePreparationToggle scene={scene} onToggleSurprisePreparation={onToggleSurprisePreparation} />
         <ListeParPaliers scene={scene} participants={participantsClassiques} actifId={actifId} activeSlotId={scene.activeSlotId || ''} interactions={interactions} performanceLow={performanceLow} />
       </div>
     );
@@ -254,6 +285,7 @@ export const ListeInitiative = memo(function ListeInitiative({ scene, participan
 
   return (
     <div className="initiative-list flexible-list" ref={containerRef}>
+      <SurprisePreparationToggle scene={scene} onToggleSurprisePreparation={onToggleSurprisePreparation} />
       <section className="flexible-section">
         <EnteteSectionSouple titre={t('initiative.actionsToResolve')} compteur={doitJouer.length} />
         <ListeParPaliers scene={scene} participants={doitJouer} actifId={actifId} activeSlotId={scene.activeSlotId || ''} interactions={interactions} temporaliteSouple onMarquerAJoue={onMarquerAJoue} onAnnulerAJoue={onAnnulerAJoue} performanceLow={performanceLow} />

@@ -50,7 +50,7 @@ onboarding.family.generic,Génériques
 onboarding.family.system,Systèmes
 onboarding.toggleTheme,Basculer thème clair ou sombre
 onboarding.title,Choisis comment commencer
-onboarding.description,"Cadence peut démarrer avec un preset générique, un preset lié à un système, ou une base vide pour régler tout à ta main."
+onboarding.description,"Choisis une famille de mécaniques : Cadence préparera l’initiative et les jets utiles, tout en te laissant la main sur les règles."
 onboarding.presets.genericTitle,Presets génériques
 onboarding.presets.systemTitle,Presets systèmes
 onboarding.presets.systemNote,"Configurations compatibles, non officielles."
@@ -79,6 +79,59 @@ onboarding.trackers.threshold.wounded,Blessé
 onboarding.trackers.threshold.out,Hors combat
 onboarding.start,Commencer
 onboarding.customRules,Règles personnalisées
+onboarding.defineRules,Définir les règles à la main
+onboarding.system.title,Choisir une mécanique ou une famille
+onboarding.edition.title,Choisir une édition
+onboarding.initiative.title,Choisir un style d’initiative
+onboarding.support.official,Officiel
+onboarding.support.commonVariant,Variante courante
+onboarding.support.home,Maison / générique
+onboarding.profile.planned,À venir : profil non implémenté
+onboarding.quickRolls.title,Choisir des jets rapides
+onboarding.quickRolls.help,Cadence lancera les dés ou cartes sélectionnés ; la table interprète les effets.
+onboarding.summary.title,Votre table est prête
+onboarding.summary.help,Voici ce que Cadence prépare pour votre première scène.
+onboarding.summary.ready,Cadence prépare
+onboarding.summary.atHand,À portée de main
+onboarding.summary.yourCall,Vous gardez la main
+onboarding.progress,Étape {current} sur {total}
+onboarding.back,Retour
+onboarding.next,Étape suivante
+onboarding.startChoice.help,Comment souhaitez-vous découvrir votre première scène ?
+onboarding.startChoice.tutorial,Suivre le tutoriel
+onboarding.startChoice.tutorialHelp,Quatre étapes guidées directement dans une scène vierge.
+onboarding.startChoice.direct,Commencer directement
+sceneTutorial.progress,Étape {current} sur {total}
+sceneTutorial.add.title,Créez votre premier personnage
+sceneTutorial.add.body,Utilisez le vrai bouton Ajouter mis en évidence en bas de la scène.
+sceneTutorial.choose.title,Choisissez votre point de départ
+sceneTutorial.choose.body,"Fiche vierge permet de tout construire ; un modèle fournit une base réutilisable. Choisissez aussi l’initiative ou la réserve, puis utilisez Créer."
+sceneTutorial.identity.title,Donnez une identité à la fiche
+sceneTutorial.identity.body,"Le nom et le Type sont essentiels. Le Type pilote les comportements de Cadence ; la description, le rôle et l’initiative complètent la fiche."
+sceneTutorial.quickInfo.title,Ajoutez les informations rapides
+sceneTutorial.quickInfo.body,"Ces lignes affichent les valeurs souvent consultées : défense, perception, mouvement ou toute donnée utile à votre table."
+sceneTutorial.indicator.title,Ajoutez un indicateur
+sceneTutorial.indicator.body,Faites défiler jusqu’à Indicateurs puis utilisez le vrai bouton Ajouter un indicateur.
+sceneTutorial.configure.title,Choisissez son fonctionnement
+sceneTutorial.configure.body,"Utilisez un modèle prêt à l’emploi ou choisissez Personnalisé pour créer une barre, des puces, un compteur, une horloge ou des cases."
+sceneTutorial.save.title,Relisez puis validez la fiche
+sceneTutorial.save.body,Vérifiez les valeurs et utilisez le vrai bouton de validation de la fiche.
+sceneTutorial.done.title,Votre première fiche est prête
+sceneTutorial.done.body,Vous pouvez maintenant ajouter d’autres participants ou lancer la scène. Les indicateurs resteront accessibles directement sur la fiche.
+sceneTutorial.useInterface,Utilisez le contrôle mis en évidence dans Cadence.
+sceneTutorial.finish,Terminer
+sceneTutorial.close,Fermer
+sceneTutorial.skip,Ignorer le tutoriel
+rules.profile.title,Profil de campagne
+rules.profile.change,Modifier le profil
+rules.profile.help,Choisis un profil pour remplacer explicitement les réglages avancés d’initiative.
+rules.profile.system,Système
+rules.profile.none,Choisir un système
+rules.profile.edition,Édition
+rules.profile.initiative,Initiative
+rules.profile.quickRolls,Jets rapides
+rules.profile.warning,Appliquer ce profil remplace les réglages avancés d’initiative. Les jets rapides sélectionnés sont ajoutés sans retirer les autres.
+rules.profile.apply,Appliquer le profil
 characterAdd.title,Ajouter un personnage
 characterAdd.blank,Fiche vierge
 characterAdd.template,Modèle
@@ -86,6 +139,7 @@ characterAdd.category,Catégorie
 characterAdd.model,Modèle
 characterAdd.emptyCategory,"Cette catégorie existe dans le Hub, mais ne contient encore aucun modèle."
 characterAdd.placement.init,En initiative
+characterAdd.placement.pending,À lancer au début du combat
 characterAdd.placement.reserve,En réserve
 characterAdd.initiative,Initiative
 characterAdd.help,La fiche s'ouvrira ensuite pour ajuster les détails avant de continuer la scène.
@@ -462,6 +516,10 @@ initiative.passed.addAnyway,Ajouter quand même
 initiative.passed.addSurprised,Ajouter surpris
 initiative.passed.editInitiative,Modifier son initiative
 sheet.type,Type
+sheet.tacticalRole,Rôle tactique
+sheet.tacticalRole.normal,Normal
+sheet.tacticalRole.group,Groupe
+sheet.tacticalRole.boss,Boss
 sheet.description,Description
 sheet.category,Catégorie
 sheet.symbol,Symbole
@@ -492,6 +550,12 @@ sheet.quickInfo.title,Infos rapides
 sheet.quickInfo.label,Libellé
 sheet.quickInfo.placeholder,Libellé
 sheet.quickInfo.add,+ info rapide
+sheet.quickInfo.roll,Jet rapide
+sheet.quickInfo.rollConfigure,Configurer
+sheet.quickInfo.rollConfigTitle,Configurer le jet rapide
+sheet.quickInfo.rollConfigHelp,Choisissez le jet de la campagne associé à cette information rapide.
+sheet.quickInfo.rollDefinition,Jet à lancer
+sheet.quickInfo.rollUnavailable,Aucun jet actif n’est disponible. Activez ou créez-en un dans les tirages de campagne.
 sheet.trackers.title,Indicateurs
 sheet.trackers.add,Ajouter un indicateur
 sheet.trackers.custom,Personnalisé
@@ -554,6 +618,7 @@ sheet.reset.defaultState,État par défaut
 sheet.reset.default.empty,vide
 sheet.reset.default.full,plein
 sheet.reset.default.custom,personnalisé
+sheet.reset.default.customValue,Valeur de réinitialisation personnalisée
 sheet.reset.blockFallback,Bloc
 sheet.reset.boxes,Cases
 sheet.reset.step,Cran
@@ -731,6 +796,11 @@ rules.multipleActions.none,Aucune
 rules.multipleActions.noneHelp,Une seule activation d’initiative par personnage.
 rules.multipleActions.manual,Créneaux manuels
 rules.multipleActions.manualHelp,Le MJ saisit plusieurs créneaux au lancement.
+rules.multipleActions.scope,Portée des actions multiples
+rules.multipleActions.scopeAll,Tous les participants
+rules.multipleActions.scopeAllHelp,Tous les Types peuvent recevoir plusieurs créneaux manuels.
+rules.multipleActions.scopeElite,Actions multiples pour les Élites
+rules.multipleActions.scopeEliteHelp,Seuls Élite et les Types personnalisés qui héritent d’Élite peuvent recevoir plusieurs créneaux.
 rules.multipleActions.initiativeCost,Actions multiples avec coût d’initiative
 rules.multipleActions.initiativeCostHelp,"Après une action, le coût crée un nouveau créneau plus bas si le seuil le permet."
 rules.multipleActions.threshold,Seuil de fin de round

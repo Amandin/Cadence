@@ -19,11 +19,12 @@ const resourceKindMeta = {
   definitions: { icon: 'roll', labelKey: 'random.resource.rolls' },
   cards: { icon: 'cards', labelKey: 'random.resource.cards' },
 };
+const emptyInputs = Object.freeze({});
 
-function initialInputs(definition) {
+function initialInputs(definition, { parameters = {}, options = {} } = {}) {
   return {
-    parameters: Object.fromEntries((definition?.parameters || []).map((parameter) => [parameter.id, parameter.defaultValue])),
-    options: Object.fromEntries((definition?.options || []).map((option) => [option.id, option.defaultValue])),
+    parameters: Object.fromEntries((definition?.parameters || []).map((parameter) => [parameter.id, parameters[parameter.id] ?? parameter.defaultValue])),
+    options: Object.fromEntries((definition?.options || []).map((option) => [option.id, options[option.id] ?? option.defaultValue])),
   };
 }
 
@@ -35,8 +36,12 @@ export const DefinitionForm = memo(function DefinitionForm({
   className = '',
   showHeader = true,
   runLabel = t('random.use.run'),
+  initialParameters = emptyInputs,
+  initialOptions = emptyInputs,
+  onInputsChange,
+  hideRun = false,
 }) {
-  const [inputs, setInputs] = useState(() => initialInputs(definition));
+  const [inputs, setInputs] = useState(() => initialInputs(definition, { parameters: initialParameters, options: initialOptions }));
   const [error, setError] = useState('');
   const combination = useMemo(() => definitionCombination(definition), [definition]);
   const combinationValue = combination
@@ -67,9 +72,9 @@ export const DefinitionForm = memo(function DefinitionForm({
   }, [combination, combinationValue, definition, definitions]);
 
   useEffect(() => {
-    setInputs(initialInputs(definition));
+    setInputs(initialInputs(definition, { parameters: initialParameters, options: initialOptions }));
     setError('');
-  }, [definition]);
+  }, [definition, initialOptions, initialParameters]);
   useEffect(() => {
     setInputs((current) => ({
       parameters: {
@@ -88,10 +93,18 @@ export const DefinitionForm = memo(function DefinitionForm({
   }, [targetDefinition, targetOptions]);
 
   const setParameter = (id, value) => {
-    setInputs((current) => ({ ...current, parameters: { ...current.parameters, [id]: value } }));
+    setInputs((current) => {
+      const next = { ...current, parameters: { ...current.parameters, [id]: value } };
+      onInputsChange?.(next);
+      return next;
+    });
   };
   const setOption = (id, value) => {
-    setInputs((current) => ({ ...current, options: { ...current.options, [id]: value } }));
+    setInputs((current) => {
+      const next = { ...current, options: { ...current.options, [id]: value } };
+      onInputsChange?.(next);
+      return next;
+    });
   };
   const run = () => {
     try {
@@ -150,7 +163,7 @@ export const DefinitionForm = memo(function DefinitionForm({
         ))}
       </div>
       {error && <p className="rs-error" role="alert">{error}</p>}
-      <button type="button" className="primary rs-run-button" onClick={run}>{runLabel}</button>
+      {!hideRun && <button type="button" className="primary rs-run-button" onClick={run}>{runLabel}</button>}
     </section>
   );
 });

@@ -25,7 +25,6 @@ export const EnteteScene = memo(function EnteteScene(props) {
     onTourSuivant,
     onModifierCompteurGlobal,
     onToggleCompteurTemps,
-    onToggleSurprisePreparation,
     onAjouterEtatScene,
     onModifierEtatScene,
     onRetirerEtatScene,
@@ -64,7 +63,6 @@ export const EnteteScene = memo(function EnteteScene(props) {
         </div>
         <BadgeRound round={scene.round} effect={effetRound} phase={temporalitePhases ? scene.phase || 1 : null} surpriseRound={!!scene.surpriseRoundActive} />
       </div>
-      {enPreparation && <label className={`reset-switch preparation-surprise-toggle ${scene.preparationSurprise ? 'active' : ''}`}><span>{t('scene.header.surprise')}</span><input type="checkbox" checked={!!scene.preparationSurprise} onChange={(event) => onToggleSurprisePreparation?.(event.target.checked)} /></label>}
       <div className="turn-row header-turn-row">
         <div className={`active-box panel ${activationSimultanee ? 'simultaneous-turn' : ''} ${temporaliteSouple ? 'flexible-turn' : ''} ${temporalitePhases ? 'phase-turn' : ''} ${temporaliteDeclaration ? 'declaration-turn' : ''}`}>
           <div className="turn-active-line">

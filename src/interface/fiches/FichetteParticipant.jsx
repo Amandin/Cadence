@@ -29,6 +29,7 @@ export const FichetteParticipant = memo(function FichetteParticipant({
   onAjouterEtat,
   onModifierEtat,
   onRetirerEtat,
+  onLancerJetRapide,
   autoCollapsed = false,
 }) {
   const [repliee, setRepliee] = useState(false);
@@ -82,7 +83,7 @@ export const FichetteParticipant = memo(function FichetteParticipant({
         </button>
         {primaryAction}
       </div>
-      {hasQuickStats && <div className="quick-stats-full">{showInitiative && <span className="chip init-chip">{t('initiative.groupShort')} {libelleInitiative(participant)}</span>}<InfosRapides stats={participant.stats || []} /></div>}
+      {hasQuickStats && <div className="quick-stats-full">{showInitiative && <span className="chip init-chip">{t('initiative.groupShort')} {libelleInitiative(participant)}</span>}<InfosRapides stats={participant.stats || []} onLancerJetRapide={onLancerJetRapide ? (info) => onLancerJetRapide({ ...info, characterName: participant.name }) : undefined} /></div>}
       {secondaryActions && <div className="fiche-secondary-actions">{secondaryActions}</div>}
       <div className="trackers">
         {suivisVisibles.map((suivi) => <Suivi key={suivi.id} suivi={suivi} couleur={participant.color} onModifier={(suivant) => onSuivi(suivi.id, suivant)} onSupprimer={() => onSupprimerSuivi(suivi.id)} />)}

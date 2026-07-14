@@ -21,6 +21,8 @@ import {
   defaultTemporalityMode,
   initiativeOrders,
   multipleActionModes,
+  manualMultipleActionScopes,
+  defaultManualMultipleActionScope,
   phaseActionModes,
   temporalityModes,
 } from '../constants.js';
@@ -28,6 +30,7 @@ import { multipleActionModeFromRules, normalizeInitiativeCostLimitToCurrent, nor
 import { declarationStages, normalizeInitiativeModeOptions } from './initiativeModes.js';
 import { trierParInitiative } from './initiative.js';
 import { normalizeInitiativeTextOrder } from './initiativeTextOrder.js';
+import { normalizeParticipantTypeName, normalizeParticipantTypes } from './participantTypes.js';
 
 function cleanId(value) {
   return String(value ?? '').trim();
@@ -55,6 +58,8 @@ export function normalizeCampaignRules(rules = {}) {
     ...rules,
     multipleActionMode: explicitMultipleActionMode || undefined,
   });
+  const categoryOrderSource = Array.isArray(rules.categoryOrder) && rules.categoryOrder.length ? rules.categoryOrder : defaultCategoryOrder;
+  const categoryOrder = [...new Set(categoryOrderSource.map(normalizeParticipantTypeName).filter(Boolean))];
   return {
     temporalite,
     declarationMode: initiativeModeOptions.declarationMode ?? (legacyDeclaration ? true : defaultDeclarationMode),
@@ -65,7 +70,8 @@ export function normalizeCampaignRules(rules = {}) {
     equalityRule: rules.equalityRule || defaultEqualityRule,
     flexibleUseInitiative: rules.flexibleUseInitiative ?? defaultFlexibleUseInitiative,
     initiativeOrder: Object.values(initiativeOrders).includes(rules.initiativeOrder) ? rules.initiativeOrder : defaultInitiativeOrder,
-    categoryOrder: Array.isArray(rules.categoryOrder) && rules.categoryOrder.length ? rules.categoryOrder : defaultCategoryOrder,
+    categoryOrder,
+    participantTypes: normalizeParticipantTypes(rules.participantTypes, categoryOrder),
     tiebreakerVisible: rules.tiebreakerVisible ?? defaultTiebreakerVisible,
     tiebreakerLabel: typeof rules.tiebreakerLabel === 'string' && rules.tiebreakerLabel.trim() ? rules.tiebreakerLabel.trim() : defaultTiebreakerLabel,
     initiativeBonusEnabled: rules.initiativeBonusEnabled ?? defaultInitiativeBonusEnabled,
@@ -78,6 +84,7 @@ export function normalizeCampaignRules(rules = {}) {
     promptInitiativeOnNext: false,
     ...initiativeModeOptions,
     multipleActionMode: multipleActionMode || defaultMultipleActionMode,
+    manualMultipleActionScope: Object.values(manualMultipleActionScopes).includes(rules.manualMultipleActionScope) ? rules.manualMultipleActionScope : defaultManualMultipleActionScope,
     multipleActionSlots: multipleActionMode !== multipleActionModes.NONE,
     initiativeCostThreshold: normalizeInitiativeCostThreshold(rules.initiativeCostThreshold ?? defaultInitiativeCostThreshold),
     initiativeCostQuickCosts: normalizeInitiativeCostQuickCosts(rules.initiativeCostQuickCosts ?? defaultInitiativeCostQuickCosts),
@@ -170,6 +177,7 @@ export function applyInitiativeRules(scene, patch = {}) {
     flexibleUseInitiative: !!next.flexibleUseInitiative,
     initiativeOrder: next.initiativeOrder,
     categoryOrder: next.categoryOrder,
+    participantTypes: next.participantTypes,
     tiebreakerVisible: !!next.tiebreakerVisible,
     tiebreakerLabel: next.tiebreakerLabel,
     initiativeBonusEnabled: !!next.initiativeBonusEnabled,
@@ -183,6 +191,7 @@ export function applyInitiativeRules(scene, patch = {}) {
     initiativeValueType: next.initiativeValueType,
     initiativeLabels: next.initiativeLabels,
     multipleActionMode: next.multipleActionMode,
+    manualMultipleActionScope: next.manualMultipleActionScope,
     multipleActionSlots: next.multipleActionMode !== multipleActionModes.NONE,
     initiativeCostThreshold: next.initiativeCostThreshold,
     initiativeCostQuickCosts: next.initiativeCostQuickCosts,

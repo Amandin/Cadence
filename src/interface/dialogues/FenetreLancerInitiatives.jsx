@@ -10,6 +10,7 @@ import { activeDefinitions } from '../../random-system/definitionAccess.js';
 import { randomParameterTypes, randomSourceKinds } from '../../random-system/engine.js';
 import { Fenetre } from '../commun/ComposantsCommuns.jsx';
 import { ChampInitiative } from '../initiative/ChampInitiative.jsx';
+import { resolveParticipantBehavior } from '../../domain/participantTypes.js';
 
 function initiativeVide(participant) {
   const valeurs = Array.isArray(participant.actionSlots) && participant.actionSlots.length
@@ -17,8 +18,8 @@ function initiativeVide(participant) {
     : [participant.initiative];
   return valeurs.every((valeur) => String(valeur ?? '').trim() === '');
 }
-function estPersonnage(participant) { return participant.kind !== 'Environnement'; }
-function environnementSansInitiative(participant) { return participant.kind === 'Environnement' && initiativeVide(participant); }
+function estPersonnage(participant) { return resolveParticipantBehavior(participant.kind).initiativeEntry !== 'environment'; }
+function environnementSansInitiative(participant) { return resolveParticipantBehavior(participant.kind).initiativeEntry === 'environment' && initiativeVide(participant); }
 function filtrerParticipants(participants, inclureEnvironnements) { return inclureEnvironnements ? participants : participants.filter((participant) => estPersonnage(participant) || environnementSansInitiative(participant)); }
 function champRempli(valeur) { if (Array.isArray(valeur)) return valeur.some(champRempli); return String(valeur ?? '').trim() !== ''; }
 const initiativeEntrySortModes = { TYPE: 'type', NAME: 'name', INITIATIVE: 'initiative' };
@@ -62,7 +63,8 @@ function valeurSansBonus(valeur, participant, textConfig, actif = true) {
   const bonus = bonusInitiative(participant);
   return bonus && Number.isFinite(nombre) ? nombre - bonus : valeur;
 }
-function champsParticipant(participant, valeurs, multipleActionSlots = true, textConfig = {}) { const courant = valeurs[participant.id]; if (Array.isArray(courant) && courant.length) return multipleActionSlots ? courant : courant.slice(0, 1); return normaliserCreneauxAction(participant, { multipleActionSlots, initiativeTextOrder: textConfig }).map(() => ''); }
+function actionsMultiplesAutorisees(multipleActionSlots, participant) { return typeof multipleActionSlots === 'function' ? multipleActionSlots(participant) : multipleActionSlots; }
+function champsParticipant(participant, valeurs, multipleActionSlots = true, textConfig = {}) { const courant = valeurs[participant.id]; if (Array.isArray(courant) && courant.length) return actionsMultiplesAutorisees(multipleActionSlots, participant) ? courant : courant.slice(0, 1); return normaliserCreneauxAction(participant, { multipleActionSlots, initiativeTextOrder: textConfig }).map(() => ''); }
 function comparerNomsParticipants(a, b) { return (a?.name || '').localeCompare(b?.name || '', 'fr', { sensitivity: 'base' }); }
 function valeurTriInitiative(participant, valeurs, multipleActionSlots, textConfig, bonusInitiatives, initiativeBonusEnabled = true) {
   const champs = champsParticipant(participant, valeurs, multipleActionSlots, textConfig);
@@ -99,7 +101,7 @@ export function affectationsCartesInitiative(participants, drawResult, textConfi
   });
 }
 function valeursVides(participants, multipleActionSlots = true, textConfig = {}) { return Object.fromEntries(participants.map((participant) => [participant.id, normaliserCreneauxAction(participant, { multipleActionSlots, initiativeTextOrder: textConfig }).map(() => '')])); }
-function valeursInitiales(participants, reserve, multipleActionSlots = true, prefillExisting = false, textConfig = {}, initiativeBonusEnabled = true) { return { ...valeursVides(reserve, multipleActionSlots, textConfig), ...(prefillExisting ? Object.fromEntries(participants.map((participant) => [participant.id, normaliserCreneauxAction(participant, { multipleActionSlots, initiativeTextOrder: textConfig }).map((slot) => String(valeurSansBonus(slot.initiative ?? participant.initiative ?? '', participant, textConfig, initiativeBonusEnabled)))])) : valeursVides(participants, multipleActionSlots, textConfig)) }; }
+function valeursInitiales(participants, reserve, multipleActionSlots = true, prefillExisting = false, textConfig = {}, initiativeBonusEnabled = true) { return { ...valeursVides(reserve, multipleActionSlots, textConfig), ...(prefillExisting ? Object.fromEntries(participants.map((participant) => [participant.id, participant.initiativePending ? '' : normaliserCreneauxAction(participant, { multipleActionSlots, initiativeTextOrder: textConfig }).map((slot) => String(valeurSansBonus(slot.initiative ?? participant.initiative ?? '', participant, textConfig, initiativeBonusEnabled)))])) : valeursVides(participants, multipleActionSlots, textConfig)) }; }
 function valeursRenseignees(participants, valeurs, multipleActionSlots = true, textConfig = {}, bonusInitiatives = {}, initiativeBonusEnabled = true, bonusDejaInclus = {}) { return Object.fromEntries(participants.filter((participant) => champRempli(valeurs[participant.id])).map((participant) => [participant.id, champsParticipant(participant, valeurs, multipleActionSlots, textConfig).map((valeur, index) => ({ valeur, index })).filter(({ valeur }) => champRempli(valeur)).map(({ valeur, index }) => bonusDejaInclus[participant.id]?.[index] ? valeur : valeurAvecBonus(valeur, participant, textConfig, bonusInitiatives, initiativeBonusEnabled))])); }
 function departagesInitiaux(participants) { return Object.fromEntries(participants.map((participant) => [participant.id, String(participant.departage ?? '')])); }
 function departagesRenseignes(participants, departages, actif = false) { return Object.fromEntries(participants.flatMap((participant) => { const valeur = departages[participant.id] ?? ''; return actif || (departageManquant(participant) && champRempli(valeur)) ? [[participant.id, valeur]] : []; })); }
@@ -172,7 +174,7 @@ function SectionSaisieInitiative({ titre, participants, inclureEnvironnements, c
             const departageDiscret = departagePertinent && !departageEditable;
             const afficherBonusDiscret = bonusDiscret && valeurBonus !== 0;
             const afficherDepartageDiscret = departageDiscret && departageTexte !== '';
-            const afficherAjoutAction = initiativeEnabled && multipleActionSlots;
+            const afficherAjoutAction = initiativeEnabled && actionsMultiplesAutorisees(multipleActionSlots, participant);
             const afficherMeta = surpriseSelectionEnabled || bonusEditable || departageEditable || afficherBonusDiscret || afficherDepartageDiscret;
             return <div className={`initiative-roll-row multi-roll-row ${surpriseSelectionEnabled ? 'has-surprise' : ''} ${(departageEditable || afficherDepartageDiscret) ? 'has-tiebreaker' : ''}`} key={participant.id}>
               <div className="initiative-roll-identity"><span className="type-chip">{participant.kind}</span><strong>{participant.name}</strong>{initiativeEnabled && initiativeRollAvailable && <InitiativeRollButton card={initiativeRollIsCard} label={t(initiativeRollIsCard ? 'initiative.entry.drawOne' : 'initiative.entry.rollOne', { name: participant.name })} onClick={() => onRollParticipant(participant)} />}</div>

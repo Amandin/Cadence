@@ -25,7 +25,8 @@ function slotId(participantId, slot) {
 export function normaliserCreneauxAction(participant = {}, options = {}) {
   const fallback = participant?.initiative ?? 0;
   const rawSlots = Array.isArray(participant.actionSlots) ? participant.actionSlots : [];
-  const slotsAutorises = options.multipleActionSlots === false ? rawSlots.slice(0, 1) : rawSlots;
+  const multipleActionSlots = typeof options.multipleActionSlots === 'function' ? options.multipleActionSlots(participant) : options.multipleActionSlots;
+  const slotsAutorises = multipleActionSlots === false ? rawSlots.slice(0, 1) : rawSlots;
   const slots = slotsAutorises
     .map((slot, index) => {
       const source = slot && typeof slot === 'object' ? slot : { initiative: slot };

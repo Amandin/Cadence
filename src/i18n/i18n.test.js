@@ -112,7 +112,7 @@ describe('i18n', () => {
     expect(t('errors.title')).toBe('Cadence a rencontré une erreur');
     expect(t('onboarding.title')).toBe('Choisis comment commencer');
     expect(t('onboarding.family.system')).toBe('Systèmes');
-    expect(t('onboarding.description')).toContain('preset générique');
+    expect(t('onboarding.description')).toContain('famille de mécaniques');
     expect(t('onboarding.presets.systemNote')).toBe('Configurations compatibles, non officielles.');
     expect(t('rules.title')).toBe('Règles d’initiative');
     expect(t('rules.preset.saveTitle')).toBe('Enregistrer le preset');

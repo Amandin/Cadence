@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CADENCE_CAMPAIGN_FORMAT, CADENCE_CAMPAIGN_SCHEMA_VERSION, campaignNameFromPayload, isValidCampaign, normalizeCampaignName, normalizeCampaignPayload, serializeCampaign } from './storage.js';
+import { CADENCE_CAMPAIGN_FORMAT, CADENCE_CAMPAIGN_SCHEMA_VERSION, campaignNameFromPayload, campaignProfileFromPayload, isValidCampaign, normalizeCampaignName, normalizeCampaignPayload, serializeCampaign } from './storage.js';
 import { normalizeTemplateStore } from './templates.js';
 
 const scene = { id: 'scene-1', title: 'Test', participants: [] };
@@ -36,6 +36,21 @@ describe('campaign storage', () => {
     expect(normalizeCampaignName('   ')).toBe('Campagne Cadence');
     expect(campaignNameFromPayload({ name: '  Ma campagne  ' })).toBe('Ma campagne');
     expect(campaignNameFromPayload({ settings: { campaignName: 'Ancien nom' } })).toBe('Ancien nom');
+  });
+
+  it('adds the normal tactical role to legacy participants without changing custom kinds', () => {
+    const campaign = normalizeCampaignPayload({
+      version: '0.15.1',
+      scenes: [{
+        id: 'scene-legacy-role',
+        title: 'Roles',
+        participants: [{ id: 'legacy-main', name: 'Escouade', kind: 'Adversaire maison' }],
+        reserve: [{ id: 'legacy-reserve', name: 'Danger', kind: 'Decor vivant' }],
+      }],
+    });
+
+    expect(campaign.scenes[0].participants[0]).toMatchObject({ kind: 'Adversaire maison', tacticalRole: 'normal' });
+    expect(campaign.scenes[0].reserve[0]).toMatchObject({ kind: 'Decor vivant', tacticalRole: 'normal' });
   });
 
   it('accepts current Cadence campaign files', () => {
@@ -148,6 +163,10 @@ describe('campaign storage', () => {
       system: 'Shadowrun',
       description: 'Configuration compatible non officielle.',
       source: 'catalog',
+      systemProfileId: 'system/shadowrun',
+      editionId: 'sr-5',
+      initiativeProfileId: 'initiative/shadowrun-5-decrement',
+      randomQuickRollProfileIds: ['quick-roll/d6-pool'],
       rules: { temporalite: 'phases', phaseActionMode: 'automatic', phaseDecrement: 10, phaseRerollEachRound: true },
       modified: false,
     };
@@ -160,9 +179,51 @@ describe('campaign storage', () => {
       name: 'Shadowrun compatible',
       family: 'system',
       system: 'Shadowrun',
+      systemProfileId: 'system/shadowrun',
+      editionId: 'sr-5',
+      initiativeProfileId: 'initiative/shadowrun-5-decrement',
+      randomQuickRollProfileIds: ['quick-roll/d6-pool'],
       modified: false,
     });
     expect(serialized.templates.ruleTemplates).toEqual([]);
+  });
+
+  it('migrates a legacy profile selection from the preset snapshot into campaignProfile', () => {
+    const campaign = normalizeCampaignPayload(campaignPayload({
+      rulePresetSnapshot: {
+        systemProfileId: 'system/shadowrun',
+        editionId: 'sr-5',
+        initiativeProfileId: 'initiative/shadowrun-5-decrement',
+        randomQuickRollProfileIds: ['quick-roll/d6-pool'],
+      },
+    }));
+
+    expect(campaign.campaignProfile).toEqual({
+      systemProfileId: 'system/shadowrun',
+      editionId: 'sr-5',
+      initiativeProfileId: 'initiative/shadowrun-5-decrement',
+      randomQuickRollProfileIds: ['quick-roll/d6-pool'],
+    });
+  });
+
+  it('prefers the dedicated campaign profile when both formats are present', () => {
+    expect(campaignProfileFromPayload({
+      campaignProfile: { systemProfileId: 'system/pbta', initiativeProfileId: 'initiative/pbta-spotlight' },
+      rulePresetSnapshot: { systemProfileId: 'system/shadowrun' },
+    })).toMatchObject({ systemProfileId: 'system/pbta', initiativeProfileId: 'initiative/pbta-spotlight' });
+  });
+
+  it('keeps the dedicated campaign profile through a serialization round-trip', () => {
+    const profile = {
+      systemProfileId: 'system/shadowrun',
+      editionId: 'sr-5',
+      initiativeProfileId: 'initiative/shadowrun-5-decrement',
+      randomQuickRollProfileIds: ['quick-roll/d6-pool'],
+    };
+
+    const serialized = JSON.parse(serializeCampaign([scene], false, 'Profil', null, {}, null, {}, null, profile));
+
+    expect(normalizeCampaignPayload(serialized).campaignProfile).toEqual(profile);
   });
 
   it('roundtrips normalized .cad payloads with scenes, participants, rules and shared templates', () => {
@@ -180,6 +241,7 @@ describe('campaign storage', () => {
         id: 'pj-roundtrip',
         name: 'Ariane',
         kind: 'PJ',
+        tacticalRole: 'boss',
         initiative: 18,
         stats: [{ label: 'CA', value: '17', editable: true }],
         statuses: [{ id: 'haste', name: 'Hate', duration: 1, remaining: 1, limited: true }],
@@ -189,6 +251,7 @@ describe('campaign storage', () => {
         id: 'reserve-roundtrip',
         name: 'Renfort',
         kind: 'Allie',
+        tacticalRole: 'group',
         initiative: 99,
         trackers: [{ id: 'prep', type: 'clock', name: 'Preparation', current: 1, max: 4 }],
       }],
@@ -231,8 +294,8 @@ describe('campaign storage', () => {
       title: 'Pont suspendu',
       notes: 'Vent fort.',
       globalTracker: { enabled: true, name: 'Menace', mode: 'clock', current: 3, max: 6 },
-      participants: [{ id: 'pj-roundtrip', name: 'Ariane', kind: 'PJ', initiative: 18 }],
-      reserve: [{ id: 'reserve-roundtrip', name: 'Renfort', initiative: 0 }],
+      participants: [{ id: 'pj-roundtrip', name: 'Ariane', kind: 'PJ', tacticalRole: 'boss', initiative: 18 }],
+      reserve: [{ id: 'reserve-roundtrip', name: 'Renfort', tacticalRole: 'group', initiative: 0 }],
     });
     expect(reloaded.scenes[0].statuses[0]).toMatchObject({ name: 'Brouillard', advanceOn: 'round' });
     expect(reloaded.scenes[0].participants[0].trackers[0]).toMatchObject({ id: 'pv', name: 'PV', current: 9, max: 12 });

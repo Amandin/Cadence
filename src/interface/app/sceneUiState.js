@@ -26,7 +26,7 @@ export function buildSceneUiState({ scene, active, blocked, nextStartsRound, nex
     initiativeTextOrder: scene.initiativeTextOrder,
     initiativeEnabled: !temporaliteSouple || scene.flexibleUseInitiative !== false,
     tiebreakerVisible: scene.tiebreakerVisible !== false,
-    multipleActionSlots: rulesAllowMultipleSlots(scene),
+    multipleActionSlots: (participant) => rulesAllowMultipleSlots(scene, participant),
   };
   const utiliserInitiative = optionsInitiative.initiativeEnabled;
   const phaseParticipants = temporalitePhases && !phaseAttendRelanceInitiative ? participantsPhaseScene(scene) : [];

@@ -1,5 +1,7 @@
 import { applyInitiativeRules, campaignRulesFromPayload, normalizeCampaignRules, unifyCampaignScenes } from '../domain/campaignRules.js';
-import { createRulePresetSnapshot, syncRulePresetSnapshot } from '../rulePresets.js';
+import { createRulePresetSnapshot, rulePresetCatalog, syncRulePresetSnapshot } from '../rulePresets.js';
+import { initiativeProfileById, initiativeProfileStatuses, initiativeProfilesForSystem, quickRollProfilesForSystem, systemProfileById } from '../domain/systemProfiles.js';
+import { enableQuickRollProfilesInState } from '../random-system/quickRollProfiles.js';
 import { campaignNameFromPayload, campaignTemplatesFromPayload, isValidCampaign, normalizeCampaignName, normalizeCampaignPayload, serializeCampaign } from '../storage.js';
 import { boxBlocks, clone, isBoxesTracker, isNumericTracker, makeDefaultCampaign, makeTestCampaign, normalizeBoxTracker, uid } from '../logic.js';
 import { mergeTemplateStores, numberedCopyName } from '../templates.js';
@@ -74,16 +76,41 @@ function duplicateSceneData(scene, rules, existingScenes = []) {
   return remettreSceneAuDepartInitiative({ ...clone(scene), id: uid('scene'), title: numberedCopyName(existingScenes.map((item) => item.title), title, t('hub.scene.defaultType')) }, rules);
 }
 
-export function createCampaignActions({ scenes, campaignRules, rulePresetSnapshot, setCampaignRules, setRulePresetSnapshot = () => {}, sceneIndex, dark, campaignName, templateStore, randomSystemState, setScenes, setSceneIndex, setDark, setCampaignNameState, setTemplateStore, setRandomSystemState = () => {} }) {
+export function createCampaignActions({ scenes, campaignRules, campaignProfile = {}, rulePresetSnapshot, setCampaignRules, setCampaignProfile = () => {}, setRulePresetSnapshot = () => {}, sceneIndex, dark, campaignName, templateStore, randomSystemState, setScenes, setSceneIndex, setDark, setCampaignNameState, setTemplateStore, setRandomSystemState = () => {} }) {
   const applyCampaign = (payload) => {
     const fresh = normalizeCampaignPayload(payload);
     setCampaignRules(campaignRulesFromPayload(fresh));
+    setCampaignProfile(fresh.campaignProfile || {});
     setRulePresetSnapshot(fresh.rulePresetSnapshot || null);
     setScenes(fresh.scenes);
     setTemplateStore(campaignTemplatesFromPayload(fresh));
     setRandomSystemState(normalizeRandomSystemState(fresh.randomSystem));
     setCampaignNameState(campaignNameFromPayload(fresh));
     setSceneIndex(0);
+  };
+
+  const applyCampaignProfile = ({ systemProfileId, editionId = '', initiativeProfileId, randomQuickRollProfileIds = [] } = {}) => {
+    const systemProfile = systemProfileById(systemProfileId);
+    const initiativeProfile = initiativeProfileById(initiativeProfileId);
+    const supportedInitiativeProfileIds = new Set(initiativeProfilesForSystem(systemProfileId, editionId).map((profile) => profile.id));
+    if (!systemProfile || !initiativeProfile || initiativeProfile.status !== initiativeProfileStatuses.AVAILABLE || !supportedInitiativeProfileIds.has(initiativeProfile.id)) return false;
+    const preset = rulePresetCatalog.find((item) => item.catalogId === initiativeProfile.rulePresetId);
+    if (!preset) return false;
+    const availableQuickRollProfileIds = new Set(quickRollProfilesForSystem(systemProfile.id, initiativeProfile.id).map((profile) => profile.id));
+    const selectedQuickRollProfileIds = (Array.isArray(randomQuickRollProfileIds) ? randomQuickRollProfileIds : [])
+      .filter((profileId) => availableQuickRollProfileIds.has(profileId));
+    const nextRules = normalizeCampaignRules(preset.rules);
+    setCampaignRules(nextRules);
+    setCampaignProfile({ systemProfileId: systemProfile.id, editionId, initiativeProfileId: initiativeProfile.id, randomQuickRollProfileIds: selectedQuickRollProfileIds });
+    setRulePresetSnapshot(createRulePresetSnapshot(preset, nextRules, {
+      systemProfileId: systemProfile.id,
+      editionId,
+      initiativeProfileId: initiativeProfile.id,
+      randomQuickRollProfileIds: selectedQuickRollProfileIds,
+    }));
+    setScenes((currentScenes) => unifyCampaignScenes(currentScenes, nextRules));
+    setRandomSystemState(enableQuickRollProfilesInState(randomSystemState, selectedQuickRollProfileIds));
+    return true;
   };
 
   return {
@@ -124,7 +151,19 @@ export function createCampaignActions({ scenes, campaignRules, rulePresetSnapsho
       });
     },
     updateCampaignInitiativeRules(patch) {
-      const nextRules = normalizeCampaignRules({ ...campaignRules, ...patch });
+      const rename = patch?.renameParticipantType;
+      const deleted = patch?.deleteParticipantType;
+      if ((rename?.from && rename?.to && rename.from !== rename.to) || (deleted?.name && deleted?.replacement)) {
+        const from = rename?.from || deleted.name;
+        const to = rename?.to || deleted.replacement;
+        setScenes((currentScenes) => currentScenes.map((scene) => ({
+          ...scene,
+          participants: (scene.participants || []).map((participant) => participant.kind === from ? { ...participant, kind: to } : participant),
+          reserve: (scene.reserve || []).map((participant) => participant.kind === from ? { ...participant, kind: to } : participant),
+        })));
+      }
+      const { renameParticipantType: _renameParticipantType, deleteParticipantType: _deleteParticipantType, ...rulesPatch } = patch || {};
+      const nextRules = normalizeCampaignRules({ ...campaignRules, ...rulesPatch });
       setCampaignRules(nextRules);
       setRulePresetSnapshot((current) => syncRulePresetSnapshot(current, nextRules));
       setScenes((currentScenes) => unifyCampaignScenes(currentScenes, nextRules));
@@ -133,14 +172,16 @@ export function createCampaignActions({ scenes, campaignRules, rulePresetSnapsho
       if (!preset?.rules) return;
       const nextRules = normalizeCampaignRules(preset.rules);
       setCampaignRules(nextRules);
+      setCampaignProfile({});
       setRulePresetSnapshot(createRulePresetSnapshot(preset, nextRules));
       setScenes((currentScenes) => unifyCampaignScenes(currentScenes, nextRules));
     },
+    applyCampaignProfile,
     async exportCampaign(name = campaignName) {
       const exportName = normalizeCampaignName(name);
       const rules = normalizeCampaignRules(campaignRules);
       const exportScenes = unifyCampaignScenes(scenes, rules);
-      const result = await shareOrDownloadCampaign(serializeCampaign(exportScenes, dark, exportName, templateStore, rules, rulePresetSnapshot, {}, randomSystemState), exportName);
+      const result = await shareOrDownloadCampaign(serializeCampaign(exportScenes, dark, exportName, templateStore, rules, rulePresetSnapshot, {}, randomSystemState, campaignProfile), exportName);
       if (result?.ok) setCampaignNameState(exportName);
       return result;
     },
@@ -150,6 +191,7 @@ export function createCampaignActions({ scenes, campaignRules, rulePresetSnapsho
         if (!isValidCampaign(data)) return { ok: false, message: t('campaign.error.invalidCadenceFileDetailed', { fileName: file?.name || t('campaign.file.unnamed'), fileType: file?.type || t('campaign.file.unknownType'), fileSize: file?.size || 0 }) };
         const campaign = normalizeCampaignPayload(data);
         setCampaignRules(campaign.initiativeRules);
+        setCampaignProfile(campaign.campaignProfile || {});
         setRulePresetSnapshot(campaign.rulePresetSnapshot || null);
         setScenes(campaign.scenes);
         setCampaignNameState(campaignNameFromPayload(campaign));

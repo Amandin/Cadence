@@ -18,6 +18,7 @@ import {
   defaultSurpriseAdvanceOn,
   defaultSurpriseDedicatedRound,
   defaultSurpriseImpact,
+  defaultTacticalRole,
   defaultTiebreakerLabel,
   defaultTiebreakerVisible,
   defaultTemporalityMode,
@@ -25,6 +26,7 @@ import {
   legacyParticipantKinds,
   multipleActionModes,
   phaseActionModes,
+  tacticalRoles,
   temporalityModes,
 } from './constants.js';
 import { campaignRulesFromPayload, normalizeCampaignRules, unifyCampaignScenes } from './domain/campaignRules.js';
@@ -102,12 +104,20 @@ function normalizeKind(kind) {
   return typeof normalized === 'string' && normalized.trim() ? normalized : 'Environnement';
 }
 
+function normalizeTacticalRole(role) {
+  return tacticalRoles.includes(role) ? role : defaultTacticalRole;
+}
+
 function normalizeQuickStat(stat) {
   if (isPlainObject(stat)) {
     const label = stringOr(stat.label || stat.titre).trim();
     const value = stringOr(stat.value || stat.valeur).trim();
     if (!label && !value) return null;
-    return { label, value, editable: booleanOr(stat.editable) };
+    const quickRollDefinitionId = stringOr(stat.quickRollDefinitionId).trim();
+    const quickRoll = booleanOr(stat.quickRollEnabled) && quickRollDefinitionId
+      ? { quickRollEnabled: true, quickRollDefinitionId, quickRollParameters: isPlainObject(stat.quickRollParameters) ? stat.quickRollParameters : {}, quickRollOptions: isPlainObject(stat.quickRollOptions) ? stat.quickRollOptions : {} }
+      : {};
+    return { label, value, editable: booleanOr(stat.editable), ...quickRoll };
   }
   const text = String(stat || '').trim();
   return text ? text : null;
@@ -287,6 +297,7 @@ export function normalizeCampaignParticipant(participant, { reserve = false } = 
     id: stringOr(participant.id, uid('p')),
     name: stringOr(participant.name, t('templates.fallback.character')),
     kind: normalizeKind(participant.kind),
+    tacticalRole: normalizeTacticalRole(participant.tacticalRole),
     symbol: stringOr(participant.symbol, defaultMechanicalSymbol),
     color: stringOr(participant.color, 'slate'),
     initiative,
@@ -369,7 +380,25 @@ export function rulePresetSnapshotFromPayload(data, activeRules = null) {
   return normalizeRulePresetSnapshot(data?.rulePresetSnapshot, activeRules);
 }
 
-export function createCampaignPayload(scenes, dark, campaignName = DEFAULT_CAMPAIGN_NAME, templates, initiativeRules, rulePresetSnapshot = null, campaignMeta = {}, randomSystemState = null) {
+function normalizeCampaignProfile(source = {}) {
+  const randomQuickRollProfileIds = Array.isArray(source?.randomQuickRollProfileIds)
+    ? [...new Set(source.randomQuickRollProfileIds.map((profileId) => stringOr(profileId).trim()).filter(Boolean))]
+    : [];
+  return {
+    systemProfileId: stringOr(source?.systemProfileId).trim(),
+    editionId: stringOr(source?.editionId).trim(),
+    initiativeProfileId: stringOr(source?.initiativeProfileId).trim(),
+    randomQuickRollProfileIds,
+  };
+}
+
+export function campaignProfileFromPayload(data = {}) {
+  const profile = data?.campaignProfile;
+  if (isPlainObject(profile)) return normalizeCampaignProfile(profile);
+  return normalizeCampaignProfile(data?.rulePresetSnapshot);
+}
+
+export function createCampaignPayload(scenes, dark, campaignName = DEFAULT_CAMPAIGN_NAME, templates, initiativeRules, rulePresetSnapshot = null, campaignMeta = {}, randomSystemState = null, campaignProfile = null) {
   const safeScenes = normalizeCampaignScenes(scenes);
   const rules = normalizeCampaignRules(initiativeRules || campaignRulesFromPayload({ scenes: safeScenes }));
   const name = normalizeCampaignName(campaignMeta.name || campaignName);
@@ -388,6 +417,7 @@ export function createCampaignPayload(scenes, dark, campaignName = DEFAULT_CAMPA
     version: APP_VERSION,
     savedAt: new Date().toISOString(),
     initiativeRules: rules,
+    campaignProfile: normalizeCampaignProfile(campaignProfile || rulePresetSnapshot),
     rulePresetSnapshot: rulePresetSnapshotFromPayload({ rulePresetSnapshot }, rules),
     scenes: unifyCampaignScenes(safeScenes, rules),
     templates: exportedTemplateStore(templates),
@@ -437,6 +467,7 @@ export function normalizeCampaignPayload(data) {
     version: APP_VERSION,
     savedAt: typeof data?.savedAt === 'string' ? data.savedAt : new Date().toISOString(),
     initiativeRules,
+    campaignProfile: campaignProfileFromPayload(data),
     rulePresetSnapshot: rulePresetSnapshotFromPayload(data, initiativeRules),
     scenes: unifyCampaignScenes(sourceScenes, initiativeRules),
     templates: campaignTemplatesFromPayload(data),
@@ -455,12 +486,12 @@ export function loadCampaign() {
   return normalizeCampaignPayload(makeDefaultCampaign());
 }
 
-export function saveCampaign(scenes, dark, campaignName, templates, initiativeRules, rulePresetSnapshot = null, campaignMeta = {}, randomSystemState = null) {
-  writeLocalCampaignPayload(STORAGE_KEY, createCampaignPayload(scenes, dark, campaignName, templates, initiativeRules, rulePresetSnapshot, campaignMeta, randomSystemState));
+export function saveCampaign(scenes, dark, campaignName, templates, initiativeRules, rulePresetSnapshot = null, campaignMeta = {}, randomSystemState = null, campaignProfile = null) {
+  writeLocalCampaignPayload(STORAGE_KEY, createCampaignPayload(scenes, dark, campaignName, templates, initiativeRules, rulePresetSnapshot, campaignMeta, randomSystemState, campaignProfile));
 }
 
-export function serializeCampaign(scenes, dark, campaignName, templates, initiativeRules, rulePresetSnapshot = null, campaignMeta = {}, randomSystemState = null) {
-  return JSON.stringify(createCampaignPayload(scenes, dark, campaignName, templates, initiativeRules, rulePresetSnapshot, campaignMeta, randomSystemState), null, 2);
+export function serializeCampaign(scenes, dark, campaignName, templates, initiativeRules, rulePresetSnapshot = null, campaignMeta = {}, randomSystemState = null, campaignProfile = null) {
+  return JSON.stringify(createCampaignPayload(scenes, dark, campaignName, templates, initiativeRules, rulePresetSnapshot, campaignMeta, randomSystemState, campaignProfile), null, 2);
 }
 
 function hasScenes(data) {
