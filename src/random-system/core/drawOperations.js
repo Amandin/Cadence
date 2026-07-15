@@ -11,7 +11,8 @@ export function appliesToDraw(step, draw) {
 
 export function isStepEnabled(step, options) {
   if (!step.enabledWhen) return true;
-  return options[step.enabledWhen.optionId] === step.enabledWhen.equals;
+  const conditions = Array.isArray(step.enabledWhen) ? step.enabledWhen : [step.enabledWhen];
+  return conditions.every((condition) => options[condition.optionId] === condition.equals);
 }
 
 function makeDraw(component, source, outcome, initialIndex, chainIndex, idSequence, extra = {}) {
@@ -39,6 +40,10 @@ export function drawInitialComponents(context, rng, groupIndex) {
   const draws = [];
   let idSequence = groupIndex * 100000;
   for (const component of context.definition.components) {
+    const componentConditions = Array.isArray(component.enabledWhen)
+      ? component.enabledWhen
+      : component.enabledWhen ? [component.enabledWhen] : [];
+    if (!componentConditions.every((condition) => context.options[condition.optionId] === condition.equals)) continue;
     const sourceId = String(resolveValue(component.source, context.parameters, ''));
     const source = context.sourceMap.get(sourceId);
     if (!source) {

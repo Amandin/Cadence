@@ -1097,3 +1097,16 @@
   }
 
 }
+.rs-code-mode {
+  margin: 16px 0;
+  max-width: 360px;
+}
+
+.rs-code-editor textarea {
+  width: 100%;
+  min-height: 180px;
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  line-height: 1.5;
+  tab-size: 2;
+}

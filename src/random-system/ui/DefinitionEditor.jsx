@@ -7,6 +7,7 @@ import {
   createDefinitionDraft,
   definitionToDraft,
 } from '../definitionBuilder.js';
+import { compileRollCode } from '../rollCode.js';
 import { definitionIsReferenced } from '../combinations.js';
 import { randomDefinitionVisuals } from '../definitionVisuals.js';
 import { createResourceId } from '../resourceIds.js';
@@ -68,13 +69,21 @@ export function DefinitionEditor({ definitions, sources, rulePool, actions, onOp
   const [selectedId, setSelectedId] = useState(definitions[0]?.id || '');
   const selected = definitions.find((item) => item.id === selectedId) || null;
   const [draft, setDraft] = useState(() => definitionToDraft(selected, sources));
+  const [editorMode, setEditorMode] = useState(() => (selected?.code ? 'code' : 'guided'));
+  const [rollCode, setRollCode] = useState(() => selected?.code || '1d20');
   useEffect(() => {
-    if (selected) setDraft(definitionToDraft(selected, sources));
+    if (selected) {
+      setDraft(definitionToDraft(selected, sources));
+      setEditorMode(selected.code ? 'code' : 'guided');
+      setRollCode(selected.code || '1d20');
+    }
   }, [selected, sources]);
 
   const newDefinition = () => {
     setSelectedId('');
     setDraft(createDefinitionDraft(sources, definitions));
+    setEditorMode('guided');
+    setRollCode('1d20');
   };
   const duplicateDefinition = () => {
     const next = {
@@ -90,7 +99,17 @@ export function DefinitionEditor({ definitions, sources, rulePool, actions, onOp
     setDraft(next);
   };
   const save = () => {
-    const saved = actions.saveDefinition(buildRandomDefinition(draft));
+    const definition = editorMode === 'code' && draft.kind === builderDefinitionKinds.ROLL
+      ? compileRollCode(rollCode, {
+        id: draft.id,
+        name: draft.name,
+        visualId: draft.visualId,
+        exposed: draft.exposed,
+        active: draft.active,
+        sources,
+      })
+      : buildRandomDefinition(draft);
+    const saved = actions.saveDefinition(definition);
     setSelectedId(saved.id);
   };
   const remove = () => {
@@ -134,11 +153,19 @@ export function DefinitionEditor({ definitions, sources, rulePool, actions, onOp
   const selectedIsReferenced = selected
     ? definitionIsReferenced(definitions, selected.id)
     : false;
-  const definitionIsValid = draft.kind !== builderDefinitionKinds.COMBINATION
+  let codeError = '';
+  if (editorMode === 'code' && draft.kind === builderDefinitionKinds.ROLL) {
+    try {
+      compileRollCode(rollCode, { id: draft.id, name: draft.name, sources });
+    } catch (error) {
+      codeError = `${error.message}${Number.isFinite(error.position) ? ` (position ${error.position + 1})` : ''}`;
+    }
+  }
+  const definitionIsValid = !codeError && (draft.kind !== builderDefinitionKinds.COMBINATION
     || (
       draft.combination.choices.length > 0
       && draft.combination.choices.every((choice) => choice.definitionId)
-    );
+    ));
   const definitionGroups = useMemo(() => ({
     exposed: definitions.filter((definition) => definition.exposed !== false),
     internal: definitions.filter((definition) => definition.exposed === false),
@@ -244,6 +271,20 @@ export function DefinitionEditor({ definitions, sources, rulePool, actions, onOp
         </div>
         {draft.kind === builderDefinitionKinds.ROLL ? (
           <>
+            <div className="rs-segmented rs-code-mode" aria-label={t('random.definition.editorMode')}>
+              <button type="button" className={editorMode === 'guided' ? 'selected' : ''} onClick={() => setEditorMode('guided')}>{t('random.definition.guidedMode')}</button>
+              <button type="button" className={editorMode === 'code' ? 'selected' : ''} onClick={() => setEditorMode('code')}>{t('random.definition.codeMode')}</button>
+            </div>
+            {editorMode === 'code' ? (
+              <section className="rs-code-editor">
+                <label className="field">
+                  {t('random.definition.rollCode')}
+                  <textarea rows="8" spellCheck="false" value={rollCode} onChange={(event) => setRollCode(event.target.value)} />
+                </label>
+                <p className="muted compact-help">{t('random.definition.rollCodeHelp')}</p>
+                {codeError && <p className="rule-warning" role="alert">{codeError}</p>}
+              </section>
+            ) : <>
             <div className="rs-components">
               <div className="rs-subhead">
                 <h3>{t('random.definition.groups')}</h3>
@@ -268,6 +309,7 @@ export function DefinitionEditor({ definitions, sources, rulePool, actions, onOp
               ))}
             </div>
             <CalculationEditor draft={draft} rulePool={rulePool} setDraft={setDraft} sources={sources} />
+            </>}
           </>
         ) : (
           <CombinationEditor

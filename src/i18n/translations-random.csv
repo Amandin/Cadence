@@ -81,6 +81,9 @@ random.tabs.statistics,Statistiques
 random.resource.rolls,Lancers
 random.resource.cards,Cartes
 random.use.run,Lancer
+random.use.recursive.instance,Jet {index}
+random.use.recursive.add,Ajouter un jet
+random.use.recursive.remove,Retirer
 random.quick.title,Lancer les dés
 random.quick.open,Ouvrir le lanceur de dés
 random.quick.type,Type de lancer
@@ -327,6 +330,11 @@ random.deck.remaining,{count} restantes
 random.definition.linkedTable,Relier le résultat à une table
 random.definition.linkedTableSource,Source liée
 random.definition.linkedTableLabel,Libellé affiché
+random.definition.editorMode,Mode d’édition
+random.definition.guidedMode,Guidé
+random.definition.codeMode,Code expert
+random.definition.rollCode,Code du jet
+random.definition.rollCodeHelp,Déclare des variables number ou source puis écris le calcul. Exemple : number bonus = 2; source dé = d6; 1d10! + 5d@dé - 3d4k2 + [bonus]
 random.deck.discardPile,Défausse
 random.deck.discardSummary,Défausse · {count}
 random.cards.drawMode,Mode de tirage

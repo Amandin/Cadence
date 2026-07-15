@@ -21,11 +21,24 @@ function normalizeParameter(parameter, index) {
   const type = Object.values(randomParameterTypes).includes(parameter?.type)
     ? parameter.type
     : randomParameterTypes.NUMBER;
+  const choices = type === randomParameterTypes.SOURCE
+    ? [...new Set((Array.isArray(parameter?.choices) ? parameter.choices : [])
+      .map((choice) => String(choice || '').trim())
+      .filter(Boolean))]
+    : [];
+  const requestedDefault = parameter?.defaultValue ?? (type === randomParameterTypes.SOURCE ? '' : 0);
+  const prompt = type !== randomParameterTypes.SOURCE && parameter?.prompt === true;
   return {
     id: cleanId(parameter?.id, `parameter-${index + 1}`),
     label: cleanLabel(parameter?.label, `Paramètre ${index + 1}`),
     type,
-    defaultValue: parameter?.defaultValue ?? (type === randomParameterTypes.SOURCE ? '' : 0),
+    defaultValue: prompt
+      ? ''
+      : type === randomParameterTypes.SOURCE && choices.length && !choices.includes(String(requestedDefault))
+      ? choices[0]
+      : requestedDefault,
+    prompt,
+    choices,
     min: Number.isFinite(Number(parameter?.min)) ? Number(parameter.min) : undefined,
     max: Number.isFinite(Number(parameter?.max)) ? Number(parameter.max) : undefined,
     required: parameter?.required !== false,
@@ -78,7 +91,18 @@ function normalizeComponent(component, index) {
     color,
     source: normalizeValueReference(component?.source, ''),
     count: normalizeValueReference(component?.count, 1),
+    enabledWhen: normalizeEnabledWhen(component?.enabledWhen),
   };
+}
+
+function normalizeEnabledWhen(value) {
+  const source = Array.isArray(value) ? value : value ? [value] : [];
+  const conditions = source.filter((condition) => condition?.optionId).map((condition) => ({
+    optionId: String(condition.optionId),
+    equals: primitiveValue(condition.equals ?? true),
+  }));
+  if (!conditions.length) return null;
+  return conditions.length === 1 ? conditions[0] : conditions;
 }
 
 function normalizePipelineStep(step, index) {
@@ -89,12 +113,7 @@ function normalizePipelineStep(step, index) {
     componentIds: Array.isArray(step?.componentIds)
       ? step.componentIds.map((id) => String(id))
       : [],
-    enabledWhen: step?.enabledWhen?.optionId
-      ? {
-        optionId: String(step.enabledWhen.optionId),
-        equals: primitiveValue(step.enabledWhen.equals ?? true),
-      }
-      : null,
+    enabledWhen: normalizeEnabledWhen(step?.enabledWhen),
   };
 }
 
@@ -115,11 +134,13 @@ export function normalizeRandomDefinition(definition, index = 0) {
     active: definition?.active !== undefined
       ? definition.active !== false
       : kind === randomDefinitionKinds.COMBINATION || definition?.exposed !== false,
+    recursive: definition?.recursive === true,
     parameters: (Array.isArray(definition?.parameters) ? definition.parameters : []).map(normalizeParameter),
     options: (Array.isArray(definition?.options) ? definition.options : []).map(normalizeOption),
     components: (Array.isArray(definition?.components) ? definition.components : []).map(normalizeComponent),
     pipeline: (Array.isArray(definition?.pipeline) ? definition.pipeline : []).map(normalizePipelineStep),
     primaryAggregateId: cleanId(definition?.primaryAggregateId, ''),
+    code: typeof definition?.code === 'string' ? definition.code : '',
   };
 }
 
@@ -133,7 +154,21 @@ function normalizeParameterValue(parameter, value, sourceMap) {
         { parameterId: parameter.id, sourceId },
       );
     }
+    if (parameter.choices.length && !parameter.choices.includes(sourceId)) {
+      throw new RandomSystemError(
+        'invalid-source-choice',
+        `La source choisie pour « ${parameter.label} » ne fait pas partie de la preselection.`,
+        { parameterId: parameter.id, sourceId, choices: parameter.choices },
+      );
+    }
     return sourceId;
+  }
+  if (parameter.prompt && (value === '' || value === null || value === undefined)) {
+    throw new RandomSystemError(
+      'missing-number-parameter',
+      `Une valeur est demandee pour « ${parameter.label} ».`,
+      { parameterId: parameter.id },
+    );
   }
   if (parameter.type === randomParameterTypes.INTEGER) {
     const min = parameter.min ?? -MAX_DRAWS_PER_COMPONENT;

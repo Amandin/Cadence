@@ -42,6 +42,7 @@ export const DefinitionForm = memo(function DefinitionForm({
   hideRun = false,
 }) {
   const [inputs, setInputs] = useState(() => initialInputs(definition, { parameters: initialParameters, options: initialOptions }));
+  const [additionalInputs, setAdditionalInputs] = useState([]);
   const [error, setError] = useState('');
   const combination = useMemo(() => definitionCombination(definition), [definition]);
   const combinationValue = combination
@@ -73,6 +74,7 @@ export const DefinitionForm = memo(function DefinitionForm({
 
   useEffect(() => {
     setInputs(initialInputs(definition, { parameters: initialParameters, options: initialOptions }));
+    setAdditionalInputs([]);
     setError('');
   }, [definition, initialOptions, initialParameters]);
   useEffect(() => {
@@ -92,24 +94,50 @@ export const DefinitionForm = memo(function DefinitionForm({
     }));
   }, [targetDefinition, targetOptions]);
 
-  const setParameter = (id, value) => {
-    setInputs((current) => {
-      const next = { ...current, parameters: { ...current.parameters, [id]: value } };
-      onInputsChange?.(next);
-      return next;
+  const setParameter = (instanceIndex, id, value) => {
+    const update = (current) => ({
+      ...current,
+      parameters: { ...current.parameters, [id]: value },
     });
+    if (instanceIndex === 0) {
+      setInputs((current) => {
+        const next = update(current);
+        onInputsChange?.(next);
+        return next;
+      });
+      return;
+    }
+    setAdditionalInputs((current) => current.map((item, index) => (
+      index === instanceIndex - 1 ? update(item) : item
+    )));
   };
-  const setOption = (id, value) => {
-    setInputs((current) => {
-      const next = { ...current, options: { ...current.options, [id]: value } };
-      onInputsChange?.(next);
-      return next;
+  const setOption = (instanceIndex, id, value) => {
+    const update = (current) => ({
+      ...current,
+      options: { ...current.options, [id]: value },
     });
+    if (instanceIndex === 0) {
+      setInputs((current) => {
+        const next = update(current);
+        onInputsChange?.(next);
+        return next;
+      });
+      return;
+    }
+    setAdditionalInputs((current) => current.map((item, index) => (
+      index === instanceIndex - 1 ? update(item) : item
+    )));
   };
+  const inputInstances = definition.recursive ? [inputs, ...additionalInputs] : [inputs];
   const run = () => {
     try {
       setError('');
-      onRun(definition.id, inputs.parameters, inputs.options);
+      onRun(
+        definition.id,
+        inputs.parameters,
+        inputs.options,
+        definition.recursive ? inputInstances : undefined,
+      );
     } catch (nextError) {
       setError(nextError?.message || t('random.error.generic'));
     }
@@ -127,41 +155,72 @@ export const DefinitionForm = memo(function DefinitionForm({
           {definition.note && <span>{definition.note}</span>}
         </div>
       </div>}
-      <div className="rs-input-grid">
-        {targetDefinition.parameters.map((parameter) => (
-          <label className="field" key={parameter.id}>
-            {parameter.label}
-            {parameter.type === randomParameterTypes.SOURCE ? (
-              <select value={inputs.parameters[parameter.id] ?? ''} onChange={(event) => setParameter(parameter.id, event.target.value)}>
-                {sources.map((source) => <option value={source.id} key={source.id}>{source.name}</option>)}
-              </select>
-            ) : (
-              <input
-                type={parameter.type === randomParameterTypes.TEXT ? 'text' : 'number'}
-                min={parameter.min}
-                max={parameter.max}
-                value={inputs.parameters[parameter.id] ?? ''}
-                onChange={(event) => setParameter(parameter.id, event.target.value)}
-              />
+      <div className={definition.recursive ? 'rs-recursive-inputs' : ''}>
+        {inputInstances.map((instanceInputs, instanceIndex) => (
+          <section className={definition.recursive ? 'rs-recursive-instance' : ''} key={instanceIndex}>
+            {definition.recursive && (
+              <div className="rs-recursive-instance-head">
+                <strong>{t('random.use.recursive.instance', { index: instanceIndex + 1 })}</strong>
+                {instanceIndex > 0 && (
+                  <button
+                    type="button"
+                    className="small-btn"
+                    onClick={() => setAdditionalInputs((current) => current.filter((_, index) => index !== instanceIndex - 1))}
+                  >
+                    {t('random.use.recursive.remove')}
+                  </button>
+                )}
+              </div>
             )}
-          </label>
-        ))}
-        {visibleOptions.map((option) => (
-          option.type === randomOptionTypes.CHOICE ? (
-            <ChoiceOptionControl
-              option={option}
-              value={inputs.options[option.id]}
-              onChange={(value) => setOption(option.id, value)}
-              key={option.id}
-            />
-          ) : (
-            <label className={`global-switch rs-option-toggle ${inputs.options[option.id] ? 'active' : ''}`} key={option.id}>
-              <span>{option.label}</span>
-              <input type="checkbox" checked={!!inputs.options[option.id]} onChange={(event) => setOption(option.id, event.target.checked)} />
-            </label>
-          )
+            <div className="rs-input-grid">
+              {targetDefinition.parameters.map((parameter) => (
+                <label className="field" key={parameter.id}>
+                  {parameter.label}
+                  {parameter.type === randomParameterTypes.SOURCE ? (
+                    <select value={instanceInputs.parameters[parameter.id] ?? ''} onChange={(event) => setParameter(instanceIndex, parameter.id, event.target.value)}>
+                      {sources
+                        .filter((source) => !parameter.choices?.length || parameter.choices.includes(source.id))
+                        .map((source) => <option value={source.id} key={source.id}>{source.name}</option>)}
+                    </select>
+                  ) : (
+                    <input
+                      type={parameter.type === randomParameterTypes.TEXT ? 'text' : 'number'}
+                      min={parameter.min}
+                      max={parameter.max}
+                      value={instanceInputs.parameters[parameter.id] ?? ''}
+                      onChange={(event) => setParameter(instanceIndex, parameter.id, event.target.value)}
+                    />
+                  )}
+                </label>
+              ))}
+              {visibleOptions.map((option) => (
+                option.type === randomOptionTypes.CHOICE ? (
+                  <ChoiceOptionControl
+                    option={option}
+                    value={instanceInputs.options[option.id]}
+                    onChange={(value) => setOption(instanceIndex, option.id, value)}
+                    key={option.id}
+                  />
+                ) : (
+                  <label className={`global-switch rs-option-toggle ${instanceInputs.options[option.id] ? 'active' : ''}`} key={option.id}>
+                    <span>{option.label}</span>
+                    <input type="checkbox" checked={!!instanceInputs.options[option.id]} onChange={(event) => setOption(instanceIndex, option.id, event.target.checked)} />
+                  </label>
+                )
+              ))}
+            </div>
+          </section>
         ))}
       </div>
+      {definition.recursive && additionalInputs.length < 19 && (
+        <button
+          type="button"
+          className="small-btn rs-add-recursive-instance"
+          onClick={() => setAdditionalInputs((current) => [...current, initialInputs(targetDefinition)])}
+        >
+          {t('random.use.recursive.add')}
+        </button>
+      )}
       {error && <p className="rs-error" role="alert">{error}</p>}
       {!hideRun && <button type="button" className="primary rs-run-button" onClick={run}>{runLabel}</button>}
     </section>

@@ -503,7 +503,9 @@ function definitionSourceIds(definition) {
     ...(definition.components || []).flatMap((component) => {
       if (component.source?.kind === 'fixed') return [component.source.value];
       const parameter = (definition.parameters || []).find((item) => item.id === component.source?.parameterId);
-      return parameter?.type === 'source' ? [parameter.defaultValue] : [];
+      return parameter?.type === 'source'
+        ? [parameter.defaultValue, ...(parameter.choices || [])]
+        : [];
     }),
     ...(definition.pipeline || []).filter((step) => step.type === randomPipelineStepTypes.LOOKUP_TABLE).map((step) => step.sourceId),
   ].filter(Boolean);

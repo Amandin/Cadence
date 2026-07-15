@@ -37,11 +37,14 @@ function upsertById(items, item) {
 function definitionUsesSource(definition, sourceId) {
   return definition.components.some((component) => (
     (component.source.kind === 'fixed' && component.source.value === sourceId)
-    || definition.parameters.some((parameter) => parameter.type === 'source' && parameter.defaultValue === sourceId)
+    || definition.parameters.some((parameter) => (
+      parameter.type === 'source'
+      && (parameter.defaultValue === sourceId || parameter.choices?.includes(sourceId))
+    ))
   )) || definition.pipeline.some((step) => step.type === 'lookup-table' && step.sourceId === sourceId);
 }
 
-export function executeDefinitionFromState(state, definitionId, parameters, options) {
+export function executeDefinitionFromState(state, definitionId, parameters, options, instances) {
   const definition = (state?.definitions || []).find((item) => item.id === definitionId);
   if (!definition) return null;
   const prepared = prepareCombinedDefinition(definition, state.definitions, options);
@@ -50,6 +53,7 @@ export function executeDefinitionFromState(state, definitionId, parameters, opti
     sources: state.sources.filter((source) => source.kind !== randomSourceKinds.CARDS),
     parameters,
     options,
+    instances,
   });
 }
 
@@ -90,12 +94,12 @@ export function useRandomSystem(controlled = {}) {
     };
   }, [controlledMode, state]);
 
-  const runDefinitionTransient = useCallback((definitionId, parameters, options) => {
-    return executeDefinitionFromState(stateRef.current, definitionId, parameters, options);
+  const runDefinitionTransient = useCallback((definitionId, parameters, options, instances) => {
+    return executeDefinitionFromState(stateRef.current, definitionId, parameters, options, instances);
   }, []);
 
-  const runDefinition = useCallback((definitionId, parameters, options) => {
-    const result = runDefinitionTransient(definitionId, parameters, options);
+  const runDefinition = useCallback((definitionId, parameters, options, instances) => {
+    const result = runDefinitionTransient(definitionId, parameters, options, instances);
     if (!result) return null;
     const current = stateRef.current;
     const next = recordRandomResult(current, result);

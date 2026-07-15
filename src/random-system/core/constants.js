@@ -40,6 +40,7 @@ export const randomPipelineStepTypes = {
   AGGREGATE: 'aggregate',
   OCCURRENCE_BONUS: 'occurrence-bonus',
   MODIFIER: 'modifier',
+  EXPRESSION: 'expression',
 };
 
 export const randomAggregateOperations = {

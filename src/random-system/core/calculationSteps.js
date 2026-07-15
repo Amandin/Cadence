@@ -9,6 +9,9 @@ import { appliesToDraw } from './drawOperations.js';
 import { resolveValue } from './references.js';
 import { sourceOutcomes } from './sources.js';
 import { boundedInteger, cleanId, cleanLabel, finiteNumber } from './utils.js';
+import { RandomSystemError } from './errors.js';
+
+const NO_EXPRESSION_VALUE = Symbol('no-expression-value');
 
 export function mapDrawValues(drawState, step, context) {
   const mappings = Array.isArray(step.mappings) ? step.mappings : [];
@@ -130,6 +133,124 @@ export function applyModifier(drawState, step, context) {
     label: cleanLabel(step.label, 'Modificateur'),
     value: modifier,
   }];
+}
+
+function expressionValue(node, drawState, context) {
+  if (!node || typeof node !== 'object') return 0;
+  if (node.type === 'none') return NO_EXPRESSION_VALUE;
+  if (node.type === 'number') return finiteNumber(node.value, 0);
+  if (node.type === 'parameter') {
+    return finiteNumber(context.parameters[node.parameterId], 0);
+  }
+  if (node.type === 'roll') {
+    const candidates = drawState.draws.filter((draw) => (
+        !draw.rerolled
+        && draw.kept !== false
+        && draw.componentId === node.componentId
+      ));
+    if (node.condition) {
+      return candidates.reduce((sum, draw) => (
+        sum + (matchesCondition(draw, node.condition, context) ? 1 : 0)
+      ), 0);
+    }
+    if (node.collapse) {
+      const chains = candidates.reduce((groups, draw) => {
+        const chain = groups.get(draw.initialIndex) || [];
+        chain.push(draw);
+        groups.set(draw.initialIndex, chain);
+        return groups;
+      }, new Map());
+      return Array.from(chains.values()).reduce((total, chain) => {
+        const collapsed = chain.some((draw) => (
+          draw.chainIndex > 0 && matchesCondition(draw, node.collapse.condition, context)
+        ));
+        return total + (collapsed
+          ? finiteNumber(resolveValue(node.collapse.value, context.parameters, 1), 1)
+          : chain.reduce((sum, draw) => sum + (numericDrawValue(draw) ?? 0), 0));
+      }, 0);
+    }
+    return candidates.reduce((sum, draw) => sum + (numericDrawValue(draw) ?? 0), 0);
+  }
+  if (node.type === 'unary') {
+    const value = expressionValue(node.value, drawState, context);
+    if (value === NO_EXPRESSION_VALUE) return value;
+    return node.operator === '-' ? -value : value;
+  }
+  if (node.type === 'select') {
+    const candidates = (node.choices || []).map((choice, index) => ({
+      choice,
+      index,
+      value: expressionValue(choice, drawState, context),
+    }));
+    candidates.forEach((candidate) => {
+      if (candidate.value === NO_EXPRESSION_VALUE) candidate.value = 0;
+    });
+    const count = boundedInteger(
+      resolveValue(node.count, context.parameters, 1),
+      0,
+      candidates.length,
+      1,
+    );
+    const direction = node.order === randomKeepOrders.LOWEST ? 1 : -1;
+    const selected = new Set([...candidates]
+      .sort((left, right) => ((left.value - right.value) * direction) || (left.index - right.index))
+      .slice(0, count)
+      .map((candidate) => candidate.index));
+    const componentIds = (candidate) => {
+      if (!candidate || typeof candidate !== 'object') return [];
+      if (candidate.type === 'roll') return [candidate.componentId];
+      if (candidate.type === 'binary') return [...componentIds(candidate.left), ...componentIds(candidate.right)];
+      if (candidate.type === 'unary') return componentIds(candidate.value);
+      if (candidate.type === 'select') return candidate.choices.flatMap(componentIds);
+      return [];
+    };
+    candidates.forEach((candidate) => {
+      if (selected.has(candidate.index)) return;
+      const discardedComponents = new Set(componentIds(candidate.choice));
+      drawState.draws.forEach((draw) => {
+        if (discardedComponents.has(draw.componentId)) draw.kept = false;
+      });
+    });
+    return candidates
+      .filter((candidate) => selected.has(candidate.index))
+      .reduce((sum, candidate) => sum + candidate.value, 0);
+  }
+  if (node.type === 'choice') {
+    const selectedValue = context.options[node.optionId] ?? node.defaultValue;
+    const selected = node.choices.find((choice) => choice.value === selectedValue)
+      || node.choices[0];
+    return selected ? expressionValue(selected.expression, drawState, context) : 0;
+  }
+  if (node.type === 'binary') {
+    const left = expressionValue(node.left, drawState, context);
+    const right = expressionValue(node.right, drawState, context);
+    if (left === NO_EXPRESSION_VALUE) return right;
+    if (right === NO_EXPRESSION_VALUE) return left;
+    if (node.operator === '+') return left + right;
+    if (node.operator === '-') return left - right;
+    if (node.operator === '*') return left * right;
+    if (node.operator === '/') {
+      if (right === 0) throw new RandomSystemError('division-by-zero', 'Division par zero dans le code du jet.');
+      return left / right;
+    }
+    if (node.operator === '%') {
+      if (right === 0) throw new RandomSystemError('division-by-zero', 'Modulo par zero dans le code du jet.');
+      return left % right;
+    }
+  }
+  throw new RandomSystemError('invalid-expression', 'Expression de jet invalide.');
+}
+
+export function applyExpression(drawState, step, context) {
+  const expressionResult = expressionValue(step.expression, drawState, context);
+  const value = expressionResult === NO_EXPRESSION_VALUE ? 0 : expressionResult;
+  const aggregate = {
+    id: cleanId(step.outputId, step.id),
+    label: cleanLabel(step.label, 'Resultat'),
+    operation: randomPipelineStepTypes.EXPRESSION,
+    value,
+  };
+  drawState.aggregates.set(aggregate.id, aggregate);
 }
 
 function outcomeMatchesValue(outcome, targetValue) {

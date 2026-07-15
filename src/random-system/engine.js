@@ -29,3 +29,4 @@ export {
   resolveDefinitionInputs,
 } from './core/definitions.js';
 export { executeRandomDefinition } from './core/execute.js';
+export { compileRollCode, parseRollCode, RollCodeError } from './rollCode.js';

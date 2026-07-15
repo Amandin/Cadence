@@ -5,6 +5,7 @@ import { randomRuleIds } from '../rulePool.js';
 import { createDefaultRandomSystemState } from '../state.js';
 import { fixedValue, randomAggregateOperations, randomPipelineStepTypes } from '../engine.js';
 import { ensureRandomKitInState } from '../rulePresetKits.js';
+import { compileRollCode } from '../rollCode.js';
 import { CalculationEditor } from './definition/CalculationEditor.jsx';
 import { CalculationFields } from './definition/CalculationFields.jsx';
 import { ComponentEditor } from './definition/ComponentEditor.jsx';
@@ -83,6 +84,21 @@ function combinationDefinitions() {
 }
 
 describe('RandomSystem definition UI', () => {
+  it('shows controls for a recursively repeatable coded roll', () => {
+    const baseState = createDefaultRandomSystemState();
+    const definition = compileRollCode('number mod=0; 1d6+[mod]++', {
+      id: 'recursive-damage',
+      name: 'Dégâts',
+      sources: baseState.sources,
+    });
+    const state = { ...baseState, definitions: [definition] };
+    const html = renderToStaticMarkup(<UsePanel state={state} actions={actions} />);
+
+    expect(html).toContain('Jet 1');
+    expect(html).toContain('Ajouter un jet');
+    expect(html).toContain('mod');
+  });
+
   it('uses a dedicated editor for combined definitions', () => {
     const state = {
       ...createDefaultRandomSystemState(),

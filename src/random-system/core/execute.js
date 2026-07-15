@@ -8,6 +8,7 @@ import {
   applyMarkers,
   applyModifier,
   applyOccurrenceBonus,
+  applyExpression,
   mapDrawValues,
   markSuccesses,
 } from './calculationSteps.js';
@@ -37,6 +38,7 @@ function runGroup(context, steps, rng, groupIndex) {
     if (step.type === randomPipelineStepTypes.AGGREGATE) applyAggregate(drawState, step, context);
     if (step.type === randomPipelineStepTypes.OCCURRENCE_BONUS) applyOccurrenceBonus(drawState, step, context);
     if (step.type === randomPipelineStepTypes.MODIFIER) applyModifier(drawState, step, context);
+    if (step.type === randomPipelineStepTypes.EXPRESSION) applyExpression(drawState, step, context);
     if (step.type === randomPipelineStepTypes.LOOKUP_TABLE) applyTableLookup(drawState, step, context);
   }
   return {
@@ -110,6 +112,7 @@ export function executeRandomDefinition({
   sources,
   parameters = {},
   options = {},
+  instances,
   rng = secureRandomFloat,
   now = Date.now(),
 } = {}) {
@@ -122,15 +125,29 @@ export function executeRandomDefinition({
     );
   }
 
+  const recursiveInputs = context.definition.recursive && Array.isArray(instances) && instances.length
+    ? instances.slice(0, 20)
+    : null;
+  const recursiveContexts = recursiveInputs?.map((instance) => resolveDefinitionInputs(
+    context.definition,
+    sources,
+    instance?.parameters || {},
+    instance?.options || {},
+  ));
+
   const repeatStep = context.definition.pipeline.find((step) => (
     step.type === randomPipelineStepTypes.REPEAT_SELECT && isStepEnabled(step, context.options)
   ));
   const steps = context.definition.pipeline.filter((step) => step.type !== randomPipelineStepTypes.REPEAT_SELECT);
-  const repeat = repeatConfiguration(repeatStep, context.options);
-  const groups = Array.from(
-    { length: repeat.repetitions },
-    (_, groupIndex) => runGroup(context, steps, rng, groupIndex),
-  );
+  const repeat = recursiveContexts
+    ? { repetitions: recursiveContexts.length, select: 'sum', aggregateId: context.definition.primaryAggregateId }
+    : repeatConfiguration(repeatStep, context.options);
+  const groups = recursiveContexts
+    ? recursiveContexts.map((instanceContext, groupIndex) => runGroup(instanceContext, steps, rng, groupIndex))
+    : Array.from(
+      { length: repeat.repetitions },
+      (_, groupIndex) => runGroup(context, steps, rng, groupIndex),
+    );
   const keptGroupIndex = selectedGroupIndex(groups, repeat);
   const combined = repeat.select === 'sum' || repeat.select === 'subtract';
   const selectedGroup = combined ? null : groups[keptGroupIndex];
@@ -150,6 +167,12 @@ export function executeRandomDefinition({
     rolledAt: now,
     parameters: context.parameters,
     options: context.options,
+    ...(recursiveContexts ? {
+      instances: recursiveContexts.map((instanceContext) => ({
+        parameters: instanceContext.parameters,
+        options: instanceContext.options,
+      })),
+    } : {}),
     groups,
     selectedGroupIndex: keptGroupIndex,
     combined,

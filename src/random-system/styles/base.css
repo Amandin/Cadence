@@ -329,6 +329,31 @@
   gap: 0 10px;
 }
 
+.rs-recursive-inputs {
+  display: grid;
+  gap: 10px;
+}
+
+.rs-recursive-instance {
+  padding: 10px;
+  border: 1px solid var(--rs-border);
+  border-radius: var(--radius-control);
+  background: var(--ui-control-bg);
+}
+
+.rs-recursive-instance-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.rs-add-recursive-instance {
+  width: 100%;
+  margin-top: 10px;
+}
+
 .rs-option-toggle {
   align-self: end;
   min-height: 42px;
