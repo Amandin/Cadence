@@ -245,7 +245,7 @@ function CasesSuivi({ suivi, cocher }) {
   const maxParLigne = capaciteParLigne(largeurZone, { taille: 30, espace: 1, reserve: 120, min: 2, max: 12, fallback: 5 });
   const rendreCases = (bloc, ligne) => {
     const rangees = lignesEquilibrees(ligne.boxes, maxParLigne);
-    return <div className="boxes balanced-token-rows">{rangees.map((rangee, rowIndex) => <div className="token-row" key={rowIndex}>{rangee.map((caseSuivi) => { const rank = boxVisualRank(caseSuivi.mark, suivi); return <button key={caseSuivi.id} className={`box mark-${rank} ${rank >= 5 ? 'full' : ''}`} onClick={() => cocher(bloc.id, ligne.id, caseSuivi.id)} aria-label={`${bloc.label} ${ligne.label} case ${caseSuivi.position + 1}`} />; })}</div>)}</div>;
+    return <div className="boxes balanced-token-rows">{rangees.map((rangee, rowIndex) => <div className="token-row" key={rowIndex}>{rangee.map((caseSuivi) => { const rank = boxVisualRank(caseSuivi.mark, suivi); return <button key={caseSuivi.id} className={`box mark-${rank} ${rank >= 5 ? 'full' : ''}`} onClick={() => cocher(bloc.id, ligne.id, caseSuivi.id)} aria-label={t('trackers.boxes.caseAria', { block: bloc.label, line: ligne.label, index: caseSuivi.position + 1 })} />; })}</div>)}</div>;
   };
 
   return <div ref={zoneRef} className="boxes grouped-boxes">{boxBlocks(suivi).map((bloc) => {

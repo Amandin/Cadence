@@ -3,6 +3,12 @@ import baseSource from './translations.csv?raw';
 import randomSource from './translations-random.csv?raw';
 import { getAvailableLocales, t } from './index.js';
 
+const applicationSources = import.meta.glob('../**/*.{js,jsx}', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+});
+
 function parseCsv(text) {
   const rows = [];
   let row = [];
@@ -54,6 +60,46 @@ function placeholders(value) {
 }
 
 describe('i18n', () => {
+  it('traduit toutes les cles litterales affichees par l interface', () => {
+    const translatedKeys = new Set(
+      [baseSource, randomSource].flatMap((source) => parseCsv(source).slice(1).map(([key]) => key)),
+    );
+    const missing = [];
+    const literalTranslation = /(?<![A-Za-z0-9_$])t\(\s*(['"])([a-z][a-zA-Z0-9_.-]+)\1/g;
+
+    Object.entries(applicationSources)
+      .filter(([path]) => !path.includes('.test.'))
+      .forEach(([path, source]) => {
+        for (const match of String(source).matchAll(literalTranslation)) {
+          if (!translatedKeys.has(match[2])) missing.push(`${match[2]} (${path})`);
+        }
+      });
+
+    expect(missing).toEqual([]);
+  });
+
+  it('ne laisse pas de texte produit code en dur dans le JSX', () => {
+    const rawText = [];
+    const textNode = /<[A-Za-z][^>]*>\s*([A-Za-zÀ-ÖØ-öø-ÿ][^<>{}\n]*?)\s*</g;
+    const literalAttribute = /\b(?:aria-label|title|placeholder)=(['"])([^'"{}]*[A-Za-zÀ-ÿ][^'"{}]*)\1/g;
+    const allowedText = new Set(['Cadence', '×']);
+    const developmentPages = ['StyleReferencePage.jsx', 'StyleReferenceSymbols.jsx', 'AdminPresetsPage.jsx', 'AdminPresetsPageForms.jsx'];
+
+    Object.entries(applicationSources)
+      .filter(([path]) => !path.includes('.test.') && !path.includes('.tests/') && !developmentPages.some((page) => path.endsWith(page)))
+      .forEach(([path, source]) => {
+        for (const match of String(source).matchAll(textNode)) {
+          const value = match[1].trim();
+          if (value && !allowedText.has(value)) rawText.push(`${value} (${path})`);
+        }
+        for (const match of String(source).matchAll(literalAttribute)) {
+          if (!/^https?:\/\/\.\.\.$/.test(match[2])) rawText.push(`${match[2]} (${path})`);
+        }
+      });
+
+    expect(rawText).toEqual([]);
+  });
+
   it('garde les fichiers CSV bien formes', () => {
     const sources = [baseSource, randomSource];
     const keys = new Set();
@@ -110,9 +156,9 @@ describe('i18n', () => {
     expect(t('common.loading')).toBe('Chargement');
     expect(t('app.loading.preparing')).toBe('Cadence se prépare...');
     expect(t('errors.title')).toBe('Cadence a rencontré une erreur');
-    expect(t('onboarding.title')).toBe('Choisis comment commencer');
+    expect(t('onboarding.title')).toBe('Configurer les règles de la table');
     expect(t('onboarding.family.system')).toBe('Systèmes');
-    expect(t('onboarding.description')).toContain('famille de mécaniques');
+    expect(t('onboarding.description')).toContain('règles courantes de D&D 5e');
     expect(t('onboarding.presets.systemNote')).toBe('Configurations compatibles, non officielles.');
     expect(t('rules.title')).toBe('Règles d’initiative');
     expect(t('rules.preset.saveTitle')).toBe('Enregistrer le preset');
@@ -121,6 +167,7 @@ describe('i18n', () => {
     expect(t('common.create')).toBe('Créer');
     expect(t('common.remove')).toBe('Retirer');
     expect(t('common.expand')).toBe('Déplier');
+    expect(t('common.validate')).toBe('Valider');
     expect(t('characterAdd.title')).toBe('Ajouter un personnage');
     expect(t('export.defaultName')).toBe('Campagne Cadence');
     expect(t('initiativeCost.defaultParticipant')).toBe('ce personnage');

@@ -181,7 +181,20 @@ function trackerTemplate(id,name,tracker){ if(!tracker) return null; return {id,
 function sceneCounterTemplate(id,name,counter){ if(!counter) return null; return {id,name,createdAt:'demo',counter:clone(counter)}; }
 export function makeTestCampaign(){
   const campaigns = makeDemoCampaigns();
-  const sceneIds = ['scene-test-generique','global-counter','global-clock-loop','global-timer','cases-puces'];
+  const sceneIds = [
+    'scene-test-generique',
+    'global-counter',
+    'global-clock-loop',
+    'global-timer',
+    'cases-puces',
+    'initiative-retours',
+    'regles-classique',
+    'regles-phases',
+    'regles-phases-cochees',
+    'regles-cartes',
+    'regles-declaration',
+    'regles-souple',
+  ];
   const scenes = sceneIds.map((sceneId)=>clone(findDemoScene(campaigns, sceneId))).filter(Boolean);
   const genericScene = findDemoScene(campaigns, 'scene-test-generique');
   const trackerScene = findDemoScene(campaigns, 'cases-puces');
@@ -189,7 +202,7 @@ export function makeTestCampaign(){
   const globalClockScene = findDemoScene(campaigns, 'global-clock-loop');
   const globalTimerScene = findDemoScene(campaigns, 'global-timer');
 
-  return demoCampaign('campagne-test-cadence','Campagne de test',{
+  return demoCampaign('campagne-test-cadence','Campagne de test complète',{
     initiativeRules:{temporalite:temporalityModes.CLASSIC,startRound:0,declarationMode:false,multipleActionSlots:true},
     scenes,
     templates:{

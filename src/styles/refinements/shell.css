@@ -1,0 +1,93 @@
+.header-turn-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.scene-app .top {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  z-index: 40;
+  width: min(620px, calc(100% - 20px));
+  padding: 6px 0 8px;
+  transform: translateX(-50%);
+  background: transparent;
+  backdrop-filter: none;
+  isolation: isolate;
+}
+
+.scene-app .top::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto auto 50%;
+  z-index: -1;
+  width: 100vw;
+  height: 100%;
+  transform: translateX(-50%);
+  background: var(--scene-status-tint-gradient, transparent), var(--ui-app-bg);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.scene-app .scene-shell {
+  padding-top: 148px;
+}
+
+/* Keep the active card comfortably clear of both fixed scene bars. */
+.scene-app .active-turn {
+  scroll-margin-block: 12px;
+}
+
+/* The bottom bar is icon-heavy: keep its symbols readable at a glance. */
+.scene-app .bottom > .small-btn .cadence-mask-icon,
+.scene-app .bottom-prep-return .cadence-mask-icon {
+  --cadence-icon-size: 1.55em;
+}
+
+.scene-app .bottom > .bottom-menu-btn {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0;
+  line-height: 1;
+}
+
+.scene-app .bottom > .bottom-menu-btn .cadence-mask-icon-menu {
+  --cadence-icon-size: 31px;
+  margin: 0;
+}
+
+/* Tracker step controls were visually and tactically undersized on mobile. */
+.scene-app .controls > button,
+.scene-app .clock-inline button:not(.clock-face) {
+  width: 38px;
+  height: 38px;
+  font-size: 16px;
+}
+
+.scene-app .scene-main {
+  position: relative;
+  z-index: 1;
+}
+
+.active-box.simultaneous-turn .turn-active-line {
+  gap: 6px;
+}
+
+.active-box.simultaneous-turn .active-name strong {
+  white-space: normal;
+  line-height: 1.08;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/*
+ * Retouches d’interface ciblées.
+ *
+ * Ce fichier regroupe les ajustements visuels apparus après stabilisation des
+ * styles principaux, afin d’éviter une multiplication de petits fichiers CSS.
+ */
+

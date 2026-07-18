@@ -11,8 +11,6 @@
   --cadence-brand-orange-deep: var(--theme-orange-deep);
   --cadence-brand-ivory: var(--theme-dark-text);
   --cadence-brand-gold: var(--theme-gold);
-  --cadence-brand-mist: var(--theme-mist);
-
   --override-brand-bg: var(--cadence-brand-bg-light);
   --override-brand-border: color-mix(in srgb, var(--ui-primary-strong) 12%, transparent);
   --override-brand-title: var(--ui-primary-strong);
@@ -40,12 +38,12 @@
   --override-total-bg: color-mix(in srgb, var(--ui-primary) 18%, var(--ui-surface));
   --override-total-border: color-mix(in srgb, var(--ui-primary) 48%, var(--ui-border));
 
-  --override-threshold-neutral: #94a3b8;
-  --override-threshold-green: #22c55e;
-  --override-threshold-amber: #f59e0b;
-  --override-threshold-red: #ef4444;
-  --override-threshold-blue: #3b82f6;
-  --override-threshold-violet: #8b5cf6;
+  --override-threshold-neutral: var(--ui-muted);
+  --override-threshold-green: var(--ui-success);
+  --override-threshold-amber: var(--ui-accent);
+  --override-threshold-red: var(--ui-danger);
+  --override-threshold-blue: var(--ui-focus);
+  --override-threshold-violet: var(--ui-primary);
   --threshold-a: var(--override-threshold-neutral);
   --threshold-b: var(--override-threshold-neutral);
 
@@ -527,29 +525,4 @@
 .options-section .field {
   margin-bottom: 0;
 }
-
-
-:root[data-performance="low"] .active-box:has(.global-mini.threshold-glow),
-:root[data-performance="low"] .dark .active-box:has(.global-mini.threshold-glow),
-:root[data-performance="low"] .global-mini.threshold-glow .global-mini-main,
-:root[data-performance="low"] .dark .global-mini.threshold-glow .global-mini-main,
-[data-performance="low"] .active-box:has(.global-mini.threshold-glow),
-[data-performance="low"] .dark .active-box:has(.global-mini.threshold-glow),
-[data-performance="low"] .global-mini.threshold-glow .global-mini-main,
-[data-performance="low"] .dark .global-mini.threshold-glow .global-mini-main {
-  background: var(--ui-surface) !important;
-  box-shadow: none !important;
-  filter: none !important;
-}
-
-:root[data-performance="low"] .global-clock.overflowing::after,
-:root[data-performance="low"] .dark .global-clock.overflowing::after,
-[data-performance="low"] .global-clock.overflowing::after,
-[data-performance="low"] .dark .global-clock.overflowing::after {
-  filter: none !important;
-}
-
-:root[data-performance="low"] .auto-plus,
-[data-performance="low"] .auto-plus {
-  display: none;
-}
+/* Les surcharges du mode léger vivent dans styles/performance-low.css. */

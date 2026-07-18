@@ -1,8 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 import { keepScreenAwakeWhileForeground } from './screenWakeLock.js';
 
-function flushPromises() {
-  return new Promise((resolve) => setTimeout(resolve, 0));
+async function flushPromises() {
+  // Les demandes Wake Lock ne reposent que sur la file de microtâches. Éviter
+  // un setTimeout ici empêche Vitest de conserver un timer actif à l’arrêt.
+  for (let index = 0; index < 8; index += 1) await Promise.resolve();
 }
 
 function makeEnvironment() {

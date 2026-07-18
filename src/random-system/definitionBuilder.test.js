@@ -62,6 +62,47 @@ describe('RandomSystem definition builder', () => {
     expect(second).toEqual(first);
   });
 
+  it('exposes repeatable rolls, bounded explosions and requested inputs without code', () => {
+    const sources = createStandardSources();
+    const draft = createDefinitionDraft(sources);
+    draft.recursive = true;
+    draft.components[0].sourceMode = builderModes.REQUEST;
+    draft.components[0].sourceChoices = [standardSourceIds.D6, standardSourceIds.D8];
+    draft.components[0].countMode = builderModes.PROMPT;
+    draft.components[0].explosionMode = builderExplosionModes.ALWAYS;
+    draft.components[0].explosionLimit = 100;
+
+    const definition = buildRandomDefinition(draft);
+    expect(definition.recursive).toBe(true);
+    expect(definition.parameters).toMatchObject([
+      { type: 'source', choices: [standardSourceIds.D6, standardSourceIds.D8] },
+      { type: 'integer', prompt: true, defaultValue: '' },
+    ]);
+    expect(definition.pipeline.find((step) => step.type === randomPipelineStepTypes.EXPLODE))
+      .toMatchObject({ maxIterations: 100 });
+    expect(buildRandomDefinition(definitionToDraft(definition, sources))).toEqual(definition);
+  });
+
+  it('builds several named result counters from the no-code draft', () => {
+    const sources = createStandardSources();
+    const draft = createDefinitionDraft(sources);
+    draft.counters = [
+      { id: 'critical', label: 'Critiques', operator: 'gte', value: 20 },
+      { id: 'fumble', label: 'Complications', operator: 'eq', value: 1 },
+    ];
+
+    const definition = buildRandomDefinition(draft);
+    const counters = definition.pipeline.filter((step) => (
+      step.type === randomPipelineStepTypes.AGGREGATE
+      && step.operation === randomAggregateOperations.COUNT_MATCHES
+    ));
+    expect(counters.map((counter) => [counter.outputId, counter.label])).toEqual([
+      ['counter-critical', 'Critiques'],
+      ['counter-fumble', 'Complications'],
+    ]);
+    expect(buildRandomDefinition(definitionToDraft(definition, sources))).toEqual(definition);
+  });
+
   it('produces definitions directly executable by the engine', () => {
     const sources = createStandardSources();
     const draft = createDefinitionDraft(sources);
@@ -236,5 +277,251 @@ describe('RandomSystem definition builder', () => {
       rng: () => 0.5,
     });
     expect(result.primaryAggregate.value).toBe(-3);
+  });
+
+  it('creates d20 advantage and disadvantage entirely from the no-code draft', () => {
+    const sources = createStandardSources();
+    const draft = createDefinitionDraft(sources);
+    draft.name = 'd20 avantage';
+    draft.rollOptions = [{
+      id: 'approach',
+      label: 'Approche',
+      control: 'slider',
+      defaultValue: 'normal',
+      choices: [
+        { value: 'disadvantage', label: 'Désavantage' },
+        { value: 'normal', label: 'Normal' },
+        { value: 'advantage', label: 'Avantage' },
+      ],
+    }];
+    const branch = (id, count, value, keepMode = 'none') => ({
+      ...draft.components[0],
+      id,
+      label: value,
+      sourceId: standardSourceIds.D20,
+      count,
+      enabledWhen: [{ optionId: 'approach', equals: value }],
+      calculation: {
+        ...createCalculationDraft(keepMode !== 'none'),
+        keepMode,
+        keepCount: 1,
+      },
+    });
+    draft.components = [
+      branch('disadvantage', 2, 'disadvantage', 'lowest'),
+      branch('normal', 1, 'normal'),
+      branch('advantage', 2, 'advantage', 'highest'),
+    ];
+    draft.modifierEnabled = true;
+    draft.modifierMode = builderModes.PROMPT;
+
+    const definition = buildRandomDefinition(draft);
+    let index = 0;
+    const result = executeRandomDefinition({
+      definition,
+      sources,
+      parameters: { modifier: 2 },
+      options: { approach: 'advantage' },
+      rng: () => [0.1, 0.9][index++],
+    });
+
+    expect(result.draws).toHaveLength(2);
+    expect(result.primaryAggregate.value).toBe(21);
+    expect(buildRandomDefinition(definitionToDraft(definition, sources))).toEqual(definition);
+  });
+
+  it('composes the d20 mode and Cosmere stakes as two independent no-code choices', () => {
+    const sources = createStandardSources();
+    const draft = createDefinitionDraft(sources);
+    draft.name = 'Cosmere';
+    draft.rollOptions = [
+      {
+        id: 'approach',
+        label: 'Approche',
+        control: 'slider',
+        defaultValue: 'normal',
+        choices: [
+          { value: 'disadvantage', label: 'Désavantage' },
+          { value: 'normal', label: 'Normal' },
+          { value: 'advantage', label: 'Avantage' },
+        ],
+      },
+      {
+        id: 'stakes',
+        label: 'Monter les enjeux',
+        control: 'switch',
+        defaultValue: 'none',
+        choices: [
+          { value: 'none', label: 'Non' },
+          { value: 'raise', label: 'Oui' },
+        ],
+      },
+    ];
+    const branch = (id, count, value, keepMode = 'none') => ({
+      ...draft.components[0],
+      id,
+      sourceId: standardSourceIds.D20,
+      count,
+      enabledWhen: [{ optionId: 'approach', equals: value }],
+      calculation: {
+        ...createCalculationDraft(keepMode !== 'none'),
+        keepMode,
+        keepCount: 1,
+      },
+    });
+    draft.components = [
+      branch('disadvantage', 2, 'disadvantage', 'lowest'),
+      branch('normal', 1, 'normal'),
+      branch('advantage', 2, 'advantage', 'highest'),
+      {
+        ...draft.components[0],
+        id: 'intrigue',
+        label: 'Dé d’intrigue',
+        sourceId: standardSourceIds.D6,
+        count: 1,
+        enabledWhen: [{ optionId: 'stakes', equals: 'raise' }],
+      },
+    ];
+    draft.modifierEnabled = true;
+    draft.modifierMode = builderModes.PROMPT;
+
+    const definition = buildRandomDefinition(draft);
+    let index = 0;
+    const result = executeRandomDefinition({
+      definition,
+      sources,
+      parameters: { modifier: 2 },
+      options: { approach: 'advantage', stakes: 'raise' },
+      rng: () => [0.1, 0.9, 0.5][index++],
+    });
+
+    expect(definition.options).toHaveLength(2);
+    expect(result.draws).toHaveLength(3);
+    expect(result.primaryAggregate.value).toBe(25);
+  });
+
+  it('creates the reusable standard dice roll with conditional explosion and reroll', () => {
+    const sources = createStandardSources();
+    const draft = createDefinitionDraft(sources);
+    draft.name = 'Dés standards';
+    draft.recursive = true;
+    draft.rollOptions = [{
+      id: 'mode',
+      label: 'Mode',
+      control: 'slider',
+      defaultValue: 'standard',
+      choices: [
+        { value: 'standard', label: 'Standard' },
+        { value: 'explosion', label: 'Explosion' },
+        { value: 'reroll', label: 'Relance' },
+      ],
+    }];
+    draft.components[0].sourceMode = builderModes.REQUEST;
+    draft.components[0].sourceId = standardSourceIds.D6;
+    draft.components[0].sourceChoices = [
+      standardSourceIds.D4,
+      standardSourceIds.D6,
+      standardSourceIds.D8,
+      standardSourceIds.D10,
+      standardSourceIds.D12,
+    ];
+    draft.components[0].countMode = builderModes.PROMPT;
+    draft.components[0].explosionMode = builderExplosionModes.ALWAYS;
+    draft.components[0].explosionEnabledWhen = [{ optionId: 'mode', equals: 'explosion' }];
+    draft.components[0].reroll = {
+      enabled: true,
+      operator: 'eq',
+      value: 1,
+      maxIterations: 1,
+      enabledWhen: [{ optionId: 'mode', equals: 'reroll' }],
+    };
+    draft.modifierEnabled = true;
+    draft.modifierMode = builderModes.PROMPT;
+
+    const definition = buildRandomDefinition(draft);
+    let index = 0;
+    const result = executeRandomDefinition({
+      definition,
+      sources,
+      parameters: {
+        [`source-${draft.components[0].id}`]: standardSourceIds.D6,
+        [`count-${draft.components[0].id}`]: 1,
+        modifier: 2,
+      },
+      options: { mode: 'explosion' },
+      rng: () => [0.99, 0][index++],
+    });
+
+    expect(definition.recursive).toBe(true);
+    expect(result.draws).toHaveLength(2);
+    expect(result.primaryAggregate.value).toBe(9);
+    expect(buildRandomDefinition(definitionToDraft(definition, sources))).toEqual(definition);
+  });
+
+  it('creates Shadowrun successes complications and the exploding chance mode without code', () => {
+    const sources = createStandardSources();
+    const draft = createDefinitionDraft(sources);
+    draft.name = 'Shadowrun';
+    draft.rollOptions = [{
+      id: 'chance',
+      label: 'Jet de chance',
+      control: 'switch',
+      defaultValue: 'standard',
+      choices: [
+        { value: 'standard', label: 'Standard' },
+        { value: 'chance', label: 'Chance' },
+      ],
+    }];
+    draft.components[0].sourceId = standardSourceIds.D6;
+    draft.components[0].countMode = builderModes.PROMPT;
+    draft.components[0].explosionMode = builderExplosionModes.ALWAYS;
+    draft.components[0].explosionEnabledWhen = [{ optionId: 'chance', equals: 'chance' }];
+    draft.resultMode = builderResultModes.SUCCESSES;
+    draft.threshold = 5;
+    draft.thresholdOperator = 'gte';
+    draft.counters = [{ id: 'ones', label: 'Complications', operator: 'eq', value: 1 }];
+
+    const definition = buildRandomDefinition(draft);
+    let index = 0;
+    const result = executeRandomDefinition({
+      definition,
+      sources,
+      parameters: { [`count-${draft.components[0].id}`]: 1 },
+      options: { chance: 'chance' },
+      rng: () => [0.99, 0.99, 0][index++],
+    });
+
+    expect(result.primaryAggregate.value).toBe(2);
+    expect(result.aggregates.find((aggregate) => aggregate.id === 'counter-ones')?.value).toBe(1);
+    expect(buildRandomDefinition(definitionToDraft(definition, sources))).toEqual(definition);
+  });
+
+  it('creates the exploding L5R pool with a requested keep count without code', () => {
+    const sources = createStandardSources();
+    const draft = createDefinitionDraft(sources);
+    draft.name = 'L5R';
+    draft.components[0].sourceId = standardSourceIds.D10;
+    draft.components[0].countMode = builderModes.PROMPT;
+    draft.components[0].explosionMode = builderExplosionModes.ALWAYS;
+    draft.keepMode = 'highest';
+    draft.keepCountMode = builderModes.PROMPT;
+
+    const definition = buildRandomDefinition(draft);
+    let index = 0;
+    const result = executeRandomDefinition({
+      definition,
+      sources,
+      parameters: {
+        [`count-${draft.components[0].id}`]: 3,
+        'keep-count': 2,
+      },
+      rng: () => [0.8, 0.2, 0.5][index++],
+    });
+
+    expect(result.primaryAggregate.value).toBe(15);
+    expect(definition.parameters.map((parameter) => parameter.id)).toEqual([
+      `count-${draft.components[0].id}`,
+      'keep-count',
+    ]);
   });
 });

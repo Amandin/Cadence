@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { participantKinds } from '../../constants.js';
 import { normaliserCreneauxAction } from '../../domain/initiative.js';
-import { initiativeLabelFromCardDraw, initiativeTextOrderEnabled, initiativeToNumber, normalizeInitiativeTextOrder } from '../../domain/initiativeTextOrder.js';
+import { initiativeLabelFromCardDraw, initiativeMatchesMode, initiativeTextOrderEnabled, initiativeToNumber, normalizeInitiativeTextOrder } from '../../domain/initiativeTextOrder.js';
 import { t } from '../../i18n/index.js';
 import { IconeJetDes } from '../icones/IconeJetDes.jsx';
 import { IconeCadence } from '../icones/IconeCadence.jsx';
 import { prepareCombinedDefinition } from '../../random-system/combinations.js';
 import { activeDefinitions } from '../../random-system/definitionAccess.js';
-import { randomParameterTypes, randomSourceKinds } from '../../random-system/engine.js';
+import { drawRandomSource, randomSourceKinds } from '../../random-system/engine.js';
+import { initiativeApproachOption, initiativeRollInputs } from '../../random-system/initiativeRoll.js';
 import { Fenetre } from '../commun/ComposantsCommuns.jsx';
 import { ChampInitiative } from '../initiative/ChampInitiative.jsx';
 import { resolveParticipantBehavior } from '../../domain/participantTypes.js';
@@ -120,27 +121,6 @@ function LibelleBonusInitiative() {
   return t('initiative.entry.bonusLabel');
 }
 
-function initiativeBonusParameter(parameter = {}) {
-  const signature = `${parameter.id || ''} ${parameter.label || ''}`.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-  return parameter.type !== randomParameterTypes.SOURCE
-    && parameter.type !== randomParameterTypes.TEXT
-    && (signature.includes('modifier') || signature.includes('modificateur') || signature.includes('bonus'));
-}
-
-function rollDefaultsWithInitiativeBonus(definition = {}, participant, bonusInitiatives = {}) {
-  const bonus = bonusInitiative(participant, bonusInitiatives);
-  let bonusInjected = false;
-  const parameters = Object.fromEntries((definition.parameters || []).map((parameter) => {
-    if (initiativeBonusParameter(parameter)) {
-      bonusInjected = true;
-      return [parameter.id, bonus];
-    }
-    return [parameter.id, parameter.defaultValue];
-  }));
-  const options = Object.fromEntries((definition.options || []).map((option) => [option.id, option.defaultValue]));
-  return { parameters, options, bonus, bonusInjected };
-}
-
 function defaultRollOptions(definition = {}) {
   return Object.fromEntries((definition.options || []).map((option) => [option.id, option.defaultValue]));
 }
@@ -153,7 +133,7 @@ function BoutonChoixInitiative({ titre, detail, onClick, disabled = false, varia
   return <button className={`initiative-choice-action ${variant}`} onClick={onClick} disabled={disabled}><strong>{titre}</strong><small>{detail}</small></button>;
 }
 
-function SectionSaisieInitiative({ titre, participants, inclureEnvironnements, categoryOrder, triSaisie, valeurs, changerValeur, ajouterAction, retirerAction, textConfig, initiativeEnabled, multipleActionSlots, surpriseSelectionEnabled, surprisedIds, basculerSurpris, initiativeBonusEnabled = true, modifierBonusInitiative, bonusInitiatives, changerBonus, initiativeRollAvailable, initiativeRollIsCard, onRollParticipant, modifierDepartage, tiebreakerVisible, tiebreakerLabel, departages, changerDepartage }) {
+function SectionSaisieInitiative({ titre, participants, inclureEnvironnements, categoryOrder, triSaisie, valeurs, changerValeur, ajouterAction, retirerAction, textConfig, initiativeEnabled, multipleActionSlots, surpriseSelectionEnabled, surprisedIds, basculerSurpris, initiativeBonusEnabled = true, modifierBonusInitiative, bonusInitiatives, changerBonus, initiativeRollAvailable, initiativeRollIsCard, initiativeApproach, initiativeApproaches, onChangeInitiativeApproach, onRollParticipant, modifierDepartage, tiebreakerVisible, tiebreakerLabel, departages, changerDepartage }) {
   const groupes = groupesParticipants(participants, inclureEnvironnements, categoryOrder, triSaisie, valeurs, multipleActionSlots, textConfig, bonusInitiatives, initiativeBonusEnabled);
   const bonusPertinent = initiativeEnabled && initiativeBonusEnabled && !initiativeTextOrderEnabled(textConfig);
   const departagePertinent = initiativeEnabled && tiebreakerVisible;
@@ -177,7 +157,12 @@ function SectionSaisieInitiative({ titre, participants, inclureEnvironnements, c
             const afficherAjoutAction = initiativeEnabled && actionsMultiplesAutorisees(multipleActionSlots, participant);
             const afficherMeta = surpriseSelectionEnabled || bonusEditable || departageEditable || afficherBonusDiscret || afficherDepartageDiscret;
             return <div className={`initiative-roll-row multi-roll-row ${surpriseSelectionEnabled ? 'has-surprise' : ''} ${(departageEditable || afficherDepartageDiscret) ? 'has-tiebreaker' : ''}`} key={participant.id}>
-              <div className="initiative-roll-identity"><span className="type-chip">{participant.kind}</span><strong>{participant.name}</strong>{initiativeEnabled && initiativeRollAvailable && <InitiativeRollButton card={initiativeRollIsCard} label={t(initiativeRollIsCard ? 'initiative.entry.drawOne' : 'initiative.entry.rollOne', { name: participant.name })} onClick={() => onRollParticipant(participant)} />}</div>
+              <div className="initiative-roll-identity">
+                <span className="type-chip">{participant.kind}</span>
+                <strong>{participant.name}</strong>
+                {initiativeEnabled && initiativeApproach && <label className="initiative-roll-approach"><span>{t('initiative.entry.rollMode')}</span><select aria-label={t('initiative.entry.rollModeFor', { name: participant.name })} value={initiativeApproaches[participant.id] ?? initiativeApproach.defaultValue} onChange={(event) => onChangeInitiativeApproach(participant.id, event.target.value)}>{initiativeApproach.choices.map((choice) => <option value={choice.value} key={choice.value}>{choice.label}</option>)}</select></label>}
+                {initiativeEnabled && initiativeRollAvailable && <InitiativeRollButton card={initiativeRollIsCard} label={t(initiativeRollIsCard ? 'initiative.entry.drawOne' : 'initiative.entry.rollOne', { name: participant.name })} onClick={() => onRollParticipant(participant)} />}
+              </div>
               {afficherMeta && <div className={`initiative-meta-row ${surpriseSelectionEnabled ? 'has-surprise' : ''} ${(bonusEditable || afficherBonusDiscret) ? 'has-bonus' : ''} ${(departageEditable || afficherDepartageDiscret) ? 'has-tiebreaker' : ''}`}>
                 {surpriseSelectionEnabled && <label className={`surprise-inline-toggle ${surprisedIds.has(participant.id) ? 'active' : ''}`}><input type="checkbox" checked={surprisedIds.has(participant.id)} onChange={() => basculerSurpris(participant.id)} /><span>{t('initiative.entry.surprised')}</span></label>}
                 {bonusEditable && <label className="initiative-bonus-inline-field"><small><LibelleBonusInitiative /></small><input type="number" inputMode="numeric" value={bonusInitiatives[participant.id] ?? ''} onChange={(event) => changerBonus(participant.id, event.target.value)} /></label>}
@@ -240,17 +225,25 @@ export function FenetreLancerInitiatives({ participants = [], reserve = [], init
   const changerBonus = (id, valeur) => setBonusInitiatives((courant) => ({ ...courant, [id]: valeur }));
   const bonusSwitchVisible = initiativeBonusEnabled && !initiativeTextOrderEnabled(textConfig);
   const initiativeRollDefinitions = useMemo(() => activeDefinitions(randomSystem?.state?.definitions || []), [randomSystem?.state?.definitions]);
-  const initiativeRollDefinition = bonusSwitchVisible
-    ? initiativeRollDefinitions.find((definition) => definition.id === initiativeBonusRollDefinitionId)
-    : null;
+  const initiativeRollDefinition = initiativeRollDefinitions.find((definition) => definition.id === initiativeBonusRollDefinitionId) || null;
+  const initiativeApproach = useMemo(() => initiativeApproachOption(initiativeRollDefinition), [initiativeRollDefinition]);
+  const [initiativeApproaches, setInitiativeApproaches] = useState({});
+  const changerApprocheInitiative = (participantId, value) => setInitiativeApproaches((current) => ({ ...current, [participantId]: value }));
+  const initiativeLinkedSourceId = textConfig.sourceId || textConfig.cardSourceId;
   const initiativeCardSource = useMemo(() => {
-    if (!initiativeTextOrderEnabled(textConfig) || !textConfig.cardSourceId) return null;
+    if (!initiativeTextOrderEnabled(textConfig) || !initiativeLinkedSourceId) return null;
     return (randomSystem?.state?.sources || []).find((source) => (
-      source.id === textConfig.cardSourceId && source.kind === randomSourceKinds.CARDS
+      source.id === initiativeLinkedSourceId && source.kind === randomSourceKinds.CARDS
     )) || null;
-  }, [randomSystem?.state?.sources, textConfig]);
+  }, [initiativeLinkedSourceId, randomSystem?.state?.sources, textConfig]);
+  const initiativeTableSource = useMemo(() => {
+    if (!initiativeTextOrderEnabled(textConfig) || !initiativeLinkedSourceId) return null;
+    return (randomSystem?.state?.sources || []).find((source) => (
+      source.id === initiativeLinkedSourceId && source.kind === randomSourceKinds.WEIGHTED
+    )) || null;
+  }, [initiativeLinkedSourceId, randomSystem?.state?.sources, textConfig]);
   const initiativeRollIsCard = !!initiativeCardSource;
-  const initiativeRollAvailable = !!initiativeRollDefinition || initiativeRollIsCard;
+  const initiativeRollAvailable = !!initiativeRollDefinition || initiativeRollIsCard || !!initiativeTableSource;
   const appliquerValeurLancee = (participant, valeur) => setValeurs((courant) => {
     const champs = Array.isArray(courant[participant.id]) && courant[participant.id].length ? courant[participant.id] : [''];
     return { ...courant, [participant.id]: champs.map((champ, index) => index === 0 ? valeur : champ) };
@@ -271,11 +264,25 @@ export function FenetreLancerInitiatives({ participants = [], reserve = [], init
         setRollError('');
         return true;
       }
+      if (initiativeTableSource) {
+        const outcome = drawRandomSource(initiativeTableSource);
+        const value = String(outcome?.label || outcome?.value || '').trim();
+        if (!initiativeMatchesMode(value, textConfig)) throw new Error(t('initiative.entry.rollUnavailable'));
+        appliquerValeurLancee(participant, value);
+        setRollError('');
+        return true;
+      }
       if (!initiativeRollDefinition || !randomSystem?.actions?.runDefinition) return false;
-      const baseOptions = defaultRollOptions(initiativeRollDefinition);
+      const baseOptions = {
+        ...defaultRollOptions(initiativeRollDefinition),
+        ...(initiativeApproach ? {
+          [initiativeApproach.id]: initiativeApproaches[participant.id] ?? initiativeApproach.defaultValue,
+        } : {}),
+      };
       const prepared = prepareCombinedDefinition(initiativeRollDefinition, initiativeRollDefinitions, baseOptions);
-      const { parameters, options, bonus, bonusInjected } = rollDefaultsWithInitiativeBonus(prepared.definition, participant, bonusInitiatives);
+      const { parameters, options, bonus, bonusInjected } = initiativeRollInputs(prepared.definition, bonusInitiative(participant, bonusInitiatives), baseOptions);
       const result = randomSystem.actions.runDefinition(initiativeRollDefinition.id, parameters, options);
+      if (result?.kind === 'random-decision') throw new Error(t('initiative.entry.decisionUnsupported'));
       const raw = Number(result?.primaryAggregate?.value);
       if (!Number.isFinite(raw)) throw new Error(t('initiative.entry.rollUnavailable'));
       const value = bonusInjected ? raw : raw + bonus;
@@ -341,7 +348,7 @@ export function FenetreLancerInitiatives({ participants = [], reserve = [], init
       return false;
     }
   };
-  const propsSection = { inclureEnvironnements, categoryOrder, triSaisie, valeurs, changerValeur, ajouterAction, retirerAction, textConfig, initiativeEnabled, multipleActionSlots, surpriseSelectionEnabled, surprisedIds, basculerSurpris, initiativeBonusEnabled, modifierBonusInitiative, bonusInitiatives, changerBonus, initiativeRollAvailable, initiativeRollIsCard, onRollParticipant: lancerInitiativeParticipant, modifierDepartage, tiebreakerVisible, tiebreakerLabel, departages, changerDepartage };
+  const propsSection = { inclureEnvironnements, categoryOrder, triSaisie, valeurs, changerValeur, ajouterAction, retirerAction, textConfig, initiativeEnabled, multipleActionSlots, surpriseSelectionEnabled, surprisedIds, basculerSurpris, initiativeBonusEnabled, modifierBonusInitiative, bonusInitiatives, changerBonus, initiativeRollAvailable, initiativeRollIsCard, initiativeApproach, initiativeApproaches, onChangeInitiativeApproach: changerApprocheInitiative, onRollParticipant: lancerInitiativeParticipant, modifierDepartage, tiebreakerVisible, tiebreakerLabel, departages, changerDepartage };
   const modificationSwitchVisible = tiebreakerVisible || bonusSwitchVisible;
 
   return <Fenetre title={initiativeEnabled ? t('initiative.entry.title') : t('initiative.entry.surpriseTitle')} onClose={onFermer}>

@@ -113,6 +113,16 @@ export function createCampaignActions({ scenes, campaignRules, campaignProfile =
     return true;
   };
 
+  const applyQuestionnaireRules = ({ rules } = {}) => {
+    if (!rules || typeof rules !== 'object') return false;
+    const nextRules = normalizeCampaignRules(rules);
+    setCampaignRules(nextRules);
+    setCampaignProfile({});
+    setRulePresetSnapshot(null);
+    setScenes((currentScenes) => unifyCampaignScenes(currentScenes, nextRules));
+    return true;
+  };
+
   return {
     setSceneIndex,
     setDark,
@@ -177,6 +187,7 @@ export function createCampaignActions({ scenes, campaignRules, campaignProfile =
       setScenes((currentScenes) => unifyCampaignScenes(currentScenes, nextRules));
     },
     applyCampaignProfile,
+    applyQuestionnaireRules,
     async exportCampaign(name = campaignName) {
       const exportName = normalizeCampaignName(name);
       const rules = normalizeCampaignRules(campaignRules);

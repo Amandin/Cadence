@@ -507,7 +507,14 @@ function definitionSourceIds(definition) {
         ? [parameter.defaultValue, ...(parameter.choices || [])]
         : [];
     }),
-    ...(definition.pipeline || []).filter((step) => step.type === randomPipelineStepTypes.LOOKUP_TABLE).map((step) => step.sourceId),
+    ...(definition.pipeline || []).filter((step) => step.type === randomPipelineStepTypes.LOOKUP_TABLE).flatMap((step) => {
+      if (step.source?.kind === 'fixed') return [step.source.value];
+      if (step.source?.kind === 'parameter') {
+        const parameter = (definition.parameters || []).find((item) => item.id === step.source.parameterId);
+        return parameter ? [parameter.defaultValue, ...(parameter.choices || [])] : [];
+      }
+      return [step.sourceId];
+    }),
   ].filter(Boolean);
 }
 
@@ -555,65 +562,12 @@ export function exportRandomSystemStateForCampaign(state) {
   };
 }
 
-function incrementRecord(record, key, amount = 1) {
-  return { ...record, [key]: (Number(record[key]) || 0) + amount };
-}
-
-function statisticsForRoll(statistics, result) {
-  const next = {
-    ...statistics,
-    totalUses: statistics.totalUses + 1,
-    byDefinition: incrementRecord(statistics.byDefinition, result.definitionId),
-    bySource: { ...statistics.bySource },
-  };
-  const draws = result.groups.flatMap((group) => group.draws);
-  next.totalDraws += draws.length;
-  const mutableSourceStats = new Map();
-  for (const draw of draws) {
-    if (!mutableSourceStats.has(draw.sourceId)) {
-      const current = next.bySource[draw.sourceId] || { count: 0, outcomes: {} };
-      const mutable = { count: current.count, outcomes: { ...current.outcomes } };
-      mutableSourceStats.set(draw.sourceId, mutable);
-      next.bySource[draw.sourceId] = mutable;
-    }
-    const sourceStats = mutableSourceStats.get(draw.sourceId);
-    sourceStats.count += 1;
-    sourceStats.outcomes[draw.outcome.id] = (sourceStats.outcomes[draw.outcome.id] || 0) + 1;
-  }
-  return next;
-}
-
-function statisticsForCards(statistics, result) {
-  const current = statistics.bySource[result.sourceId] || { count: 0, outcomes: {} };
-  const sourceStats = {
-    count: current.count + result.cards.length,
-    outcomes: { ...current.outcomes },
-  };
-  result.cards.forEach((card) => {
-    sourceStats.outcomes[card.id] = (sourceStats.outcomes[card.id] || 0) + 1;
-  });
-  return {
-    ...statistics,
-    totalUses: statistics.totalUses + 1,
-    totalDraws: statistics.totalDraws + result.cards.length,
-    bySource: {
-      ...statistics.bySource,
-      [result.sourceId]: sourceStats,
-    },
-  };
-}
+import { recordRandomResult as recordStatisticsResult } from './randomStatistics.js';
 
 export function recordRandomResult(state, result) {
-  const current = state?.schemaVersion === RANDOM_SYSTEM_SCHEMA_VERSION
-    ? state
-    : normalizeRandomSystemState(state);
-  const statistics = result.kind === 'card-draw'
-    ? statisticsForCards(current.statistics, result)
-    : statisticsForRoll(current.statistics, result);
-  return {
-    ...current,
-    lastResult: result,
-    history: [result, ...current.history.filter((item) => item.id !== result.id)].slice(0, RANDOM_HISTORY_LIMIT),
-    statistics,
-  };
+  return recordStatisticsResult(state, result, {
+    schemaVersion: RANDOM_SYSTEM_SCHEMA_VERSION,
+    normalizeState: normalizeRandomSystemState,
+    historyLimit: RANDOM_HISTORY_LIMIT,
+  });
 }

@@ -15,20 +15,56 @@ import {
 import { resolveDefinitionInputs } from './definitions.js';
 import {
   drawInitialComponents,
+  appliesToDraw,
   explodeDraws,
   isStepEnabled,
   rerollDraws,
 } from './drawOperations.js';
+import { matchesCondition } from './conditions.js';
 import { RandomSystemError } from './errors.js';
 import { secureRandomFloat } from '../random.js';
 import { boundedInteger, cleanId } from './utils.js';
 
 let executionSequence = 0;
 
-function runGroup(context, steps, rng, groupIndex) {
+function stepHasDecisionCandidate(drawState, step, context) {
+  if (step.type === randomPipelineStepTypes.KEEP) {
+    return drawState.draws.some((draw) => !draw.rerolled && appliesToDraw(step, draw));
+  }
+  return drawState.draws.some((draw) => (
+    !draw.rerolled
+    && appliesToDraw(step, draw)
+    && matchesCondition(draw, step.condition, context)
+  ));
+}
+
+function runGroup(context, steps, rng, groupIndex, decisions) {
   const drawState = { ...drawInitialComponents(context, rng, groupIndex), aggregates: new Map() };
   for (const step of steps) {
     if (!isStepEnabled(step, context.options)) continue;
+    if (step.decision === 'after-roll') {
+      const answer = decisions[step.id];
+      if (answer === undefined && stepHasDecisionCandidate(drawState, step, context)) {
+        return {
+          index: groupIndex,
+          draws: drawState.draws,
+          aggregates: Array.from(drawState.aggregates.values()),
+          pendingDecision: {
+            id: step.id,
+            type: step.type,
+            label: step.label || (step.type === randomPipelineStepTypes.EXPLODE ? 'Faire exploser' : 'Relancer'),
+            matchingDrawIds: drawState.draws
+              .filter((draw) => (
+                !draw.rerolled
+                && appliesToDraw(step, draw)
+                && (step.type === randomPipelineStepTypes.KEEP || matchesCondition(draw, step.condition, context))
+              ))
+              .map((draw) => draw.id),
+          },
+        };
+      }
+      if (answer !== true) continue;
+    }
     if (step.type === randomPipelineStepTypes.REROLL) rerollDraws(drawState, step, context, rng);
     if (step.type === randomPipelineStepTypes.EXPLODE) explodeDraws(drawState, step, context, rng);
     if (step.type === randomPipelineStepTypes.MAP_VALUE) mapDrawValues(drawState, step, context);
@@ -115,8 +151,22 @@ export function executeRandomDefinition({
   instances,
   rng = secureRandomFloat,
   now = Date.now(),
+  decisions = {},
+  replayRandomValues = [],
+  sourceStates = {},
 } = {}) {
-  const context = resolveDefinitionInputs(definition, sources, parameters, options);
+  const randomValues = [];
+  let replayIndex = 0;
+  const recordedRng = () => {
+    const value = replayIndex < replayRandomValues.length
+      ? replayRandomValues[replayIndex]
+      : rng();
+    replayIndex += 1;
+    randomValues.push(value);
+    return value;
+  };
+  const workingSourceStates = { ...(sourceStates || {}) };
+  const context = resolveDefinitionInputs(definition, sources, parameters, options, workingSourceStates);
   if (!context.definition.components.length) {
     throw new RandomSystemError(
       'empty-definition',
@@ -133,6 +183,7 @@ export function executeRandomDefinition({
     sources,
     instance?.parameters || {},
     instance?.options || {},
+    workingSourceStates,
   ));
 
   const repeatStep = context.definition.pipeline.find((step) => (
@@ -142,12 +193,35 @@ export function executeRandomDefinition({
   const repeat = recursiveContexts
     ? { repetitions: recursiveContexts.length, select: 'sum', aggregateId: context.definition.primaryAggregateId }
     : repeatConfiguration(repeatStep, context.options);
-  const groups = recursiveContexts
-    ? recursiveContexts.map((instanceContext, groupIndex) => runGroup(instanceContext, steps, rng, groupIndex))
-    : Array.from(
-      { length: repeat.repetitions },
-      (_, groupIndex) => runGroup(context, steps, rng, groupIndex),
-    );
+  const groupContexts = recursiveContexts || Array.from({ length: repeat.repetitions }, () => context);
+  const groups = [];
+  for (let groupIndex = 0; groupIndex < groupContexts.length; groupIndex += 1) {
+    const group = runGroup(groupContexts[groupIndex], steps, recordedRng, groupIndex, decisions);
+    groups.push(group);
+    if (group.pendingDecision) {
+      return {
+        id: `${now}-${context.definition.id}-decision`,
+        kind: 'random-decision',
+        definitionId: context.definition.id,
+        definitionName: context.definition.name,
+        rolledAt: now,
+        draws: groups.flatMap((item) => item.draws),
+        groups,
+        pendingDecision: group.pendingDecision,
+        continuation: {
+          definition,
+          sources,
+          parameters,
+          options,
+          instances,
+          now,
+          decisions,
+          replayRandomValues: randomValues,
+          sourceStates,
+        },
+      };
+    }
+  }
   const keptGroupIndex = selectedGroupIndex(groups, repeat);
   const combined = repeat.select === 'sum' || repeat.select === 'subtract';
   const selectedGroup = combined ? null : groups[keptGroupIndex];
@@ -180,5 +254,21 @@ export function executeRandomDefinition({
     aggregates,
     primaryAggregateId: primaryAggregate?.id || '',
     primaryAggregate,
+    sourceStates: workingSourceStates,
   };
+}
+
+export function resolveRandomDecision(pendingResult, accepted, rng = secureRandomFloat) {
+  if (pendingResult?.kind !== 'random-decision' || !pendingResult.continuation || !pendingResult.pendingDecision?.id) {
+    throw new RandomSystemError('invalid-random-decision', 'Aucune decision de tirage ne peut etre resolue.');
+  }
+  const continuation = pendingResult.continuation;
+  return executeRandomDefinition({
+    ...continuation,
+    rng,
+    decisions: {
+      ...(continuation.decisions || {}),
+      [pendingResult.pendingDecision.id]: accepted === true,
+    },
+  });
 }

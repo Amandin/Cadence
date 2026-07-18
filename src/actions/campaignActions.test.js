@@ -220,7 +220,7 @@ describe('campaign actions export/import', () => {
     expect(calls.setCampaignRules).toHaveBeenCalled();
     expect(calls.setScenes).toHaveBeenCalled();
     expect(calls.setTemplateStore).toHaveBeenCalled();
-    expect(calls.setCampaignNameState).toHaveBeenCalledWith('Campagne de test');
+    expect(calls.setCampaignNameState).toHaveBeenCalledWith('Campagne de test complète');
     expect(calls.setSceneIndex).toHaveBeenCalledWith(0);
     expect(state().scenes.length).toBeGreaterThan(1);
     expect(state().templates.templates.length).toBeGreaterThan(0);
@@ -262,5 +262,34 @@ describe('campaign actions export/import', () => {
       randomQuickRollProfileIds: ['quick-roll/d6-pool'],
     });
     expect(state().randomSystem.definitions.find((definition) => definition.id === 'kit-d6-pool-successes')?.active).toBe(true);
+  });
+
+  it('applies questionnaire rules without pretending they belong to a system profile', () => {
+    const { actions, state } = createHarness({
+      campaignProfile: {
+        systemProfileId: 'system/shadowrun',
+        initiativeProfileId: 'initiative/shadowrun-5-decrement',
+      },
+    });
+
+    expect(actions.applyQuestionnaireRules({
+      rules: {
+        temporalite: 'souple',
+        flexibleUseInitiative: false,
+        surpriseDedicatedRound: true,
+      },
+    })).toBe(true);
+
+    expect(state().rules).toMatchObject({
+      temporalite: 'souple',
+      flexibleUseInitiative: false,
+      surpriseDedicatedRound: true,
+    });
+    expect(state().campaignProfile).toEqual({});
+    expect(state().rulePresetSnapshot).toBeNull();
+    expect(state().scenes[0]).toMatchObject({
+      temporalite: 'souple',
+      flexibleUseInitiative: false,
+    });
   });
 });

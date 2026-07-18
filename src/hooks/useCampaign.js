@@ -297,12 +297,14 @@ export function useCampaign() {
       setPendingFileChoice(null);
       setFileSaveStatus({ mode: 'local', message: t('campaign.status.loadedNoLinkedFile') });
     },
-    startFirstRunCampaign(preset, profileSelection = {}) {
+    startFirstRunCampaign(preset, profileSelection = {}, campaignOptions = {}) {
       if (!preset?.rules) return { ok: false, message: t('campaign.error.presetMissing') };
       const nextRules = normalizeCampaignRules(preset.rules);
       const blankScene = createBlankScene(nextRules);
       const nextTemplateStore = addOnboardingTrackerTemplates(templateStore, preset);
-      const nextRandomSystem = enableQuickRollProfilesInState(normalizeRandomSystemState(null), profileSelection.randomQuickRollProfileIds);
+      const nextRandomSystem = campaignOptions.randomSystem && typeof campaignOptions.randomSystem === 'object'
+        ? normalizeRandomSystemState(campaignOptions.randomSystem)
+        : enableQuickRollProfilesInState(normalizeRandomSystemState(null), profileSelection.randomQuickRollProfileIds);
       const snapshot = createCampaignPayload([blankScene], dark, DEFAULT_CAMPAIGN_NAME, nextTemplateStore, nextRules, createRulePresetSnapshot(preset, nextRules, profileSelection), {}, nextRandomSystem, profileSelection);
       const entry = campaignEntryFromPayload(snapshot, { source: 'local' });
       setCampaignRules(nextRules);
@@ -334,6 +336,17 @@ export function useCampaign() {
       const preset = rulePresetCatalog.find((item) => item.catalogId === initiativeProfile.rulePresetId);
       if (!preset) return { ok: false, message: t('campaign.error.presetMissing') };
       return this.startFirstRunCampaign(preset, { systemProfileId: systemProfile.id, editionId, initiativeProfileId: initiativeProfile.id, randomQuickRollProfileIds });
+    },
+    startFirstRunQuestionnaire({ rules, randomSystem } = {}) {
+      if (!rules || typeof rules !== 'object') return { ok: false, message: t('campaign.error.presetMissing') };
+      return this.startFirstRunCampaign({
+        id: 'onboarding/questionnaire',
+        catalogId: '',
+        name: t('onboarding.question.summary.title'),
+        family: 'personal',
+        source: 'onboarding',
+        rules,
+      }, {}, { randomSystem });
     },
     startFirstRunCustomCampaign() {
       const nextRules = normalizeCampaignRules(campaignRules);

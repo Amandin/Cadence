@@ -3,10 +3,11 @@ import { describe, expect, it } from 'vitest';
 import { initiativeTextOrderPresetIds, presetInitiativeTextOrder } from '../../domain/initiativeTextOrder.js';
 import { FenetreInitiativeTextuelleEdition } from './FenetreInitiativeTextuelleEdition.jsx';
 
-const renderEditor = (cardSources = []) => renderToStaticMarkup(
+const renderEditor = (cardSources = [], tableSources = []) => renderToStaticMarkup(
   <FenetreInitiativeTextuelleEdition
     config={presetInitiativeTextOrder(initiativeTextOrderPresetIds.POSTURES)}
     cardSources={cardSources}
+    tableSources={tableSources}
     onFermer={() => {}}
     onValider={() => {}}
     onEnregistrerPreset={() => ({ ok: true })}
@@ -14,14 +15,14 @@ const renderEditor = (cardSources = []) => renderToStaticMarkup(
 );
 
 describe('FenetreInitiativeTextuelleEdition', () => {
-  it('disables the card preset when no card source can be linked', () => {
+  it('disables the linked random source option when no source can be linked', () => {
     const html = renderEditor();
 
-    expect(html).toContain('<option value="cards" disabled="">Paquet de cartes</option>');
+    expect(html).toContain('<option value="source" disabled="">Paquet ou table d’aléa</option>');
     expect(html).toContain('Enregistrer comme préréglage');
   });
 
-  it('enables the card preset when a card source is available', () => {
+  it('enables the linked random source option when a card source is available', () => {
     const html = renderEditor([{
       id: 'deck-1',
       name: 'Paquet standard',
@@ -32,7 +33,18 @@ describe('FenetreInitiativeTextuelleEdition', () => {
       ],
     }]);
 
-    expect(html).toContain('<option value="cards">Paquet de cartes</option>');
-    expect(html).not.toContain('<option value="cards" disabled="">');
+    expect(html).toContain('<option value="source">Paquet ou table d’aléa</option>');
+    expect(html).not.toContain('<option value="source" disabled="">');
+  });
+
+  it('enables the linked random source option for a weighted table', () => {
+    const html = renderEditor([], [{
+      id: 'stances',
+      name: 'Postures tirées',
+      kind: 'weighted',
+      outcomes: [{ id: 'fast', label: 'Rapide', value: 'Rapide', weight: 1 }],
+    }]);
+
+    expect(html).toContain('<option value="source">Paquet ou table d’aléa</option>');
   });
 });

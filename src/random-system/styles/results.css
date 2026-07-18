@@ -406,3 +406,8 @@
     grid-column: 1 / -1;
   }
 }
+.rs-decision-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .65rem;
+}

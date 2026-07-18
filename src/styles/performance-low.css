@@ -1,0 +1,61 @@
+/*
+  Garde-fous du mode léger. Cette feuille reste importée en dernier afin que
+  les skins et les styles de composants ne puissent pas réactiver par cascade
+  les effets coûteux désactivés ici.
+*/
+
+[data-performance="low"] * {
+  animation-duration: .001ms !important;
+  animation-iteration-count: 1 !important;
+  scroll-behavior: auto !important;
+  transition-duration: .001ms !important;
+}
+
+[data-performance="low"] .app {
+  background-image: none !important;
+}
+
+[data-performance="low"] :is(.top, .bottom, .sheet, .overlay) {
+  backdrop-filter: none !important;
+}
+
+[data-performance="low"] :is(
+  .brand,
+  .card,
+  .panel,
+  .bottom,
+  .sheet,
+  .round,
+  .small-btn,
+  .theme-toggle,
+  .clock-face,
+  .status.expired,
+  .tracker.threshold-glow
+) {
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+[data-performance="low"] .card.active {
+  transform: none;
+}
+
+[data-performance="low"] .initiative-list .card:not(.active) {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 220px;
+}
+
+[data-performance="low"] .active-box:has(.global-mini.threshold-glow),
+[data-performance="low"] .global-mini.threshold-glow .global-mini-main {
+  background: var(--ui-surface) !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+[data-performance="low"] .global-clock.overflowing::after {
+  filter: none !important;
+}
+
+[data-performance="low"] .auto-plus {
+  display: none;
+}

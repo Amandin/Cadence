@@ -21,12 +21,12 @@
   left: 4px;
   width: 16px;
   height: 16px;
-  border: 1px solid #7f4a70;
+  border: 1px solid var(--rs-muted);
   border-radius: var(--radius-pill);
   background:
-    radial-gradient(circle at 35% 28%, rgba(255, 255, 255, .95), transparent 34%),
-    linear-gradient(135deg, #fffdf6 0%, #f3d7a6 100%);
-  box-shadow: 0 1px 3px rgba(124, 45, 18, .22);
+    radial-gradient(circle at 35% 28%, color-mix(in srgb, white 95%, transparent), transparent 34%),
+    linear-gradient(135deg, var(--ui-surface-strong) 0%, var(--ui-warning-bg) 100%);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--rs-accent) 22%, transparent);
   opacity: 0;
   transform: translateX(0);
   pointer-events: none;
@@ -39,7 +39,7 @@
   left: 9px;
   width: 6px;
   height: 6px;
-  border: 1px solid #c46a44;
+  border: 1px solid var(--rs-accent);
   border-radius: 2px;
   opacity: 0;
   transform: translateX(0) rotate(45deg);
@@ -52,16 +52,16 @@
 }
 
 .random-system-page .global-switch input[type="checkbox"]:checked::before {
-  border-color: #51165a;
+  border-color: var(--rs-accent);
   background:
-    radial-gradient(circle at 35% 28%, rgba(255, 255, 255, .9), transparent 34%),
-    linear-gradient(135deg, #fff7d6 0%, #f6c46a 100%);
-  box-shadow: 0 1px 4px rgba(81, 22, 90, .28);
+    radial-gradient(circle at 35% 28%, color-mix(in srgb, white 90%, transparent), transparent 34%),
+    linear-gradient(135deg, var(--ui-primary-contrast) 0%, var(--ui-warning-text) 100%);
+  box-shadow: 0 1px 4px color-mix(in srgb, var(--rs-accent) 28%, transparent);
   transform: translateX(18px);
 }
 
 .random-system-page .global-switch input[type="checkbox"]:checked::after {
-  border-color: #c85f19;
+  border-color: var(--rs-accent);
   transform: translateX(18px) rotate(45deg);
 }
 
@@ -132,6 +132,7 @@
   grid-template-columns: minmax(0, 1fr) 42px minmax(0, 1fr);
   gap: 8px;
   align-items: center;
+  max-inline-size: 100%;
 }
 
 .rs-choice-switch > span {
@@ -150,6 +151,8 @@
 }
 
 .rs-choice-switch input {
+  box-sizing: border-box;
+  min-inline-size: 0;
   width: 42px;
   height: 22px;
   accent-color: var(--rs-accent);

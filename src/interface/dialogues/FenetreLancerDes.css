@@ -54,6 +54,85 @@
   box-shadow: var(--ui-selected-shadow);
 }
 
+.quick-roll-expert-mark {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 9px;
+  background: var(--ui-surface-soft);
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.quick-card-form,
+.quick-expert-form {
+  display: grid;
+  gap: 9px;
+  padding-top: 2px;
+}
+
+.quick-card-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.quick-card-form > button {
+  grid-column: 1 / -1;
+}
+
+.quick-expert-form textarea {
+  width: 100%;
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 12px;
+}
+
+.quick-expert-form .compact-help,
+.quick-expert-form .rs-error {
+  margin: 0;
+}
+
+.quick-card-result-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--ui-muted);
+  font-size: 11px;
+}
+
+.quick-card-result-head strong {
+  color: var(--ui-text);
+}
+
+.quick-card-result-list {
+  display: grid;
+  gap: 6px;
+}
+
+.quick-card-result-list article {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 3px 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--radius-control);
+  background: var(--ui-surface-soft);
+}
+
+.quick-card-result-list article img {
+  grid-row: 1 / span 2;
+  width: 34px;
+  height: 46px;
+  object-fit: cover;
+  border-radius: 5px;
+}
+
+.quick-card-result-list article small {
+  color: var(--ui-muted);
+}
+
 .quick-roll-form.rs-use-form {
   display: grid;
   gap: 10px;
@@ -119,7 +198,7 @@
   text-align: center;
   font-size: 24px;
   line-height: 1;
-  background: var(--ui-surface-soft, rgba(148, 163, 184, .18));
+  background: var(--ui-surface-soft);
 }
 
 .quick-roll-total {
@@ -217,6 +296,14 @@
 
   .quick-roll-form .rs-choice-control,
   .quick-roll-form .global-switch {
+    grid-column: auto;
+  }
+
+  .quick-card-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .quick-card-form > button {
     grid-column: auto;
   }
 }

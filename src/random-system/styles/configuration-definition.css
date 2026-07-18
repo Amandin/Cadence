@@ -1,0 +1,284 @@
+.rs-components {
+  display: grid;
+  gap: 9px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--rs-border);
+}
+
+.rs-component-editor {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 10px;
+  padding: 12px;
+  border: 1px solid var(--ui-control-border);
+  border-radius: var(--radius-control);
+  background: var(--ui-control-bg);
+}
+
+.rs-component-editor .rs-subhead {
+  grid-column: 1 / -1;
+}
+
+.rs-mode-value {
+  display: grid;
+  grid-template-columns: minmax(115px, .85fr) minmax(0, 1fr);
+  gap: 5px;
+}
+
+.rs-mode-value > :only-child {
+  grid-column: 1 / -1;
+}
+
+.rs-color-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+}
+
+.rs-color-toggle {
+  min-height: 38px;
+  padding: 7px 9px;
+  border: 1px solid var(--ui-control-border);
+  border-radius: var(--radius-control);
+  background: var(--ui-control-bg);
+}
+
+.rs-color-toggle.active {
+  border-color: var(--ui-selected-border);
+  background: var(--ui-selected-bg);
+  color: var(--ui-primary-contrast);
+}
+
+.rs-color-field input[type="color"] {
+  width: 44px;
+  height: 34px;
+  padding: 3px;
+  border: 1px solid var(--ui-input-border);
+  border-radius: var(--radius-control);
+  background: var(--ui-input-bg);
+  cursor: pointer;
+}
+
+.rs-calculation-editor {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--rs-border);
+}
+
+.rs-calculation-editor > h3 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.rs-calculation-fields {
+  align-items: end;
+}
+
+.rs-calculation-toggle {
+  align-self: end;
+  min-height: 42px;
+  padding: 9px 10px;
+  border: 1px solid var(--ui-control-border);
+  border-radius: var(--radius-control);
+  background: var(--ui-control-bg);
+}
+
+.rs-calculation-toggle.active {
+  border-color: var(--ui-selected-border);
+  background: var(--ui-selected-bg);
+  color: var(--ui-primary-contrast);
+}
+
+.rs-group-calculation {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 8px;
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px solid var(--rs-border);
+}
+
+.rs-draw-treatments {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 8px;
+}
+
+.rs-draw-treatment-toggles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  align-items: end;
+}
+
+.rs-reroll-condition {
+  display: grid;
+  gap: 4px;
+}
+
+.rs-explosion-settings {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.rs-reroll-condition > span {
+  color: var(--rs-muted);
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.rs-advanced-treatments {
+  border-top: 1px solid var(--rs-border);
+  padding-top: 10px;
+}
+
+.rs-advanced-treatments > summary {
+  cursor: pointer;
+  color: var(--rs-muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.rs-treatment {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 10px;
+  border: 1px solid var(--rs-border);
+  border-radius: var(--radius-control);
+}
+
+.rs-treatment.active {
+  border-color: color-mix(in srgb, var(--rs-accent) 55%, var(--rs-border));
+}
+
+.rs-combination-editor {
+  display: grid;
+  gap: 7px;
+}
+
+.rs-combination-settings {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.rs-combination-choice {
+  display: grid;
+  gap: 5px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--rs-border);
+}
+
+.rs-combination-choice-name {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) 34px;
+  gap: 5px;
+  align-items: center;
+}
+
+.rs-combination-choice-roll {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 5px;
+  align-items: end;
+}
+
+.rs-combination-choice-name > input[type="text"],
+.rs-combination-choice label input,
+.rs-combination-choice label select {
+  width: 100%;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid var(--ui-input-border);
+  border-radius: var(--radius-control);
+  background: var(--ui-input-bg);
+  color: var(--ui-input-text);
+}
+
+.rs-combination-choice-name > input[type="radio"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--rs-accent);
+  cursor: pointer;
+}
+
+.rs-combination-choice label {
+  display: grid;
+  gap: 3px;
+  color: var(--rs-muted);
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.rs-combination-choice-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.rs-combination-choice-actions > button,
+.rs-combination-choice-name > button {
+  width: 34px;
+  height: 36px;
+  padding: 0;
+}
+
+.rs-treatment .global-switch {
+  min-height: 34px;
+}
+
+.rs-condition-fields {
+  display: grid;
+  grid-template-columns: 75px minmax(0, 1fr) minmax(120px, 1fr);
+  gap: 6px;
+}
+
+.rs-condition-fields > select,
+.rs-condition-fields > input,
+.rs-condition-fields label input {
+  width: 100%;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid var(--ui-input-border);
+  border-radius: var(--radius-control);
+  background: var(--ui-input-bg);
+  color: var(--ui-input-text);
+}
+
+.rs-condition-fields label {
+  display: grid;
+  grid-template-columns: auto minmax(50px, 1fr);
+  gap: 5px;
+  align-items: center;
+  color: var(--rs-muted);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.rs-inline-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.rs-new-source-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+  margin-bottom: 8px;
+}
+
+.rs-new-source-actions .small-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+

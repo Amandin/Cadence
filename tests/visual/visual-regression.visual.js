@@ -155,8 +155,8 @@ async function waitForSurface(page, surface) {
     await expect(page.locator('.rs-config-workspace')).toBeVisible();
   }
   if (surface === 'modal') {
-    await page.getByRole('button', { name: 'Ouvrir le lanceur de dés' }).click();
-    await expect(page.getByRole('dialog', { name: 'Lancer les dés' })).toBeVisible();
+    await page.getByRole('button', { name: 'Ouvrir le lanceur de tirages' }).click();
+    await expect(page.getByRole('dialog', { name: 'Lancer un tirage' })).toBeVisible();
   }
 }
 
@@ -273,7 +273,7 @@ for (const surface of accessibilitySurfaces) {
     expect(audit.headingJumps).toEqual([]);
 
     if (surface === 'modal') {
-      const dialog = page.getByRole('dialog', { name: 'Lancer les dés' });
+      const dialog = page.getByRole('dialog', { name: 'Lancer un tirage' });
       await expect(dialog).toHaveAttribute('aria-modal', 'true');
       await expect(dialog).toHaveAttribute('aria-labelledby', /.+/);
     }
@@ -287,9 +287,9 @@ test('la fenêtre de lancer conserve et restaure le focus', async ({ page }) => 
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await waitForSurface(page, 'scene');
 
-  const launcher = page.getByRole('button', { name: 'Ouvrir le lanceur de dés' });
+  const launcher = page.getByRole('button', { name: 'Ouvrir le lanceur de tirages' });
   await launcher.click();
-  const dialog = page.getByRole('dialog', { name: 'Lancer les dés' });
+  const dialog = page.getByRole('dialog', { name: 'Lancer un tirage' });
   await expect(dialog).toBeVisible();
   expect(await dialog.evaluate((element) => element.contains(document.activeElement))).toBe(true);
 

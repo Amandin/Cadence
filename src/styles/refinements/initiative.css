@@ -1,0 +1,306 @@
+/* Fenêtre de saisie d’initiatives */
+.initiative-entry-zone {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.initiative-entry-zone > h3 {
+  margin: 2px 0 0;
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--theme-light-muted);
+}
+
+.dark .initiative-entry-zone > h3 {
+  color: var(--theme-dark-muted);
+}
+
+.initiative-entry-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.initiative-entry-zone .initiative-roll-group {
+  gap: 2px;
+  padding: 2px 8px 8px;
+}
+
+.initiative-entry-zone .initiative-roll-group h4 {
+  margin: 0 0 2px;
+  padding: 0;
+  line-height: 1;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--theme-purple-deep);
+}
+
+.initiative-entry-zone .initiative-roll-list {
+  margin-top: 0;
+}
+
+.initiative-entry-zone .initiative-roll-row {
+  padding-top: 2px;
+}
+
+.initiative-entry-zone .initiative-roll-row span {
+  font-size: 13px;
+}
+
+.initiative-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.initiative-decision-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 7px;
+}
+
+.initiative-choice-action {
+  display: grid;
+  gap: 2px;
+  align-items: center;
+  justify-items: center;
+  min-height: 52px;
+  padding: 9px 12px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--theme-orange) 34%, transparent);
+  background: color-mix(in srgb, var(--theme-light-surface) 86%, transparent);
+  color: var(--theme-purple-deep);
+  text-align: center;
+  font-weight: 900;
+}
+
+.initiative-choice-action strong {
+  font-size: 14px;
+  line-height: 1.05;
+}
+
+.initiative-choice-action small {
+  font-size: 11px;
+  line-height: 1.15;
+  color: var(--theme-light-muted);
+  font-weight: 800;
+}
+
+.initiative-choice-action.primary-choice {
+  border-color: color-mix(in srgb, var(--theme-orange) 74%, transparent);
+  background: var(--theme-purple-deep);
+  color: white;
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--theme-purple-deep) 14%, transparent);
+}
+
+.initiative-choice-action.primary-choice small {
+  color: color-mix(in srgb, white 78%, transparent);
+}
+
+.initiative-choice-action.keep-choice,
+.initiative-choice-action.out-choice {
+  border-width: 2px;
+}
+
+.initiative-choice-action.out-choice {
+  border-color: color-mix(in srgb, var(--theme-orange) 54%, transparent);
+}
+
+.initiative-cancel-action {
+  align-self: center;
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--theme-light-muted);
+  font-size: 12px;
+  font-weight: 900;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.dark .initiative-choice-action {
+  border-color: color-mix(in srgb, var(--theme-gold) 28%, transparent);
+  background: color-mix(in srgb, var(--theme-dark-bg-deep) 38%, transparent);
+  color: var(--theme-dark-text);
+}
+
+.dark .initiative-choice-action small {
+  color: var(--theme-dark-muted);
+}
+
+.dark .initiative-choice-action.primary-choice {
+  border-color: color-mix(in srgb, var(--theme-gold) 56%, transparent);
+  background: color-mix(in srgb, var(--theme-gold) 16%, transparent);
+  color: var(--theme-gold);
+  box-shadow: 0 10px 22px color-mix(in srgb, black 24%, transparent);
+}
+
+.dark .initiative-choice-action.primary-choice small {
+  color: color-mix(in srgb, var(--ui-primary-contrast) 72%, transparent);
+}
+
+.dark .initiative-cancel-action {
+  color: var(--theme-dark-muted);
+}
+
+.declaration-choice-window {
+  gap: 12px;
+}
+
+.declaration-choice-progress {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px;
+  align-items: center;
+}
+
+.declaration-choice-progress span {
+  min-width: 44px;
+  padding: 5px 9px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--theme-orange) 12%, transparent);
+  color: var(--theme-orange-deep);
+  text-align: center;
+  font-weight: 900;
+}
+
+.declaration-choice-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+  gap: 7px;
+}
+
+.declaration-choice-actions .initiative-choice-action {
+  min-height: 42px;
+  padding: 7px 10px;
+}
+
+.declaration-choice-review {
+  display: grid;
+  gap: 5px;
+  max-height: 180px;
+  overflow: auto;
+}
+
+.declaration-choice-review button {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 8px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--ui-muted) 12%, transparent);
+  text-align: left;
+}
+
+.declaration-choice-review button.active {
+  outline: 2px solid color-mix(in srgb, var(--theme-orange) 38%, transparent);
+  background: color-mix(in srgb, var(--theme-orange) 10%, transparent);
+}
+
+.declaration-choice-review span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.declaration-action-chip.ready {
+  border-color: color-mix(in srgb, var(--theme-orange) 34%, transparent);
+  background: color-mix(in srgb, var(--theme-orange) 12%, transparent);
+  color: var(--theme-orange-deep);
+}
+
+.active-name .declaration-header-action {
+  margin-top: 2px;
+  color: var(--theme-orange-deep);
+  font-size: clamp(17px, 4vw, 22px);
+  line-height: 1.05;
+  white-space: normal;
+}
+
+.declaration-entry {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+}
+
+.declaration-entry .declaration-action-chip {
+  justify-self: center;
+}
+
+.dark .declaration-choice-progress span,
+.dark .declaration-action-chip.ready {
+  background: color-mix(in srgb, var(--theme-gold) 13%, transparent);
+  color: var(--theme-gold);
+  border-color: color-mix(in srgb, var(--theme-gold) 30%, transparent);
+}
+
+.dark .active-name .declaration-header-action {
+  color: var(--theme-gold);
+}
+
+.dark .declaration-choice-review button {
+  background: color-mix(in srgb, var(--ui-primary-contrast) 08%, transparent);
+}
+
+.dark .declaration-choice-review button.active {
+  outline-color: color-mix(in srgb, var(--theme-gold) 36%, transparent);
+  background: color-mix(in srgb, var(--theme-gold) 10%, transparent);
+}
+
+.phase-actions-editor {
+  display: grid;
+  gap: 7px;
+  padding: 8px;
+  border: 1px solid color-mix(in srgb, var(--ui-muted) 22%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--ui-muted) 08%, transparent);
+}
+
+.phase-check-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(54px, 1fr));
+  gap: 6px;
+}
+
+.phase-check {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 5px;
+  align-items: center;
+  min-height: 34px;
+  padding: 5px 7px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--ui-muted) 24%, transparent);
+  font-weight: 900;
+}
+
+.phase-check.selected {
+  border-color: color-mix(in srgb, var(--theme-orange) 38%, transparent);
+  background: color-mix(in srgb, var(--theme-orange) 10%, transparent);
+  color: var(--theme-orange-deep);
+}
+
+.dark .phase-actions-editor {
+  background: color-mix(in srgb, var(--ui-primary-contrast) 05%, transparent);
+}
+
+.dark .phase-check.selected {
+  border-color: color-mix(in srgb, var(--theme-gold) 34%, transparent);
+  background: color-mix(in srgb, var(--theme-gold) 10%, transparent);
+  color: var(--theme-gold);
+}
+
+@media (min-width: 520px) {
+  .initiative-decision-actions {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
+}
+

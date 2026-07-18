@@ -191,7 +191,24 @@ function CardResult({ result }) {
   );
 }
 
-export const ResultView = memo(function ResultView({ result }) {
+function DecisionResult({ result, onDecision }) {
+  const matching = new Set(result.pendingDecision?.matchingDrawIds || []);
+  return (
+    <>
+      <div className="rs-primary-result">
+        <span>{t('random.decision.afterRoll')}</span>
+        <strong>{result.pendingDecision?.label}</strong>
+      </div>
+      <DrawGroups draws={result.draws.filter((draw) => matching.has(draw.id))} resultId={result.id} />
+      <div className="rs-decision-actions">
+        <button type="button" className="primary" onClick={() => onDecision?.(true)}>{t('random.decision.accept')}</button>
+        <button type="button" className="small-btn" onClick={() => onDecision?.(false)}>{t('random.decision.decline')}</button>
+      </div>
+    </>
+  );
+}
+
+export const ResultView = memo(function ResultView({ result, onDecision }) {
   return (
     <section className="rs-result-view" aria-live="polite">
       <div className="rs-section-head">
@@ -212,6 +229,7 @@ export const ResultView = memo(function ResultView({ result }) {
       {!result && <div className="rs-empty-state">{t('random.result.empty')}</div>}
       {result?.kind === 'random-roll' && <RollResult result={result} />}
       {result?.kind === 'card-draw' && <CardResult result={result} />}
+      {result?.kind === 'random-decision' && <DecisionResult result={result} onDecision={onDecision} />}
     </section>
   );
 });

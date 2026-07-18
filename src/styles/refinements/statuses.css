@@ -1,0 +1,683 @@
+.status.permanent {
+  border-color: color-mix(in srgb, var(--ui-control-border) 92%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ui-primary-contrast) 16%, transparent);
+}
+
+.status.temporary {
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--ui-warning-border) 92%, transparent);
+}
+
+.status.loop {
+  border-style: double;
+  border-color: color-mix(in srgb, var(--ui-control-border) 86%, var(--ui-accent) 14%);
+}
+
+.dark .status.permanent {
+  border-color: color-mix(in srgb, var(--ui-control-border) 96%, transparent);
+}
+
+.dark .status.temporary {
+  border-color: color-mix(in srgb, var(--ui-warning-border) 96%, transparent);
+}
+
+.dark .status.loop {
+  border-color: color-mix(in srgb, var(--ui-control-border) 88%, var(--ui-accent) 12%);
+}
+
+.status.expired,
+.status.inactive-status.expired,
+.status.limited-status.expired {
+  background: var(--theme-orange);
+  border: 1px solid color-mix(in srgb, var(--ui-primary-contrast) 70%, transparent);
+  color: var(--ui-primary-contrast);
+  opacity: 1;
+  filter: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-orange) 18%, transparent), 0 0 14px color-mix(in srgb, var(--theme-orange) 28%, transparent);
+}
+
+.status.expired button {
+  margin-left: 7px;
+  padding: 1px 6px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--ui-primary-contrast) 22%, transparent);
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.dark .status.expired,
+.dark .status.inactive-status.expired,
+.dark .status.limited-status.expired {
+  background: color-mix(in srgb, var(--theme-orange) 72%, var(--theme-purple-deep));
+  color: var(--theme-dark-text);
+}
+
+.status.inactive-status {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--theme-purple-deep) 10%, transparent);
+}
+
+.card.inactive-character,
+.card.inactive-character.active {
+  opacity: .68;
+  filter: grayscale(.82) saturate(.38);
+}
+
+.card.inactive-character.active {
+  transform: scale(1.01);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ui-muted) 42%, transparent), 0 14px 30px color-mix(in srgb, var(--ui-primary-strong) 12%, transparent);
+}
+
+.dark .card.inactive-character.active {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ui-border) 24%, transparent), 0 18px 36px color-mix(in srgb, black 40%, transparent);
+}
+
+.card.limited-character {
+  border-color: color-mix(in srgb, var(--ui-accent) 48%, transparent);
+  border-style: dashed;
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--ui-warning-text) 44%, transparent);
+}
+
+.card.limited-character.active {
+  border-color: var(--accent, var(--ui-accent));
+  border-style: solid;
+  box-shadow: inset 4px 0 0 color-mix(in srgb, var(--ui-muted) 84%, transparent), 0 0 0 3px color-mix(in srgb, var(--ui-muted) 28%, transparent), 0 14px 30px color-mix(in srgb, var(--ui-muted) 16%, transparent);
+}
+
+.chip.limited-chip,
+.status.limited-status:not(.expired) {
+  background: color-mix(in srgb, var(--ui-accent) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ui-accent) 42%, transparent);
+  color: var(--ui-warning-text);
+}
+
+.dark .chip.limited-chip,
+.dark .status.limited-status:not(.expired) {
+  background: color-mix(in srgb, var(--ui-warning-text) 14%, transparent);
+  border-color: color-mix(in srgb, var(--ui-warning-text) 44%, transparent);
+  color: var(--ui-warning-text);
+}
+
+.status.colored-status:not(.expired) {
+  background:
+    linear-gradient(135deg, color-mix(in oklab, var(--status-color, var(--ui-muted)) 58%, white) 0%, color-mix(in oklab, var(--status-color, var(--ui-muted)) 38%, white) 100%) !important;
+  border-color: color-mix(in oklab, var(--status-color, var(--ui-muted)) 82%, transparent) !important;
+  color: color-mix(in oklab, var(--status-color, var(--ui-muted)) 76%, var(--ui-primary-strong)) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--status-color, var(--ui-muted)) 28%, white);
+}
+
+.dark .status.colored-status:not(.expired) {
+  background:
+    linear-gradient(135deg, color-mix(in oklab, var(--status-color, var(--ui-muted)) 52%, var(--ui-primary-strong)) 0%, color-mix(in oklab, var(--status-color, var(--ui-muted)) 34%, var(--ui-primary-strong)) 100%) !important;
+  border-color: color-mix(in oklab, var(--status-color, var(--ui-muted)) 76%, transparent) !important;
+  color: color-mix(in oklab, var(--status-color, var(--ui-muted)) 72%, var(--ui-surface-strong)) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--status-color, var(--ui-muted)) 26%, transparent);
+}
+
+.scene-status-row .scene-add-status-btn {
+  align-self: center;
+  min-height: 0;
+  padding: 5px 9px;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.limited-status-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 15px;
+  height: 15px;
+  margin-right: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--ui-accent);
+  color: var(--ui-primary-contrast);
+  font-size: 10px;
+}
+
+.status-impact-selector {
+  display: grid;
+  gap: 4px;
+  padding: 8px 10px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--ui-muted) 42%, transparent);
+  background: color-mix(in srgb, var(--ui-surface-strong) 74%, transparent);
+}
+
+.dark .status-impact-selector {
+  border-color: color-mix(in srgb, var(--ui-muted) 28%, transparent);
+  background: color-mix(in srgb, var(--ui-primary-strong) 36%, transparent);
+}
+
+.status-impact-selector input[type="range"] {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  accent-color: var(--ui-accent);
+}
+
+.status-impact-labels {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+
+.status-impact-labels button {
+  padding: 3px 2px;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ui-muted);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.status-impact-labels button.active {
+  background: color-mix(in srgb, var(--ui-accent) 14%, transparent);
+  color: var(--ui-warning-text);
+}
+
+.dark .status-impact-labels button.active {
+  color: var(--ui-warning-text);
+}
+
+.preparation-surprise-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 8px;
+  padding: 8px 11px;
+  border: 1px solid color-mix(in srgb, var(--ui-muted) 34%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, white 72%, transparent);
+  color: var(--ui-text);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.preparation-surprise-toggle.active {
+  border-color: color-mix(in srgb, var(--ui-accent) 56%, transparent);
+  background: color-mix(in srgb, var(--ui-warning-text) 12%, transparent);
+  color: var(--ui-warning-text);
+}
+
+.initiative-surprise-toggle {
+  width: fit-content;
+  min-height: 34px;
+  margin: 0 0 8px;
+  padding: 6px 10px;
+}
+
+.preparation-surprise-toggle.disabled {
+  opacity: .58;
+}
+
+.preparation-surprise-toggle small {
+  display: block;
+  margin-top: 2px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.dark .preparation-surprise-toggle {
+  background: color-mix(in srgb, var(--ui-primary-strong) 72%, transparent);
+}
+
+.dark .preparation-surprise-toggle.active {
+  color: var(--ui-warning-text);
+}
+
+.surprise-inline-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ui-muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.surprise-inline-toggle input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--ui-accent);
+}
+
+.surprise-inline-toggle.active {
+  color: var(--ui-warning-text);
+}
+
+.dark .surprise-inline-toggle.active {
+  color: var(--ui-warning-text);
+}
+
+.initiative-reserve-compact {
+  margin-top: 9px;
+  padding: 7px 9px;
+  border: 1px solid color-mix(in srgb, var(--ui-muted) 28%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--ui-muted) 07%, transparent);
+}
+
+.initiative-reserve-compact summary {
+  cursor: pointer;
+  color: var(--ui-muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.initiative-tiebreaker-field,
+.initiative-bonus-inline-field,
+.initiative-entry-zone .initiative-roll-slot {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  min-height: 22px;
+  padding: 2px 3px 2px 7px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--radius-pill);
+  background: var(--ui-surface-soft);
+}
+
+.initiative-tiebreaker-field small,
+.initiative-bonus-inline-field small,
+.initiative-entry-zone .initiative-roll-slot small {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--ui-muted);
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.initiative-tiebreaker-field input,
+.initiative-bonus-inline-field input,
+.initiative-entry-zone .initiative-roll-slot input {
+  flex: 0 0 auto;
+  width: 42px;
+  min-width: 0;
+  height: 18px;
+  min-height: 18px;
+  padding: 0 4px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--radius-pill);
+  background: var(--ui-surface);
+  color: var(--ui-text);
+  font-size: 11px;
+  line-height: 1;
+}
+
+.initiative-entry-zone .initiative-roll-group {
+  display: block;
+}
+
+.initiative-roll-group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.initiative-entry-zone .initiative-roll-group h4 {
+  display: block;
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ui-muted);
+  font-size: 11px;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.initiative-dice-roll-btn {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  min-width: 34px;
+  height: 24px;
+  min-height: 24px;
+  padding: 0;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--radius-pill);
+  background: var(--ui-surface);
+  color: var(--ui-text);
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.initiative-dice-roll-btn:hover,
+.initiative-dice-roll-btn:focus-visible {
+  border-color: var(--ui-accent);
+  color: var(--ui-accent);
+}
+
+.initiative-dice-roll-btn:disabled {
+  cursor: not-allowed;
+  opacity: .45;
+}
+
+.initiative-entry-zone .initiative-roll-row.multi-roll-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 6px;
+  padding: 7px 0;
+}
+
+.initiative-roll-identity {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.initiative-roll-identity .type-chip {
+  flex: 0 0 auto;
+  margin: 0;
+}
+
+.initiative-roll-identity strong {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.initiative-roll-approach {
+  flex: 0 1 128px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  color: var(--ui-muted);
+  font-size: 9px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.initiative-roll-approach select {
+  min-width: 0;
+  height: 26px;
+  padding: 2px 22px 2px 7px;
+  border-radius: var(--radius-pill);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.sheet-initiative-roll {
+  display: flex;
+  align-items: end;
+  gap: 7px;
+  padding: 8px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--radius-control);
+  background: var(--ui-surface-soft);
+}
+
+.sheet-initiative-roll label {
+  flex: 1 1 auto;
+  display: grid;
+  gap: 3px;
+  color: var(--ui-muted);
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.sheet-initiative-roll select {
+  width: 100%;
+  min-width: 0;
+  height: 32px;
+  font-size: 11px;
+  text-transform: none;
+}
+
+.sheet-initiative-roll .small-btn {
+  min-height: 32px;
+}
+
+.initiative-values-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: end;
+  gap: 6px;
+}
+
+.initiative-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.initiative-meta-row.has-surprise.has-tiebreaker {
+  justify-content: space-between;
+}
+
+.initiative-meta-row .surprise-inline-toggle {
+  min-width: 0;
+}
+
+.initiative-meta-row .initiative-tiebreaker-field {
+  width: auto;
+  min-width: 0;
+  flex: 1 1 0;
+}
+
+.initiative-meta-row .initiative-bonus-inline-field {
+  width: auto;
+  min-width: 0;
+  max-width: none;
+  flex: 1 1 0;
+}
+
+.initiative-entry-zone .initiative-roll-slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.initiative-entry-zone .initiative-roll-slot {
+  flex: 1 1 92px;
+}
+
+.initiative-entry-zone .initiative-roll-slot.has-remove {
+  flex-basis: 122px;
+}
+
+.initiative-entry-zone .initiative-roll-slot .subtle-danger.small-btn {
+  flex: 0 0 auto;
+  width: 20px;
+  min-width: 20px;
+  height: 20px;
+  min-height: 20px;
+  padding: 0;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.initiative-entry-zone .add-roll-slot {
+  flex: 0 0 auto;
+  min-height: 24px;
+  padding: 3px 8px;
+}
+
+.surprise-rule-options .surprise-advance-options {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid color-mix(in srgb, var(--ui-muted) 36%, transparent);
+  box-shadow: inset 0 10px 0 color-mix(in srgb, var(--ui-muted) 06%, transparent);
+}
+
+.surprise-rule-options .surprise-advance-options::before {
+  content: "Fin de l'etat";
+  display: block;
+  margin: -4px 0 8px;
+  color: var(--ui-muted);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.dark .surprise-rule-options .surprise-advance-options {
+  border-top-color: color-mix(in srgb, var(--ui-muted) 28%, transparent);
+  box-shadow: inset 0 10px 0 color-mix(in srgb, var(--ui-primary-strong) 22%, transparent);
+}
+
+.initiative-card .status-control-row {
+  align-items: center;
+}
+
+.initiative-card .collapse-inline {
+  margin-left: auto;
+  width: 34px;
+  height: 34px;
+}
+
+.initiative-card.collapsed .collapsed-head {
+  align-items: center;
+  padding: 10px 12px;
+}
+
+.initiative-card.collapsed .collapsed-main {
+  align-items: center;
+}
+
+.initiative-card.collapsed .collapsed-main strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 520px) {
+  .initiative-card {
+    border-radius: 22px;
+    margin: 8px 0;
+  }
+
+  .initiative-card .card-head {
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .initiative-card .card-main {
+    gap: 9px;
+  }
+
+  .initiative-card .avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+  }
+
+  .initiative-card .name-line {
+    gap: 4px;
+  }
+
+  .initiative-card .name-line strong {
+    font-size: 15px;
+    line-height: 1.1;
+  }
+
+  .initiative-card .card-description {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin-top: 2px;
+    font-size: 13px;
+    line-height: 1.25;
+  }
+
+  .initiative-card .chip {
+    padding: 2px 6px;
+    font-size: 9px;
+  }
+
+  .initiative-card .quick-stat-chip {
+    max-width: 92px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .initiative-card .small-btn {
+    padding: 5px 8px;
+    font-size: 11px;
+  }
+
+  .initiative-card .card-actions {
+    display: grid;
+    gap: 5px;
+    flex: 0 0 auto;
+  }
+
+  .initiative-card .trackers {
+    padding: 8px;
+    gap: 6px;
+  }
+
+  .initiative-card .tracker {
+    border-radius: 16px;
+    padding: 7px;
+  }
+
+  .initiative-card .tracker-top {
+    margin-bottom: 6px;
+  }
+
+  .initiative-card .clock-top {
+    grid-template-columns: minmax(0, 1fr) auto auto!important;
+    gap: 6px;
+  }
+
+  .initiative-card .clock-title-zone {
+    gap: 4px;
+  }
+
+  .initiative-card .tracker-title {
+    font-size: 12px;
+  }
+
+  .initiative-card .clock-inline button:not(.clock-face) {
+    width: 31px;
+    height: 31px;
+  }
+
+  .initiative-card .clock-face {
+    width: 42px!important;
+    height: 42px!important;
+  }
+
+  .initiative-card .freeze-btn {
+    width: 34px;
+    height: 34px;
+  }
+}
+
+@media (max-width: 390px) {
+  .initiative-card .card-description {
+    -webkit-line-clamp: 1;
+  }
+
+  .initiative-card .quick-stat-chip {
+    max-width: 74px;
+  }
+
+  .initiative-card .clock-top,
+  .reserve-card .clock-top {
+    grid-template-columns: minmax(0, 1fr) auto auto!important;
+  }
+}
+

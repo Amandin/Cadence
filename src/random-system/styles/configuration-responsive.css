@@ -1,0 +1,135 @@
+@media (max-width: 760px) {
+  .rs-config-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rs-config-list {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    border-right: 0;
+    border-bottom: 1px solid var(--rs-border);
+  }
+
+  .rs-config-list > .rs-section-head,
+  .rs-config-list > .rs-new-source-actions,
+  .rs-config-list > p,
+  .rs-config-list > .rs-definition-list-group {
+    grid-column: 1 / -1;
+  }
+
+  .rs-definition-list-group {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rs-definition-list-group > h4 {
+    grid-column: 1 / -1;
+  }
+
+  .rs-component-editor {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rs-draw-treatment-toggles {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rs-definition-meta {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rs-definition-visual-picker > div {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .rs-condition-fields {
+    grid-template-columns: 70px minmax(0, 1fr);
+  }
+
+  .rs-condition-fields label {
+    grid-column: 1 / -1;
+  }
+
+  .rs-rule-groups {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rs-combination-settings {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rs-combination-choice-roll {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .rs-card-visual-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rs-weighted-layout,
+  .rs-source-detail-grid,
+  .rs-kit-save-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+}
+
+@container (max-width: 760px) {
+  .rs-config-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rs-config-list {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    border-right: 0;
+    border-bottom: 1px solid var(--rs-border);
+  }
+
+  .rs-config-list > .rs-section-head,
+  .rs-config-list > .rs-new-source-actions,
+  .rs-config-list > p,
+  .rs-config-list > .rs-definition-list-group {
+    grid-column: 1 / -1;
+  }
+
+  .rs-definition-list-group {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rs-definition-visual-picker > div {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .rs-definition-list-group > h4 {
+    grid-column: 1 / -1;
+  }
+
+  .rs-component-editor,
+  .rs-definition-meta,
+  .rs-rule-groups {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rs-draw-treatment-toggles {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rs-combination-settings {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rs-combination-choice-roll {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .rs-card-visual-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rs-weighted-layout,
+  .rs-source-detail-grid,
+  .rs-kit-save-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+}

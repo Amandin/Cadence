@@ -1,5 +1,5 @@
 import { defaultCategoryOrder, defaultEqualityRule, defaultInitiativeOrder, equalityRules, initiativeOrders, legacyParticipantKinds } from '../constants.js';
-import { initiativeToNumber } from './initiativeTextOrder.js';
+import { initiativeTextOrderEnabled, initiativeToNumber } from './initiativeTextOrder.js';
 
 function numberOr(value, fallback = 0, options = {}) {
   return initiativeToNumber(value, options.initiativeTextOrder, fallback);
@@ -94,7 +94,9 @@ export function participantAvecCreneau(participant, slot, options = {}) {
 export function ordreCreneauxClassique(participants = [], options = {}) {
   const categoryOrder = options.categoryOrder || defaultCategoryOrder;
   const equalityRule = options.equalityRule || defaultEqualityRule;
-  const initiativeDirection = options.initiativeOrder === initiativeOrders.ASC ? 1 : -1;
+  const initiativeDirection = initiativeTextOrderEnabled(options.initiativeTextOrder)
+    ? -1
+    : options.initiativeOrder === initiativeOrders.ASC ? 1 : -1;
 
   return participants
     .flatMap((participant) => creneauxActionParticipant(participant, options).map((slot) => ({ participant, slot })))
@@ -184,7 +186,9 @@ function comparerNoms(a, b) {
 export function trierParInitiative(participants = [], options = {}) {
   const categoryOrder = options.categoryOrder || defaultCategoryOrder;
   const equalityRule = options.equalityRule || defaultEqualityRule;
-  const initiativeDirection = options.initiativeOrder === initiativeOrders.ASC ? 1 : -1;
+  const initiativeDirection = initiativeTextOrderEnabled(options.initiativeTextOrder)
+    ? -1
+    : options.initiativeOrder === initiativeOrders.ASC ? 1 : -1;
 
   return [...participants].sort((a, b) => {
     if (options.initiativeEnabled === false) {

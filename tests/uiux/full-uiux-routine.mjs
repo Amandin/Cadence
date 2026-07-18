@@ -117,6 +117,14 @@ const scenarios = [
     interactions: ['onboarding-scan'],
   },
   {
+    id: 'first-run-advanced',
+    view: 'hub',
+    tab: 'scenes',
+    campaign: campaignForRules('onboarding-advanced', { temporalite: 'classique' }),
+    onboardingDone: false,
+    interactions: ['advanced-rules-entry'],
+  },
+  {
     id: 'hub-scenes',
     view: 'hub',
     tab: 'scenes',
@@ -461,17 +469,28 @@ async function runInteractions(page, scenario, report) {
     if (group === 'onboarding-scan') {
       report.surfaces.push(await auditSurface(page, `${scenario.id}/welcome`));
       await clickVisibleButton(page, report, 'onboarding theme toggle', { aria: 'Basculer thème clair ou sombre', exact: true });
-      for (let step = 1; step <= 5; step += 1) {
-        const fastSlow = page.getByRole('button', { name: /Rapide \/ lent à chaque round/ });
-        if (await fastSlow.count() === 1 && await fastSlow.isVisible()) await safeClick(page, report, 'onboarding select fast/slow initiative', fastSlow);
-        const simpleD20 = page.getByRole('button', { name: /d20 simple/ });
-        if (await simpleD20.count() === 1 && await simpleD20.isVisible()) {
-          const advantageD20 = page.getByRole('button', { name: /d20 avec avantage \/ désavantage/ });
-          const plotDie = page.getByRole('button', { name: /Dé d’intrigue du Cosmere RPG/ });
-          report.actions.push({ label: 'onboarding d20 simple proposal', status: 'ok' });
-          report.actions.push({ label: 'onboarding d20 advantage proposal', status: await advantageD20.count() === 1 ? 'ok' : 'error' });
-          report.actions.push({ label: 'onboarding plot die for fast/slow', status: await plotDie.count() === 1 ? 'ok' : 'error' });
-        }
+      report.actions.push({
+        label: 'onboarding rhythm choices visible',
+        status: await page.getByRole('button', { name: /Initiative classique/ }).count() === 1 ? 'ok' : 'error',
+      });
+      await safeClick(page, report, 'onboarding choose flexible rhythm', page.getByRole('button', { name: /Tours libres/ }));
+      await safeClick(page, report, 'onboarding open flexible initiative', page.getByRole('button', { name: 'Étape suivante', exact: true }));
+      report.actions.push({
+        label: 'multiple actions remain visible with flexible initiative',
+        status: await page.getByText('Actions multiples', { exact: true }).count() === 1 ? 'ok' : 'error',
+      });
+      await safeClick(page, report, 'onboarding disable flexible initiative', page.getByRole('button', { name: /Non, jouer sans initiative/ }));
+      report.actions.push({
+        label: 'multiple actions remain visible without flexible initiative',
+        status: await page.getByText('Actions multiples', { exact: true }).count() === 1 ? 'ok' : 'error',
+      });
+      await safeClick(page, report, 'onboarding enable flexible initiative', page.getByRole('button', { name: /Oui, garder l’initiative/ }));
+      await safeClick(page, report, 'onboarding open flexible initiative format', page.getByRole('button', { name: 'Étape suivante', exact: true }));
+      report.actions.push({
+        label: 'multiple actions are not repeated on flexible initiative format',
+        status: await page.getByText('Actions multiples', { exact: true }).count() === 0 ? 'ok' : 'error',
+      });
+      for (let step = 1; step <= 12; step += 1) {
         const next = page.getByRole('button', { name: 'Étape suivante', exact: true });
         if (await next.count() !== 1 || !await next.isVisible()) break;
         await safeClick(page, report, `onboarding next step ${step}`, next);
@@ -483,6 +502,16 @@ async function runInteractions(page, scenario, report) {
       await safeClick(page, report, 'tutorial use real Add control', page.locator('.bottom-add-participant'));
       await page.locator('.character-add-sheet').waitFor({ state: 'visible', timeout: 3_000 });
       report.surfaces.push(await auditSurface(page, `${scenario.id}/scene-tutorial-character-add`));
+    }
+
+    if (group === 'advanced-rules-entry') {
+      await safeClick(page, report, 'open advanced rules from onboarding', page.getByRole('button', { name: 'Accéder aux règles avancées', exact: true }));
+      await page.locator('.hub-app').waitFor({ state: 'visible', timeout: 3_000 });
+      report.actions.push({
+        label: 'advanced onboarding opens the rules tab',
+        status: await page.getByRole('button', { name: 'Règles', exact: true }).getAttribute('aria-current') === 'page' ? 'ok' : 'error',
+      });
+      report.surfaces.push(await auditSurface(page, `${scenario.id}/rules`));
     }
 
     if (group === 'hub-tabs') {
@@ -561,7 +590,7 @@ async function runInteractions(page, scenario, report) {
     }
 
     if (group === 'scene-dialogs') {
-      await clickVisibleButton(page, report, 'scene dice launcher', { aria: 'Ouvrir le lanceur de dés', exact: true });
+      await clickVisibleButton(page, report, 'scene dice launcher', { aria: 'Ouvrir le lanceur de tirages', exact: true });
       report.surfaces.push(await auditSurface(page, `${scenario.id}/dice-dialog`));
       await closeDialog(page, report, 'dice');
 

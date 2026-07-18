@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { createRulePresetSnapshot, normalizeRulePresetSnapshot, rulePresetCatalog } from './rulePresets.js';
+import {
+  createRulePresetSnapshot,
+  mergeRulePresetCatalog,
+  normalizeRulePresetSnapshot,
+  rulePresetCatalog,
+} from './rulePresets.js';
 import { normalizeTemplateStore } from './templates.js';
 
 describe('rule preset catalog', () => {
@@ -63,6 +68,16 @@ describe('rule preset catalog', () => {
     expect(store.statusTemplates).toEqual([]);
     expect(store.sceneStatusTemplates).toEqual([]);
     expect(store.sceneCounterTemplates).toEqual([]);
+  });
+
+  it('only offers user presets in the rules UI', () => {
+    const personal = { id: 'mine', name: 'Maison', family: 'system', rules: { temporalite: 'classique' } };
+    const visible = mergeRulePresetCatalog([personal]);
+
+    expect(visible).toEqual([
+      expect.objectContaining({ id: 'mine', family: 'personal', source: 'local' }),
+    ]);
+    expect(mergeRulePresetCatalog([])).toEqual([]);
   });
 
   it('keeps the selected system, edition and initiative profile in a preset snapshot', () => {

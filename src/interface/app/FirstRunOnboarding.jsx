@@ -1,168 +1,427 @@
-import { useEffect, useMemo, useState } from 'react';
-import { initiativeProfileStatuses, initiativeProfilesForSystem, onboardingSupportSummary, quickRollProfilesForSystem } from '../../domain/systemProfiles.js';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { phaseActionModes, temporalityModes } from '../../constants.js';
+import {
+  campaignRulesFromOnboardingAnswers,
+  onboardingAnswersFromRules,
+  onboardingForcesNumericInitiative,
+  onboardingInitiativeFormats,
+  onboardingLabelPresets,
+  onboardingMultipleActionModes,
+  onboardingDefaultRules,
+  onboardingUsesInitiative,
+} from '../../domain/onboardingQuestionnaire.js';
+import { activeRuleSummary } from '../../domain/ruleCompatibility.js';
 import { t } from '../../i18n/index.js';
 import { getCadenceLogo, uiGlyphs } from '../../uiAssets.js';
+import { DefinitionEditor } from '../../random-system/ui/DefinitionEditor.jsx';
+import {
+  createDnd5DefaultDefinitions,
+  dnd5InitiativeDefinitionId,
+} from '../../random-system/noCodeExamples.js';
+import '../../random-system/styles/base.css';
+import '../../random-system/styles/choice-controls.css';
+import '../../random-system/styles/configuration.css';
+import '../../random-system/styles/results.css';
 
-function SystemCard({ profile, selected, onSelect, onActivate }) {
-  return (
-    <button type="button" className={`choice onboarding-preset-card ${selected ? 'selected' : ''}`} aria-pressed={selected} onClick={() => onSelect(profile.id)} onDoubleClick={() => onActivate?.(profile.id)}><span className="onboarding-preset-name">{profile.name}</span>{profile.description && <span className="onboarding-preset-description">{profile.description}</span>}</button>
-  );
-}
-
-function EditionCard({ edition, selected, onSelect }) {
-  return <button type="button" className={`choice onboarding-preset-card ${selected ? 'selected' : ''}`} aria-pressed={selected} onClick={() => onSelect(edition.id)}><span className="onboarding-preset-name">{edition.label}</span></button>;
-}
-
-function InitiativeProfileCard({ profile, examples, selected, onSelect }) {
-  const available = profile.status === initiativeProfileStatuses.AVAILABLE;
+function ChoiceCard({ option, selected, onSelect }) {
   return (
     <button
       type="button"
-      className={`choice onboarding-preset-card ${selected ? 'selected' : ''} ${available ? '' : 'disabled'}`}
-      onClick={() => available && onSelect(profile.id)}
+      className={`choice onboarding-preset-card ${selected ? 'selected' : ''}`}
       aria-pressed={selected}
-      disabled={!available}
+      onClick={() => onSelect(option.value)}
     >
-      <span className="onboarding-preset-name">{profile.label}</span>
-      <span className="onboarding-preset-description">{profile.description || profile.examples || examples}</span>
-      {!available && <span className="onboarding-preset-description">{t('onboarding.profile.planned')}</span>}
+      <span className="onboarding-preset-name">{option.label}</span>
+      {option.description && <span className="onboarding-preset-description">{option.description}</span>}
     </button>
   );
 }
 
-function QuickRollProfileCard({ profile, selected, onToggle }) {
-  return <button type="button" className={`choice onboarding-preset-card ${selected ? 'selected' : ''}`} aria-pressed={selected} onClick={() => onToggle(profile.id)}><span className="onboarding-preset-name">{profile.label}</span><span className="onboarding-preset-description">{profile.description}</span></button>;
+function multipleActionOptions(answers) {
+  const options = [
+    { value: onboardingMultipleActionModes.NEVER, label: t('onboarding.answer.multiple.never') },
+    { value: onboardingMultipleActionModes.ELITES, label: t('onboarding.answer.multiple.elites') },
+    { value: onboardingMultipleActionModes.EVERYONE, label: t('onboarding.answer.multiple.everyone') },
+  ];
+  const automaticAvailable = answers.organization === temporalityModes.CLASSIC
+    && answers.initiativeFormat === onboardingInitiativeFormats.DESCENDING
+    && !answers.declarationMode;
+  options.push({
+    value: onboardingMultipleActionModes.AUTOMATIC,
+    label: automaticAvailable
+      ? t('onboarding.answer.multiple.automatic')
+      : t(answers.organization === temporalityModes.FLEXIBLE
+        ? 'onboarding.answer.multiple.automaticUnavailableFlexible'
+        : 'onboarding.answer.multiple.automaticUnavailable'),
+    disabled: !automaticAvailable,
+  });
+  return options;
 }
 
-function OnboardingSection({ title, children }) {
+function CompactFlowOptions({ answers, onSetAnswer }) {
+  const actionsAvailable = answers.organization !== temporalityModes.PHASES;
+  return (
+    <div className="onboarding-flow-options">
+      {actionsAvailable && (
+        <label className="onboarding-inline-select">
+          <span>{t('onboarding.question.multiple.compact')}</span>
+          <select value={answers.multipleActions} onChange={(event) => onSetAnswer('multipleActions', event.target.value)}>
+            {multipleActionOptions(answers).map((option) => <option key={option.value} value={option.value} disabled={option.disabled}>{option.label}</option>)}
+          </select>
+        </label>
+      )}
+    </div>
+  );
+}
+
+function OnboardingQuestion({ question, value, onChange, answers, onSetAnswer }) {
   return (
     <section className="onboarding-section">
-      <h2>{title}</h2>
-      {children}
+      <div className="onboarding-question-heading">
+        <span>{question.eyebrow}</span>
+        <h2>{question.title}</h2>
+        {question.help && <p className="onboarding-section-note">{question.help}</p>}
+      </div>
+      {question.type === 'text'
+        ? <label className="field onboarding-text-answer"><span>{question.inputLabel}</span><input autoFocus value={value || ''} onChange={(event) => onChange(event.target.value)} /></label>
+        : <div className="stack onboarding-preset-list" role="list" aria-label={question.title}>{question.options.map((option) => <ChoiceCard key={option.value} option={option} selected={option.value === value} onSelect={onChange} />)}</div>}
+      {question.id === 'organization' && (
+        <div className="onboarding-opening-options">
+          <label className={`global-switch onboarding-inline-switch ${answers.surpriseRound ? 'active' : ''}`}>
+            <span>{t('onboarding.question.surprise.switch')}</span>
+            <input type="checkbox" checked={!!answers.surpriseRound} onChange={(event) => onSetAnswer('surpriseRound', event.target.checked)} />
+          </label>
+          <label className={`global-switch onboarding-inline-switch ${answers.declarationMode ? 'active' : ''}`}>
+            <span>{t('onboarding.question.declaration.compact')}</span>
+            <input type="checkbox" checked={!!answers.declarationMode} onChange={(event) => onSetAnswer('declarationMode', event.target.checked)} />
+          </label>
+        </div>
+      )}
+      {question.id === 'phaseType' && (
+        <label className="field onboarding-number-answer">
+          <span>{t(answers.phaseType === phaseActionModes.AUTOMATIC ? 'onboarding.question.phase.decrement' : 'onboarding.question.phase.count')}</span>
+          <input type="number" inputMode="numeric" min="1" max={answers.phaseType === phaseActionModes.CHECKED ? 20 : undefined} step="1" value={answers.phaseType === phaseActionModes.AUTOMATIC ? answers.phaseDecrement : answers.phaseCount} onChange={(event) => onSetAnswer(answers.phaseType === phaseActionModes.AUTOMATIC ? 'phaseDecrement' : 'phaseCount', event.target.value)} />
+        </label>
+      )}
+      {question.id === 'tiebreakerVisible' && answers.tiebreakerVisible && (
+        <label className="field onboarding-inline-text-answer">
+          <span>{t('onboarding.question.tiebreakerLabel.input')}</span>
+          <input value={answers.tiebreakerLabel || ''} onChange={(event) => onSetAnswer('tiebreakerLabel', event.target.value)} />
+        </label>
+      )}
+      {question.compactFlowOptions && <CompactFlowOptions answers={answers} onSetAnswer={onSetAnswer} />}
     </section>
   );
 }
 
-function SupportSummary({ summary }) {
-  const groups = [
-    ['onboarding.summary.ready', summary.ready],
-    ['onboarding.summary.atHand', summary.atHand],
-    ['onboarding.summary.yourCall', summary.yourCall],
-  ];
-  return <div className="stack onboarding-support-summary">{groups.map(([labelKey, items]) => <div key={labelKey}><strong>{t(labelKey)}</strong><ul>{items.map((item) => <li key={item}>{item}</li>)}</ul></div>)}</div>;
+function RulesSummary({ rules, answers }) {
+  const summary = activeRuleSummary(rules);
+  return (
+    <section className="onboarding-section">
+      <div className="onboarding-question-heading">
+        <span>{t('onboarding.question.summary.eyebrow')}</span>
+        <h2>{t('onboarding.question.summary.title')}</h2>
+        <p className="onboarding-section-note">{t('onboarding.question.summary.help')}</p>
+      </div>
+      <div className="onboarding-rule-summary">
+        {summary.map((item) => <span key={item}>{item}</span>)}
+        {answers.surpriseRound && <span>{t('onboarding.summary.surpriseRound')}</span>}
+        {answers.initiativeSource === 'roll' && onboardingUsesInitiative(answers) && answers.initiativeFormat !== onboardingInitiativeFormats.LABELS && <span>{t('onboarding.summary.randomInitiative')}</span>}
+      </div>
+    </section>
+  );
+}
+
+export function OnboardingRandomSetup({ randomSystem, initiativeRequested = false, initiativeRollDefinitionId = '', onSelectInitiative }) {
+  const definitions = randomSystem?.state?.definitions || [];
+  const sources = (randomSystem?.state?.sources || []).filter((source) => source.kind !== 'cards');
+  const selectableDefinitions = definitions.filter((definition) => definition.exposed !== false && definition.active !== false);
+  return (
+    <section className="onboarding-section onboarding-random-setup">
+      <div className="onboarding-question-heading">
+        <span>{t('onboarding.random.eyebrow')}</span>
+        <h2>{t('onboarding.random.title')}</h2>
+        <p className="onboarding-section-note">{t('onboarding.random.help')}</p>
+      </div>
+      {initiativeRequested && (
+        <div className="onboarding-initiative-roll">
+          <label className="field">
+            {t('onboarding.random.initiativeRoll')}
+            <select
+              value={initiativeRollDefinitionId}
+              disabled={!selectableDefinitions.length}
+              onChange={(event) => onSelectInitiative?.(event.target.value)}
+            >
+              {!selectableDefinitions.length && <option value="">{t('onboarding.random.initiativeMissing')}</option>}
+              {selectableDefinitions.map((definition) => <option value={definition.id} key={definition.id}>{definition.name}</option>)}
+            </select>
+          </label>
+          <p className={selectableDefinitions.length ? 'muted compact-help' : 'rule-warning'}>
+            {t(selectableDefinitions.length ? 'onboarding.random.initiativeHelp' : 'onboarding.random.initiativeRequired')}
+          </p>
+        </div>
+      )}
+      <DefinitionEditor
+        definitions={definitions}
+        sources={sources}
+        rulePool={randomSystem?.state?.rulePool}
+        actions={randomSystem?.actions}
+        noCodeOnly
+        initialNoCodeView="essential"
+      />
+      <p className="muted compact-help onboarding-random-later">{t('onboarding.random.later')}</p>
+    </section>
+  );
 }
 
 export function OnboardingStartActions({ disabled = false, onStartDirect, onStartTutorial }) {
   return <div className="onboarding-start-choice"><button type="button" className="primary" onClick={onStartTutorial} disabled={disabled}>{t('onboarding.startChoice.tutorial')}</button><button type="button" className="small-btn" onClick={onStartDirect} disabled={disabled}>{t('onboarding.startChoice.direct')}</button></div>;
 }
 
-export function FirstRunOnboarding({ dark, systemProfiles = [], initialProfile = null, onToggleTheme, onStartProfile, onStartCustomRules, onCancel, showCustomRules = true, offerSceneTutorial = true }) {
-  const preferredSystemProfileId = useMemo(() => systemProfiles.find((profile) => profile.id === 'system/dnd-pathfinder')?.id || systemProfiles[0]?.id || '', [systemProfiles]);
-  const [systemProfileId, setSystemProfileId] = useState(() => initialProfile?.systemProfileId || preferredSystemProfileId);
-  const systemProfile = useMemo(() => systemProfiles.find((profile) => profile.id === systemProfileId) || systemProfiles[0] || null, [systemProfileId, systemProfiles]);
-  const [editionId, setEditionId] = useState(() => initialProfile?.editionId || '');
-  const initiativeProfiles = useMemo(() => initiativeProfilesForSystem(systemProfile?.id, editionId), [editionId, systemProfile?.id]);
-  const [initiativeProfileId, setInitiativeProfileId] = useState(() => initialProfile?.initiativeProfileId || '');
-  const quickRollProfiles = useMemo(() => quickRollProfilesForSystem(systemProfile?.id, initiativeProfileId), [initiativeProfileId, systemProfile?.id]);
-  const [randomQuickRollProfileIds, setRandomQuickRollProfileIds] = useState(() => initialProfile?.randomQuickRollProfileIds || []);
-  const [quickRollSelectionSystemId, setQuickRollSelectionSystemId] = useState('');
+export function questionnaireSteps(answers, includeRandomSetup = false) {
+  const usesInitiative = onboardingUsesInitiative(answers);
+  const forcedNumeric = onboardingForcesNumericInitiative(answers);
+  const labelInitiative = usesInitiative && !forcedNumeric && answers.initiativeFormat === onboardingInitiativeFormats.LABELS;
+  const steps = [
+    {
+      id: 'organization',
+      eyebrow: t('onboarding.question.organization.eyebrow'),
+      title: t('onboarding.question.organization.title'),
+      help: t('onboarding.question.organization.help'),
+      options: [
+        { value: temporalityModes.CLASSIC, label: t('onboarding.answer.organization.classic'), description: t('onboarding.answer.organization.classicHelp') },
+        { value: temporalityModes.FLEXIBLE, label: t('onboarding.answer.organization.flexible'), description: t('onboarding.answer.organization.flexibleHelp') },
+        { value: temporalityModes.PHASES, label: t('onboarding.answer.organization.phases'), description: t('onboarding.answer.organization.phasesHelp') },
+      ],
+    },
+  ];
+
+  if (answers.organization === temporalityModes.FLEXIBLE) {
+    steps.push({
+      id: 'flexibleInitiative',
+      compactFlowOptions: true,
+      eyebrow: t('onboarding.question.flexibleInitiative.eyebrow'),
+      title: t('onboarding.question.flexibleInitiative.title'),
+      help: t('onboarding.question.flexibleInitiative.help'),
+      options: [
+        { value: true, label: t('onboarding.answer.flexibleInitiative.yes'), description: t('onboarding.answer.flexibleInitiative.yesHelp') },
+        { value: false, label: t('onboarding.answer.flexibleInitiative.no'), description: t('onboarding.answer.flexibleInitiative.noHelp') },
+      ],
+    });
+  }
+
+  if (answers.organization === temporalityModes.PHASES) {
+    steps.push({
+      id: 'phaseType',
+      eyebrow: t('onboarding.question.phaseType.eyebrow'),
+      title: t('onboarding.question.phaseType.title'),
+      help: t('onboarding.question.phaseType.help'),
+      options: [
+        { value: phaseActionModes.AUTOMATIC, label: t('onboarding.answer.phaseType.automatic'), description: t('onboarding.answer.phaseType.automaticHelp') },
+        { value: phaseActionModes.CHECKED, label: t('onboarding.answer.phaseType.checked'), description: t('onboarding.answer.phaseType.checkedHelp') },
+      ],
+    });
+  }
+
+  if (usesInitiative && !(answers.organization === temporalityModes.PHASES && answers.phaseType === phaseActionModes.AUTOMATIC)) {
+    steps.push({
+      id: 'initiativeFormat',
+      compactFlowOptions: answers.organization === temporalityModes.CLASSIC,
+      eyebrow: t('onboarding.question.initiativeFormat.eyebrow'),
+      title: t('onboarding.question.initiativeFormat.title'),
+      help: t('onboarding.question.initiativeFormat.help'),
+      options: [
+        { value: onboardingInitiativeFormats.DESCENDING, label: t('onboarding.answer.initiativeFormat.desc'), description: t('onboarding.answer.initiativeFormat.descHelp') },
+        { value: onboardingInitiativeFormats.ASCENDING, label: t('onboarding.answer.initiativeFormat.asc'), description: t('onboarding.answer.initiativeFormat.ascHelp') },
+        { value: onboardingInitiativeFormats.LABELS, label: t('onboarding.answer.initiativeFormat.labels'), description: t('onboarding.answer.initiativeFormat.labelsHelp') },
+      ],
+    });
+  }
+
+  if (
+    (answers.organization === temporalityModes.PHASES && answers.phaseType === phaseActionModes.AUTOMATIC)
+    || answers.multipleActions === onboardingMultipleActionModes.AUTOMATIC
+  ) {
+    steps.push({
+      id: 'phaseReroll',
+      eyebrow: t('onboarding.question.reroll.eyebrow'),
+      title: t('onboarding.question.reroll.title'),
+      help: t('onboarding.question.reroll.help'),
+      options: [
+        { value: true, label: t('onboarding.answer.reroll.yes'), description: t('onboarding.answer.reroll.yesHelp') },
+        { value: false, label: t('onboarding.answer.reroll.no'), description: t('onboarding.answer.reroll.noHelp') },
+      ],
+    });
+  }
+
+  if (labelInitiative) {
+    steps.push({
+      id: 'labelPreset',
+      eyebrow: t('onboarding.question.labels.eyebrow'),
+      title: t('onboarding.question.labels.title'),
+      help: t('onboarding.question.labels.help'),
+      options: [
+        { value: onboardingLabelPresets.FAST_SLOW, label: t('onboarding.answer.labels.fastSlow'), description: t('onboarding.answer.labels.fastSlowHelp') },
+        { value: onboardingLabelPresets.CARDS, label: t('onboarding.answer.labels.cards'), description: t('onboarding.answer.labels.cardsHelp') },
+        { value: onboardingLabelPresets.TAROT, label: t('onboarding.answer.labels.tarot'), description: t('onboarding.answer.labels.tarotHelp') },
+      ],
+    });
+  }
+
+  if (usesInitiative) {
+    steps.push({
+      id: 'tiebreakerVisible',
+      eyebrow: t('onboarding.question.tiebreaker.eyebrow'),
+      title: t('onboarding.question.tiebreaker.title'),
+      help: t('onboarding.question.tiebreaker.help'),
+      options: [
+        { value: true, label: t('onboarding.answer.tiebreaker.yes'), description: t('onboarding.answer.tiebreaker.yesHelp') },
+        { value: false, label: t('onboarding.answer.tiebreaker.no'), description: t('onboarding.answer.tiebreaker.noHelp') },
+      ],
+    });
+  }
+
+  if (usesInitiative && !labelInitiative) {
+    steps.push({
+      id: 'initiativeSource',
+      eyebrow: t('onboarding.question.initiativeSource.eyebrow'),
+      title: t('onboarding.question.initiativeSource.title'),
+      help: t('onboarding.question.initiativeSource.help'),
+      options: [
+        { value: 'fixed', label: t('onboarding.answer.initiativeSource.fixed'), description: t('onboarding.answer.initiativeSource.fixedHelp') },
+        { value: 'roll', label: t('onboarding.answer.initiativeSource.roll'), description: t('onboarding.answer.initiativeSource.rollHelp') },
+      ],
+    });
+  }
+
+  return [...steps, { id: 'summary' }, ...(includeRandomSetup ? [{ id: 'randomSetup' }] : [])];
+}
+
+export function FirstRunOnboarding({ dark, initialRules = null, randomSystem = null, onToggleTheme, onStartRules, onStartCustomRules, onCancel, showCustomRules = true, offerSceneTutorial = true }) {
+  const [answers, setAnswers] = useState(() => onboardingAnswersFromRules(onboardingDefaultRules));
   const [stepIndex, setStepIndex] = useState(0);
-
+  const seededDnd5Rolls = useRef(false);
   useEffect(() => {
-    if (systemProfiles.some((profile) => profile.id === systemProfileId)) return;
-    setSystemProfileId(preferredSystemProfileId);
-  }, [preferredSystemProfileId, systemProfileId, systemProfiles]);
-
-  useEffect(() => {
-    const editions = systemProfile?.editions || [];
-    if (!editions.length) {
-      setEditionId('');
-      return;
-    }
-    if (editions.some((edition) => edition.id === editionId)) return;
-    const recommendedEdition = editions.find((edition) => initiativeProfilesForSystem(systemProfile.id, edition.id)
-      .some((profile) => profile.status === initiativeProfileStatuses.AVAILABLE));
-    setEditionId((recommendedEdition || editions[0]).id);
-  }, [editionId, systemProfile]);
-
-  useEffect(() => {
-    const available = initiativeProfiles.filter((profile) => profile.status === initiativeProfileStatuses.AVAILABLE);
-    if (available.some((profile) => profile.id === initiativeProfileId)) return;
-    setInitiativeProfileId(available[0]?.id || '');
-  }, [initiativeProfileId, initiativeProfiles]);
-
-  useEffect(() => {
-    const selectionKey = `${systemProfile?.id || ''}:${initiativeProfileId}`;
-    if (quickRollSelectionSystemId === selectionKey) return;
-    setRandomQuickRollProfileIds(quickRollProfiles.length === 1 ? [quickRollProfiles[0].id] : []);
-    setQuickRollSelectionSystemId(selectionKey);
-  }, [initiativeProfileId, quickRollProfiles, quickRollSelectionSystemId, systemProfile?.id]);
-
-  const selectedInitiativeProfile = initiativeProfiles.find((profile) => profile.id === initiativeProfileId) || null;
-  const chooseSystem = (nextSystemProfileId) => {
-    const nextSystem = systemProfiles.find((profile) => profile.id === nextSystemProfileId) || null;
-    const nextEditionId = nextSystem?.editions?.[0]?.id || '';
-    const nextInitiativeProfiles = initiativeProfilesForSystem(nextSystemProfileId, nextEditionId).filter((profile) => profile.status === initiativeProfileStatuses.AVAILABLE);
-    setSystemProfileId(nextSystemProfileId);
-    setEditionId(nextEditionId);
-    setInitiativeProfileId(nextInitiativeProfiles[0]?.id || '');
-    const nextQuickRollProfiles = quickRollProfilesForSystem(nextSystemProfileId, nextInitiativeProfiles[0]?.id || '');
-    setRandomQuickRollProfileIds(nextQuickRollProfiles.length === 1 ? [nextQuickRollProfiles[0].id] : []);
-    setStepIndex(0);
-  };
-  const chooseEdition = (nextEditionId) => {
-    const nextInitiativeProfiles = initiativeProfilesForSystem(systemProfile?.id, nextEditionId).filter((profile) => profile.status === initiativeProfileStatuses.AVAILABLE);
-    setEditionId(nextEditionId);
-    setInitiativeProfileId(nextInitiativeProfiles[0]?.id || '');
-  };
-  const toggleQuickRollProfile = (profileId) => setRandomQuickRollProfileIds((current) => current.includes(profileId) ? current.filter((id) => id !== profileId) : [...current, profileId]);
-  const supportSummary = useMemo(() => onboardingSupportSummary({ initiativeProfileId, randomQuickRollProfileIds }), [initiativeProfileId, randomQuickRollProfileIds]);
-  const steps = useMemo(() => [
-    { id: 'system', title: t('onboarding.system.title') },
-    ...(systemProfile?.editions?.length > 1 ? [{ id: 'edition', title: t('onboarding.edition.title') }] : []),
-    ...(initiativeProfiles.length > 1 ? [{ id: 'initiative', title: t('onboarding.initiative.title') }] : []),
-    ...(quickRollProfiles.length > 1 ? [{ id: 'quick-rolls', title: t('onboarding.quickRolls.title') }] : []),
-    { id: 'summary', title: t('onboarding.summary.title') },
-  ], [initiativeProfiles.length, quickRollProfiles.length, systemProfile?.editions?.length]);
-  const step = steps[stepIndex] || steps[0];
-
-  useEffect(() => {
-    if (stepIndex < steps.length) return;
-    setStepIndex(Math.max(0, steps.length - 1));
-  }, [stepIndex, steps.length]);
-
-  const canContinue = step?.id !== 'initiative' || !!selectedInitiativeProfile;
+    if (!randomSystem || seededDnd5Rolls.current) return;
+    seededDnd5Rolls.current = true;
+    if ((randomSystem.state?.definitions || []).length) return;
+    const definitions = createDnd5DefaultDefinitions(randomSystem.state?.sources || []);
+    [...definitions].reverse().forEach((definition) => randomSystem.actions?.saveDefinition(definition));
+    setAnswers((current) => ({
+      ...current,
+      initiativeRollDefinitionId: dnd5InitiativeDefinitionId,
+    }));
+  }, [randomSystem]);
+  const steps = useMemo(() => questionnaireSteps(answers, !!randomSystem), [answers, randomSystem]);
+  const safeStepIndex = Math.min(stepIndex, steps.length - 1);
+  const step = steps[safeStepIndex];
+  const selectableDefinitions = (randomSystem?.state?.definitions || []).filter((definition) => definition.exposed !== false && definition.active !== false);
+  const initiativeRequested = answers.initiativeSource === 'roll'
+    && onboardingUsesInitiative(answers)
+    && answers.initiativeFormat !== onboardingInitiativeFormats.LABELS;
+  const initiativeRollDefinitionId = selectableDefinitions.some((definition) => definition.id === answers.initiativeRollDefinitionId)
+    ? answers.initiativeRollDefinitionId
+    : selectableDefinitions[0]?.id || '';
+  const rules = useMemo(() => ({
+    ...campaignRulesFromOnboardingAnswers(answers, onboardingDefaultRules),
+    initiativeBonusRollDefinitionId: initiativeRequested ? initiativeRollDefinitionId : '',
+  }), [answers, initiativeRequested, initiativeRollDefinitionId]);
+  const value = step?.id === 'summary' ? null : answers[step?.id];
+  const inlineTiebreakerComplete = step?.id !== 'tiebreakerVisible' || !answers.tiebreakerVisible || String(answers.tiebreakerLabel || '').trim().length > 0;
+  const phaseValue = Number(answers.phaseType === phaseActionModes.AUTOMATIC ? answers.phaseDecrement : answers.phaseCount);
+  const inlinePhaseNumberComplete = step?.id !== 'phaseType'
+    || (Number.isInteger(phaseValue) && phaseValue >= 1 && (answers.phaseType !== phaseActionModes.CHECKED || phaseValue <= 20));
+  const canContinue = inlineTiebreakerComplete
+    && inlinePhaseNumberComplete
+    && (step?.id !== 'randomSetup' || !initiativeRequested || !!initiativeRollDefinitionId)
+    && (['summary', 'randomSetup'].includes(step?.id) || (step?.type === 'text' ? String(value || '').trim().length > 0 : value !== undefined && value !== null));
+  const setAnswer = (nextValue) => setAnswers((current) => ({
+    ...current,
+    [step.id]: nextValue,
+    ...(step.id === 'organization'
+      && nextValue !== temporalityModes.CLASSIC
+      && current.multipleActions === onboardingMultipleActionModes.AUTOMATIC
+      ? { multipleActions: onboardingMultipleActionModes.NEVER }
+      : {}),
+    ...(step.id === 'initiativeFormat'
+      && nextValue !== onboardingInitiativeFormats.DESCENDING
+      && current.multipleActions === onboardingMultipleActionModes.AUTOMATIC
+      ? { multipleActions: onboardingMultipleActionModes.NEVER }
+      : {}),
+  }));
+  const setNamedAnswer = (id, nextValue) => setAnswers((current) => ({
+    ...current,
+    [id]: nextValue,
+    ...(id === 'multipleActions' && nextValue === onboardingMultipleActionModes.AUTOMATIC
+      ? { declarationMode: false, initiativeFormat: onboardingInitiativeFormats.DESCENDING }
+      : {}),
+    ...(id === 'declarationMode' && nextValue && current.multipleActions === onboardingMultipleActionModes.AUTOMATIC
+      ? { multipleActions: onboardingMultipleActionModes.NEVER }
+      : {}),
+  }));
   const next = () => setStepIndex((current) => Math.min(current + 1, steps.length - 1));
   const previous = () => setStepIndex((current) => Math.max(current - 1, 0));
-  const startSelection = { systemProfileId: systemProfile?.id, editionId, initiativeProfileId: selectedInitiativeProfile?.id, randomQuickRollProfileIds };
+  const start = (tutorial) => onStartRules?.({ rules, randomSystem: randomSystem?.state || null }, tutorial);
+  const skipConfiguration = () => {
+    const currentRandomState = randomSystem?.state || null;
+    const defaultRandomState = currentRandomState && !(currentRandomState.definitions || []).length
+      ? {
+        ...currentRandomState,
+        definitions: createDnd5DefaultDefinitions(currentRandomState.sources || []),
+      }
+      : currentRandomState;
+    onStartRules?.({
+      rules: {
+        ...onboardingDefaultRules,
+        initiativeBonusRollDefinitionId: dnd5InitiativeDefinitionId,
+      },
+      randomSystem: defaultRandomState,
+    }, false);
+  };
 
   return (
     <div className={`app welcome-app ${dark ? 'dark' : ''}`} data-skin="cadence" data-mode={dark ? 'dark' : 'light'}>
-      <main className="welcome-shell">
+      <main className={`welcome-shell ${step?.id === 'randomSetup' ? 'onboarding-random-shell' : ''}`}>
         <section className="panel welcome-panel">
           <div className="welcome-topbar">
-            <div className="loading-mark welcome-mark">
-              <img src={getCadenceLogo(dark)} alt="Cadence" />
+            <div className="loading-mark welcome-mark"><img src={getCadenceLogo(dark)} alt="Cadence" /></div>
+            <div className="welcome-topbar-actions">
+              {showCustomRules && <button type="button" className="small-btn onboarding-advanced-entry" onClick={() => onStartCustomRules?.()}>{t('onboarding.advanced')}</button>}
+              <button className={`theme-toggle ${dark ? 'dark-on' : 'light-on'}`} onClick={() => onToggleTheme?.(!dark)} aria-label={t('onboarding.toggleTheme')}><span>{uiGlyphs.themeLight}</span><span>{uiGlyphs.themeDark}</span><i /></button>
             </div>
-            <button className={`theme-toggle ${dark ? 'dark-on' : 'light-on'}`} onClick={() => onToggleTheme?.(!dark)} aria-label={t('onboarding.toggleTheme')}><span>{uiGlyphs.themeLight}</span><span>{uiGlyphs.themeDark}</span><i /></button>
           </div>
           <div className="welcome-copy">
             <strong className="brand-title">Cadence</strong>
             <h1>{t('onboarding.title')}</h1>
             <p>{t('onboarding.description')}</p>
           </div>
-          <div className="onboarding-step-progress" aria-live="polite">{t('onboarding.progress', { current: stepIndex + 1, total: steps.length })}</div>
+          {initialRules && safeStepIndex === 0 && (
+            <div className="onboarding-reset-warning" role="alert">
+              <div>
+                <strong>{t('onboarding.resetWarning.title')}</strong>
+                <p>{t('onboarding.resetWarning.body')}</p>
+              </div>
+              {onCancel && <button type="button" className="small-btn" onClick={onCancel}>{t('onboarding.resetWarning.cancel')}</button>}
+            </div>
+          )}
           <div className="onboarding-step" key={step?.id}>
-            {step?.id === 'system' && <OnboardingSection title={step.title}><div className="stack onboarding-preset-list" role="list" aria-label={step.title}>{systemProfiles.map((profile) => <SystemCard key={profile.id} profile={profile} selected={profile.id === systemProfile?.id} onSelect={chooseSystem} onActivate={(profileId) => { chooseSystem(profileId); setStepIndex(1); }} />)}</div></OnboardingSection>}
-            {step?.id === 'edition' && <OnboardingSection title={step.title}><div className="stack onboarding-preset-list" role="list" aria-label={step.title}>{systemProfile.editions.map((edition) => <EditionCard key={edition.id} edition={edition} selected={edition.id === editionId} onSelect={chooseEdition} />)}</div></OnboardingSection>}
-            {step?.id === 'initiative' && <OnboardingSection title={step.title}><div className="stack onboarding-preset-list" role="list" aria-label={step.title}>{initiativeProfiles.map((profile) => <InitiativeProfileCard key={profile.id} profile={profile} examples={systemProfile?.examples} selected={profile.id === initiativeProfileId} onSelect={setInitiativeProfileId} />)}</div></OnboardingSection>}
-            {step?.id === 'quick-rolls' && <OnboardingSection title={step.title}><p className="onboarding-section-note">{t('onboarding.quickRolls.help')}</p><div className="stack onboarding-preset-list" role="list" aria-label={step.title}>{quickRollProfiles.map((profile) => <QuickRollProfileCard key={profile.id} profile={profile} selected={randomQuickRollProfileIds.includes(profile.id)} onToggle={toggleQuickRollProfile} />)}</div></OnboardingSection>}
-            {step?.id === 'summary' && <OnboardingSection title={step.title}><p className="onboarding-section-note">{t('onboarding.summary.help')}</p><SupportSummary summary={supportSummary} /></OnboardingSection>}
+            {step?.id === 'summary'
+              ? <RulesSummary rules={rules} answers={answers} />
+              : step?.id === 'randomSetup'
+                ? <OnboardingRandomSetup randomSystem={randomSystem} initiativeRequested={initiativeRequested} initiativeRollDefinitionId={initiativeRollDefinitionId} onSelectInitiative={(definitionId) => setNamedAnswer('initiativeRollDefinitionId', definitionId)} />
+                : <OnboardingQuestion question={step} value={value} onChange={setAnswer} answers={answers} onSetAnswer={setNamedAnswer} />}
           </div>
-          <div className="welcome-actions onboarding-step-actions">
-            {stepIndex > 0 && <button type="button" className="small-btn" onClick={previous}>{t('onboarding.back')}</button>}
-            {step?.id === 'system' && showCustomRules && <button type="button" className="primary onboarding-custom-action" onClick={() => onStartCustomRules?.()}>{t('onboarding.defineRules')}</button>}
-            {stepIndex < steps.length - 1 ? <button type="button" className="primary" onClick={next} disabled={!canContinue}>{t('onboarding.next')}</button> : <>{offerSceneTutorial ? <OnboardingStartActions disabled={!systemProfile || !selectedInitiativeProfile} onStartDirect={() => selectedInitiativeProfile && onStartProfile?.(startSelection, false)} onStartTutorial={() => selectedInitiativeProfile && onStartProfile?.(startSelection, true)} /> : <button type="button" className="primary" onClick={() => selectedInitiativeProfile && onStartProfile?.(startSelection, false)} disabled={!systemProfile || !selectedInitiativeProfile}>{t('onboarding.start')}</button>}{showCustomRules && <button type="button" className="small-btn onboarding-custom-action" onClick={() => onStartCustomRules?.()}><span className="onboarding-preset-name">{t('onboarding.customRules')}</span></button>}{onCancel && <button type="button" className="small-btn" onClick={onCancel}>{t('common.cancel')}</button>}</>}
+          <div className={`welcome-actions onboarding-step-actions ${step?.id === 'summary' ? 'onboarding-summary-actions' : ''}`.trim()}>
+            {safeStepIndex > 0 && <button type="button" className="small-btn" onClick={previous}>{t('onboarding.back')}</button>}
+            {safeStepIndex < steps.length - 1
+              ? <button type="button" className="primary" onClick={next} disabled={!canContinue}>{t('onboarding.next')}</button>
+              : <>{offerSceneTutorial ? <OnboardingStartActions disabled={!canContinue} onStartDirect={() => start(false)} onStartTutorial={() => start(true)} /> : <button type="button" className="primary" disabled={!canContinue} onClick={() => start(false)}>{t('onboarding.apply')}</button>}{onCancel && <button type="button" className="small-btn" onClick={onCancel}>{t('common.cancel')}</button>}</>}
+            {safeStepIndex === 0 && (
+              <div className="onboarding-skip-config">
+                <button type="button" className="small-btn" onClick={skipConfiguration}>{t('onboarding.skip')}</button>
+                <span>{t('onboarding.skipHelp')}</span>
+              </div>
+            )}
           </div>
         </section>
       </main>

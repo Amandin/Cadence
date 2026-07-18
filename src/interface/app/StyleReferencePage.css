@@ -45,7 +45,7 @@
   border: 1px solid var(--ui-border);
   border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--ui-surface) 94%, transparent);
-  box-shadow: var(--ui-shadow-soft);
+  box-shadow: var(--ui-shadow-surface);
 }
 
 .style-reference-sticky-actions .theme-toggle {

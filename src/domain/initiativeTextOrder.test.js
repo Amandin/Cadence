@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { initiativeLabelFromCard, initiativeLabelFromCardDraw, initiativeTextOrderFromCardSource, initiativeTextOrderPresetIds, initiativeTextValue, initiativeToNumber, normalizeInitiativeTextOrder, presetInitiativeTextOrder, composeInitiativeLabel, splitInitiativeLabel } from './initiativeTextOrder.js';
+import { initiativeLabelFromCard, initiativeLabelFromCardDraw, initiativeTextOrderFromCardSource, initiativeTextOrderFromRandomSource, initiativeTextOrderPresetIds, initiativeTextValue, initiativeToNumber, normalizeInitiativeTextOrder, presetInitiativeTextOrder, composeInitiativeLabel, splitInitiativeLabel } from './initiativeTextOrder.js';
 import { ordreCreneauxClassique, trierParInitiative } from './initiative.js';
 import { createFrenchTarotCardSource, createStandard54CardSource } from '../random-system/cardSourceDefaults.js';
 
@@ -84,6 +84,31 @@ describe('initiativeTextOrder', () => {
       { id: 'c', name: 'C', initiative: 'A♠' },
     ], { initiativeTextOrder: cards });
     expect(participants.map((participant) => participant.id)).toEqual(['c', 'b', 'a']);
+  });
+
+  it('derive les libelles d initiative depuis une table Random System liee', () => {
+    const config = initiativeTextOrderFromRandomSource({
+      id: 'postures-table',
+      name: 'Postures',
+      kind: 'weighted',
+      outcomes: [
+        { id: 'fast', label: 'Rapide', value: 'Rapide', weight: 1 },
+        { id: 'slow', label: 'Lent', value: 'Lent', weight: 1 },
+      ],
+    });
+
+    expect(config.sourceId).toBe('postures-table');
+    expect(config.cardSourceId).toBe('');
+    expect(config.parts).toEqual([{ label: 'Postures', values: ['Rapide', 'Lent'] }]);
+  });
+
+  it('uses the configured label order regardless of the numeric direction setting', () => {
+    const participants = trierParInitiative([
+      { id: 'ace', name: 'As', initiative: 'A♠' },
+      { id: 'king', name: 'Roi', initiative: 'R♥' },
+    ], { initiativeTextOrder: cards, initiativeOrder: 'asc' });
+
+    expect(participants.map((participant) => participant.id)).toEqual(['ace', 'king']);
   });
 
   it('branche la conversion sur les créneaux multiples', () => {

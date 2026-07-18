@@ -10,6 +10,7 @@ common.save,Enregistrer
 common.edit,Modifier
 common.delete,Supprimer
 common.ok,OK
+common.information,Information
 common.on,ON
 common.off,OFF
 common.loading,Chargement
@@ -17,6 +18,7 @@ common.create,Créer
 common.remove,Retirer
 common.expand,Déplier
 common.collapse,Replier
+common.validate,Valider
 app.loading.preparing,Cadence se prépare...
 app.loading.hub,Chargement du hub...
 app.loading.scene,Chargement de la scène...
@@ -49,8 +51,8 @@ onboarding.familySwitchLabel,Famille de presets
 onboarding.family.generic,Génériques
 onboarding.family.system,Systèmes
 onboarding.toggleTheme,Basculer thème clair ou sombre
-onboarding.title,Choisis comment commencer
-onboarding.description,"Choisis une famille de mécaniques : Cadence préparera l’initiative et les jets utiles, tout en te laissant la main sur les règles."
+onboarding.title,Configurer les règles de la table
+onboarding.description,"Choisissez le déroulement des rounds, l’initiative et les actions. Le profil de départ reprend les règles courantes de D&D 5e."
 onboarding.presets.genericTitle,Presets génériques
 onboarding.presets.systemTitle,Presets systèmes
 onboarding.presets.systemNote,"Configurations compatibles, non officielles."
@@ -99,8 +101,124 @@ onboarding.back,Retour
 onboarding.next,Étape suivante
 onboarding.startChoice.help,Comment souhaitez-vous découvrir votre première scène ?
 onboarding.startChoice.tutorial,Suivre le tutoriel
-onboarding.startChoice.tutorialHelp,Quatre étapes guidées directement dans une scène vierge.
+onboarding.startChoice.tutorialHelp,Un parcours guidé directement dans une scène vierge.
 onboarding.startChoice.direct,Commencer directement
+onboarding.apply,Appliquer ces règles
+onboarding.advanced,Accéder aux règles avancées
+onboarding.skip,Passer la configuration
+onboarding.skipHelp,Cadence utilisera les règles courantes de D&D 5e.
+onboarding.resetWarning.title,Les règles actuelles seront remplacées
+onboarding.resetWarning.body,"Ce parcours repart du profil D&D 5e. Si vous le validez, les règles actuelles et les options avancées absentes du questionnaire seront réinitialisées."
+onboarding.resetWarning.cancel,Conserver les règles actuelles
+onboarding.question.organization.eyebrow,Déroulement des rounds
+onboarding.question.organization.title,Comment les personnages prennent-ils leur tour ?
+onboarding.question.organization.help,Choisissez la structure utilisée en combat et dans les scènes d’action.
+onboarding.answer.organization.classic,Initiative classique
+onboarding.answer.organization.classicHelp,"À chaque round, chacun joue une fois dans l’ordre d’initiative."
+onboarding.answer.organization.flexible,Tours libres
+onboarding.answer.organization.flexibleHelp,Le MJ ou les joueurs choisissent qui agit ensuite.
+onboarding.answer.organization.phases,Rounds en plusieurs passes
+onboarding.answer.organization.phasesHelp,Chaque round est découpé en plusieurs phases d’action.
+onboarding.question.surprise.switch,Round de surprise
+onboarding.question.surprise.eyebrow,Surprise
+onboarding.question.surprise.title,Utiliser un round de surprise séparé ?
+onboarding.question.surprise.help,Les personnages surpris sont normalement gérés dans le premier round.
+onboarding.answer.yesDedicatedRound,Oui
+onboarding.answer.yesDedicatedRoundHelp,La surprise occupe un round séparé.
+onboarding.answer.noDedicatedRound,Non
+onboarding.answer.noDedicatedRoundHelp,La surprise est gérée dans le premier round.
+onboarding.question.flexibleInitiative.eyebrow,Initiative en tours libres
+onboarding.question.flexibleInitiative.title,Conserver un ordre d’initiative indicatif ?
+onboarding.question.flexibleInitiative.help,L’ordre reste affiché mais n’impose pas qui joue ensuite.
+onboarding.answer.flexibleInitiative.yes,"Oui, garder l’initiative"
+onboarding.answer.flexibleInitiative.yesHelp,Les scores aident le MJ à distribuer les tours.
+onboarding.answer.flexibleInitiative.no,"Non, jouer sans initiative"
+onboarding.answer.flexibleInitiative.noHelp,Le groupe choisit librement le prochain personnage actif.
+onboarding.question.phaseType.eyebrow,Gestion des passes
+onboarding.question.phaseType.title,Comment attribuer les actions dans chaque passe ?
+onboarding.question.phaseType.help,Utilisez le score d’initiative ou cochez les passes autorisées sur chaque fiche.
+onboarding.answer.phaseType.automatic,Selon le score d’initiative
+onboarding.answer.phaseType.automaticHelp,Le score baisse à chaque passe et détermine qui peut encore agir.
+onboarding.answer.phaseType.checked,Selon les passes cochées
+onboarding.answer.phaseType.checkedHelp,Chaque fiche indique les passes pendant lesquelles le personnage peut agir.
+onboarding.question.phase.count,Nombre de passes par round
+onboarding.question.phase.decrement,Initiative perdue après chaque passe
+onboarding.question.multiple.compact,Actions multiples
+onboarding.question.declaration.compact,Déclaration puis résolution
+onboarding.question.multiple.eyebrow,Actions par round
+onboarding.question.multiple.title,Qui peut agir plusieurs fois ?
+onboarding.question.multiple.help,Autorisez des actions supplémentaires ou limitez chaque personnage à une action.
+onboarding.answer.multiple.never,Une action par round
+onboarding.answer.multiple.neverHelp,Chaque personnage agit une seule fois.
+onboarding.answer.multiple.elites,Plusieurs actions pour les Élites
+onboarding.answer.multiple.elitesHelp,Seuls les profils Élites disposent de créneaux supplémentaires.
+onboarding.answer.multiple.everyone,Plusieurs actions pour tous
+onboarding.answer.multiple.everyoneHelp,Tous les personnages peuvent recevoir plusieurs créneaux.
+onboarding.answer.multiple.automatic,Dépenser de l’initiative pour agir
+onboarding.answer.multiple.automaticHelp,Chaque action réduit le score d’initiative et recalcule l’ordre.
+onboarding.answer.multiple.automaticUnavailable,Coût d’initiative — ordre décroissant sans déclaration uniquement
+onboarding.answer.multiple.automaticUnavailableFlexible,Coût d’initiative — incompatible avec les tours libres
+onboarding.question.reroll.eyebrow,Début du round
+onboarding.question.reroll.title,Redéterminer l’initiative à chaque round ?
+onboarding.question.reroll.help,Demandez une nouvelle saisie ou un nouveau jet au début de chaque round.
+onboarding.answer.reroll.yes,"Oui, nouvelle initiative"
+onboarding.answer.reroll.yesHelp,Les scores sont redéterminés au début de chaque round.
+onboarding.answer.reroll.no,"Non, conserver les scores"
+onboarding.answer.reroll.noHelp,Les scores restent identiques pendant toute la scène.
+onboarding.question.initiativeFormat.eyebrow,Format de l’initiative
+onboarding.question.initiativeFormat.title,Quel type d’initiative utiliser ?
+onboarding.question.initiativeFormat.help,Choisissez un score numérique ou une liste de valeurs ordonnées.
+onboarding.answer.initiativeFormat.desc,Score : le plus élevé agit d’abord
+onboarding.answer.initiativeFormat.descHelp,Format standard de D&D 5e et de nombreux jeux d20.
+onboarding.answer.initiativeFormat.asc,Score : le plus faible agit d’abord
+onboarding.answer.initiativeFormat.ascHelp,Pour les systèmes où une valeur basse représente une action rapide.
+onboarding.answer.initiativeFormat.labels,Initiative par libellés
+onboarding.answer.initiativeFormat.labelsHelp,"L’ordre utilise des termes, des postures ou des cartes plutôt qu’un nombre."
+onboarding.question.labels.eyebrow,Valeurs d’initiative
+onboarding.question.labels.title,Quelle liste de libellés utiliser ?
+onboarding.question.labels.help,La liste pourra être modifiée dans les règles de campagne.
+onboarding.answer.labels.fastSlow,Rapide / Lent
+onboarding.answer.labels.fastSlowHelp,Deux fenêtres d’action : Rapide puis Lent.
+onboarding.answer.labels.cards,Cartes classiques
+onboarding.answer.labels.cardsHelp,Les valeurs et couleurs d’un jeu de cartes déterminent l’ordre.
+onboarding.answer.labels.tarot,Tarot
+onboarding.answer.labels.tarotHelp,Les atouts et les familles déterminent l’ordre.
+onboarding.question.tiebreaker.eyebrow,Égalités d’initiative
+onboarding.question.tiebreaker.title,Ajouter un critère de départage ?
+onboarding.question.tiebreaker.help,Ce champ départage les personnages qui obtiennent la même initiative.
+onboarding.answer.tiebreaker.yes,Oui
+onboarding.answer.tiebreaker.yesHelp,Ajoute un champ secondaire sur chaque fiche.
+onboarding.answer.tiebreaker.no,Non
+onboarding.answer.tiebreaker.noHelp,Les égalités sont résolues par la règle de simultanéité et l’ordre des catégories.
+onboarding.question.tiebreakerLabel.eyebrow,Critère secondaire
+onboarding.question.tiebreakerLabel.title,Nommer le critère de départage
+onboarding.question.tiebreakerLabel.help,"Exemples : Dextérité, Vitesse, Réflexes."
+onboarding.question.tiebreakerLabel.input,Nom du critère secondaire
+onboarding.question.initiativeSource.eyebrow,Jet d’initiative
+onboarding.question.initiativeSource.title,Comment déterminer l’initiative ?
+onboarding.question.initiativeSource.help,Le dé et les modificateurs seront configurés dans les outils de tirage.
+onboarding.answer.initiativeSource.fixed,Saisie manuelle
+onboarding.answer.initiativeSource.fixedHelp,Le score est saisi au lancement de la scène.
+onboarding.answer.initiativeSource.roll,Jet de dés
+onboarding.answer.initiativeSource.rollHelp,Le lanceur d’initiative utilisera le tirage choisi pour la campagne.
+onboarding.random.eyebrow,Tirages de la campagne
+onboarding.random.title,Quels jets veux-tu préparer ?
+onboarding.random.help,Crée les jets qui seront disponibles dès la première scène. Le mode Essentiel suffit pour les jets courants et Toutes les options ouvre la boîte à outils complète sans code.
+onboarding.random.initiativeRoll,Jet utilisé pour l’initiative
+onboarding.random.initiativeMissing,Crée et enregistre d’abord un jet
+onboarding.random.initiativeHelp,Ce jet sera proposé directement lors de la saisie de l’initiative.
+onboarding.random.initiativeRequired,Tu as choisi une initiative lancée aux dés. Crée puis enregistre au moins un jet pour continuer.
+onboarding.random.later,Les jets autres que l’initiative sont facultatifs et pourront être ajoutés ou modifiés plus tard dans les règles de campagne.
+onboarding.question.summary.eyebrow,Récapitulatif
+onboarding.question.summary.title,Vérifier les règles
+onboarding.question.summary.help,Confirmez ces choix avant de les appliquer à la campagne.
+onboarding.summary.surpriseRound,Round de surprise dédié
+onboarding.summary.randomInitiative,Initiative déterminée par un jet
+onboarding.toolbox.title,Jets de dés et tirages
+onboarding.toolbox.help,"Après la création, activez les outils voulus dans l’onglet Tirages : initiative seule, jets courants ou kit complet."
+onboarding.toolbox.level.initiative,Initiative seule
+onboarding.toolbox.level.essentials,Essentiels
+onboarding.toolbox.level.complete,Kit complet
 sceneTutorial.progress,Étape {current} sur {total}
 sceneTutorial.add.title,Créez votre premier personnage
 sceneTutorial.add.body,Utilisez le vrai bouton Ajouter mis en évidence en bas de la scène.
@@ -311,6 +429,7 @@ trackers.boxes.actionGroup,Action sur les cases
 trackers.boxes.fill,Ajouter ou remplir les cases
 trackers.boxes.empty,Retirer ou vider les cases
 trackers.boxes.stepLabel,Nombre de clics par case
+trackers.boxes.caseAria,{block} {line} case {index}
 trackers.bar.newValue,Nouvelle valeur
 trackers.bar.subtractValue,Valeur à soustraire
 trackers.bar.addValue,Valeur à ajouter
@@ -469,6 +588,8 @@ initiative.entry.sort.name,Nom
 initiative.entry.sort.initiative,Initiative
 initiative.entry.bonusLabel,Bonus d'init
 initiative.entry.rollOne,Lancer l'initiative de {name}
+initiative.entry.rollMode,Jet
+initiative.entry.rollModeFor,Mode du jet d’initiative de {name}
 initiative.entry.rollGroup,Lancer l'initiative du groupe {group}
 initiative.entry.rollGrouped,Lancer groupés
 initiative.entry.drawOne,Tirer l'initiative de {name}
@@ -479,6 +600,7 @@ initiative.entry.drawAllTitle,Tirer une carte pour chaque personnage dans l’or
 initiative.entry.rollUnavailable,Tirage d'initiative introuvable ou sans résultat numérique.
 initiative.entry.cardDrawUnavailable,"Paquet d'initiative introuvable ou vide, ou carte incompatible avec les libellés configurés."
 initiative.entry.cardDrawIncomplete,"{drawn} carte(s) distribuée(s) sur {count} : le paquet ne contient pas assez de cartes compatibles."
+initiative.entry.decisionUnsupported,Ce jet demande une décision après le tirage et ne peut pas être utilisé pour l’initiative automatique.
 initiative.entry.partialWarning,"Certaines valeurs actives sont renseignées, d’autres non. Choisis quoi faire des champs vides."
 initiative.entry.empty,Aucun personnage à renseigner.
 initiative.entry.inInitiative,En initiative
@@ -780,6 +902,8 @@ rules.initiativeOrder.unavailableWithCost,Indisponible avec le coût d’initiat
 rules.tiebreaker.title,Départage
 rules.tiebreaker.help,Champ secondaire optionnel utilisé pour ordonner les initiatives égales.
 rules.tiebreaker.show,Afficher le champ
+rules.tiebreaker.showWithBonus,Utiliser un champ de départage en plus du bonus d’initiative
+rules.tiebreaker.showWithoutBonus,Utiliser un champ de départage pour les initiatives égales
 rules.tiebreaker.label,Nom du champ
 rules.tiebreaker.hiddenNote,Les anciennes valeurs restent conservées mais n’influencent plus le tri.
 rules.initiativeBonus.title,Bonus d'initiative
@@ -790,6 +914,7 @@ rules.initiativeBonus.noRoll,Aucun tirage lié
 rules.initiativeBonus.rollNote,La saisie d'initiative utilisera ce tirage pour remplir l'initiative en y injectant le bonus du personnage.
 rules.initiativeBonus.textNote,Les bonus sont conservés mais ne s'appliquent pas aux initiatives par libellés.
 rules.initiativeBonus.hiddenNote,Les anciennes valeurs restent conservées mais sont ignorées et masquées.
+rules.initiativeBonus.noBonusNote,Sans bonus : l’initiative est saisie directement ou définie par le tirage lié.
 rules.multipleActions.title,Actions multiples
 rules.multipleActions.help,Choix exclusif pour les actions multiples dans le round.
 rules.multipleActions.none,Aucune
@@ -821,6 +946,8 @@ rules.newRound.reroll,Relancer l’initiative au nouveau round
 rules.categories.title,Ordre des types
 rules.categories.help,Ordre utilisé pour classer les personnages et départager les initiatives encore égales. Il n’impose pas une activation supplémentaire et reste distinct des libellés d’initiative.
 rules.categories.delete,Supprimer {category}
+rules.categories.renameAria,Renommer {category}
+rules.categories.behaviorAria,Comportement de {category}
 rules.categories.new,Nouveau type
 rules.categories.add,Ajouter
 rules.title,Règles d’initiative
@@ -867,6 +994,7 @@ hub.campaigns.copy,Enregistrer une copie
 hub.campaigns.importAria,Importer une campagne
 hub.campaigns.advanced,Actions avancées
 hub.campaigns.loadTest,Charger la campagne de test
+hub.campaigns.adminPresets,Admin presets règles/tirages
 hub.campaigns.reset,Réinitialiser Cadence
 hub.campaigns.filePickerDescription,Campagne Cadence
 hub.files.title,Fichiers Cadence
@@ -991,7 +1119,11 @@ initiativeText.saveLabels,Enregistrer les libellés
 initiativeText.preset,Préréglage
 initiativeText.cardSource,Paquet de cartes lié
 initiativeText.noCardSource,Aucun paquet lié
-initiativeText.cardSourceHelp,"Le lien indique quel paquet RandomSystem utiliser pour les initiatives par cartes. Cadence convertit chaque carte en parties de libellé, par exemple As + Pique, au lieu de reprendre le nom complet de la carte."
+initiativeText.cardSourceHelp,"Le lien indique quel paquet utiliser pour les initiatives par cartes. Cadence convertit chaque carte en parties de libellé, par exemple As + Pique, au lieu de reprendre le nom complet de la carte."
+initiativeText.linkedSource,Paquet ou table d’aléa
+initiativeText.noLinkedSource,Aucun paquet ni table disponible
+initiativeText.linkedSourceHelp,Les boutons de tirage utiliseront directement cette source. Les libellés suivent les résultats de la source.
+initiativeText.linkedSourceRequired,Créez ou importez d’abord un paquet ou une table dans les sources de hasard.
 initiativeText.cardSourceRequired,Crée ou importe d’abord un paquet dans les sources de hasard.
 initiativeText.custom,Personnalisé
 initiativeText.addPart,+ partie

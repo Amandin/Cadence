@@ -39,6 +39,7 @@ export const DefinitionForm = memo(function DefinitionForm({
   initialParameters = emptyInputs,
   initialOptions = emptyInputs,
   onInputsChange,
+  onResult,
   hideRun = false,
 }) {
   const [inputs, setInputs] = useState(() => initialInputs(definition, { parameters: initialParameters, options: initialOptions }));
@@ -132,12 +133,13 @@ export const DefinitionForm = memo(function DefinitionForm({
   const run = () => {
     try {
       setError('');
-      onRun(
+      const result = onRun(
         definition.id,
         inputs.parameters,
         inputs.options,
         definition.recursive ? inputInstances : undefined,
       );
+      onResult?.(result);
     } catch (nextError) {
       setError(nextError?.message || t('random.error.generic'));
     }
@@ -179,7 +181,15 @@ export const DefinitionForm = memo(function DefinitionForm({
                   {parameter.type === randomParameterTypes.SOURCE ? (
                     <select value={instanceInputs.parameters[parameter.id] ?? ''} onChange={(event) => setParameter(instanceIndex, parameter.id, event.target.value)}>
                       {sources
-                        .filter((source) => !parameter.choices?.length || parameter.choices.includes(source.id))
+                        .filter((source) => {
+                          if (parameter.choices?.length && !parameter.choices.includes(source.id)) return false;
+                          const usages = targetDefinition.components.filter((component) => component.source?.parameterId === parameter.id);
+                          if (!usages.length) return true;
+                          const acceptsCards = usages.some((component) => component.sourceKind === 'cards');
+                          const acceptsRandom = usages.some((component) => component.sourceKind !== 'cards');
+                          return (source.kind === randomSourceKinds.CARDS && acceptsCards)
+                            || (source.kind !== randomSourceKinds.CARDS && acceptsRandom);
+                        })
                         .map((source) => <option value={source.id} key={source.id}>{source.name}</option>)}
                     </select>
                   ) : (
@@ -295,13 +305,10 @@ export function UsePanel({ state, actions }) {
     [state.definitions],
   );
   const [resourceKind, setResourceKind] = useState('definitions');
+  const [pendingResult, setPendingResult] = useState(null);
   const [selectedDefinitionId, setSelectedDefinitionId] = useState(activeRollDefinitions[0]?.id || '');
   const cardSources = useMemo(
     () => state.sources.filter((source) => source.kind === randomSourceKinds.CARDS),
-    [state.sources],
-  );
-  const randomSources = useMemo(
-    () => state.sources.filter((source) => source.kind !== randomSourceKinds.CARDS),
     [state.sources],
   );
   const [selectedCardSourceId, setSelectedCardSourceId] = useState(cardSources[0]?.id || '');
@@ -319,6 +326,10 @@ export function UsePanel({ state, actions }) {
 
   const resources = resourceKind === 'definitions' ? activeRollDefinitions : cardSources;
   const selectedId = resourceKind === 'definitions' ? selectedDefinition?.id : selectedCardSource?.id;
+  const resolveDecision = (accepted) => {
+    const result = actions.resolveDefinitionDecision?.(pendingResult, accepted);
+    setPendingResult(result?.kind === 'random-decision' ? result : null);
+  };
 
   return (
     <div className="rs-use-layout">
@@ -353,8 +364,9 @@ export function UsePanel({ state, actions }) {
           <DefinitionForm
             definition={selectedDefinition}
             definitions={state.definitions}
-            sources={randomSources}
+            sources={state.sources}
             onRun={actions.runDefinition}
+            onResult={(result) => setPendingResult(result?.kind === 'random-decision' ? result : null)}
           />
         )}
         {resourceKind === 'cards' && selectedCardSource && (
@@ -364,7 +376,7 @@ export function UsePanel({ state, actions }) {
             actions={actions}
           />
         )}
-        <ResultView result={state.lastResult} />
+        <ResultView result={pendingResult || state.lastResult} onDecision={pendingResult ? resolveDecision : undefined} />
       </div>
 
       <HistoryPanel history={state.history} onSelect={actions.selectResult} onClear={actions.clearHistory} />

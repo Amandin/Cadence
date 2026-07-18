@@ -1,9 +1,10 @@
 {
   "name": "cadence",
   "private": true,
-  "version": "0.15.30",
+  "version": "0.16.0",
   "type": "module",
   "scripts": {
+    "audit": "node scripts/audit-codebase.mjs",
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
     "build:cloudflare": "npm test && npm run build",

@@ -1,4 +1,4 @@
-export const APP_VERSION = '0.15.30';
+export const APP_VERSION = '0.16.0';
 export const STORAGE_KEY = 'cadence:campaign:v1';
 export const TEMPLATE_STORAGE_KEY = 'cadence:templates:v1';
 
@@ -12,11 +12,10 @@ export const legacyParticipantKinds = {
   Autre: 'Environnement',
 };
 
-// Kept in its historical order so loading an old campaign never changes initiative visibly.
-// The two newer standard profiles remain available and can be inserted anywhere by the user.
-export const defaultCategoryOrder = ['PJ', 'Opposant', 'Allié', 'Environnement'];
+// Existing campaigns retain their saved order. New campaigns expose every standard type.
+export const defaultCategoryOrder = ['PJ', 'Compagnon', 'Élite', 'Allié', 'Opposant', 'Environnement'];
 export const defaultTiebreakerVisible = true;
-export const defaultTiebreakerLabel = 'Départage';
+export const defaultTiebreakerLabel = 'Dextérité';
 export const defaultInitiativeBonusEnabled = true;
 export const defaultFlexibleUseInitiative = true;
 export const surpriseImpacts = { LIMITED: 'limited', INACTIVE: 'inactive' };

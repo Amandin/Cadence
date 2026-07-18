@@ -1,0 +1,274 @@
+/*
+  Socle de theming et de responsive.
+
+  Organisation des tokens :
+  - --layout-* decrit les largeurs et points d'appui responsive.
+  - --space-* decrit les espacements transverses.
+  - --radius-* decrit les arrondis reutilisables.
+  - --skin-* est la couche a redefinir pour de futurs skins d'ambiance.
+  - --ui-* est la couche consommee par les composants existants.
+
+  Pour ajouter un futur skin, surcharger d'abord --skin-* dans un scope
+  dedie, puis laisser --ui-* alimenter les composants autant que possible.
+*/
+
+@font-face {
+  font-family: 'Lato';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/lato/lato-latin-400-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Lato';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/lato/lato-latin-700-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Comfortaa';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/comfortaa/comfortaa-latin-700-normal.woff2') format('woff2');
+}
+
+:root {
+  --font-ui: 'Lato', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-title: 'Comfortaa', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-number: var(--font-ui);
+  font-family: var(--font-ui);
+
+  /* Layout */
+  --layout-reference-width: 390px;
+  --layout-min-width: 320px;
+  --layout-tablet-width: 768px;
+  --layout-wide-width: 1280px;
+  --layout-scene-max-width: var(--layout-reference-width);
+  --layout-hub-max-width: var(--layout-reference-width);
+  --layout-sheet-max-width: var(--layout-reference-width);
+  --layout-bottom-max-width: var(--layout-scene-max-width);
+  --layout-reserve-width: 320px;
+
+  /* Spacing */
+  --space-page-inline: 8px;
+  --space-page-bottom: 96px;
+  --space-compact: 6px;
+  --space-default: 10px;
+  --space-comfortable: 14px;
+
+  /* Shape */
+  --radius-surface: 28px;
+  --radius-sheet: 30px;
+  --radius-card: 28px;
+  --radius-control: 16px;
+  --radius-action: 24px;
+  --radius-pill: 999px;
+
+  /* Skin palette. Future ambience skins should override this block first. */
+  --skin-bg: var(--theme-light-bg);
+  --skin-bg-soft: var(--theme-light-bg-soft);
+  --skin-app-bg: radial-gradient(circle at top left, #fffdf9 0, var(--skin-bg-soft) 36%, var(--skin-bg) 100%);
+  --skin-surface: var(--theme-light-surface);
+  --skin-surface-strong: var(--theme-light-surface-strong);
+  --skin-surface-soft: rgba(250, 239, 229, .58);
+  --skin-border: var(--theme-light-border);
+  --skin-border-strong: rgba(199, 94, 25, .42);
+  --skin-text: var(--theme-light-text);
+  --skin-muted: var(--theme-light-muted);
+  --skin-focus: color-mix(in srgb, var(--theme-purple) 68%, var(--theme-orange-deep));
+  --skin-primary: var(--theme-purple);
+  --skin-primary-strong: var(--theme-purple-deep);
+  --skin-primary-contrast: #fff7ed;
+  --skin-accent: var(--theme-orange-deep);
+  --skin-accent-soft: rgba(199, 94, 25, .16);
+  --skin-danger: var(--theme-danger);
+  --skin-danger-soft: var(--theme-danger-soft);
+  --skin-danger-border: color-mix(in srgb, var(--skin-danger) 28%, transparent);
+  --skin-success: var(--theme-success);
+  --skin-success-soft: var(--theme-success-soft);
+  --skin-success-border: color-mix(in srgb, var(--skin-success) 42%, transparent);
+  --skin-success-contrast: #047857;
+  --skin-control-bg: var(--skin-surface-strong);
+  --skin-control-border: var(--skin-border-strong);
+  --skin-control-text: var(--skin-primary-strong);
+  --skin-input-bg: var(--skin-surface-strong);
+  --skin-input-border: color-mix(in srgb, var(--skin-border) 82%, transparent);
+  --skin-input-text: var(--skin-text);
+  --skin-warning-bg: var(--skin-accent-soft);
+  --skin-warning-border: color-mix(in srgb, var(--skin-accent) 38%, transparent);
+  --skin-warning-text: var(--skin-accent);
+  --skin-overlay-bg: rgba(18, 9, 7, .58);
+  --skin-shadow-surface: 0 14px 34px rgba(49, 18, 54, .12);
+  --skin-shadow-action: 0 4px 16px rgba(81, 22, 90, .24);
+  --skin-app-bg-image: var(--skin-app-bg);
+  --skin-panel-bg: var(--skin-surface);
+  --skin-panel-border: var(--skin-border);
+  --skin-panel-shadow: var(--skin-shadow-surface);
+  --skin-emphasis-panel-bg: var(--skin-panel-bg);
+  --skin-emphasis-panel-shadow: var(--skin-panel-shadow);
+  --skin-rule-panel-bg: var(--skin-panel-bg);
+  --skin-rule-panel-border: var(--skin-panel-border);
+  --skin-rule-panel-shadow: var(--skin-panel-shadow);
+  --skin-muted-strong: var(--skin-muted);
+  --skin-control-bg-strong: var(--skin-control-bg);
+  --skin-control-shadow: var(--skin-shadow-action);
+  --skin-primary-action-bg: var(--skin-primary);
+  --skin-primary-action-border: var(--skin-control-border);
+  --skin-primary-action-shadow: var(--skin-shadow-action);
+  --skin-selected-bg: var(--skin-primary);
+  --skin-selected-border: var(--skin-control-border);
+  --skin-selected-shadow: var(--skin-shadow-action);
+  --skin-danger-contrast: var(--skin-danger);
+  --skin-chip-bg: var(--skin-accent-soft);
+  --skin-chip-border: color-mix(in srgb, var(--skin-accent) 20%, var(--skin-border));
+  --skin-chip-text: var(--skin-primary-strong);
+  --skin-chip-subtle-bg: color-mix(in srgb, var(--skin-surface) 82%, var(--skin-accent-soft));
+  --skin-chip-subtle-border: color-mix(in srgb, var(--skin-accent) 24%, var(--skin-border));
+  --skin-chip-subtle-text: var(--skin-primary-strong);
+  --skin-chip-muted-bg: color-mix(in srgb, var(--skin-surface) 88%, var(--skin-primary) 6%);
+  --skin-chip-muted-border: color-mix(in srgb, var(--skin-primary) 14%, var(--skin-border));
+  --skin-chip-muted-text: color-mix(in srgb, var(--skin-primary-strong) 82%, var(--skin-text));
+
+  /* UI aliases used by existing components. Keep these stable. */
+  --ui-bg: var(--skin-bg);
+  --ui-bg-soft: var(--skin-bg-soft);
+  --ui-app-bg: var(--skin-app-bg);
+  --ui-surface: var(--skin-surface);
+  --ui-surface-strong: var(--skin-surface-strong);
+  --ui-surface-soft: var(--skin-surface-soft);
+  --ui-border: var(--skin-border);
+  --ui-border-strong: var(--skin-border-strong);
+  --ui-text: var(--skin-text);
+  --ui-muted: var(--skin-muted);
+  --ui-focus: var(--skin-focus);
+  --ui-primary: var(--skin-primary);
+  --ui-primary-strong: var(--skin-primary-strong);
+  --ui-primary-contrast: var(--skin-primary-contrast);
+  --ui-accent: var(--skin-accent);
+  --ui-accent-soft: var(--skin-accent-soft);
+  --ui-danger: var(--skin-danger);
+  --ui-danger-soft: var(--skin-danger-soft);
+  --ui-danger-border: var(--skin-danger-border);
+  --ui-success: var(--skin-success);
+  --ui-success-soft: var(--skin-success-soft);
+  --ui-success-border: var(--skin-success-border);
+  --ui-success-contrast: var(--skin-success-contrast);
+  --ui-control-bg: var(--skin-control-bg);
+  --ui-control-border: var(--skin-control-border);
+  --ui-control-text: var(--skin-control-text);
+  --ui-input-bg: var(--skin-input-bg);
+  --ui-input-border: var(--skin-input-border);
+  --ui-input-text: var(--skin-input-text);
+  --ui-warning-bg: var(--skin-warning-bg);
+  --ui-warning-border: var(--skin-warning-border);
+  --ui-warning-text: var(--skin-warning-text);
+  --ui-overlay-bg: var(--skin-overlay-bg);
+  --ui-shadow-surface: var(--skin-shadow-surface);
+  --ui-shadow-action: var(--skin-shadow-action);
+  --ui-app-bg-image: var(--skin-app-bg-image);
+  --ui-panel-bg: var(--skin-panel-bg);
+  --ui-panel-border: var(--skin-panel-border);
+  --ui-panel-shadow: var(--skin-panel-shadow);
+  --ui-emphasis-panel-bg: var(--skin-emphasis-panel-bg);
+  --ui-emphasis-panel-shadow: var(--skin-emphasis-panel-shadow);
+  --ui-rule-panel-bg: var(--skin-rule-panel-bg);
+  --ui-rule-panel-border: var(--skin-rule-panel-border);
+  --ui-rule-panel-shadow: var(--skin-rule-panel-shadow);
+  --ui-muted-strong: var(--skin-muted-strong);
+  --ui-control-bg-strong: var(--skin-control-bg-strong);
+  --ui-control-shadow: var(--skin-control-shadow);
+  --ui-primary-action-bg: var(--skin-primary-action-bg);
+  --ui-primary-action-border: var(--skin-primary-action-border);
+  --ui-primary-action-shadow: var(--skin-primary-action-shadow);
+  --ui-selected-bg: var(--skin-selected-bg);
+  --ui-selected-border: var(--skin-selected-border);
+  --ui-selected-shadow: var(--skin-selected-shadow);
+  --ui-danger-contrast: var(--skin-danger-contrast);
+  --ui-chip-bg: var(--skin-chip-bg);
+  --ui-chip-border: var(--skin-chip-border);
+  --ui-chip-text: var(--skin-chip-text);
+  --ui-chip-subtle-bg: var(--skin-chip-subtle-bg);
+  --ui-chip-subtle-border: var(--skin-chip-subtle-border);
+  --ui-chip-subtle-text: var(--skin-chip-subtle-text);
+  --ui-chip-muted-bg: var(--skin-chip-muted-bg);
+  --ui-chip-muted-border: var(--skin-chip-muted-border);
+  --ui-chip-muted-text: var(--skin-chip-muted-text);
+}
+
+:root.dark,
+:root[data-mode="dark"],
+.app.dark,
+.app[data-mode="dark"] {
+  color-scheme: dark;
+  --skin-bg: var(--theme-dark-bg);
+  --skin-bg-soft: var(--theme-dark-bg-deep);
+  --skin-app-bg: radial-gradient(circle at top left, var(--theme-purple) 0, var(--theme-dark-bg) 38%, var(--theme-dark-bg-deep) 100%);
+  --skin-surface: var(--theme-dark-surface);
+  --skin-surface-strong: var(--theme-dark-surface-soft);
+  --skin-surface-soft: rgba(83, 35, 72, .36);
+  --skin-border: var(--theme-dark-border);
+  --skin-border-strong: rgba(210, 164, 86, .44);
+  --skin-text: var(--theme-dark-text);
+  --skin-muted: var(--theme-dark-muted);
+  --skin-focus: var(--theme-gold);
+  --skin-primary: var(--theme-purple);
+  --skin-primary-strong: #3b1245;
+  --skin-primary-contrast: var(--theme-dark-text);
+  --skin-accent: var(--theme-orange-deep);
+  --skin-accent-soft: rgba(199, 94, 25, .24);
+  --skin-danger: #fb7185;
+  --skin-danger-soft: rgba(244, 63, 94, .18);
+  --skin-danger-border: rgba(244, 114, 182, .38);
+  --skin-success: #34d399;
+  --skin-success-soft: rgba(16, 185, 129, .16);
+  --skin-success-border: rgba(16, 185, 129, .42);
+  --skin-success-contrast: #a7f3d0;
+  --skin-control-bg: #301437;
+  --skin-control-border: rgba(210, 164, 86, .44);
+  --skin-control-text: var(--theme-dark-text);
+  --skin-input-bg: var(--theme-dark-bg-deep);
+  --skin-input-border: var(--theme-dark-border);
+  --skin-input-text: var(--theme-dark-text);
+  --skin-warning-bg: rgba(210, 164, 86, .10);
+  --skin-warning-border: rgba(210, 164, 86, .30);
+  --skin-warning-text: var(--theme-gold);
+  --skin-overlay-bg: rgba(8, 3, 10, .72);
+  --skin-shadow-surface: 0 20px 42px rgba(0, 0, 0, .48), inset 0 1px 0 rgba(240, 221, 182, .05);
+  --skin-shadow-action: 0 0 0 1px rgba(164, 90, 177, .20), 0 4px 18px rgba(0, 0, 0, .38);
+  --skin-app-bg-image:
+    radial-gradient(ellipse at 12% 0%, rgba(164, 90, 177, .36) 0, rgba(81, 22, 90, .20) 28%, transparent 58%),
+    radial-gradient(ellipse at 88% 8%, rgba(210, 164, 86, .18) 0, rgba(199, 94, 25, .10) 26%, transparent 56%),
+    linear-gradient(145deg, rgba(33, 16, 37, .98) 0, rgba(24, 10, 28, .99) 48%, var(--theme-dark-bg-deep) 100%);
+  --skin-panel-bg: linear-gradient(145deg, rgba(60, 27, 67, .92) 0, rgba(35, 15, 40, .96) 58%, rgba(18, 8, 22, .96) 100%);
+  --skin-panel-border: color-mix(in srgb, var(--theme-dark-border) 78%, rgba(164, 90, 177, .32));
+  --skin-panel-shadow: 0 18px 42px rgba(0, 0, 0, .46), 0 0 0 1px rgba(164, 90, 177, .10), inset 0 1px 0 rgba(255, 247, 237, .055), inset 0 -1px 0 rgba(0, 0, 0, .24);
+  --skin-emphasis-panel-bg: radial-gradient(ellipse at 14% 0%, rgba(210, 164, 86, .14) 0, transparent 48%), linear-gradient(160deg, rgba(50, 23, 57, .99), rgba(29, 12, 33, .99) 60%, rgba(18, 8, 22, .99));
+  --skin-emphasis-panel-shadow: 0 18px 38px rgba(0, 0, 0, .42), 0 0 0 1px rgba(210, 164, 86, .14), inset 0 1px 0 rgba(255, 247, 237, .08);
+  --skin-rule-panel-bg: linear-gradient(155deg, rgba(65, 30, 72, .84) 0, rgba(38, 16, 43, .94) 54%, rgba(20, 8, 24, .96) 100%);
+  --skin-rule-panel-border: color-mix(in srgb, var(--theme-dark-border) 70%, rgba(199, 94, 25, .22));
+  --skin-rule-panel-shadow: inset 0 1px 0 rgba(255, 247, 237, .045), inset 0 0 24px rgba(164, 90, 177, .08);
+  --skin-muted-strong: color-mix(in srgb, var(--theme-dark-muted) 88%, #fff7ed);
+  --skin-control-bg-strong: linear-gradient(180deg, rgba(64, 29, 72, .92), rgba(35, 15, 40, .96));
+  --skin-control-shadow: 0 2px 10px rgba(0, 0, 0, .34), inset 0 1px 0 rgba(255, 247, 237, .05);
+  --skin-primary-action-bg: linear-gradient(180deg, color-mix(in srgb, var(--theme-purple-glow) 42%, var(--theme-purple)) 0%, var(--theme-purple) 55%, var(--theme-purple-deep) 100%);
+  --skin-primary-action-border: color-mix(in srgb, var(--theme-gold) 52%, transparent);
+  --skin-primary-action-shadow: 0 8px 20px rgba(0, 0, 0, .38), 0 0 18px rgba(164, 90, 177, .22), inset 0 1px 0 rgba(255, 247, 237, .10);
+  --skin-selected-bg: linear-gradient(180deg, color-mix(in srgb, var(--theme-purple-glow) 52%, var(--theme-purple)) 0%, var(--theme-purple) 100%);
+  --skin-selected-border: var(--theme-gold);
+  --skin-selected-shadow: 0 8px 18px rgba(0, 0, 0, .34), 0 0 16px rgba(164, 90, 177, .20);
+  --skin-danger-contrast: #fff1f2;
+  --skin-chip-bg: rgba(81, 22, 90, .48);
+  --skin-chip-border: rgba(210, 164, 86, .34);
+  --skin-chip-text: var(--theme-dark-text);
+  --skin-chip-subtle-bg: color-mix(in srgb, rgba(81, 22, 90, .34) 72%, var(--skin-surface));
+  --skin-chip-subtle-border: color-mix(in srgb, var(--theme-gold) 30%, var(--skin-border));
+  --skin-chip-subtle-text: var(--theme-dark-text);
+  --skin-chip-muted-bg: color-mix(in srgb, rgba(81, 22, 90, .18) 48%, var(--skin-surface));
+  --skin-chip-muted-border: color-mix(in srgb, var(--theme-gold) 18%, var(--skin-border));
+  --skin-chip-muted-text: color-mix(in srgb, var(--theme-dark-text) 84%, var(--theme-dark-muted));
+}
+

@@ -6,6 +6,8 @@ import { OptionsContent, ThemeModeToggle } from '../app/MenuOptions.jsx';
 import { Fenetre } from '../commun/ComposantsCommuns.jsx';
 import { IconeCadence } from '../icones/IconeCadence.jsx';
 import { activeDefinitions } from '../../random-system/definitionAccess.js';
+import { randomSourceKinds } from '../../random-system/engine.js';
+import { HUB_TAB_STORAGE_KEY } from './hubNavigation.js';
 
 const OngletRegles = lazy(() => import('./OngletRegles.jsx').then((module) => ({ default: module.OngletRegles })));
 const OngletTemplates = lazy(() => import('./OngletTemplates.jsx').then((module) => ({ default: module.OngletTemplates })));
@@ -19,8 +21,6 @@ const ConfigurationPanel = lazy(() => loadRandomConfigurationPanel().then((modul
 const StatisticsPanel = lazy(() => loadRandomStatisticsPanel().then((module) => ({ default: module.StatisticsPanel })));
 const StyleReferencePage = lazy(() => loadStyleReferencePage().then((module) => ({ default: module.StyleReferencePage })));
 const AdminPresetsPage = lazy(() => loadAdminPresetsPage().then((module) => ({ default: module.AdminPresetsPage })));
-
-const HUB_TAB_STORAGE_KEY = 'cadence:interface:hub-tab:v1';
 
 function initialHubTab() {
   try {
@@ -186,7 +186,7 @@ function OngletReglesEtHasard({ scene, campaignProfile, rulePresetSnapshot, rule
       </nav>
       <Suspense fallback={<ChargementOnglet texte={t('random.loadingSection')} />}>
         <div className="rules-hub-content">
-          {section === 'initiative' && <OngletRegles embedded scene={scene} campaignProfile={campaignProfile} rulePresetSnapshot={rulePresetSnapshot} onModifierRegles={onModifierReglesInitiative} ruleTemplates={ruleTemplates} initiativeTextPresets={initiativeTextPresets} cardSources={randomSystem.state.sources.filter((source) => source.kind === 'cards')} rollDefinitions={activeDefinitions(randomSystem.state.definitions)} onOuvrirProfilCampagne={onOuvrirProfilCampagne} onAppliquerTemplateRegles={onAppliquerTemplateRegles} onEnregistrerTemplateRegles={onEnregistrerTemplateRegles} onEnregistrerPresetInitiativeTextuelle={onEnregistrerPresetInitiativeTextuelle} onDupliquerTemplateRegles={onDupliquerTemplateRegles} onSupprimerTemplateRegles={onSupprimerTemplateRegles} />}
+          {section === 'initiative' && <OngletRegles embedded scene={scene} campaignProfile={campaignProfile} rulePresetSnapshot={rulePresetSnapshot} onModifierRegles={onModifierReglesInitiative} ruleTemplates={ruleTemplates} initiativeTextPresets={initiativeTextPresets} cardSources={randomSystem.state.sources.filter((source) => source.kind === randomSourceKinds.CARDS)} tableSources={randomSystem.state.sources.filter((source) => source.kind === randomSourceKinds.WEIGHTED)} rollDefinitions={activeDefinitions(randomSystem.state.definitions)} onOuvrirProfilCampagne={onOuvrirProfilCampagne} onAppliquerTemplateRegles={onAppliquerTemplateRegles} onEnregistrerTemplateRegles={onEnregistrerTemplateRegles} onEnregistrerPresetInitiativeTextuelle={onEnregistrerPresetInitiativeTextuelle} onDupliquerTemplateRegles={onDupliquerTemplateRegles} onSupprimerTemplateRegles={onSupprimerTemplateRegles} />}
           {randomConfigurationSection && <section className="random-system-page"><ConfigurationPanel state={randomSystem.state} actions={randomSystem.actions} section={section} /></section>}
         </div>
       </Suspense>
@@ -310,7 +310,7 @@ function OngletCampagnes({ campaignName, campaignEntries = [], fileSaveStatus, p
         <input ref={inputLibraryRef} className="import-file-input" type="file" aria-label={t('hub.files.importLibrary')} accept=".cadlib,application/json,text/json,text/plain,application/octet-stream,*/*" onChange={importerBibliotheque} />
         <details className="advanced-options">
           <summary>{t('hub.campaigns.advanced')}</summary>
-          <button className="small-btn" type="button" onPointerEnter={loadAdminPresetsPage} onFocus={loadAdminPresetsPage} onClick={() => setAdminPresetsOpen(true)}>Admin presets règles/tirages</button>
+          <button className="small-btn" type="button" onPointerEnter={loadAdminPresetsPage} onFocus={loadAdminPresetsPage} onClick={() => setAdminPresetsOpen(true)}>{t('hub.campaigns.adminPresets')}</button>
           <button className="small-btn" type="button" onPointerEnter={loadStyleReferencePage} onFocus={loadStyleReferencePage} onClick={() => setStyleReferenceOpen(true)}>{t('hub.campaigns.styleReference')}</button>
           <button className="small-btn" onClick={onChargerCampagneTest}>{t('hub.campaigns.loadTest')}</button>
           <button className="danger-btn" onClick={onReinitialiser}>{t('hub.campaigns.reset')}</button>

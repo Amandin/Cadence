@@ -147,10 +147,10 @@ export function mergeRulePresetCatalog(customPresets = []) {
     ? customPresets.map((preset) => ({
       ...preset,
       source: preset.source || 'local',
-      family: preset.family || rulePresetFamilies.PERSONAL,
+      family: rulePresetFamilies.PERSONAL,
       system: preset.system || '',
       readOnly: !!preset.readOnly,
     }))
     : [];
-  return [...rulePresetCatalog, ...custom].sort(sortPresets);
+  return custom.sort(sortPresets);
 }

@@ -1,0 +1,236 @@
+.icon-btn,
+.small-btn,
+.controls > button,
+.clock-inline button:not(.clock-face),
+.global-mini > button {
+  background: var(--ui-surface-strong);
+  border-color: var(--ui-border-strong);
+  color: var(--ui-primary-strong);
+}
+
+.primary,
+.turn-btn,
+.small-btn,
+.icon-btn,
+.danger-btn,
+.choice,
+.initiative-choice-action,
+.controls > button,
+.clock-inline button:not(.clock-face),
+.global-mini > button {
+  border-style: solid;
+  border-width: 1px;
+  font-weight: 900;
+}
+
+.small-btn,
+.icon-btn,
+.choice,
+.initiative-choice-action,
+.controls > button,
+.clock-inline button:not(.clock-face),
+.global-mini > button {
+  box-shadow: var(--ui-shadow-action);
+}
+
+.dark .small-btn,
+.dark .icon-btn,
+.dark .choice,
+.dark .initiative-choice-action,
+.dark .controls > button,
+.dark .clock-inline button:not(.clock-face),
+.dark .global-mini > button {
+  background: var(--ui-control-bg-strong);
+  border-color: var(--ui-control-border);
+  color: var(--ui-primary-contrast);
+  box-shadow: var(--ui-control-shadow);
+}
+
+.choice.selected,
+.initiative-choice-action.primary-choice,
+.dark .choice.selected,
+.dark .initiative-choice-action.primary-choice {
+  background: var(--ui-primary);
+  border-color: var(--ui-accent);
+  color: var(--ui-primary-contrast);
+  box-shadow: var(--ui-shadow-action);
+}
+
+.dark .choice.selected,
+.dark .initiative-choice-action.primary-choice {
+  background: var(--ui-selected-bg);
+  border-color: var(--ui-selected-border);
+  color: var(--ui-primary-contrast);
+}
+
+.initiative-choice-action small,
+.dark .initiative-choice-action small,
+.dark .initiative-choice-action.primary-choice small {
+  color: currentColor;
+  opacity: .78;
+}
+
+.danger-btn,
+.subtle-danger {
+  background: var(--ui-danger-soft);
+  border-color: color-mix(in srgb, var(--ui-danger) 36%, transparent);
+  color: var(--ui-danger);
+}
+
+.dark .danger-btn,
+.dark .subtle-danger {
+  background: var(--ui-danger-soft);
+  border-color: var(--ui-danger-border);
+  color: var(--ui-danger-contrast);
+}
+
+.bottom .small-btn,
+.bottom .turn-btn,
+.bottom .primary {
+  border-color: var(--ui-border-strong);
+}
+
+.bottom .small-btn {
+  background: var(--ui-surface-strong);
+  color: var(--ui-primary-strong);
+  box-shadow: var(--ui-shadow-action);
+}
+
+.bottom .turn-btn,
+.bottom .primary {
+  background: var(--ui-primary);
+  color: var(--ui-primary-contrast);
+  box-shadow: var(--ui-shadow-action);
+}
+
+.bottom .primary.next-round,
+.bottom .turn-btn.next-round {
+  background: var(--ui-accent);
+}
+
+.bottom .primary.blocked,
+.bottom .turn-btn.blocked {
+  background: var(--ui-primary-strong);
+}
+
+.dark .bottom .small-btn,
+.dark .bottom .turn-btn,
+.dark .bottom .primary {
+  border-color: var(--ui-border-strong);
+}
+
+.dark .bottom .small-btn {
+  background: var(--ui-control-bg-strong);
+  color: var(--ui-primary-contrast);
+  box-shadow: var(--ui-control-shadow);
+}
+
+.dark .bottom .turn-btn,
+.dark .bottom .primary {
+  background: var(--ui-primary);
+  color: var(--ui-primary-contrast);
+  box-shadow: var(--ui-shadow-action);
+}
+
+.dark .bottom .primary.next-round,
+.dark .bottom .turn-btn.next-round {
+  background: var(--ui-accent);
+}
+
+.dark .bottom .primary.blocked,
+.dark .bottom .turn-btn.blocked {
+  background: var(--ui-primary-strong);
+}
+
+.hub-return-logo {
+  overflow: visible;
+}
+
+.hub-return-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.scene-head .hub-return-logo {
+  padding: 5px;
+}
+
+.app.dark .small-btn,
+.app.dark .icon-btn,
+.app.dark .choice,
+.app.dark .initiative-choice-action,
+.app.dark .controls > button,
+.app.dark .clock-inline button:not(.clock-face),
+.app.dark .global-mini > button,
+.app.dark .hub-section-head .small-btn,
+.app.dark .hub-scene-actions .small-btn,
+.app.dark .template-row-actions .small-btn,
+.app.dark .template-category-actions .small-btn,
+.app.dark .scene-management-grid .small-btn,
+.app.dark .dynamic-insertion-secondary-actions .small-btn,
+.app.dark .initiative-roll-slot .small-btn,
+.app.dark .compact-arrows .small-btn,
+.app.dark .fiche-card .small-btn,
+.app.dark .reserve-card .small-btn,
+.app.dark .initiative-card .small-btn {
+  background: var(--ui-control-bg-strong) !important;
+  border-color: var(--ui-control-border) !important;
+  color: var(--ui-control-text) !important;
+  box-shadow: var(--ui-control-shadow);
+}
+
+.app.dark .choice.selected,
+.app.dark .initiative-choice-action.primary-choice,
+.app.dark .hub-tabs .choice.selected {
+  background: var(--ui-selected-bg) !important;
+  border-color: var(--ui-selected-border) !important;
+  color: var(--ui-primary-contrast) !important;
+}
+
+.app.dark .danger-btn,
+.app.dark .subtle-danger,
+.app.dark .template-row-actions .danger-btn,
+.app.dark .template-category-actions .danger-btn {
+  background: var(--ui-danger-soft) !important;
+  border-color: var(--ui-danger-border) !important;
+  color: var(--ui-danger-contrast) !important;
+}
+
+.app.dark .primary,
+.app.dark .turn-btn,
+.app.dark .delta button,
+.app.dark .delta-pop button {
+  background: var(--ui-primary);
+  border-color: var(--ui-primary-action-border);
+  color: var(--ui-primary-contrast);
+}
+
+.app.dark .hub-scene-card,
+.app.dark .hub-row,
+.app.dark .rule-save-choices,
+.app.dark .rule-group-body,
+.app.dark .edit-sheet-header {
+  background: var(--ui-rule-panel-bg) !important;
+  border-color: var(--ui-rule-panel-border) !important;
+  color: var(--ui-text);
+}
+
+.app.dark .campaign-hub-page > .hub-section.panel,
+.app.dark .campaign-hub-header.panel,
+.app.dark .panel,
+.app.dark .sheet,
+.app.dark .card,
+.app.dark .bottom {
+  background: var(--ui-surface);
+  border-color: var(--ui-border);
+}
+
+.field,
+.muted,
+.box-label,
+.line-count-row label,
+.box-level-row span {
+  color: var(--ui-muted);
+}
+

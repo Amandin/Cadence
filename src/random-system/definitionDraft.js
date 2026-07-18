@@ -11,6 +11,7 @@ import { defaultRandomDefinitionVisualId } from './definitionVisuals.js';
 export const builderModes = {
   FIXED: 'fixed',
   REQUEST: 'request',
+  PROMPT: 'prompt',
 };
 
 export const builderExplosionModes = {
@@ -33,17 +34,30 @@ export const builderResultModes = {
 
 export const builderDefinitionKinds = randomDefinitionKinds;
 
+function enabledWhenDraft(value) {
+  const conditions = Array.isArray(value) ? value : value ? [value] : [];
+  return conditions
+    .filter((condition) => condition?.optionId)
+    .map((condition) => ({
+      optionId: String(condition.optionId),
+      equals: condition.equals,
+    }));
+}
+
 export function createCalculationDraft(enabled = false) {
   return {
     enabled,
     resultMode: builderResultModes.SUM,
     thresholdMode: builderModes.FIXED,
     threshold: 6,
+    thresholdOperator: 'gte',
     keepMode: 'none',
     keepCountMode: builderModes.FIXED,
     keepCount: 1,
     modifierEnabled: false,
+    modifierMode: builderModes.REQUEST,
     modifier: 0,
+    counters: [],
   };
 }
 
@@ -64,28 +78,44 @@ export function createDefinitionDraft(sources = [], definitions = []) {
     kind: randomDefinitionKinds.ROLL,
     exposed: true,
     active: true,
+    recursive: false,
+    rollOptions: [],
     components: [{
       id: createResourceId('component'),
       label: 'Groupe 1',
       color: '',
       sourceMode: builderModes.FIXED,
       sourceId: sources[0]?.id || '',
+      sourceChoices: [],
+      enabledWhen: [],
+      contribution: 'add',
       countMode: builderModes.FIXED,
       count: 1,
       explosionMode: builderExplosionModes.NEVER,
       explosionTrigger: builderExplosionTriggers.MAXIMUM,
       explosionThreshold: 6,
-      reroll: { enabled: false, operator: 'eq', value: 1, maxIterations: 1 },
+      explosionLimit: 100,
+      explosionEnabledWhen: [],
+      reroll: {
+        enabled: false,
+        operator: 'eq',
+        value: 1,
+        maxIterations: 1,
+        enabledWhen: [],
+      },
       calculation: createCalculationDraft(false),
     }],
     resultMode: builderResultModes.SUM,
     thresholdMode: builderModes.FIXED,
     threshold: 6,
+    thresholdOperator: 'gte',
     keepMode: 'none',
     keepCountMode: builderModes.FIXED,
     keepCount: 1,
     modifierEnabled: false,
+    modifierMode: builderModes.REQUEST,
     modifier: 0,
+    counters: [],
     linkedTable: {
       enabled: false,
       sourceId: sources[0]?.id || '',
@@ -116,7 +146,11 @@ function parameterForReference(definition, reference) {
 function editableValue(reference, definition, fallback) {
   if (reference?.kind === 'parameter') {
     const parameter = parameterForReference(definition, reference);
-    return { mode: builderModes.REQUEST, value: parameter?.defaultValue ?? fallback };
+    return {
+      mode: parameter?.prompt ? builderModes.PROMPT : builderModes.REQUEST,
+      value: parameter?.prompt ? fallback : parameter?.defaultValue ?? fallback,
+      choices: parameter?.choices || [],
+    };
   }
   return { mode: builderModes.FIXED, value: reference?.value ?? fallback };
 }
@@ -150,6 +184,13 @@ function calculationFromDefinition(definition, componentId = null) {
   const thresholdValue = editableValue(threshold?.condition?.value, definition, 6);
   const keepValue = editableValue(keep?.count, definition, 1);
   const modifierValue = editableValue(modifier?.value, definition, 0);
+  const counters = definition.pipeline.filter((step) => (
+    step.type === randomPipelineStepTypes.AGGREGATE
+    && step.operation === randomAggregateOperations.COUNT_MATCHES
+    && (componentId
+      ? step.componentIds.length === 1 && step.componentIds[0] === componentId
+      : step.componentIds.length === 0)
+  ));
   return {
     enabled: !!aggregate,
     resultMode: aggregate?.operation === randomAggregateOperations.VALUES
@@ -161,11 +202,19 @@ function calculationFromDefinition(definition, componentId = null) {
           : builderResultModes.SUM,
     thresholdMode: thresholdValue.mode,
     threshold: thresholdValue.value,
+    thresholdOperator: threshold?.condition?.operator || 'gte',
     keepMode: keep ? keep.order : 'none',
     keepCountMode: keepValue.mode,
     keepCount: keepValue.value,
     modifierEnabled: !!modifier,
+    modifierMode: modifierValue.mode,
     modifier: modifierValue.value,
+    counters: counters.map((counter) => ({
+      id: String(counter.outputId || counter.id).replace(`${componentId ? `${componentId}-` : ''}counter-`, ''),
+      label: counter.label || 'Compteur',
+      operator: counter.condition?.operator || 'eq',
+      value: counter.condition?.value?.value ?? 1,
+    })),
   };
 }
 
@@ -179,24 +228,36 @@ export function definitionToDraft(definition, sources = []) {
     const count = editableValue(component.count, normalized, 1);
     const explosion = explodeSteps.find((step) => !step.componentIds.length || step.componentIds.includes(component.id));
     const reroll = rerollSteps.find((step) => !step.componentIds.length || step.componentIds.includes(component.id));
+    const explosionEnabledWhen = enabledWhenDraft(explosion?.enabledWhen);
+    const usesLegacyExplosionOption = explosionEnabledWhen.some((condition) => (
+      condition.optionId === 'exploding'
+    ));
     return {
       id: component.id,
       label: component.label,
       color: component.color,
       sourceMode: source.mode,
       sourceId: source.value,
+      sourceChoices: source.choices || [],
+      enabledWhen: enabledWhenDraft(component.enabledWhen),
+      contribution: Number(component.multiplier) < 0 ? 'subtract' : 'add',
       countMode: count.mode,
       count: count.value,
       explosionMode: !explosion
         ? builderExplosionModes.NEVER
-        : explosion.enabledWhen
+        : usesLegacyExplosionOption
           ? builderExplosionModes.OPTION
           : builderExplosionModes.ALWAYS,
       explosionTrigger: !explosion || explosion.condition?.type === 'source-extreme'
         ? builderExplosionTriggers.MAXIMUM
         : builderExplosionTriggers.THRESHOLD,
       explosionThreshold: explosion?.condition?.value?.value ?? 6,
-      reroll: conditionDraft(reroll, { operator: 'eq', value: 1, maxIterations: 1 }),
+      explosionLimit: explosion?.maxIterations ?? 100,
+      explosionEnabledWhen,
+      reroll: {
+        ...conditionDraft(reroll, { operator: 'eq', value: 1, maxIterations: 1 }),
+        enabledWhen: enabledWhenDraft(reroll?.enabledWhen),
+      },
       calculation: calculationFromDefinition(normalized, component.id),
     };
   });
@@ -218,6 +279,16 @@ export function definitionToDraft(definition, sources = []) {
     kind: normalized.kind,
     exposed: normalized.exposed,
     active: normalized.active,
+    recursive: normalized.recursive,
+    rollOptions: normalized.options
+      .filter((option) => option.type === 'choice')
+      .map((option) => ({
+        id: option.id,
+        label: option.label,
+        control: option.control,
+        defaultValue: option.defaultValue,
+        choices: option.choices.map((choice) => ({ ...choice })),
+      })),
     components,
     ...overallCalculation,
     linkedTable: {

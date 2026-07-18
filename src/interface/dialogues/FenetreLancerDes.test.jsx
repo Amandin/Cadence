@@ -49,6 +49,21 @@ describe('QuickRollResult', () => {
   it('renders nothing before the first roll', () => {
     expect(renderToStaticMarkup(<QuickRollResult result={null} />)).toBe('');
   });
+
+  it('shows card draws in the same compact result area', () => {
+    const html = renderToStaticMarkup(<QuickRollResult result={{
+      id: 'cards-1',
+      kind: 'card-draw',
+      sourceName: 'Tarot',
+      remaining: 21,
+      cards: [{ id: 'sun', label: 'Le Soleil', symbol: '☀', comment: 'Succès éclatant' }],
+    }} />);
+
+    expect(html).toContain('Tarot');
+    expect(html).toContain('21 cartes restantes');
+    expect(html).toContain('Le Soleil');
+    expect(html).toContain('Succès éclatant');
+  });
 });
 
 describe('FenetreLancerDes', () => {
@@ -73,6 +88,41 @@ describe('FenetreLancerDes', () => {
     expect(html).toContain('visual-dice compact');
     expect(html).toContain('<span>Jet d20</span>');
     expect(html).toContain('<span>Jet percentile</span>');
+    expect(html).toContain('<span>Syntaxe experte</span>');
     expect(html).not.toContain('<select');
+  });
+
+  it('offers direct card draws when a deck is available', () => {
+    const deck = { id: 'tarot', name: 'Tarot', kind: 'cards', cards: [{ id: 'sun', label: 'Le Soleil' }] };
+    const html = renderToStaticMarkup(
+      <FenetreLancerDes
+        randomSystem={{
+          state: { definitions: [], sources: [deck] },
+          actions: { drawCards: () => null, runAdHocDefinition: () => null },
+        }}
+        onFermer={() => {}}
+      />,
+    );
+
+    expect(html).toContain('<span>Tarot</span>');
+    expect(html).toContain('Nombre de cartes');
+    expect(html).toContain('Sans remise');
+    expect(html).toContain('Avec remise');
+  });
+
+  it('keeps a free expert expression accessible without saving a definition', () => {
+    const html = renderToStaticMarkup(
+      <FenetreLancerDes
+        randomSystem={{
+          state: { definitions: [], sources: [] },
+          actions: { runAdHocDefinition: () => null },
+        }}
+        onFermer={() => {}}
+      />,
+    );
+
+    expect(html).toContain('Expression');
+    expect(html).toContain('>1d20</textarea>');
+    expect(html).toContain('Exécute une expression ponctuelle sans créer de nouveau type de tirage.');
   });
 });

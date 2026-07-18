@@ -24,11 +24,14 @@ Cette note fixe la hiérarchie minimale des tokens CSS existants pour préparer 
 
 Les fichiers suivants concentrent les risques de mélange entre palette brute, sémantique et usages métier :
 
-- `src/theme-system.css`
-- `src/theme-cadence.css`
+- `src/styles/theme/foundation.css` : contrat `--skin-*` et alias publics `--ui-*`.
+- `src/styles/theme/base.css`, `onboarding.css` et `controls.css` : styles communs par responsabilitÃ©.
+- `src/styles/theme/responsive-mobile.css` et `responsive-wide.css` : adaptations de mise en page.
+- `src/styles/theme/dark-compatibility.css` : compatibilitÃ© sombre des styles historiques.
+- `src/styles/skins/cadence.css` : palette brute du skin Cadence.
 - `src/styles.css`
-- `src/refinements.css`
-- `src/trackers-clarity.css`
+- `src/styles/refinements/` : ajustements par surface applicative.
+- `src/styles/trackers/` : palette et styles mÃ©tier des indicateurs.
 - `src/overrides.css`
 
 ## Notes de prudence

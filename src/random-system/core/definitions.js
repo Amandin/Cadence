@@ -91,6 +91,10 @@ function normalizeComponent(component, index) {
     color,
     source: normalizeValueReference(component?.source, ''),
     count: normalizeValueReference(component?.count, 1),
+    cardMode: component?.cardMode === 'replacement' ? 'replacement' : 'draw',
+    sourceKind: component?.sourceKind === 'cards' ? 'cards' : 'random',
+    repeatBaseCount: component?.repeatBaseCount ? normalizeValueReference(component.repeatBaseCount, 1) : null,
+    multiplier: finiteNumber(component?.multiplier, 1),
     enabledWhen: normalizeEnabledWhen(component?.enabledWhen),
   };
 }
@@ -182,7 +186,7 @@ function normalizeParameterValue(parameter, value, sourceMap) {
   return String(value ?? parameter.defaultValue ?? '');
 }
 
-export function resolveDefinitionInputs(definition, sources, suppliedParameters = {}, suppliedOptions = {}) {
+export function resolveDefinitionInputs(definition, sources, suppliedParameters = {}, suppliedOptions = {}, sourceStates = {}) {
   const normalized = normalizeRandomDefinition(definition);
   const sourceMap = new Map((Array.isArray(sources) ? sources : []).map((source, index) => {
     const next = normalizeRandomSource(source, index);
@@ -209,5 +213,6 @@ export function resolveDefinitionInputs(definition, sources, suppliedParameters 
     sourceExtremeCache: new Map(),
     parameters,
     options,
+    sourceStates: sourceStates || {},
   };
 }

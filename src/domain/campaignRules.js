@@ -26,7 +26,7 @@ import {
   phaseActionModes,
   temporalityModes,
 } from '../constants.js';
-import { multipleActionModeFromRules, normalizeInitiativeCostLimitToCurrent, normalizeInitiativeCostQuickCosts, normalizeInitiativeCostThreshold } from './initiativeCost.js';
+import { normalizeInitiativeCostLimitToCurrent, normalizeInitiativeCostQuickCosts, normalizeInitiativeCostThreshold } from './initiativeCost.js';
 import { declarationStages, normalizeInitiativeModeOptions } from './initiativeModes.js';
 import { trierParInitiative } from './initiative.js';
 import { normalizeInitiativeTextOrder } from './initiativeTextOrder.js';
@@ -34,6 +34,23 @@ import { normalizeParticipantTypeName, normalizeParticipantTypes } from './parti
 
 function cleanId(value) {
   return String(value ?? '').trim();
+}
+
+const retiredDefaultCategoryOrders = [
+  ['PJ', 'Opposant', 'Allié', 'Environnement'],
+  ['PJ', 'Compagnon', 'Allié', 'Élite', 'Opposant', 'Environnement'],
+];
+
+function isRetiredDefaultCategoryOrder(order) {
+  return retiredDefaultCategoryOrders.some((retiredOrder) => (
+    order.length === retiredOrder.length
+    && order.every((type, index) => type === retiredOrder[index])
+  ));
+}
+
+function normalizeTiebreakerLabel(value) {
+  const label = typeof value === 'string' ? value.trim() : '';
+  return !label || label === 'Départage' ? defaultTiebreakerLabel : label;
 }
 
 export function normalizeCampaignRules(rules = {}) {
@@ -46,7 +63,11 @@ export function normalizeCampaignRules(rules = {}) {
       : defaultTemporalityMode;
   const surpriseAdvanceOn = temporalite === temporalityModes.FLEXIBLE ? 'round' : rules.surpriseAdvanceOn === 'round' ? 'round' : defaultSurpriseAdvanceOn;
   const legacyPrompt = !!rules.promptInitiativeOnNext;
-  const explicitMultipleActionMode = Object.values(multipleActionModes).includes(rules.multipleActionMode) ? rules.multipleActionMode : '';
+  const explicitMultipleActionMode = Object.values(multipleActionModes).includes(rules.multipleActionMode)
+    ? rules.multipleActionMode
+    : Object.values(multipleActionModes).includes(rules.multipleActionsMode)
+      ? rules.multipleActionsMode
+      : '';
   const legacyManualSlots = !explicitMultipleActionMode && rules.multipleActionSlots === true;
   const promptConvertible = legacyPrompt
     && temporalite === temporalityModes.CLASSIC
@@ -54,12 +75,15 @@ export function normalizeCampaignRules(rules = {}) {
     && !(rules.initiativeTextOrder?.enabled)
     && rules.initiativeOrder !== initiativeOrders.ASC
     && !legacyManualSlots;
-  const multipleActionMode = promptConvertible ? multipleActionModes.INITIATIVE_COST : multipleActionModeFromRules({
-    ...rules,
-    multipleActionMode: explicitMultipleActionMode || undefined,
-  });
+  const multipleActionMode = promptConvertible
+    ? multipleActionModes.INITIATIVE_COST
+    : explicitMultipleActionMode || (legacyManualSlots ? multipleActionModes.MANUAL : defaultMultipleActionMode);
   const categoryOrderSource = Array.isArray(rules.categoryOrder) && rules.categoryOrder.length ? rules.categoryOrder : defaultCategoryOrder;
-  const categoryOrder = [...new Set(categoryOrderSource.map(normalizeParticipantTypeName).filter(Boolean))];
+  const normalizedCategoryOrder = [...new Set(categoryOrderSource.map(normalizeParticipantTypeName).filter(Boolean))];
+  // Migrate only the former untouched default; custom orders remain fully user-controlled.
+  const categoryOrder = isRetiredDefaultCategoryOrder(normalizedCategoryOrder)
+    ? [...defaultCategoryOrder]
+    : normalizedCategoryOrder;
   return {
     temporalite,
     declarationMode: initiativeModeOptions.declarationMode ?? (legacyDeclaration ? true : defaultDeclarationMode),
@@ -73,7 +97,7 @@ export function normalizeCampaignRules(rules = {}) {
     categoryOrder,
     participantTypes: normalizeParticipantTypes(rules.participantTypes, categoryOrder),
     tiebreakerVisible: rules.tiebreakerVisible ?? defaultTiebreakerVisible,
-    tiebreakerLabel: typeof rules.tiebreakerLabel === 'string' && rules.tiebreakerLabel.trim() ? rules.tiebreakerLabel.trim() : defaultTiebreakerLabel,
+    tiebreakerLabel: normalizeTiebreakerLabel(rules.tiebreakerLabel),
     initiativeBonusEnabled: rules.initiativeBonusEnabled ?? defaultInitiativeBonusEnabled,
     initiativeBonusRollDefinitionId: cleanId(rules.initiativeBonusRollDefinitionId),
     surpriseImpact: ['limited', 'inactive'].includes(rules.surpriseImpact) ? rules.surpriseImpact : defaultSurpriseImpact,

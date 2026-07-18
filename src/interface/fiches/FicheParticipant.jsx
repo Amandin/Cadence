@@ -11,7 +11,10 @@ import { EditeurPhasesParticipant, normaliserPhaseActions } from '../initiative/
 import { Suivi } from '../suivis/Suivi.jsx';
 import { InfosRapides } from './InfosRapides.jsx';
 import { activeDefinitions } from '../../random-system/definitionAccess.js';
+import { prepareCombinedDefinition } from '../../random-system/combinations.js';
 import { QuickRollResult } from '../dialogues/FenetreLancerDes.jsx';
+import { initiativeApproachOption, initiativeRollInputs } from '../../random-system/initiativeRoll.js';
+import { IconeJetDes } from '../icones/IconeJetDes.jsx';
 
 function valeurNumerique(valeur, defaut = 0) {
   const nombre = Number(valeur);
@@ -33,8 +36,11 @@ function FenetreJetInfoRapide({ info, randomSystem, onFermer }) {
     return () => window.clearTimeout(timer);
   }, [definition?.id, randomSystem.actions]);
   if (!definition) return null;
+  const resolveDecision = (accepted) => {
+    setResult((current) => randomSystem.actions.resolveDefinitionDecision?.(current, accepted) || current);
+  };
   return <Fenetre title={`${t('sheet.quickInfo.roll')} — ${info.label}`} onClose={onFermer} className="quick-roll-dialog"><div className="quick-roll-content">
-    <QuickRollResult result={result} rolling={rolling} />
+    <QuickRollResult result={result} rolling={rolling} onDecision={result?.kind === 'random-decision' ? resolveDecision : undefined} />
   </div></Fenetre>;
 }
 
@@ -43,17 +49,46 @@ function formatBonusInitiative(valeur) {
   return bonus > 0 ? `+${bonus}` : String(bonus);
 }
 
-function FenetreInitiativesRapides({ participant, initiatives, initiativeTextOrder, phaseActionMode, phaseCount = defaultPhaseCount, multipleActionSlots = true, onFermer, onValider }) {
+function FenetreInitiativesRapides({ participant, initiatives, initiativeTextOrder, phaseActionMode, phaseCount = defaultPhaseCount, multipleActionSlots = true, initiativeBonusEnabled = true, initiativeBonusRollDefinitionId = '', randomSystem = null, onFermer, onValider }) {
   multipleActionSlots = typeof multipleActionSlots === 'function' ? multipleActionSlots(participant) : multipleActionSlots;
   const textConfig = normalizeInitiativeTextOrder(initiativeTextOrder);
   const modePhasesCochees = phaseActionMode === phaseActionModes.CHECKED;
   const [brouillon, setBrouillon] = useState(() => (multipleActionSlots ? initiatives : initiatives.slice(0, 1)).map(String));
   const [phaseActionsBrouillon, setPhaseActionsBrouillon] = useState(() => normaliserPhaseActions(Array.isArray(participant.phaseActions) ? participant.phaseActions : ['1'], phaseCount));
+  const definitions = useMemo(() => activeDefinitions(randomSystem?.state?.definitions || []), [randomSystem?.state?.definitions]);
+  const rollDefinition = definitions.find((definition) => definition.id === initiativeBonusRollDefinitionId) || null;
+  const approachOption = useMemo(() => initiativeApproachOption(rollDefinition), [rollDefinition]);
+  const [rollApproach, setRollApproach] = useState(() => approachOption?.defaultValue || '');
+  const [rollError, setRollError] = useState('');
   const modifier = (index, valeur) => setBrouillon((courant) => courant.map((item, position) => position === index ? valeur : item));
   const ajouter = () => setBrouillon((courant) => [...courant, courant.at(-1) || '']);
   const retirer = (index) => setBrouillon((courant) => courant.length <= 1 ? courant : courant.filter((_, position) => position !== index));
   const valeurs = brouillon.map((valeur) => String(valeur ?? '').trim()).filter(Boolean);
   const valeursValides = valeurs.length > 0 && valeurs.every((valeur) => initiativeInputIsValid(valeur, textConfig));
+  const lancerInitiative = () => {
+    if (!rollDefinition || !randomSystem?.actions?.runDefinition) return;
+    try {
+      const baseOptions = Object.fromEntries((rollDefinition.options || []).map((option) => [
+        option.id,
+        option.id === approachOption?.id ? rollApproach || option.defaultValue : option.defaultValue,
+      ]));
+      const prepared = prepareCombinedDefinition(rollDefinition, definitions, baseOptions);
+      const { parameters, options, bonus, bonusInjected } = initiativeRollInputs(
+        prepared.definition,
+        initiativeBonusEnabled ? valeurNumerique(participant.initiativeBonus, 0) : 0,
+        baseOptions,
+      );
+      const result = randomSystem.actions.runDefinition(rollDefinition.id, parameters, options);
+      if (result?.kind === 'random-decision') throw new Error(t('initiative.entry.decisionUnsupported'));
+      const raw = Number(result?.primaryAggregate?.value);
+      if (!Number.isFinite(raw)) throw new Error(t('initiative.entry.rollUnavailable'));
+      const value = String(bonusInjected ? raw : raw + bonus);
+      setBrouillon((current) => current.map((item, index) => index === 0 ? value : item));
+      setRollError('');
+    } catch (error) {
+      setRollError(error?.message || t('initiative.entry.rollUnavailable'));
+    }
+  };
   const valider = () => {
     if (!valeursValides) return;
     onValider(
@@ -63,8 +98,13 @@ function FenetreInitiativesRapides({ participant, initiatives, initiativeTextOrd
   };
 
   return (
-    <Fenetre title={`Initiative - ${participant.name}`} onClose={onFermer}>
+    <Fenetre title={t('initiative.editDialog.title', { name: participant.name })} onClose={onFermer}>
       <div className="stack">
+        {rollDefinition && <div className="sheet-initiative-roll">
+          {approachOption && <label><span>{t('initiative.entry.rollMode')}</span><select aria-label={t('initiative.entry.rollModeFor', { name: participant.name })} value={rollApproach || approachOption.defaultValue} onChange={(event) => setRollApproach(event.target.value)}>{approachOption.choices.map((choice) => <option value={choice.value} key={choice.value}>{choice.label}</option>)}</select></label>}
+          <button type="button" className="small-btn" onClick={lancerInitiative}><IconeJetDes /> {t('random.use.run')}</button>
+        </div>}
+        {rollError && <p className="rule-option-warning" role="alert">{rollError}</p>}
         {brouillon.map((initiative, index) => (
           <div className="initiative-action-row" key={index}>
             <ChampInitiative label={t('initiative.entry.slotLabel', { index: index + 1 })} valeur={initiative} textConfig={textConfig} onChange={(valeur) => modifier(index, valeur)} autoFocus={index === 0} />
@@ -82,7 +122,7 @@ function FenetreInitiativesRapides({ participant, initiatives, initiativeTextOrd
   );
 }
 
-function MiniCompteurInitiative({ participant, departage, initiativeTextOrder, phaseActionMode, phaseCount, multipleActionSlots, initiativeBonusEnabled = true, tiebreakerVisible, onChangerInitiatives }) {
+function MiniCompteurInitiative({ participant, departage, initiativeTextOrder, phaseActionMode, phaseCount, multipleActionSlots, initiativeBonusEnabled = true, initiativeBonusRollDefinitionId = '', randomSystem = null, tiebreakerVisible, onChangerInitiatives }) {
   const textConfig = normalizeInitiativeTextOrder(initiativeTextOrder);
   const initiatives = initiativesActionParticipant(participant, { initiativeTextOrder: textConfig, multipleActionSlots });
   const [edition, setEdition] = useState(false);
@@ -98,12 +138,12 @@ function MiniCompteurInitiative({ participant, departage, initiativeTextOrder, p
         <strong>{libelle}{afficherDepartage && <em className="init-tiebreak">{valeurDepartage > 0 ? `+${valeurDepartage}` : valeurDepartage}</em>}</strong>
         {bonusInitiative !== 0 && <span className="init-bonus-badge">{formatBonusInitiative(bonusInitiative)}</span>}
       </button>
-      {edition && <FenetreInitiativesRapides participant={participant} initiatives={initiatives} initiativeTextOrder={initiativeTextOrder} phaseActionMode={phaseActionMode} phaseCount={phaseCount} multipleActionSlots={multipleActionSlots} onFermer={() => setEdition(false)} onValider={(valeurs, phaseActions) => { onChangerInitiatives(valeurs, phaseActions); setEdition(false); }} />}
+      {edition && <FenetreInitiativesRapides participant={participant} initiatives={initiatives} initiativeTextOrder={initiativeTextOrder} phaseActionMode={phaseActionMode} phaseCount={phaseCount} multipleActionSlots={multipleActionSlots} initiativeBonusEnabled={initiativeBonusEnabled} initiativeBonusRollDefinitionId={initiativeBonusRollDefinitionId} randomSystem={randomSystem} onFermer={() => setEdition(false)} onValider={(valeurs, phaseActions) => { onChangerInitiatives(valeurs, phaseActions); setEdition(false); }} />}
     </>
   );
 }
 
-export function FicheParticipant({ participant, enInitiative, initiativeTextOrder, phaseActionMode, phaseCount = defaultPhaseCount, multipleActionSlots = true, utiliserInitiative = true, initiativeBonusEnabled = true, tiebreakerVisible = true, randomSystem = null, onFermer, onModifier, onBasculerDissimule, onChangerInitiatives, onRejoindreInitiative, onQuitterInitiative, onInfoRapide, onSuivi, onSupprimerSuivi, onAjouterEtat, onModifierEtat, onRetirerEtat, onNote }) {
+export function FicheParticipant({ participant, enInitiative, initiativeTextOrder, phaseActionMode, phaseCount = defaultPhaseCount, multipleActionSlots = true, utiliserInitiative = true, initiativeBonusEnabled = true, initiativeBonusRollDefinitionId = '', tiebreakerVisible = true, randomSystem = null, onFermer, onModifier, onBasculerDissimule, onChangerInitiatives, onRejoindreInitiative, onQuitterInitiative, onInfoRapide, onSuivi, onSupprimerSuivi, onAjouterEtat, onModifierEtat, onRetirerEtat, onNote }) {
   multipleActionSlots = typeof multipleActionSlots === 'function' ? multipleActionSlots(participant) : multipleActionSlots;
   const teinteEtat = teinteEtatParticipant(participant);
   const dissimule = !!participant.secret;
@@ -135,7 +175,7 @@ export function FicheParticipant({ participant, enInitiative, initiativeTextOrde
       <p>{participant.description}</p>
       <div className={`sheet-action-row ${enInitiative && utiliserInitiative ? '' : 'without-init-counter'}`}>
         <button className="primary" onClick={onModifier}>{t('common.edit')}</button>
-        {enInitiative && utiliserInitiative && <MiniCompteurInitiative participant={participant} departage={participant.departage} initiativeTextOrder={initiativeTextOrder} phaseActionMode={phaseActionMode} phaseCount={phaseCount} multipleActionSlots={multipleActionSlots} initiativeBonusEnabled={initiativeBonusEnabled} tiebreakerVisible={tiebreakerVisible} onChangerInitiatives={onChangerInitiatives} />}
+        {enInitiative && utiliserInitiative && <MiniCompteurInitiative participant={participant} departage={participant.departage} initiativeTextOrder={initiativeTextOrder} phaseActionMode={phaseActionMode} phaseCount={phaseCount} multipleActionSlots={multipleActionSlots} initiativeBonusEnabled={initiativeBonusEnabled} initiativeBonusRollDefinitionId={initiativeBonusRollDefinitionId} randomSystem={randomSystem} tiebreakerVisible={tiebreakerVisible} onChangerInitiatives={onChangerInitiatives} />}
         {enInitiative ? <button className="small-btn" onClick={onQuitterInitiative}>{t('initiative.leave')}</button> : <button className="small-btn join-init-wide" onClick={onRejoindreInitiative}>{t('initiative.join')}</button>}
       </div>
       <InfosRapides stats={participant.stats || []} editable onChanger={onInfoRapide} onLancerJetRapide={randomSystem?.actions?.runDefinition ? (info) => setQuickRollInfo({ ...info, characterName: participant.name }) : undefined} />

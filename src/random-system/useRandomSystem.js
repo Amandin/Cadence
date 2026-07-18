@@ -8,6 +8,7 @@ import {
 import { definitionIsReferenced, prepareCombinedDefinition } from './combinations.js';
 import {
   executeRandomDefinition,
+  resolveRandomDecision,
   normalizeRandomDefinition,
   normalizeRandomSource,
   randomSourceKinds,
@@ -41,7 +42,15 @@ function definitionUsesSource(definition, sourceId) {
       parameter.type === 'source'
       && (parameter.defaultValue === sourceId || parameter.choices?.includes(sourceId))
     ))
-  )) || definition.pipeline.some((step) => step.type === 'lookup-table' && step.sourceId === sourceId);
+  )) || definition.pipeline.some((step) => (
+    step.type === 'lookup-table'
+    && (step.sourceId === sourceId
+      || (step.source?.kind === 'fixed' && step.source.value === sourceId)
+      || (step.source?.kind === 'parameter' && definition.parameters.some((parameter) => (
+        parameter.id === step.source.parameterId
+        && (parameter.defaultValue === sourceId || parameter.choices?.includes(sourceId))
+      ))))
+  ));
 }
 
 export function executeDefinitionFromState(state, definitionId, parameters, options, instances) {
@@ -50,7 +59,22 @@ export function executeDefinitionFromState(state, definitionId, parameters, opti
   const prepared = prepareCombinedDefinition(definition, state.definitions, options);
   return executeRandomDefinition({
     definition: prepared.definition,
-    sources: state.sources.filter((source) => source.kind !== randomSourceKinds.CARDS),
+    sources: state.sources,
+    sourceStates: state.sourceStates,
+    parameters,
+    options,
+    instances,
+  });
+}
+
+export function executeAdHocDefinitionFromState(state, definition, parameters, options, instances) {
+  if (!definition) return null;
+  const normalized = normalizeRandomDefinition(definition);
+  const prepared = prepareCombinedDefinition(normalized, state?.definitions || [], options);
+  return executeRandomDefinition({
+    definition: prepared.definition,
+    sources: state?.sources || [],
+    sourceStates: state?.sourceStates || {},
     parameters,
     options,
     instances,
@@ -101,11 +125,35 @@ export function useRandomSystem(controlled = {}) {
   const runDefinition = useCallback((definitionId, parameters, options, instances) => {
     const result = runDefinitionTransient(definitionId, parameters, options, instances);
     if (!result) return null;
+    if (result.kind === 'random-decision') return result;
     const current = stateRef.current;
-    const next = recordRandomResult(current, result);
+    const { sourceStates: nextSourceStates, ...recordedResult } = result;
+    const next = recordRandomResult({ ...current, sourceStates: nextSourceStates || current.sourceStates }, recordedResult);
     commitState(next);
-    return result;
+    return recordedResult;
   }, [commitState, runDefinitionTransient]);
+
+  const runAdHocDefinition = useCallback((definition, parameters, options, instances) => {
+    const result = executeAdHocDefinitionFromState(stateRef.current, definition, parameters, options, instances);
+    if (!result) return null;
+    if (result.kind === 'random-decision') return result;
+    const current = stateRef.current;
+    const { sourceStates: nextSourceStates, ...recordedResult } = result;
+    commitState(recordRandomResult({
+      ...current,
+      sourceStates: nextSourceStates || current.sourceStates,
+    }, recordedResult));
+    return recordedResult;
+  }, [commitState]);
+
+  const resolveDefinitionDecision = useCallback((pendingResult, accepted) => {
+    const result = resolveRandomDecision(pendingResult, accepted);
+    if (!result || result.kind === 'random-decision') return result;
+    const current = stateRef.current;
+    const { sourceStates: nextSourceStates, ...recordedResult } = result;
+    commitState(recordRandomResult({ ...current, sourceStates: nextSourceStates || current.sourceStates }, recordedResult));
+    return recordedResult;
+  }, [commitState]);
 
   const saveDefinition = useCallback((definition) => {
     const normalized = normalizeRandomDefinition(definition);
@@ -317,6 +365,8 @@ export function useRandomSystem(controlled = {}) {
   const actions = useMemo(() => ({
     runDefinition,
     runDefinitionTransient,
+    runAdHocDefinition,
+    resolveDefinitionDecision,
     saveDefinition,
     setDefinitionActive,
     deleteDefinition,
@@ -355,6 +405,8 @@ export function useRandomSystem(controlled = {}) {
     returnCards,
     runDefinition,
     runDefinitionTransient,
+    runAdHocDefinition,
+    resolveDefinitionDecision,
     saveDefinition,
     setDefinitionActive,
     saveRandomKit,

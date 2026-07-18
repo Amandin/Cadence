@@ -22,6 +22,13 @@ function compareValues(left, operator, right) {
 
 export function matchesCondition(draw, condition, context) {
   if (!condition) return false;
+  if (condition.type === 'all') {
+    return (condition.conditions || []).every((item) => matchesCondition(draw, item, context));
+  }
+  if (condition.type === 'any') {
+    return (condition.conditions || []).some((item) => matchesCondition(draw, item, context));
+  }
+  if (condition.type === 'not') return !matchesCondition(draw, condition.condition, context);
   if (condition.type === 'source-extreme') {
     const source = context.sourceMap.get(draw.sourceId);
     const cacheKey = `${draw.sourceId}:${condition.extreme}`;

@@ -93,6 +93,7 @@ export function normalizeInitiativeTextOrder(config = {}) {
   return {
     enabled: !!source.enabled,
     preset: clean(source.preset),
+    sourceId: clean(source.sourceId || source.cardSourceId),
     cardSourceId: clean(source.cardSourceId),
     separator: separators[0] ?? cleanSeparator(source.separator) ?? ' de ',
     separators,
@@ -151,11 +152,29 @@ export function initiativeTextOrderFromCardSource(source = {}, baseConfig = {}) 
     ...baseConfig,
     enabled: baseConfig.enabled ?? true,
     preset: initiativeTextOrderPresetIds.CARDS,
+    sourceId: source.id || baseConfig.sourceId || baseConfig.cardSourceId || '',
     cardSourceId: source.id || baseConfig.cardSourceId || '',
     separator: '',
     separators: Array.from({ length: Math.max(0, parts.length - 1) }, () => ''),
     unknown: baseConfig.unknown || 'last',
     parts,
+  });
+}
+
+export function initiativeTextOrderFromRandomSource(source = {}, baseConfig = {}) {
+  if (source?.kind === 'cards') return initiativeTextOrderFromCardSource(source, baseConfig);
+  const values = arr(source?.outcomes)
+    .map((outcome) => clean(outcome?.label || outcome?.value))
+    .filter(Boolean);
+  return normalizeInitiativeTextOrder({
+    ...baseConfig,
+    enabled: baseConfig.enabled ?? true,
+    preset: 'source',
+    sourceId: source?.id || baseConfig.sourceId || '',
+    cardSourceId: '',
+    separator: '',
+    separators: [],
+    parts: [{ label: source?.name || 'Résultat', values }],
   });
 }
 
@@ -282,7 +301,7 @@ function comparable(config = {}) {
   return {
     separators: normalized.separators,
     unknown: normalized.unknown,
-    cardSourceId: normalized.cardSourceId,
+    sourceId: normalized.sourceId,
     parts: normalized.parts.map((part) => ({ label: part.label, values: part.values })),
   };
 }

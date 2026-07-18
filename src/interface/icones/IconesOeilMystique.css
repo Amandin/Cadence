@@ -4,7 +4,7 @@
   padding: 0;
   border: 0;
   background: transparent;
-  color: #7c8aa0;
+  color: var(--ui-muted);
   display: grid;
   place-items: center;
   flex: 0 0 auto;
@@ -23,21 +23,21 @@
 }
 
 .eye-toggle.inactive {
-  color: #7c8aa0;
+  color: var(--ui-muted);
   opacity: .92;
 }
 
 .eye-toggle.active {
-  color: #c026d3;
-  filter: drop-shadow(0 0 5px rgba(192, 38, 211, .34));
+  color: var(--ui-primary);
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--ui-primary) 34%, transparent));
 }
 
 .dark .eye-toggle.inactive {
-  color: #94a3b8;
+  color: var(--ui-muted);
   opacity: .9;
 }
 
 .dark .eye-toggle.active {
-  color: #f0abfc;
-  filter: drop-shadow(0 0 6px rgba(240, 171, 252, .38));
+  color: var(--ui-focus);
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--ui-focus) 38%, transparent));
 }

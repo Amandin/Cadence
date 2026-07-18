@@ -1,6 +1,10 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { initiativeTextOrderFromCardSource, normalizeInitiativeTextOrder } from '../../domain/initiativeTextOrder.js';
+import { buildRandomDefinition } from '../../random-system/definitionBuilder.js';
+import { createStandardSources } from '../../random-system/defaults.js';
+import { createNoCodeExampleDraft } from '../../random-system/noCodeExamples.js';
+import { initiativeApproachOption } from '../../random-system/initiativeRoll.js';
 import {
   affectationsCartesInitiative,
   FenetreLancerInitiatives,
@@ -72,5 +76,28 @@ describe('card initiative distribution', () => {
 
     expect(html).toContain('Distribuer à tous');
     expect(html).toContain('Tirer une carte pour chaque personnage dans l’ordre actuellement affiché');
+  });
+
+  it('offers the contextual initiative approach without exposing the whole roll form', () => {
+    const sources = createStandardSources();
+    const definition = buildRandomDefinition(createNoCodeExampleDraft('d20-advantage', sources));
+    const approach = initiativeApproachOption(definition);
+    const html = renderToStaticMarkup(
+      <FenetreLancerInitiatives
+        participants={participants.slice(0, 1)}
+        initiativeBonusRollDefinitionId={definition.id}
+        randomSystem={{ state: { definitions: [definition], sources }, actions: { runDefinition: () => null } }}
+        onFermer={() => {}}
+        onValider={() => {}}
+        onPasserHorsInitiative={() => {}}
+      />,
+    );
+
+    expect(approach).toMatchObject({ id: 'approach', defaultValue: 'normal' });
+    expect(html).toContain('Mode du jet d’initiative de Bob');
+    expect(html).toContain('<option value="disadvantage">Désavantage</option>');
+    expect(html).toContain('<option value="normal" selected="">Normal</option>');
+    expect(html).toContain('<option value="advantage">Avantage</option>');
+    expect(html).not.toContain('Modificateur');
   });
 });

@@ -22,8 +22,12 @@ function addParameter(parameters, parameter) {
 }
 
 function valueFromMode(mode, fixed, parameterId, parameters, parameter) {
-  if (mode !== builderModes.REQUEST) return fixedValue(fixed);
-  addParameter(parameters, { ...parameter, id: parameterId });
+  if (mode !== builderModes.REQUEST && mode !== builderModes.PROMPT) return fixedValue(fixed);
+  addParameter(parameters, {
+    ...parameter,
+    id: parameterId,
+    prompt: mode === builderModes.PROMPT,
+  });
   return parameterValue(parameterId);
 }
 
@@ -36,6 +40,17 @@ function comparisonCondition(operator, value, field = 'raw') {
   };
 }
 
+function enabledWhenFromDraft(value) {
+  const conditions = (Array.isArray(value) ? value : value ? [value] : [])
+    .filter((condition) => condition?.optionId)
+    .map((condition) => ({
+      optionId: String(condition.optionId),
+      equals: condition.equals,
+    }));
+  if (!conditions.length) return null;
+  return conditions.length === 1 ? conditions[0] : conditions;
+}
+
 function explosionSteps(draft) {
   return draft.components
     .filter((component) => component.explosionMode !== builderExplosionModes.NEVER)
@@ -46,10 +61,11 @@ function explosionSteps(draft) {
       condition: component.explosionTrigger === builderExplosionTriggers.THRESHOLD
         ? comparisonCondition('gte', Number(component.explosionThreshold) || 0)
         : { type: 'source-extreme', extreme: 'max' },
-      maxIterations: 20,
-      enabledWhen: component.explosionMode === builderExplosionModes.OPTION
-        ? { optionId: 'exploding', equals: true }
-        : null,
+      maxIterations: Math.max(1, Math.min(100, Number(component.explosionLimit) || 100)),
+      enabledWhen: enabledWhenFromDraft(component.explosionEnabledWhen)
+        || (component.explosionMode === builderExplosionModes.OPTION
+          ? { optionId: 'exploding', equals: true }
+          : null),
     }));
 }
 
@@ -60,6 +76,7 @@ function buildComponents(draft, parameters) {
       id: component.id,
       label,
       color: component.color,
+      multiplier: component.contribution === 'subtract' ? -1 : 1,
       source: valueFromMode(
         component.sourceMode,
         component.sourceId,
@@ -69,6 +86,7 @@ function buildComponents(draft, parameters) {
           label: label ? `${label} - source` : 'Source',
           type: randomParameterTypes.SOURCE,
           defaultValue: component.sourceId,
+          choices: component.sourceChoices || [],
         },
       ),
       count: valueFromMode(
@@ -79,17 +97,41 @@ function buildComponents(draft, parameters) {
         {
           label: label ? `${label} - quantité` : 'Quantité',
           type: randomParameterTypes.INTEGER,
-          defaultValue: Math.max(1, Number(component.count) || 1),
-          min: 1,
+          defaultValue: Math.max(0, Number(component.count) || 0),
+          min: 0,
           max: 1000,
         },
       ),
+      enabledWhen: enabledWhenFromDraft(component.enabledWhen),
     };
   });
 }
 
 function buildRollOptions(draft) {
-  const options = [];
+  const options = (draft.rollOptions || []).map((option, index) => {
+    const choices = (option.choices || []).map((choice, choiceIndex) => ({
+      value: String(choice.value || `choice-${choiceIndex + 1}`),
+      label: String(choice.label || '').trim() || `Choix ${choiceIndex + 1}`,
+    }));
+    const fallbackControl = choices.length === 2
+      ? randomChoiceControlKinds.SWITCH
+      : choices.length <= 5
+        ? randomChoiceControlKinds.SLIDER
+        : randomChoiceControlKinds.SELECT;
+    return {
+      id: String(option.id || `option-${index + 1}`),
+      label: String(option.label || '').trim() || `Choix ${index + 1}`,
+      type: randomOptionTypes.CHOICE,
+      defaultValue: choices.some((choice) => choice.value === option.defaultValue)
+        ? option.defaultValue
+        : choices[0]?.value || '',
+      control: Object.values(randomChoiceControlKinds).includes(option.control)
+        && option.control !== randomChoiceControlKinds.AUTO
+        ? option.control
+        : fallbackControl,
+      choices,
+    };
+  });
   if (draft.components.some((item) => item.explosionMode === builderExplosionModes.OPTION)) {
     options.push({
       id: 'exploding',
@@ -159,6 +201,7 @@ function appendInputTransforms(pipeline, draft) {
       componentIds: [component.id],
       condition: comparisonCondition(component.reroll.operator, component.reroll.value),
       maxIterations: Math.max(1, Number(component.reroll.maxIterations) || 1),
+      enabledWhen: enabledWhenFromDraft(component.reroll.enabledWhen),
     });
   });
   pipeline.push(...explosionSteps(draft));
@@ -179,6 +222,7 @@ function appendCalculation(pipeline, calculation, parameters, {
   idPrefix = '',
   label = 'Resultat',
   outputId = 'result',
+  enabledWhen = null,
 } = {}) {
   const prefix = idPrefix ? `${idPrefix}-` : '';
   const scopedLabel = idPrefix && label ? `${label} - ` : '';
@@ -198,7 +242,12 @@ function appendCalculation(pipeline, calculation, parameters, {
       id: `${prefix}success-threshold`,
       type: randomPipelineStepTypes.SUCCESS_THRESHOLD,
       componentIds,
-      condition: { type: 'compare', operator: 'gte', value: threshold },
+      condition: {
+        type: 'compare',
+        operator: calculation.thresholdOperator || 'gte',
+        value: threshold,
+      },
+      enabledWhen,
     });
   }
   if (calculation.keepMode !== 'none') {
@@ -224,6 +273,7 @@ function appendCalculation(pipeline, calculation, parameters, {
       order: calculation.keepMode === randomKeepOrders.LOWEST
         ? randomKeepOrders.LOWEST
         : randomKeepOrders.HIGHEST,
+      enabledWhen,
     });
   }
 
@@ -240,6 +290,7 @@ function appendCalculation(pipeline, calculation, parameters, {
     componentIds,
     operation,
     outputId,
+    enabledWhen,
     label: calculation.resultMode === builderResultModes.SUCCESSES
       ? `${scopedLabel}Succès`
       : label || 'Résultat',
@@ -247,7 +298,7 @@ function appendCalculation(pipeline, calculation, parameters, {
 
   if (calculation.modifierEnabled && calculation.resultMode !== builderResultModes.VALUES) {
     const modifier = valueFromMode(
-      builderModes.REQUEST,
+      calculation.modifierMode || builderModes.REQUEST,
       Number(calculation.modifier) || 0,
       `${prefix}modifier`,
       parameters,
@@ -262,9 +313,23 @@ function appendCalculation(pipeline, calculation, parameters, {
       type: randomPipelineStepTypes.MODIFIER,
       targetAggregateId: outputId,
       value: modifier,
+      enabledWhen,
       label: 'Modificateur',
     });
   }
+
+  (calculation.counters || []).forEach((counter, index) => {
+    pipeline.push({
+      id: `${prefix}counter-${counter.id || index + 1}`,
+      type: randomPipelineStepTypes.AGGREGATE,
+      componentIds,
+      operation: randomAggregateOperations.COUNT_MATCHES,
+      condition: comparisonCondition(counter.operator || 'eq', counter.value),
+      outputId: `${prefix}counter-${counter.id || index + 1}`,
+      enabledWhen,
+      label: String(counter.label || '').trim() || `Compteur ${index + 1}`,
+    });
+  });
 }
 
 function appendCalculations(pipeline, draft, parameters) {
@@ -275,6 +340,7 @@ function appendCalculations(pipeline, draft, parameters) {
       idPrefix: component.id,
       label: component.label,
       outputId: `${component.id}-result`,
+      enabledWhen: enabledWhenFromDraft(component.enabledWhen),
     });
   });
   if (draft.marker.enabled) {
@@ -326,6 +392,7 @@ export function buildRandomDefinition(draft) {
     kind: randomDefinitionKinds.ROLL,
     exposed: draft.exposed,
     active: draft.active !== false,
+    recursive: draft.recursive === true,
     parameters,
     options: buildRollOptions(draft),
     components,

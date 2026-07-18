@@ -17,7 +17,9 @@ import { keepScreenAwakeWhileForeground } from './screenWakeLock.js';
 import { teinteEtats } from './interface/commun/ComposantsCommuns.jsx';
 import { MenuOptions } from './interface/app/MenuOptions.jsx';
 import { HubCampagne } from './interface/campaign/HubCampagne.jsx';
+import { HUB_TAB_STORAGE_KEY } from './interface/campaign/hubNavigation.js';
 import { getCadenceLogo } from './uiAssets.js';
+import { APP_SKIN, attributsApp, ChargementVue, hardwarePerformanceRisk, INITIAL_LOADING_MIN_MS, initialView, participantsInitiativeIncompatible, storedPerformancePreference } from './interface/app/appSupport.jsx';
 import { advanceSceneTutorial, readSceneTutorial, resetSceneTutorial, sceneTutorialSteps, writeSceneTutorial } from './sceneTutorial.js';
 import {
   PERFORMANCE_PREFERENCE_STORAGE_KEY,
@@ -32,72 +34,6 @@ import {
 const AppOverlays = lazy(() => import('./interface/app/AppOverlays.jsx').then((module) => ({ default: module.AppOverlays })));
 const FirstRunOnboarding = lazy(() => import('./interface/app/FirstRunOnboarding.jsx').then((module) => ({ default: module.FirstRunOnboarding })));
 const SceneView = lazy(() => import('./interface/scene/SceneView.jsx').then((module) => ({ default: module.SceneView })));
-
-const VIEW_STORAGE_KEY = 'cadence:interface:view:v1';
-const INITIAL_LOADING_MIN_MS = 180;
-const APP_SKIN = 'cadence';
-
-function attributsApp(dark, performanceLevel = performanceLevels.NORMAL) {
-  return {
-    'data-skin': APP_SKIN,
-    'data-mode': dark ? 'dark' : 'light',
-    'data-performance': performanceLevel,
-  };
-}
-
-function PanneauChargement({ dark, texte = t('common.loading') }) {
-  const logo = getCadenceLogo(dark);
-  return (
-    <div className="loading-view">
-      <div className="loading-mark">
-        <img src={logo} alt="Cadence" />
-      </div>
-      <strong>{texte}</strong>
-    </div>
-  );
-}
-
-function ChargementVue({ dark, texte = t('common.loading'), performanceLevel = performanceLevels.NORMAL }) {
-  return <div className={`app ${dark ? 'dark' : ''}`} {...attributsApp(dark, performanceLevel)}><PanneauChargement dark={dark} texte={texte} /></div>;
-}
-
-function initialView() {
-  try {
-    return window.sessionStorage.getItem(VIEW_STORAGE_KEY) === 'scene' ? 'scene' : 'hub';
-  } catch {
-    return 'hub';
-  }
-}
-
-function storedPerformancePreference() {
-  try {
-    return normalizePerformancePreference(window.localStorage.getItem(PERFORMANCE_PREFERENCE_STORAGE_KEY));
-  } catch {
-    return normalizePerformancePreference();
-  }
-}
-
-function hardwarePerformanceRisk() {
-  if (typeof window === 'undefined') return false;
-  const reducedMotion = !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-  return detectHardwarePerformanceRisk({
-    deviceMemory: navigator.deviceMemory,
-    hardwareConcurrency: navigator.hardwareConcurrency,
-    reducedMotion,
-  });
-}
-
-function initiativesDeclarees(participant = {}, multipleActionSlots = true) {
-  const slots = Array.isArray(participant.actionSlots) && participant.actionSlots.length
-    ? participant.actionSlots
-    : [{ initiative: participant.initiative }];
-  return (multipleActionSlots ? slots : slots.slice(0, 1)).map((slot) => slot?.initiative ?? participant.initiative);
-}
-
-function participantsInitiativeIncompatible(scene = {}) {
-  if (scene.temporalite === temporalityModes.FLEXIBLE && scene.flexibleUseInitiative === false) return [];
-  return (scene.participants || []).filter((participant) => initiativesDeclarees(participant, rulesAllowMultipleSlots(scene, participant)).some((initiative) => !initiativeMatchesMode(initiative, scene.initiativeTextOrder)));
-}
 
 export default function App() {
   const campaign = useCampaign();
@@ -475,7 +411,7 @@ export default function App() {
   const updateSceneTutorial = useCallback((next) => setSceneTutorial((current) => writeSceneTutorial(typeof next === 'function' ? next(current) : next)), []);
   const finishSceneTutorial = useCallback(() => updateSceneTutorial({ active: false, step: 0 }), [updateSceneTutorial]);
   const startFirstRunProfile = (selection, tutorial = false) => {
-    const result = actions.startFirstRunProfile(selection);
+    const result = actions.startFirstRunQuestionnaire(selection);
     if (result?.ok !== false) {
       updateSceneTutorial(tutorial ? { active: true, step: sceneTutorialSteps.ADD_PARTICIPANT } : { active: false, step: 0 });
       setCurrentView('scene');
@@ -484,7 +420,15 @@ export default function App() {
   };
   const startFirstRunCustomRules = () => {
     const result = actions.startFirstRunCustomCampaign();
-    if (result?.ok !== false) { finishSceneTutorial(); setCurrentView('scene'); }
+    if (result?.ok !== false) {
+      finishSceneTutorial();
+      try {
+        window.sessionStorage.setItem(HUB_TAB_STORAGE_KEY, 'regles');
+      } catch {
+        // Le Hub utilise son onglet par défaut si le stockage de session est indisponible.
+      }
+      setCurrentView('hub');
+    }
     return result;
   };
   const askResetCadence = () => { setResetConfirmationOpen(true); setOpenMenu(false); characters.closeCharacterPanels(); };
@@ -792,7 +736,7 @@ export default function App() {
   if (chargementInitialVisible) return <>{pwaUpdateBanner}<ChargementVue dark={dark} performanceLevel={performanceLevel} texte={t('app.loading.preparing')} /></>;
 
   if (firstRunOnboardingNeeded) {
-    return <>{pwaUpdateBanner}<Suspense fallback={<ChargementVue dark={dark} performanceLevel={performanceLevel} texte={t('app.loading.hub')} />}><FirstRunOnboarding dark={dark} systemProfiles={effectiveSystemProfileCatalog()} onToggleTheme={actions.setDark} onStartProfile={startFirstRunProfile} onStartCustomRules={startFirstRunCustomRules} /></Suspense></>;
+    return <>{pwaUpdateBanner}<Suspense fallback={<ChargementVue dark={dark} performanceLevel={performanceLevel} texte={t('app.loading.hub')} />}><FirstRunOnboarding dark={dark} randomSystem={randomSystem} onToggleTheme={actions.setDark} onStartRules={startFirstRunProfile} onStartCustomRules={startFirstRunCustomRules} /></Suspense></>;
   }
 
   if (campaignProfileWizardOpen) {
@@ -803,8 +747,4 @@ export default function App() {
 
   return <><Suspense fallback={<ChargementVue dark={dark} performanceLevel={performanceLevel} texte={t('app.loading.scene')} />}><div className={`app scene-app ${dark ? 'dark' : ''} ${teinteScene ? 'scene-status-tinted' : ''}`} style={teinteScene ? { '--scene-status-tint-gradient': teinteScene.gradient } : undefined} {...attributsApp(dark, performanceLevel)}>{sceneView}{fenetresCommunes}{menuOptions}</div></Suspense></>;
 }
-
-
-
-
 

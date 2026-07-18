@@ -181,7 +181,7 @@ export function OngletTemplates({
   const validerEtatScene = (id, status, nom) => { onModifierTemplateEtatScene(id, status, nom); fermerEtatScene(); };
 
   return (
-    <div className="stack hub-section panel">
+    <div className="stack hub-section panel templates-hub">
       <div className="hub-section-head">
         <h2>{t('templates.hub.title')}</h2>
       </div>

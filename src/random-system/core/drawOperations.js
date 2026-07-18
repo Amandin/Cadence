@@ -4,6 +4,27 @@ import { RandomSystemError } from './errors.js';
 import { resolveValue } from './references.js';
 import { drawNormalizedRandomSource } from './sources.js';
 import { boundedInteger } from './utils.js';
+import { randomSourceKinds } from './constants.js';
+import { drawCards } from '../cardSources.js';
+
+function drawForComponent(context, component, source, rng) {
+  if (source.kind !== randomSourceKinds.CARDS) return drawNormalizedRandomSource(source, rng);
+  const draw = drawCards(source, context.sourceStates[source.id], 1, {
+    rng,
+    withReplacement: component.cardMode === 'replacement',
+  });
+  context.sourceStates[source.id] = draw.state;
+  const card = draw.result.cards[0];
+  return card ? {
+    id: card.id,
+    value: card.value,
+    label: card.label,
+    symbol: card.symbol,
+    image: card.image,
+    text: card.comment,
+    markers: [...(card.markers || [])],
+  } : null;
+}
 
 export function appliesToDraw(step, draw) {
   return !step.componentIds.length || step.componentIds.includes(draw.componentId);
@@ -17,6 +38,7 @@ export function isStepEnabled(step, options) {
 
 function makeDraw(component, source, outcome, initialIndex, chainIndex, idSequence, extra = {}) {
   const numeric = Number(outcome.value);
+  const multiplier = Number.isFinite(Number(component.multiplier)) ? Number(component.multiplier) : 1;
   return {
     id: `draw-${idSequence}`,
     componentId: component.id,
@@ -27,7 +49,7 @@ function makeDraw(component, source, outcome, initialIndex, chainIndex, idSequen
     initialIndex,
     chainIndex,
     outcome,
-    calculatedValue: Number.isFinite(numeric) ? numeric : outcome.value,
+    calculatedValue: Number.isFinite(numeric) ? numeric * multiplier : outcome.value,
     markers: outcome.markers.map((marker) => ({ id: marker, label: marker })),
     success: false,
     kept: true,
@@ -53,22 +75,50 @@ export function drawInitialComponents(context, rng, groupIndex) {
         { componentId: component.id, sourceId },
       );
     }
+    const resolvedCount = Number(resolveValue(component.count, context.parameters, 1));
+    if (!Number.isFinite(resolvedCount)) {
+      throw new RandomSystemError(
+        'invalid-draw-count-calculation',
+        `Le calcul du nombre de tirages du groupe \u00ab ${component.label || component.id} \u00bb est invalide, notamment en cas de division par zero.`,
+        { componentId: component.id, count: resolvedCount },
+      );
+    }
+    if (!Number.isInteger(resolvedCount)) {
+      throw new RandomSystemError(
+        'non-integer-draw-count',
+        `Le nombre de tirages du groupe \u00ab ${component.label || component.id} \u00bb doit etre entier. Utilisez arrondi.inf(...) ou arrondi.sup(...).`,
+        { componentId: component.id, count: resolvedCount },
+      );
+    }
     const count = boundedInteger(
-      resolveValue(component.count, context.parameters, 1),
+      resolvedCount,
       0,
       MAX_DRAWS_PER_COMPONENT,
       1,
     );
+    const repeatBaseCount = component.repeatBaseCount
+      ? Number(resolveValue(component.repeatBaseCount, context.parameters, 1))
+      : null;
+    if (repeatBaseCount !== null && (!Number.isInteger(repeatBaseCount) || repeatBaseCount < 1)) {
+      throw new RandomSystemError('invalid-repeat-size', 'La taille d un appel repete doit etre un entier positif.');
+    }
     for (let initialIndex = 0; initialIndex < count; initialIndex += 1) {
       idSequence += 1;
-      draws.push(makeDraw(component, source, drawNormalizedRandomSource(source, rng), initialIndex, 0, idSequence));
+      const outcome = drawForComponent(context, component, source, rng);
+      if (!outcome) break;
+      draws.push(makeDraw(component, source, outcome, initialIndex, 0, idSequence, repeatBaseCount === null ? {} : {
+        repeatIndex: Math.floor(initialIndex / repeatBaseCount),
+        repeatInitialIndex: initialIndex % repeatBaseCount,
+      }));
     }
   }
   return { draws, nextId: () => { idSequence += 1; return idSequence; } };
 }
 
 export function rerollDraws(drawState, step, context, rng) {
-  const maxIterations = boundedInteger(step.maxIterations, 1, MAX_TRANSFORM_ITERATIONS, 1);
+  const resolvedIterations = Number(resolveValue(step.maxIterations, context.parameters, 1));
+  if (!Number.isInteger(resolvedIterations)) throw new RandomSystemError('non-integer-reroll-limit', 'La limite de relances doit etre entiere.');
+  const maxIterations = boundedInteger(resolvedIterations, 1, MAX_TRANSFORM_ITERATIONS, 1);
   const candidates = drawState.draws.filter((draw) => !draw.rerolled && appliesToDraw(step, draw));
   for (const original of candidates) {
     let current = original;
@@ -77,10 +127,12 @@ export function rerollDraws(drawState, step, context, rng) {
       current.rerolled = true;
       const source = context.sourceMap.get(current.sourceId);
       const component = context.componentMap.get(current.componentId);
+      const outcome = drawForComponent(context, component, source, rng);
+      if (!outcome) break;
       const replacement = makeDraw(
         component,
         source,
-        drawNormalizedRandomSource(source, rng),
+        outcome,
         current.initialIndex,
         current.chainIndex,
         drawState.nextId(),
@@ -93,7 +145,9 @@ export function rerollDraws(drawState, step, context, rng) {
 }
 
 export function explodeDraws(drawState, step, context, rng) {
-  const maxIterations = boundedInteger(step.maxIterations, 1, MAX_TRANSFORM_ITERATIONS, 6);
+  const resolvedIterations = Number(resolveValue(step.maxIterations, context.parameters, 6));
+  if (!Number.isInteger(resolvedIterations)) throw new RandomSystemError('non-integer-explosion-limit', 'La limite d explosions doit etre entiere.');
+  const maxIterations = boundedInteger(resolvedIterations, 1, MAX_TRANSFORM_ITERATIONS, 6);
   const candidates = drawState.draws.filter((draw) => !draw.rerolled && appliesToDraw(step, draw));
   for (const original of candidates) {
     let current = original;
@@ -101,10 +155,12 @@ export function explodeDraws(drawState, step, context, rng) {
       if (!matchesCondition(current, step.condition, context)) break;
       const source = context.sourceMap.get(current.sourceId);
       const component = context.componentMap.get(current.componentId);
+      const outcome = drawForComponent(context, component, source, rng);
+      if (!outcome) break;
       const exploded = makeDraw(
         component,
         source,
-        drawNormalizedRandomSource(source, rng),
+        outcome,
         current.initialIndex,
         current.chainIndex + 1,
         drawState.nextId(),

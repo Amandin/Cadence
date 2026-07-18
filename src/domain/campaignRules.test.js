@@ -4,6 +4,35 @@ import { applyInitiativeRules, normalizeCampaignRules } from './campaignRules.js
 import { rulePresetCatalog } from '../rulePresets.js';
 
 describe('campaign rules', () => {
+  it('uses every standard participant type in the default priority order', () => {
+    expect(normalizeCampaignRules({}).categoryOrder).toEqual([
+      'PJ', 'Compagnon', 'Élite', 'Allié', 'Opposant', 'Environnement',
+    ]);
+  });
+
+  it('does not enable multiple actions when the setting is absent', () => {
+    expect(normalizeCampaignRules({})).toMatchObject({
+      multipleActionMode: multipleActionModes.NONE,
+      multipleActionSlots: false,
+    });
+  });
+
+  it('migrates the retired untouched default order to include every standard type', () => {
+    expect(normalizeCampaignRules({
+      categoryOrder: ['PJ', 'Opposant', 'Allié', 'Environnement'],
+    }).categoryOrder).toEqual([
+      'PJ', 'Compagnon', 'Élite', 'Allié', 'Opposant', 'Environnement',
+    ]);
+  });
+
+  it('migrates the superseded complete default order', () => {
+    expect(normalizeCampaignRules({
+      categoryOrder: ['PJ', 'Compagnon', 'Allié', 'Élite', 'Opposant', 'Environnement'],
+    }).categoryOrder).toEqual([
+      'PJ', 'Compagnon', 'Élite', 'Allié', 'Opposant', 'Environnement',
+    ]);
+  });
+
   it('keeps tiebreaker display settings and custom priority types', () => {
     expect(normalizeCampaignRules({
       tiebreakerVisible: false,
@@ -18,6 +47,10 @@ describe('campaign rules', () => {
 
   it('uses the default tiebreaker label when the custom label is empty', () => {
     expect(normalizeCampaignRules({ tiebreakerLabel: '   ' }).tiebreakerLabel).toBe(defaultTiebreakerLabel);
+  });
+
+  it('migrates the former default tiebreaker label to Dextérité', () => {
+    expect(normalizeCampaignRules({ tiebreakerLabel: 'Départage' }).tiebreakerLabel).toBe('Dextérité');
   });
 
   it('applies tiebreaker display settings to a scene', () => {

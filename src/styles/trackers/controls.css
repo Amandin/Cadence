@@ -1,0 +1,565 @@
+.points-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.points-cycle-slot {
+  flex: 0 0 28px;
+  display: grid;
+  place-items: center;
+}
+
+.points-cycle-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--tracker-border);
+  background: var(--tracker-paper);
+  color: var(--tracker-ink);
+  font-weight: 950;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--tracker-ink) 8%, transparent);
+}
+
+.dark .points-cycle-btn {
+  background: var(--tracker-ink);
+  border-color: var(--tracker-neutral-deep);
+  color: var(--tracker-paper-muted);
+}
+
+.points-controls {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.points-controls > div {
+  min-width: 0;
+}
+
+.bar-action-zone {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  padding: 5px 2px;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: var(--radius-pill);
+  box-shadow: none !important;
+  color: inherit;
+  text-align: left;
+}
+
+.bar-controls > .bar-action-zone {
+  /* This is a grid item between the two step buttons, not a compact control. */
+  min-inline-size: 0;
+  inline-size: 100%;
+  width: 100%;
+  height: auto;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: var(--radius-pill);
+  box-shadow: none !important;
+}
+
+/* Keep the range bar fluid when the scene-level compact button rule applies. */
+.scene-app .bar-controls > .bar-action-zone {
+  min-inline-size: 0;
+  inline-size: 100%;
+}
+
+.bar-action-zone .bar-bg {
+  inline-size: 100%;
+  min-height: 18px;
+  border: 1px solid color-mix(in srgb, var(--tracker-neutral) 28%, transparent);
+  box-shadow: inset 0 1px 3px color-mix(in srgb, var(--tracker-ink) 12%, transparent), 0 1px 0 color-mix(in srgb, var(--tracker-paper) 70%, transparent);
+  transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease;
+}
+
+.bar-action-zone:hover .bar-bg,
+.bar-action-zone:focus-visible .bar-bg {
+  transform: scaleY(1.18);
+  border-color: color-mix(in srgb, var(--tracker-sky) 54%, transparent);
+  box-shadow: inset 0 1px 3px color-mix(in srgb, var(--tracker-ink) 12%, transparent), 0 0 0 3px color-mix(in srgb, var(--tracker-sky) 14%, transparent);
+}
+
+.bar-bg.under-zero {
+  background:
+    repeating-linear-gradient(135deg, var(--tracker-danger-muted) 0 5px, transparent 5px 10px),
+    repeating-linear-gradient(45deg, var(--tracker-danger-muted-soft) 0 4px, transparent 4px 9px),
+    var(--tracker-border);
+}
+
+.bar-bg.between-zero-and-min {
+  background:
+    repeating-linear-gradient(90deg, color-mix(in srgb, var(--tracker-warning) 20%, transparent) 0 6px, transparent 6px 12px),
+    var(--tracker-border);
+}
+
+.bar-bg .bar-fill {
+  position: relative;
+  z-index: 1;
+}
+
+.bar-bg .bar-over,
+.bar-bg .bar-under {
+  z-index: 2;
+}
+
+.bar-bg .bar-over {
+  background:
+    repeating-linear-gradient(135deg, color-mix(in srgb, var(--tracker-paper) 45%, transparent) 0 4px, transparent 4px 8px),
+    linear-gradient(90deg, var(--tracker-warning), var(--tracker-warning-border));
+}
+
+.bar-bg .bar-under {
+  background:
+    repeating-linear-gradient(-45deg, color-mix(in srgb, var(--tracker-paper) 30%, transparent) 0 4px, transparent 4px 8px),
+    linear-gradient(90deg, var(--tracker-danger-deep), var(--tracker-danger));
+}
+
+.bar-bg .bar-under.between-zero-and-min {
+  background:
+    repeating-linear-gradient(90deg, color-mix(in srgb, var(--tracker-paper) 46%, transparent) 0 5px, transparent 5px 10px),
+    linear-gradient(90deg, var(--tracker-orange), var(--tracker-warning));
+}
+
+.bar-bg .bar-under.under-zero {
+  background:
+    repeating-linear-gradient(135deg, color-mix(in srgb, var(--tracker-paper) 46%, transparent) 0 3px, transparent 3px 7px),
+    repeating-linear-gradient(45deg, color-mix(in srgb, var(--tracker-paper) 28%, transparent) 0 3px, transparent 3px 7px),
+    linear-gradient(90deg, color-mix(in srgb, var(--tracker-danger-deep) 36%, black), var(--tracker-danger-deep));
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--tracker-latched-ring) 82%, transparent);
+}
+
+.bar-threshold-marker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: var(--radius-pill);
+  background: var(--marker-color, var(--tracker-neutral));
+  box-shadow: 0 0 0 1px var(--tracker-white-72), 0 0 7px color-mix(in srgb, var(--marker-color, var(--tracker-neutral)) 55%, transparent);
+  transform: translateX(-50%);
+  z-index: 4;
+  pointer-events: auto;
+}
+
+.bar-controls {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  width: 100%;
+}
+
+.tracker-action-pop {
+  display: grid;
+  grid-template-columns: minmax(82px, 1fr) auto;
+  align-items: end;
+}
+
+.step-chip,
+.step-chip-input {
+  width: 50px;
+  min-width: 50px;
+  border-radius: var(--radius-pill);
+  border: 1px solid color-mix(in srgb, var(--tracker-neutral) 38%, transparent);
+  background: color-mix(in srgb, var(--tracker-neutral) 14%, transparent);
+  color: var(--tracker-neutral-strong);
+  font-size: 9px;
+  font-weight: 950;
+  line-height: 1.1;
+  text-transform: uppercase;
+  text-align: center;
+  padding: 3px 4px;
+}
+
+.step-chip-input {
+  background: var(--tracker-paper);
+  color: var(--tracker-ink);
+}
+
+.counter-wrap {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.counter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+  gap: 8px;
+  align-items: stretch;
+}
+
+.counter-unit {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) 22px;
+  align-items: center;
+  min-width: 0;
+}
+
+.counter-size-compact {
+  max-width: 150px;
+}
+
+.counter-size-normal {
+  max-width: 210px;
+}
+
+.counter-size-wide {
+  grid-column: span 2;
+}
+
+.counter-edge {
+  position: relative;
+  z-index: 1;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-pill);
+  background: var(--tracker-paper);
+  border: 1px solid color-mix(in srgb, var(--tracker-warning-border) 55%, transparent);
+  color: var(--tracker-orange-deep);
+  font-size: 18px;
+  font-weight: 950;
+  line-height: 1;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--tracker-ink) 8%, transparent);
+}
+
+.counter-edge:first-child {
+  margin-right: -8px;
+}
+
+.counter-edge:last-child {
+  margin-left: -8px;
+}
+
+.counter-tile {
+  min-width: 0;
+  width: 100%;
+  min-height: 50px;
+  border-radius: var(--radius-pill);
+  padding: 7px 16px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 1px;
+  background: var(--tracker-white-88);
+  border: 1px solid color-mix(in srgb, var(--tracker-neutral) 42%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--tracker-paper) 75%, transparent), 0 8px 18px color-mix(in srgb, var(--tracker-ink) 6%, transparent);
+  color: inherit;
+}
+
+.counter-tile:hover,
+.counter-tile:focus-visible {
+  border-color: color-mix(in srgb, var(--tracker-sky) 45%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--tracker-paper) 75%, transparent), 0 0 0 3px color-mix(in srgb, var(--tracker-sky) 12%, transparent), 0 8px 18px color-mix(in srgb, var(--tracker-ink) 8%, transparent);
+}
+
+.counter-tile span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--tracker-neutral-strong);
+  font-size: 10px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+
+.counter-tile strong {
+  color: var(--tracker-ink);
+  font-size: 22px;
+  line-height: 1;
+  font-weight: 950;
+}
+
+.counter-pop {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: minmax(70px, 1fr) auto;
+  gap: 5px;
+  margin-top: 6px;
+  align-items: center;
+}
+
+.tracker-action-pop label,
+.counter-pop label {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  color: var(--tracker-neutral-strong);
+  font-size: 9px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.counter-pop button {
+  border-radius: var(--radius-pill);
+  padding: 5px 8px;
+  background: var(--tracker-ink-deep);
+  color: var(--tracker-paper);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.tracker-action-pop > input,
+.tracker-action-pop label input,
+.counter-pop input {
+  min-width: 0;
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid var(--tracker-border);
+  padding: 6px 8px;
+  font-weight: 900;
+  color: var(--tracker-ink);
+  background: var(--tracker-paper);
+  text-transform: none;
+}
+
+.dark .spy-toggle,
+.dark .threshold-edit-row input,
+.dark .threshold-edit-row select,
+.dark .box-block-edit-head input,
+.dark .counter-edit-tile input,
+.dark .free-box-edit-line input {
+  background: var(--tracker-ink-deep);
+  color: var(--tracker-paper-muted);
+  border-color: var(--tracker-neutral-deep);
+}
+
+.dark .spy-toggle {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--tracker-blue) 24%, var(--tracker-ink-deep)), color-mix(in srgb, var(--tracker-violet) 12%, var(--tracker-ink)));
+  border-color: color-mix(in srgb, var(--tracker-blue) 48%, var(--tracker-neutral-deep));
+  color: color-mix(in srgb, var(--tracker-dark-blue-soft) 90%, var(--tracker-paper-soft));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tracker-blue) 18%, transparent);
+}
+
+.dark .spy-toggle .secret-icon {
+  filter: drop-shadow(0 1px 0 color-mix(in srgb, black 42%, transparent));
+}
+
+.dark .spy-toggle.active {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--tracker-warning) 42%, var(--tracker-ink-deep)), color-mix(in srgb, var(--tracker-dark-amber-deep) 74%, var(--tracker-ink)));
+  border-color: color-mix(in srgb, var(--tracker-warning) 72%, var(--tracker-ink));
+  color: var(--ui-primary-contrast);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--tracker-warning) 22%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--tracker-warning) 24%, transparent);
+}
+
+.dark .threshold-color-select.threshold-neutral { --select-dot: var(--tracker-neutral); --select-bg: var(--tracker-ink-soft); --select-text: var(--tracker-paper-muted); }
+.dark .threshold-color-select.threshold-green { --select-dot: var(--tracker-green); --select-bg: var(--tracker-dark-green); --select-text: var(--tracker-dark-green-soft); }
+.dark .threshold-color-select.threshold-amber { --select-dot: var(--tracker-warning); --select-bg: var(--tracker-dark-amber-deep); --select-text: var(--tracker-secret-dark-text); }
+.dark .threshold-color-select.threshold-red { --select-dot: var(--tracker-danger); --select-bg: var(--tracker-danger-deep); --select-text: var(--tracker-dark-red-soft); }
+.dark .threshold-color-select.threshold-blue { --select-dot: var(--tracker-blue); --select-bg: var(--tracker-blue-deep); --select-text: var(--tracker-dark-blue-soft); }
+.dark .threshold-color-select.threshold-violet { --select-dot: var(--tracker-violet); --select-bg: var(--tracker-violet-deep); --select-text: var(--tracker-dark-violet-soft); }
+
+.dark .title-counter {
+  background: color-mix(in srgb, var(--accent, var(--tracker-info-soft)) 24%, var(--tracker-ink-deep));
+  border-color: color-mix(in srgb, var(--accent, var(--tracker-info-soft)) 42%, var(--tracker-ink-soft));
+  color: color-mix(in srgb, var(--accent, var(--tracker-info-soft)) 28%, var(--tracker-paper-soft));
+}
+
+.dark .threshold-chip.threshold-neutral { background: var(--tracker-ink-soft); color: var(--tracker-paper-muted); border-color: var(--tracker-neutral-strong); }
+.dark .threshold-chip.threshold-green { background: color-mix(in srgb, var(--tracker-green) 26%, var(--tracker-ink-deep)); color: color-mix(in srgb, var(--tracker-green) 38%, var(--tracker-paper-soft)); border-color: color-mix(in srgb, var(--tracker-green) 58%, var(--tracker-ink)); }
+.dark .threshold-chip.threshold-amber { background: color-mix(in srgb, var(--tracker-warning) 28%, var(--tracker-ink-deep)); color: var(--tracker-secret-dark-text); border-color: color-mix(in srgb, var(--tracker-warning) 62%, var(--tracker-ink)); }
+.dark .threshold-chip.threshold-red { background: var(--tracker-danger-deep); color: color-mix(in srgb, var(--tracker-danger) 28%, var(--tracker-paper-soft)); border-color: color-mix(in srgb, var(--tracker-danger) 62%, var(--tracker-ink)); }
+.dark .threshold-chip.threshold-blue { background: color-mix(in srgb, var(--tracker-blue) 32%, var(--tracker-ink-deep)); color: color-mix(in srgb, var(--tracker-blue) 28%, var(--tracker-paper-soft)); border-color: color-mix(in srgb, var(--tracker-blue) 62%, var(--tracker-ink)); }
+.dark .threshold-chip.threshold-violet { background: color-mix(in srgb, var(--tracker-violet) 34%, var(--tracker-ink-deep)); color: color-mix(in srgb, var(--tracker-violet) 26%, var(--tracker-paper-soft)); border-color: color-mix(in srgb, var(--tracker-violet) 62%, var(--tracker-ink)); }
+
+.dark .threshold-color-select {
+  color: var(--tracker-paper-soft);
+}
+
+.dark .tracker.threshold-glow {
+  background:
+    linear-gradient(115deg,
+      color-mix(in srgb, var(--threshold-a, var(--tracker-neutral)) 32%, var(--ui-panel-bg, var(--tracker-ink-deep))) 0%,
+      color-mix(in srgb, var(--threshold-a, var(--tracker-neutral)) 14%, var(--ui-panel-bg, var(--tracker-ink-deep))) 48%,
+      color-mix(in srgb, var(--threshold-b, var(--tracker-neutral)) 28%, var(--ui-panel-bg, var(--tracker-ink-deep))) 100%),
+    var(--ui-panel-bg, var(--tracker-dark-panel-soft));
+  border-color: color-mix(in srgb, var(--threshold-a, var(--tracker-neutral)) 48%, var(--ui-panel-border, var(--tracker-neutral-deep)));
+}
+
+.dark .tracker-secret.threshold-glow {
+  background:
+    repeating-linear-gradient(45deg, color-mix(in srgb, var(--tracker-border) 4%, transparent) 0 6px, color-mix(in srgb, var(--tracker-border) 8%, transparent) 6px 12px),
+    linear-gradient(115deg,
+      color-mix(in srgb, var(--threshold-a, var(--tracker-neutral)) 32%, var(--ui-panel-bg, var(--tracker-ink-deep))) 0%,
+      color-mix(in srgb, var(--threshold-a, var(--tracker-neutral)) 14%, var(--ui-panel-bg, var(--tracker-ink-deep))) 48%,
+      color-mix(in srgb, var(--threshold-b, var(--tracker-neutral)) 28%, var(--ui-panel-bg, var(--tracker-ink-deep))) 100%),
+    var(--ui-panel-bg, var(--tracker-dark-panel-soft));
+  background-blend-mode: normal, normal, normal;
+}
+
+.dark .counter-edge {
+  background: var(--tracker-ink);
+  border-color: color-mix(in srgb, var(--tracker-warning-border) 55%, transparent);
+  color: var(--tracker-secret-dark-text);
+  box-shadow: 0 4px 14px color-mix(in srgb, black 28%, transparent);
+}
+
+.dark .counter-tile {
+  background: color-mix(in srgb, var(--tracker-ink) 86%, transparent);
+  border-color: color-mix(in srgb, var(--tracker-neutral) 34%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--tracker-paper) 8%, transparent), 0 8px 18px color-mix(in srgb, black 18%, transparent);
+}
+
+.dark .counter-tile span {
+  color: var(--tracker-border);
+}
+
+.dark .counter-tile strong {
+  color: var(--tracker-paper-soft);
+}
+
+.dark .step-chip {
+  background: color-mix(in srgb, var(--tracker-neutral) 16%, transparent);
+  color: var(--tracker-border);
+  border-color: color-mix(in srgb, var(--tracker-neutral) 28%, transparent);
+}
+
+.dark .step-chip-input {
+  background: var(--tracker-ink-deep);
+  color: var(--tracker-paper-muted);
+  border-color: var(--tracker-neutral-deep);
+}
+
+.dark .tracker-action-pop label,
+.dark .counter-pop label {
+  color: var(--tracker-border);
+}
+
+.dark .tracker-action-pop > input,
+.dark .counter-pop input {
+  background: var(--tracker-ink-deep);
+  color: var(--tracker-paper-muted);
+  border-color: var(--tracker-neutral-deep);
+}
+
+@media (max-width: 520px) {
+  .tracker-edit-head {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: stretch;
+  }
+
+  .tracker-edit-head > input {
+    grid-column: 1 / -1;
+  }
+
+  .tracker-action-line {
+    grid-column: 1 / -1;
+  }
+
+  .tracker-action-line .tracker-option-icons {
+    justify-content: flex-start;
+    margin-left: 0;
+  }
+
+  .sub-options-row {
+    justify-content: space-between;
+  }
+
+  .compact-step-field {
+    width: 62px;
+    min-width: 62px;
+  }
+
+  .tracker-option-icons {
+    margin-left: auto;
+    justify-content: flex-end;
+  }
+
+  .grid2,
+  .counter-edit-grid,
+  .edit-actions-row {
+    grid-template-columns: 1fr;
+  }
+
+  .counter-grid {
+    grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
+    gap: 7px;
+  }
+
+  .counter-size-compact,
+  .counter-size-normal {
+    max-width: none;
+  }
+
+  .counter-auto-row,
+  .box-auto-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .counter-auto-row strong,
+  .box-auto-row strong,
+  .box-auto-row .field:last-child,
+  .threshold-edit-row > .secondary-warning {
+    grid-column: 1 / -1;
+  }
+
+  .threshold-edit-row,
+  .threshold-edit-row.has-target,
+  .threshold-edit-row.has-basis,
+  .threshold-edit-row.has-target.has-basis {
+    grid-template-columns: 1fr;
+  }
+
+  .threshold-label-row {
+    grid-template-columns: minmax(0, 2fr) minmax(72px, 1fr);
+  }
+
+  .threshold-numeric-row {
+    grid-template-columns: 42px minmax(50px, 1fr);
+  }
+
+  .threshold-edit-row.has-target .threshold-numeric-row {
+    grid-template-columns: minmax(0, 1fr) 42px minmax(50px, .75fr);
+  }
+
+  .threshold-edit-row.has-basis .threshold-numeric-row {
+    grid-template-columns: 42px 62px minmax(50px, 1fr);
+  }
+
+  .threshold-edit-row.has-target.has-basis .threshold-numeric-row {
+    grid-template-columns: minmax(0, 1fr) 42px 58px minmax(50px, .75fr);
+  }
+
+  .threshold-edit-row .time-pair-fields {
+    grid-template-columns: repeat(2, minmax(42px, 1fr));
+    min-width: 0;
+  }
+
+  .threshold-color-select {
+    width: 100%;
+  }
+}
+
+@media (max-width: 380px) {
+  .threshold-edit-row,
+  .threshold-edit-row.has-target,
+  .threshold-edit-row.has-basis,
+  .threshold-edit-row.has-target.has-basis {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .threshold-edit-row input,
+  .threshold-edit-row select {
+    padding: 7px 8px;
+    font-size: 12px;
+  }
+
+  .threshold-delete {
+    width: 20px;
+    min-width: 20px;
+    height: 8px;
+    min-height: 8px;
+  }
+}

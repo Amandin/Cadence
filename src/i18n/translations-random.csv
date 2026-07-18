@@ -84,12 +84,21 @@ random.use.run,Lancer
 random.use.recursive.instance,Jet {index}
 random.use.recursive.add,Ajouter un jet
 random.use.recursive.remove,Retirer
-random.quick.title,Lancer les dés
-random.quick.open,Ouvrir le lanceur de dés
-random.quick.type,Type de lancer
+random.quick.title,Lancer un tirage
+random.quick.open,Ouvrir le lanceur de tirages
+random.quick.type,Tirage
 random.quick.noRoll,Aucun tirage actif. Active au moins un tirage depuis les règles de campagne.
 random.quick.kept,Conservé
 random.quick.discarded,Écarté
+random.quick.cardCount,Nombre de cartes
+random.quick.cardMode,Mode de tirage
+random.quick.cardWithoutReplacement,Sans remise
+random.quick.cardWithReplacement,Avec remise
+random.quick.cardDraw,Tirer
+random.quick.expert,Syntaxe experte
+random.quick.expertName,Tirage libre
+random.quick.expertField,Expression
+random.quick.expertHelp,Exécute une expression ponctuelle sans créer de nouveau type de tirage.
 random.use.noResource,Aucune ressource configurée
 random.error.generic,Le tirage n’a pas pu être effectué.
 random.result.title,Résultat
@@ -216,7 +225,8 @@ random.definition.explosionTrigger,Déclenchement
 random.definition.explosionMaximum,Sur le maximum
 random.definition.explosionThreshold,À partir d’un seuil
 random.definition.fixed,Fixe
-random.definition.requested,Demandé
+random.definition.requested,Demander avec cette valeur proposée
+random.definition.requestedNoDefault,Demander sans valeur proposée
 random.definition.requestAtUse,Demander au lancer
 random.definition.never,Jamais
 random.definition.always,Toujours
@@ -224,6 +234,7 @@ random.definition.optionalAtUse,Option au lancer
 random.definition.calculation,Calcul
 random.definition.groupCalculation,Calculer ce groupe
 random.definition.overallCalculation,Calcul de l’ensemble
+random.definition.overallCalculationHelp,Définis le résultat principal et ajoute au besoin plusieurs compteurs de résultats.
 random.definition.resultMode,Résultat produit
 random.definition.resultValues,Valeurs
 random.definition.resultSum,Somme
@@ -255,10 +266,40 @@ random.definition.choiceControlSelect,Menu déroulant
 random.definition.moveChoiceUp,Monter {name}
 random.definition.moveChoiceDown,Descendre {name}
 random.definition.deleteChoice,Supprimer {name}
+random.definition.rollOptions,Choix proposés au lancer
+random.definition.rollOptionsHelp,Ajoute des choix indépendants puis utilise-les pour activer au besoin les groupes ainsi que les explosions et les relances.
+random.definition.rollOption,Choix {index}
+random.definition.newRollOption,Nouveau choix
+random.definition.answerNo,Non
+random.definition.answerYes,Oui
+random.definition.addAnswer,Ajouter une réponse
+random.definition.alwaysActive,Toujours
+random.definition.activationChoice,Choix déclencheur
+random.definition.activationAnswer,Réponse déclencheuse
+random.definition.addActivationCondition,Ajouter une condition
+random.definition.groupAvailability,Utiliser ce groupe
+random.definition.groupContribution,Contribution au total
+random.definition.groupContributionAdd,Ajouter les résultats
+random.definition.groupContributionSubtract,Soustraire les résultats
+random.definition.explosionAvailability,Activer l’explosion
+random.definition.rerollAvailability,Activer la relance
 random.definition.advanced,Autres traitements
 random.definition.reroll,Relance
+random.definition.rerollOnce,Relancer une fois une face donnée
 random.definition.rerollCondition,Relancer si
+random.definition.rerollFace,Face à relancer
+random.definition.rerollAdvancedActive,Seuil de relance
 random.definition.maxTimes,Maximum
+random.definition.explosionLimit,Nombre maximal d’explosions
+random.definition.sourceChoices,Sources proposées au lancer
+random.definition.sourceChoicesHelp,Laisse toutes les cases cochées pour autoriser tous les dés standards.
+random.definition.allSources,Autoriser toutes les sources
+random.definition.noCodeAdvanced,Options avancées
+random.definition.noCodeAdvancedGroupHelp,Tables pondérées seuils récursifs et calcul propre au groupe
+random.definition.advancedSource,Dé ou table pondérée
+random.definition.resultCounters,Compteurs de résultats
+random.definition.resultCountersHelp,Compte séparément les critiques complications ou toute autre catégorie utile.
+random.definition.newCounter,Nouveau compteur
 random.definition.customValue,Valeur personnalisée
 random.definition.mappedValue,Nouvelle valeur
 random.definition.marker,Marqueur
@@ -330,11 +371,37 @@ random.deck.remaining,{count} restantes
 random.definition.linkedTable,Relier le résultat à une table
 random.definition.linkedTableSource,Source liée
 random.definition.linkedTableLabel,Libellé affiché
+random.definition.linkedTableNumericWarning,La recherche dans une table nécessite un résultat numérique exploitable.
 random.definition.editorMode,Mode d’édition
-random.definition.guidedMode,Guidé
-random.definition.codeMode,Code expert
+random.definition.guidedMode,Sans code
+random.definition.codeMode,Syntaxe experte
+random.definition.noCodeTitle,Construction sans code
+random.definition.noCodeHelp,Assemble le jet avec les réglages usuels. Les cas moins fréquents restent disponibles dans les options avancées.
+random.definition.noCodeLevels,Essentiel + avancé
+random.definition.noCodeView,Options affichées
+random.definition.noCodeEssential,Essentiel
+random.definition.noCodeFull,Toutes les options
+random.definition.examplePicker,Partir d’un exemple
+random.definition.examplePickerHelp,Préremplis le formulaire puis adapte librement les réglages avant de l’enregistrer.
+random.definition.exampleChoose,Choisir un exemple
+random.definition.exampleFeatured,Exemples proposés
+random.definition.exampleClassics,Autres jets classiques
+random.definition.exampleApply,Préremplir
+random.definition.noCodeAdvancedResultHelp,Comparaisons rares et table de correspondance
+random.definition.advancedSuccessComparison,Comparaison du seuil de succès
+random.definition.advancedCounterComparisons,Comparaisons des compteurs
+random.definition.recursive,Répéter ce jet autant de fois que nécessaire
+random.definition.recursiveHelp,Chaque répétition redemande ses propres paramètres puis les résultats sont additionnés.
+random.definition.tryTitle,Essai du jet
+random.definition.tryHelp,Teste la définition courante sans l’enregistrer ni l’ajouter à l’historique.
+random.definition.tryAction,Lancer l’essai
+random.definition.tryBeforeSave,Essayer avant d’enregistrer
 random.definition.rollCode,Code du jet
-random.definition.rollCodeHelp,Déclare des variables number ou source puis écris le calcul. Exemple : number bonus = 2; source dé = d6; 1d10! + 5d@dé - 3d4k2 + [bonus]
+random.definition.rollCodeHelp,Déclare les paramètres puis écris le tirage. Les réglages courants restent disponibles dans l’éditeur guidé.
+random.definition.rollCodeReference,Référence rapide de la syntaxe
+random.decision.afterRoll,Après le tirage
+random.decision.accept,Appliquer
+random.decision.decline,Conserver le résultat
 random.deck.discardPile,Défausse
 random.deck.discardSummary,Défausse · {count}
 random.cards.drawMode,Mode de tirage

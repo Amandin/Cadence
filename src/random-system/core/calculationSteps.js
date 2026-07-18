@@ -13,6 +13,55 @@ import { RandomSystemError } from './errors.js';
 
 const NO_EXPRESSION_VALUE = Symbol('no-expression-value');
 
+function requiredInteger(reference, context, fallback, label) {
+  const value = Number(resolveValue(reference, context.parameters, fallback));
+  if (!Number.isInteger(value)) {
+    throw new RandomSystemError('non-integer-setting', `${label} doit etre entier. Utilisez arrondi.inf(...) ou arrondi.sup(...).`);
+  }
+  return value;
+}
+
+function expressionComponentIds(node) {
+  if (!node || typeof node !== 'object') return [];
+  if (node.type === 'roll') return [node.componentId];
+  if (node.type === 'binary') return [...expressionComponentIds(node.left), ...expressionComponentIds(node.right)];
+  if (node.type === 'unary') return expressionComponentIds(node.value);
+  if (node.type === 'function') return node.arguments.flatMap(expressionComponentIds);
+  if (node.type === 'marker-count') return expressionComponentIds(node.expression);
+  if (node.type === 'conditional') return [
+    ...conditionComponentIds(node.condition),
+    ...expressionComponentIds(node.whenTrue),
+    ...expressionComponentIds(node.whenFalse),
+  ];
+  if (node.type === 'repeat') return expressionComponentIds(node.expression);
+  if (node.type === 'select') return node.choices.flatMap(expressionComponentIds);
+  if (node.type === 'choice') return node.choices.flatMap((choice) => expressionComponentIds(choice.expression));
+  return [];
+}
+
+function conditionComponentIds(condition) {
+  if (!condition || typeof condition !== 'object') return [];
+  if (condition.type === 'compare-values') {
+    return [...expressionComponentIds(condition.left), ...expressionComponentIds(condition.right)];
+  }
+  if (condition.type === 'not') return conditionComponentIds(condition.condition);
+  return (condition.conditions || []).flatMap(conditionComponentIds);
+}
+
+function expressionConditionValue(condition, drawState, context) {
+  if (condition.type === 'all') return condition.conditions.every((item) => expressionConditionValue(item, drawState, context));
+  if (condition.type === 'any') return condition.conditions.some((item) => expressionConditionValue(item, drawState, context));
+  if (condition.type === 'not') return !expressionConditionValue(condition.condition, drawState, context);
+  const left = expressionValue(condition.left, drawState, context);
+  const right = expressionValue(condition.right, drawState, context);
+  if (condition.operator === '=' || condition.operator === '==') return left === right;
+  if (condition.operator === '!=') return left !== right;
+  if (condition.operator === '<') return left < right;
+  if (condition.operator === '<=') return left <= right;
+  if (condition.operator === '>') return left > right;
+  return left >= right;
+}
+
 export function mapDrawValues(drawState, step, context) {
   const mappings = Array.isArray(step.mappings) ? step.mappings : [];
   for (const draw of drawState.draws) {
@@ -43,7 +92,15 @@ export function applyMarkers(drawState, step, context) {
 }
 
 export function applyKeep(drawState, step, context) {
-  const candidates = drawState.draws.filter((draw) => !draw.rerolled && appliesToDraw(step, draw));
+  const allCandidates = drawState.draws.filter((draw) => !draw.rerolled && appliesToDraw(step, draw));
+  const candidateGroups = step.perRepeat
+    ? Array.from(allCandidates.reduce((groups, draw) => {
+      const key = draw.repeatIndex ?? -1;
+      groups.set(key, [...(groups.get(key) || []), draw]);
+      return groups;
+    }, new Map()).values())
+    : [allCandidates];
+  candidateGroups.forEach((candidates) => {
   const direction = step.order === randomKeepOrders.LOWEST ? 1 : -1;
   const units = step.unit === 'chain'
     ? Array.from(candidates.reduce((groups, draw) => {
@@ -55,13 +112,14 @@ export function applyKeep(drawState, step, context) {
       return groups;
     }, new Map()).values())
     : candidates.map((draw) => ({ id: draw.id, draws: [draw], value: numericDrawValue(draw) ?? 0 }));
-  const count = boundedInteger(resolveValue(step.count, context.parameters, 1), 0, units.length, 1);
+  const count = boundedInteger(requiredInteger(step.count, context, 1, 'Le nombre de resultats conserves'), 0, units.length, 1);
   const sorted = [...units].sort((left, right) => {
     if (left.value !== right.value) return (left.value - right.value) * direction;
     return left.id.localeCompare(right.id);
   });
   const kept = new Set(sorted.slice(0, count).flatMap((unit) => unit.draws.map((draw) => draw.id)));
   candidates.forEach((draw) => { draw.kept = kept.has(draw.id); });
+  });
 }
 
 function aggregateCandidates(drawState, step) {
@@ -109,7 +167,7 @@ export function applyOccurrenceBonus(drawState, step, context) {
   if (!target || !Number.isFinite(Number(target.value))) return;
   const candidates = aggregateCandidates(drawState, step);
   const occurrences = candidates.filter((draw) => matchesCondition(draw, step.condition, context)).length;
-  const every = boundedInteger(resolveValue(step.every, context.parameters, 2), 1, MAX_DRAWS_PER_COMPONENT, 2);
+  const every = boundedInteger(requiredInteger(step.every, context, 2, 'La frequence du bonus'), 1, MAX_DRAWS_PER_COMPONENT, 2);
   const amount = finiteNumber(resolveValue(step.amount, context.parameters, 0), 0);
   const bonus = Math.floor(occurrences / every) * amount;
   target.value = Number(target.value) + bonus;
@@ -176,6 +234,42 @@ function expressionValue(node, drawState, context) {
     if (value === NO_EXPRESSION_VALUE) return value;
     return node.operator === '-' ? -value : value;
   }
+  if (node.type === 'function') {
+    const values = (node.arguments || []).map((argument) => expressionValue(argument, drawState, context));
+    if (values.some((value) => value === NO_EXPRESSION_VALUE)) return NO_EXPRESSION_VALUE;
+    if (node.name === 'min') return Math.min(...values);
+    if (node.name === 'max') return Math.max(...values);
+    if (node.name === 'arrondi.inf') return Math.floor(values[0]);
+    if (node.name === 'arrondi.sup') return Math.ceil(values[0]);
+    if (node.name === 'abs') return Math.abs(values[0]);
+    if (node.name === 'signe') return Math.sign(values[0]);
+    if (node.name === 'puissance') return values[0] ** values[1];
+    throw new RandomSystemError('invalid-expression-function', `Fonction inconnue : ${node.name}.`);
+  }
+  if (node.type === 'marker-count') {
+    const componentIds = new Set(expressionComponentIds(node.expression));
+    return drawState.draws.filter((draw) => (
+      !draw.rerolled
+      && draw.kept !== false
+      && componentIds.has(draw.componentId)
+      && draw.markers.some((marker) => marker.id === node.markerId || marker.label === node.markerId)
+    )).length;
+  }
+  if (node.type === 'conditional') {
+    return expressionValue(
+      expressionConditionValue(node.condition, drawState, context) ? node.whenTrue : node.whenFalse,
+      drawState,
+      context,
+    );
+  }
+  if (node.type === 'repeat') {
+    const count = boundedInteger(resolveValue(node.count, context.parameters, 0), 0, 100, 0);
+    return Array.from({ length: count }, (_, repeatIndex) => expressionValue(
+      node.expression,
+      { ...drawState, draws: drawState.draws.filter((draw) => draw.repeatIndex === repeatIndex) },
+      context,
+    )).reduce((sum, value) => sum + (value === NO_EXPRESSION_VALUE ? 0 : value), 0);
+  }
   if (node.type === 'select') {
     const candidates = (node.choices || []).map((choice, index) => ({
       choice,
@@ -196,17 +290,9 @@ function expressionValue(node, drawState, context) {
       .sort((left, right) => ((left.value - right.value) * direction) || (left.index - right.index))
       .slice(0, count)
       .map((candidate) => candidate.index));
-    const componentIds = (candidate) => {
-      if (!candidate || typeof candidate !== 'object') return [];
-      if (candidate.type === 'roll') return [candidate.componentId];
-      if (candidate.type === 'binary') return [...componentIds(candidate.left), ...componentIds(candidate.right)];
-      if (candidate.type === 'unary') return componentIds(candidate.value);
-      if (candidate.type === 'select') return candidate.choices.flatMap(componentIds);
-      return [];
-    };
     candidates.forEach((candidate) => {
       if (selected.has(candidate.index)) return;
-      const discardedComponents = new Set(componentIds(candidate.choice));
+      const discardedComponents = new Set(expressionComponentIds(candidate.choice));
       drawState.draws.forEach((draw) => {
         if (discardedComponents.has(draw.componentId)) draw.kept = false;
       });
@@ -264,7 +350,8 @@ function outcomeMatchesValue(outcome, targetValue) {
 
 export function applyTableLookup(drawState, step, context) {
   const target = drawState.aggregates.get(cleanId(step.targetAggregateId, ''));
-  const source = context.sourceMap.get(String(step.sourceId || ''));
+  const sourceId = step.source ? resolveValue(step.source, context.parameters, '') : step.sourceId;
+  const source = context.sourceMap.get(String(sourceId || ''));
   if (!target || !source) return;
   const matched = sourceOutcomes(source).find((outcome) => outcomeMatchesValue(outcome, target.value)) || null;
   drawState.aggregates.set(cleanId(step.outputId, step.id), {

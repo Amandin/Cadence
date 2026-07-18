@@ -1,0 +1,478 @@
+/*
+  Sombre final.
+  Les anciennes feuilles contiennent encore plusieurs fonds clairs très
+  spécifiques. Ce bloc est volontairement placé en fin de fichier pour que le
+  thème sombre reste cohérent sur le hub, les règles, les modèles et la scène.
+*/
+:root.dark,
+:root[data-mode="dark"],
+html:has(.app.dark),
+html:has(.app[data-mode="dark"]),
+body:has(.app.dark),
+body:has(.app[data-mode="dark"]),
+#root:has(> .app.dark),
+#root:has(> .app[data-mode="dark"]),
+.app.dark,
+.app[data-mode="dark"] {
+  background: var(--theme-dark-bg-deep) !important;
+  color: var(--theme-dark-text);
+}
+
+:root.dark,
+:root[data-mode="dark"],
+.app.dark,
+.app[data-mode="dark"] {
+  background-image: var(--ui-app-bg-image) !important;
+}
+
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .card,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .panel,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .sheet,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .bottom,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .campaign-hub-header.panel,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .campaign-hub-page > .hub-section.panel,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .rules-panel,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .cadence-files-panel,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .hub-scene-card,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .hub-row,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .rule-group,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .rule-group-body,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .rule-group .advanced-rule-block,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .rule-save-choices,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .edit-sheet-header,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .template-switch-notice,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .tracker,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .box-editor,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .restore-row,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .global-mini-main {
+  background: var(--ui-panel-bg) !important;
+  border-color: var(--ui-panel-border) !important;
+  color: var(--theme-dark-text);
+  box-shadow: var(--ui-panel-shadow);
+}
+
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .campaign-hub-header.panel {
+  background: var(--ui-emphasis-panel-bg) !important;
+  box-shadow: var(--ui-emphasis-panel-shadow);
+}
+
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .rule-group,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .rule-group-body,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .rule-group .advanced-rule-block {
+  background: var(--ui-rule-panel-bg) !important;
+  border-color: var(--ui-rule-panel-border) !important;
+}
+
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .rule-group-body {
+  box-shadow: var(--ui-rule-panel-shadow);
+}
+
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .muted,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .field,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .compact-help,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .rule-option-note,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .rule-group .compact-help,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .rule-group .advanced-radio small:not(.rule-option-warning),
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .hub-row small,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .hub-row em,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .campaign-save-status,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .box-label,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .line-count-row label,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .box-level-row span {
+  color: var(--ui-muted-strong) !important;
+}
+
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) input:not([type="checkbox"]):not([type="radio"]),
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) textarea,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) select,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .field input:not([type="checkbox"]):not([type="radio"]),
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .field textarea,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .field select,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .tracker-edit-head input:not([type="checkbox"]):not([type="radio"]),
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .tracker-edit-head select,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .delta-pop input:not([type="checkbox"]):not([type="radio"]),
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .restore-row select {
+  background: var(--ui-input-bg) !important;
+  border-color: var(--ui-input-border) !important;
+  color: var(--ui-input-text) !important;
+  box-shadow: var(--ui-control-shadow);
+}
+
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .small-btn,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .icon-btn,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .choice,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .initiative-choice-action,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .controls > button,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .clock-inline button:not(.clock-face),
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .global-mini > button,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .hub-section-head .small-btn,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .hub-scene-actions .small-btn,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .template-row-actions .small-btn,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .template-category-actions .small-btn,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .scene-management-grid .small-btn,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .dynamic-insertion-secondary-actions .small-btn,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .initiative-roll-slot .small-btn,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .compact-arrows .small-btn,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .fiche-card .small-btn,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .reserve-card .small-btn,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .initiative-card .small-btn {
+  background: var(--ui-control-bg-strong) !important;
+  border-color: var(--ui-control-border) !important;
+  color: var(--ui-control-text) !important;
+  box-shadow: var(--ui-control-shadow);
+}
+
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .primary,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .turn-btn,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .delta button,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .delta-pop button {
+  background: var(--ui-primary-action-bg) !important;
+  border-color: var(--ui-primary-action-border) !important;
+  color: var(--ui-primary-contrast) !important;
+  box-shadow: var(--ui-primary-action-shadow);
+}
+
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .choice.selected,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .initiative-choice-action.primary-choice,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .hub-tabs .choice.selected {
+  background: var(--ui-selected-bg) !important;
+  border-color: var(--ui-selected-border) !important;
+  color: var(--ui-primary-contrast) !important;
+  box-shadow: var(--ui-selected-shadow);
+}
+
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .danger-btn,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .subtle-danger,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .template-row-actions .danger-btn,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .template-category-actions .danger-btn {
+  background: var(--ui-danger-soft) !important;
+  border-color: var(--ui-danger-border) !important;
+  color: var(--ui-danger-contrast) !important;
+}
+
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .hub-scene-type,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .chip {
+  background: var(--ui-chip-bg) !important;
+  border-color: var(--ui-chip-border) !important;
+  color: var(--ui-text) !important;
+}
+
+.sheet.main-menu.menu-dark,
+.main-menu-overlay .sheet.menu-dark {
+  background: var(--ui-panel-bg) !important;
+  border-color: var(--ui-panel-border) !important;
+  color: var(--ui-text);
+  box-shadow: var(--ui-panel-shadow);
+}
+
+.sheet.main-menu.menu-dark .scene-options,
+.sheet.main-menu.menu-dark .compact-options,
+.sheet.main-menu.menu-dark .menu-scene-notes,
+.sheet.main-menu.menu-dark .menu-scene-elements,
+.sheet.main-menu.menu-dark .menu-flow-section,
+.sheet.main-menu.menu-dark .restore-row,
+.sheet.main-menu.menu-dark .global-mini-main {
+  background: var(--ui-rule-panel-bg) !important;
+  border-color: var(--ui-rule-panel-border) !important;
+  color: var(--ui-text);
+}
+
+.sheet.main-menu.menu-dark .muted,
+.sheet.main-menu.menu-dark .compact-help,
+.sheet.main-menu.menu-dark .field {
+  color: var(--ui-muted-strong) !important;
+}
+
+.sheet.main-menu.menu-dark .small-btn,
+.sheet.main-menu.menu-dark .icon-btn,
+.sheet.main-menu.menu-dark .choice,
+.sheet.main-menu.menu-dark .controls > button,
+.sheet.main-menu.menu-dark .clock-inline button:not(.clock-face),
+.sheet.main-menu.menu-dark .global-mini > button,
+.sheet.main-menu.menu-dark .scene-management-grid .small-btn {
+  background: var(--ui-control-bg-strong) !important;
+  border-color: var(--ui-control-border) !important;
+  color: var(--ui-control-text) !important;
+  box-shadow: var(--ui-control-shadow);
+}
+
+.sheet.main-menu.menu-dark .primary,
+.sheet.main-menu.menu-dark .turn-btn,
+.sheet.main-menu.menu-dark .delta button,
+.sheet.main-menu.menu-dark .delta-pop button {
+  background: var(--ui-primary-action-bg) !important;
+  border-color: var(--ui-primary-action-border) !important;
+  color: var(--ui-primary-contrast) !important;
+  box-shadow: var(--ui-primary-action-shadow);
+}
+
+.sheet.main-menu.menu-dark .danger-btn,
+.sheet.main-menu.menu-dark .subtle-danger {
+  background: var(--ui-danger-soft) !important;
+  border-color: var(--ui-danger-border) !important;
+  color: var(--ui-danger-contrast) !important;
+}
+
+.sheet.main-menu.menu-dark input:not([type="checkbox"]):not([type="radio"]),
+.sheet.main-menu.menu-dark textarea,
+.sheet.main-menu.menu-dark select,
+.sheet.main-menu.menu-dark .field input:not([type="checkbox"]):not([type="radio"]),
+.sheet.main-menu.menu-dark .field textarea,
+.sheet.main-menu.menu-dark .field select,
+.sheet.main-menu.menu-dark .restore-row select {
+  background: var(--ui-input-bg) !important;
+  border-color: var(--ui-input-border) !important;
+  color: var(--ui-input-text) !important;
+  box-shadow: var(--ui-control-shadow);
+}
+
+.app .hub-return-logo {
+  display: grid !important;
+  place-items: center !important;
+  align-items: center !important;
+  justify-items: center !important;
+  line-height: 0 !important;
+  aspect-ratio: 1 / 1 !important;
+  background: var(--ui-surface-strong) !important;
+  border: 1px solid var(--ui-border) !important;
+  box-shadow: var(--ui-shadow-surface);
+  overflow: visible !important;
+}
+
+.app .menu-brand img,
+.app .campaign-brand-capsule img,
+.sheet.main-menu .menu-brand img {
+  width: 54px !important;
+  height: 54px !important;
+  min-width: 54px !important;
+  object-fit: contain !important;
+  object-position: center !important;
+  display: block !important;
+}
+
+.sheet.main-menu .menu-brand-header {
+  grid-template-columns: 58px minmax(0, 1fr) auto auto;
+}
+
+.app.dark .hub-return-logo {
+  background: var(--ui-control-bg) !important;
+  border-color: var(--ui-control-border) !important;
+  box-shadow: var(--ui-shadow-action);
+}
+
+.app .hub-return-logo {
+  width: 54px !important;
+  height: 54px !important;
+  min-width: 54px !important;
+  padding: 0 !important;
+}
+
+.app .hub-return-logo img {
+  width: 38px !important;
+  height: 38px !important;
+  object-fit: contain;
+  display: block;
+  margin: auto !important;
+  transform: none !important;
+}
+
+@media (max-width: 767px) {
+  .app .scene-head .hub-return-logo {
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+  }
+
+  .app .scene-head .hub-return-logo img {
+    width: 30px !important;
+    height: 30px !important;
+  }
+}
+
+.app.dark select,
+.app.dark option,
+.app.dark optgroup {
+  color-scheme: dark;
+  background-color: var(--ui-input-bg) !important;
+  color: var(--ui-input-text) !important;
+}
+
+.app.dark select {
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--ui-input-text) 50%),
+    linear-gradient(135deg, var(--ui-input-text) 50%, transparent 50%),
+    linear-gradient(180deg, var(--ui-input-bg), var(--ui-input-bg)) !important;
+  background-position:
+    calc(100% - 16px) 50%,
+    calc(100% - 11px) 50%,
+    0 0 !important;
+  background-size:
+    5px 5px,
+    5px 5px,
+    100% 100% !important;
+  background-repeat: no-repeat !important;
+  padding-right: 32px !important;
+}
+
+.status-color-select,
+.threshold-color-select {
+  background-color: var(--select-bg, var(--tracker-paper-muted)) !important;
+  background-image: radial-gradient(circle, var(--select-dot, var(--tracker-neutral)) 0 55%, transparent 58%) !important;
+  background-repeat: no-repeat !important;
+  background-size: 16px 16px, auto !important;
+  color: var(--select-text, var(--tracker-ink-soft)) !important;
+  border-color: var(--select-border, var(--select-dot, var(--tracker-neutral))) !important;
+}
+
+.status-color-select {
+  background-position: 10px center, 0 0 !important;
+}
+
+.threshold-color-select {
+  background-position: 8px center, 0 0 !important;
+}
+
+.tracker.threshold-glow {
+  background:
+    linear-gradient(115deg,
+      color-mix(in srgb, var(--threshold-a, var(--tracker-neutral)) 32%, var(--ui-surface, var(--tracker-paper))) 0%,
+      color-mix(in srgb, var(--threshold-a, var(--tracker-neutral)) 12%, var(--ui-surface, var(--tracker-paper))) 46%,
+      color-mix(in srgb, var(--threshold-b, var(--tracker-neutral)) 26%, var(--ui-surface, var(--tracker-paper))) 100%),
+    var(--ui-surface, var(--tracker-paper)) !important;
+  border-color: color-mix(in srgb, var(--threshold-a, var(--tracker-neutral)) 48%, var(--ui-border, var(--tracker-border))) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--threshold-a, var(--tracker-neutral)) 16%, transparent);
+}
+
+.tracker-secret.threshold-glow {
+  background:
+    repeating-linear-gradient(45deg, color-mix(in srgb, var(--tracker-neutral-deep) 4%, transparent) 0 6px, color-mix(in srgb, var(--tracker-neutral-deep) 8%, transparent) 6px 12px),
+    linear-gradient(115deg,
+      color-mix(in srgb, var(--threshold-a, var(--tracker-neutral)) 32%, var(--ui-surface, var(--tracker-paper))) 0%,
+      color-mix(in srgb, var(--threshold-a, var(--tracker-neutral)) 12%, var(--ui-surface, var(--tracker-paper))) 46%,
+      color-mix(in srgb, var(--threshold-b, var(--tracker-neutral)) 26%, var(--ui-surface, var(--tracker-paper))) 100%),
+    var(--ui-surface, var(--tracker-paper)) !important;
+  background-blend-mode: normal, normal, normal;
+}
+
+.app.dark .tracker.threshold-glow,
+.dark .tracker.threshold-glow {
+  background:
+    linear-gradient(115deg,
+      color-mix(in srgb, var(--threshold-a, var(--tracker-neutral)) 32%, var(--ui-panel-bg, var(--tracker-ink-deep))) 0%,
+      color-mix(in srgb, var(--threshold-a, var(--tracker-neutral)) 14%, var(--ui-panel-bg, var(--tracker-ink-deep))) 48%,
+      color-mix(in srgb, var(--threshold-b, var(--tracker-neutral)) 28%, var(--ui-panel-bg, var(--tracker-ink-deep))) 100%),
+    var(--ui-panel-bg, var(--tracker-dark-panel-soft)) !important;
+  border-color: color-mix(in srgb, var(--threshold-a, var(--tracker-neutral)) 48%, var(--ui-panel-border, var(--tracker-neutral-deep))) !important;
+}
+
+.app.dark .tracker-secret.threshold-glow,
+.dark .tracker-secret.threshold-glow {
+  background:
+    repeating-linear-gradient(45deg, color-mix(in srgb, var(--tracker-border) 4%, transparent) 0 6px, color-mix(in srgb, var(--tracker-border) 8%, transparent) 6px 12px),
+    linear-gradient(115deg,
+      color-mix(in srgb, var(--threshold-a, var(--tracker-neutral)) 32%, var(--ui-panel-bg, var(--tracker-ink-deep))) 0%,
+      color-mix(in srgb, var(--threshold-a, var(--tracker-neutral)) 14%, var(--ui-panel-bg, var(--tracker-ink-deep))) 48%,
+      color-mix(in srgb, var(--threshold-b, var(--tracker-neutral)) 28%, var(--ui-panel-bg, var(--tracker-ink-deep))) 100%),
+    var(--ui-panel-bg, var(--tracker-dark-panel-soft)) !important;
+  background-blend-mode: normal, normal, normal;
+}
+
+.fiche-card.status-tinted-character,
+.character-sheet.status-tinted-character {
+  background: var(--status-tint-gradient, var(--ui-surface)) !important;
+}
+
+.app.dark .fiche-card.status-tinted-character,
+.dark .character-sheet.status-tinted-character {
+  background: var(--status-tint-gradient, var(--ui-surface)) !important;
+}
+
+.character-sheet-header {
+  display: grid;
+  gap: 5px;
+  margin-bottom: 10px;
+}
+
+.character-sheet-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.character-sheet-title-row h2 {
+  margin: 0;
+  min-width: 0;
+}
+
+.conceal-character-btn.discreet {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 26px;
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--ui-surface-soft) 74%, transparent);
+  border: 1px solid var(--ui-border);
+  color: var(--ui-muted);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.conceal-character-btn.discreet.active {
+  background: var(--ui-warning-bg);
+  border-color: var(--ui-warning-border);
+  color: var(--ui-warning-text);
+  box-shadow: var(--ui-shadow-action);
+}
+
+.dark .conceal-character-btn.discreet.active {
+  background: var(--ui-warning-bg);
+  border-color: var(--ui-warning-border);
+  color: var(--ui-warning-text);
+}
+
+.character-secret-edit {
+  margin-top: 8px;
+}
+
+.sheet-add-status-btn {
+  min-height: 26px;
+  padding: 3px 9px;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.fiche-card.secret-character-sheet,
+.character-sheet.secret-character-sheet {
+  background:
+    repeating-linear-gradient(135deg, rgba(71, 85, 105, .06) 0 6px, rgba(71, 85, 105, .11) 6px 12px),
+    var(--ui-surface) !important;
+}
+
+.fiche-card.secret-character-sheet.status-tinted-character,
+.character-sheet.secret-character-sheet.status-tinted-character {
+  background:
+    repeating-linear-gradient(135deg, rgba(71, 85, 105, .025) 0 6px, rgba(71, 85, 105, .055) 6px 12px),
+    var(--status-tint-gradient, var(--ui-surface)) !important;
+}
+
+.dark .fiche-card.secret-character-sheet,
+.dark .character-sheet.secret-character-sheet {
+  background:
+    repeating-linear-gradient(135deg, rgba(203, 213, 225, .05) 0 6px, rgba(203, 213, 225, .095) 6px 12px),
+    var(--ui-surface) !important;
+}
+
+.dark .fiche-card.secret-character-sheet.status-tinted-character,
+.dark .character-sheet.secret-character-sheet.status-tinted-character {
+  background:
+    repeating-linear-gradient(135deg, rgba(203, 213, 225, .025) 0 6px, rgba(203, 213, 225, .055) 6px 12px),
+    var(--status-tint-gradient, var(--ui-surface)) !important;
+}
+
+.app.scene-status-tinted,
+.app.scene-status-tinted .scene-app {
+  background: var(--scene-status-tint-gradient, transparent), var(--ui-app-bg) !important;
+}

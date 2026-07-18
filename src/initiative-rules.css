@@ -631,8 +631,8 @@
   border: 2px solid var(--ui-surface);
   border-radius: var(--radius-pill);
   background: var(--ui-accent);
-  color: #fff;
-  box-shadow: 0 6px 14px rgba(15, 23, 42, .18);
+  color: var(--ui-primary-contrast);
+  box-shadow: 0 6px 14px color-mix(in srgb, var(--ui-primary-strong) 18%, transparent);
   font-size: 10px;
   font-weight: 950;
   line-height: 1;
@@ -640,7 +640,7 @@
 
 .dark .init-bonus-badge {
   border-color: var(--ui-surface);
-  color: #111827;
+  color: var(--ui-primary-strong);
 }
 
 .flexible-play.undo-played {
@@ -768,6 +768,17 @@
   font-size: 15px;
   min-width: 0;
   overflow-wrap: anywhere;
+}
+
+.advanced-rule-block h4 {
+  margin: 0 0 5px;
+  font-size: 14px;
+}
+
+.advanced-rule-divider {
+  height: 1px;
+  margin: 12px 0;
+  background: var(--ui-border);
 }
 
 .compact-help {
