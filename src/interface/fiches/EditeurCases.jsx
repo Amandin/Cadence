@@ -1,5 +1,5 @@
 import { t } from '../../i18n/index.js';
-import { boxVisualRank, normalizeBoxTracker, sortBoxBlocks, uid } from '../../logic.js';
+import { boxVisualRank, newTracker, normalizeBoxTracker, sortBoxBlocks, uid } from '../../logic.js';
 import { IconeCadence } from '../icones/IconeCadence.jsx';
 import { entierPositif } from './ficheEditionModel.js';
 
