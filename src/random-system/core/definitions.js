@@ -129,16 +129,19 @@ export function normalizeRandomDefinition(definition, index = 0) {
   const kind = Object.values(randomDefinitionKinds).includes(definition?.kind)
     ? definition.kind
     : inferredKind;
+  const active = definition?.active !== undefined
+    ? definition.active !== false
+    : kind === randomDefinitionKinds.COMBINATION || definition?.exposed !== false;
   return {
     id: cleanId(definition?.id, `definition-${index + 1}`),
     name: cleanLabel(definition?.name, `Définition ${index + 1}`),
     visualId: normalizeRandomDefinitionVisualId(definition?.visualId, definition),
     kind,
     exposed: kind === randomDefinitionKinds.COMBINATION || definition?.exposed !== false,
-    active: definition?.active !== undefined
-      ? definition.active !== false
-      : kind === randomDefinitionKinds.COMBINATION || definition?.exposed !== false,
+    active,
+    quickAccess: active && (definition?.quickAccess !== undefined ? definition.quickAccess !== false : true),
     recursive: definition?.recursive === true,
+    sourceId: typeof definition?.sourceId === 'string' ? definition.sourceId.trim() : '',
     parameters: (Array.isArray(definition?.parameters) ? definition.parameters : []).map(normalizeParameter),
     options: (Array.isArray(definition?.options) ? definition.options : []).map(normalizeOption),
     components: (Array.isArray(definition?.components) ? definition.components : []).map(normalizeComponent),

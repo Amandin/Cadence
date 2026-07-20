@@ -255,6 +255,8 @@
 .rs-resource-picker .rs-segmented {
   display: grid;
   width: 100%;
+  grid-auto-flow: row;
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .rs-resource-list,
@@ -264,7 +266,8 @@
   margin-top: 10px;
 }
 
-.rs-resource-list > button {
+.rs-resource-list > button,
+.rs-resource-category > button {
   display: grid;
   gap: 2px;
   min-width: 0;
@@ -281,18 +284,52 @@
   font-weight: 800;
 }
 
-.rs-resource-list > button small {
+.rs-resource-list > button small,
+.rs-resource-category > button small {
   color: var(--rs-muted);
   font-size: 10px;
   font-weight: 700;
 }
 
 .rs-resource-list > button:hover,
-.rs-resource-list > button.selected {
+.rs-resource-list > button.selected,
+.rs-resource-category > button:hover,
+.rs-resource-category > button.selected {
   border-left-color: var(--ui-selected-border);
   border-color: var(--ui-selected-border);
   background: var(--ui-selected-bg);
   color: var(--ui-primary-contrast);
+}
+
+.rs-resource-category > button:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+}
+
+.rs-resource-category {
+  display: grid;
+  gap: 4px;
+}
+
+.rs-resource-category + .rs-resource-category {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--rs-line);
+}
+
+.rs-resource-category h4 {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0;
+  color: var(--rs-muted);
+  font-size: 10px;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.rs-resource-category h4 small {
+  font-size: inherit;
 }
 
 .rs-resource-title {

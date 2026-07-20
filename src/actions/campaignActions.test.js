@@ -226,6 +226,9 @@ describe('campaign actions export/import', () => {
     expect(state().templates.templates.length).toBeGreaterThan(0);
     expect(state().templates.trackerTemplates.length).toBeGreaterThan(0);
     expect(state().templates.sceneCounterTemplates.length).toBeGreaterThan(0);
+    expect(state().randomSystem.definitions.filter((definition) => definition.active).map((definition) => definition.id)).toEqual(expect.arrayContaining(['test-jet-d6', 'test-carte-initiative']));
+    expect(state().randomSystem.tokenTypes.map((type) => type.name)).toEqual(['Rouge', 'Bleu', 'Blanc']);
+    expect(state().randomSystem.tokenContainers).toContainEqual(expect.objectContaining({ id: 'token-sac-principal', referenceContents: expect.objectContaining({ 'token-rouge': 4 }) }));
   });
 
   it('numbers duplicated scene titles', () => {

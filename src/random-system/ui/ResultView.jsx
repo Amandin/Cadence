@@ -6,7 +6,7 @@ const DEFAULT_VISIBLE_DRAWS = 120;
 
 function displayAggregateValue(value) {
   if (!Array.isArray(value)) return String(value ?? '—');
-  return value.map((item) => item.symbol || item.label || item.value).join(', ');
+  return value.map((item) => item.label || item.symbol || item.value).join(', ');
 }
 
 const DrawChip = memo(function DrawChip({ draw }) {
@@ -113,7 +113,9 @@ function RollResult({ result }) {
     : null;
   const primaryValue = namedDraw
     ? namedDraw.outcome.label
-    : displayAggregateValue(result.primaryAggregate?.value);
+    : result.primaryAggregate
+      ? displayAggregateValue(result.primaryAggregate.value)
+      : keptDraws.map((draw) => draw.outcome.symbol || draw.outcome.label || draw.calculatedValue).join(', ') || '—';
   return (
     <>
       <div className="rs-primary-result">
@@ -191,6 +193,27 @@ function CardResult({ result }) {
   );
 }
 
+function TokenResult({ result }) {
+  const selected = result.tokens.filter((token) => token.kept);
+  const others = result.tokens.filter((token) => !token.kept);
+  const group = (label, tokens) => tokens.length > 0 && (
+    <section className="rs-token-result-group">
+      <h4>{label}</h4>
+      <div className="rs-token-result-grid">
+        {tokens.map((token, index) => (
+          <article key={`${token.typeId}-${index}`}>
+            <span className="rs-token-result-mark" style={token.appearance?.color ? { backgroundColor: token.appearance.color } : undefined} aria-hidden="true">
+              {token.appearance?.image ? <img src={token.appearance.image} alt="" /> : token.appearance?.symbol}
+            </span>
+            <span><strong>{token.name}</strong><small>{token.destinationName}</small></span>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+  return <>{group(t('random.tokens.selected'), selected)}{group(t('random.tokens.others'), others)}</>;
+}
+
 function DecisionResult({ result, onDecision }) {
   const matching = new Set(result.pendingDecision?.matchingDrawIds || []);
   return (
@@ -213,7 +236,7 @@ export const ResultView = memo(function ResultView({ result, onDecision }) {
     <section className="rs-result-view" aria-live="polite">
       <div className="rs-section-head">
         <div>
-          <span className="rs-section-kicker">{result?.kind === 'card-draw' ? t('random.resource.cards') : t('random.resource.rolls')}</span>
+          <span className="rs-section-kicker">{result?.kind === 'card-draw' ? t('random.resource.cards') : result?.kind === 'token-draw' ? t('random.tokens.draws') : t('random.resource.rolls')}</span>
           <div className="rs-heading-with-mark">
             <span className="rs-heading-mark" aria-hidden="true"><RandomIcon name={result?.kind === 'card-draw' ? 'cards' : 'roll'} /></span>
             <h3>{t('random.result.title')}</h3>
@@ -229,6 +252,7 @@ export const ResultView = memo(function ResultView({ result, onDecision }) {
       {!result && <div className="rs-empty-state">{t('random.result.empty')}</div>}
       {result?.kind === 'random-roll' && <RollResult result={result} />}
       {result?.kind === 'card-draw' && <CardResult result={result} />}
+      {result?.kind === 'token-draw' && <TokenResult result={result} />}
       {result?.kind === 'random-decision' && <DecisionResult result={result} onDecision={onDecision} />}
     </section>
   );

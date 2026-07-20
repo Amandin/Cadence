@@ -43,6 +43,7 @@
   --cadence-icon-size: 1.55em;
 }
 
+.scene-app .bottom > .bottom-quick-roll,
 .scene-app .bottom > .bottom-menu-btn {
   display: grid;
   place-items: center;

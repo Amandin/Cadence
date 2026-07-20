@@ -29,6 +29,13 @@
   align-items: center;
 }
 
+.template-new-category {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+  align-items: center;
+}
+
 .template-row {
   grid-template-columns: minmax(0, 1fr) auto;
 }
@@ -276,9 +283,15 @@
   height: 24px;
   padding: 0 !important;
   border-radius: var(--radius-pill);
-  opacity: .52;
+  opacity: .8;
   font-size: 15px;
   line-height: 1;
+}
+
+.template-delete-reveal {
+  min-width: 32px !important;
+  width: 32px;
+  height: 32px;
 }
 
 .template-delete-reveal:hover,

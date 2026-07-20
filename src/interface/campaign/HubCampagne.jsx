@@ -159,11 +159,19 @@ const rulesHubSections = [
   { id: 'kits', labelKey: 'rules.navigation.kits' },
   { id: 'definitions', labelKey: 'random.config.rollDefinitions' },
   { id: 'sources', labelKey: 'random.config.sources' },
+  { id: 'tokens', labelKey: 'random.config.tokens' },
 ];
 
 function OngletReglesEtHasard({ scene, campaignProfile, rulePresetSnapshot, ruleTemplates, initiativeTextPresets, randomSystem, onModifierReglesInitiative, onOuvrirProfilCampagne, onAppliquerTemplateRegles, onEnregistrerTemplateRegles, onEnregistrerPresetInitiativeTextuelle, onDupliquerTemplateRegles, onSupprimerTemplateRegles }) {
   const [section, setSection] = useState('initiative');
-  const randomConfigurationSection = ['kits', 'definitions', 'sources'].includes(section);
+  const randomConfigurationSection = ['kits', 'definitions', 'sources', 'tokens'].includes(section);
+  const initiativeDefinitionId = scene?.initiativeBonusRollDefinitionId || '';
+  const requiredDefinitionIds = initiativeDefinitionId ? [initiativeDefinitionId] : [];
+
+  useEffect(() => {
+    const definition = randomSystem.state.definitions.find((item) => item.id === initiativeDefinitionId);
+    if (definition && definition.exposed !== false && definition.active === false) randomSystem.actions.setDefinitionActive(initiativeDefinitionId, true);
+  }, [initiativeDefinitionId, randomSystem.actions, randomSystem.state.definitions]);
   return (
     <div className="stack hub-section panel rules-hub">
       <div className="hub-section-head">
@@ -175,8 +183,8 @@ function OngletReglesEtHasard({ scene, campaignProfile, rulePresetSnapshot, rule
             type="button"
             className={`choice ${section === entry.id ? 'selected' : ''}`}
             aria-pressed={section === entry.id}
-            onPointerEnter={['kits', 'definitions', 'sources'].includes(entry.id) ? loadRandomConfigurationPanel : undefined}
-            onFocus={['kits', 'definitions', 'sources'].includes(entry.id) ? loadRandomConfigurationPanel : undefined}
+            onPointerEnter={['kits', 'definitions', 'sources', 'tokens'].includes(entry.id) ? loadRandomConfigurationPanel : undefined}
+            onFocus={['kits', 'definitions', 'sources', 'tokens'].includes(entry.id) ? loadRandomConfigurationPanel : undefined}
             onClick={() => setSection(entry.id)}
             key={entry.id}
           >
@@ -187,7 +195,7 @@ function OngletReglesEtHasard({ scene, campaignProfile, rulePresetSnapshot, rule
       <Suspense fallback={<ChargementOnglet texte={t('random.loadingSection')} />}>
         <div className="rules-hub-content">
           {section === 'initiative' && <OngletRegles embedded scene={scene} campaignProfile={campaignProfile} rulePresetSnapshot={rulePresetSnapshot} onModifierRegles={onModifierReglesInitiative} ruleTemplates={ruleTemplates} initiativeTextPresets={initiativeTextPresets} cardSources={randomSystem.state.sources.filter((source) => source.kind === randomSourceKinds.CARDS)} tableSources={randomSystem.state.sources.filter((source) => source.kind === randomSourceKinds.WEIGHTED)} rollDefinitions={activeDefinitions(randomSystem.state.definitions)} onOuvrirProfilCampagne={onOuvrirProfilCampagne} onAppliquerTemplateRegles={onAppliquerTemplateRegles} onEnregistrerTemplateRegles={onEnregistrerTemplateRegles} onEnregistrerPresetInitiativeTextuelle={onEnregistrerPresetInitiativeTextuelle} onDupliquerTemplateRegles={onDupliquerTemplateRegles} onSupprimerTemplateRegles={onSupprimerTemplateRegles} />}
-          {randomConfigurationSection && <section className="random-system-page"><ConfigurationPanel state={randomSystem.state} actions={randomSystem.actions} section={section} /></section>}
+          {randomConfigurationSection && <section className="random-system-page"><ConfigurationPanel state={randomSystem.state} actions={randomSystem.actions} section={section} requiredDefinitionIds={requiredDefinitionIds} /></section>}
         </div>
       </Suspense>
     </div>
@@ -355,7 +363,7 @@ export function HubCampagne({ campaignName, scene, scenes, templates, trackerTem
         <OngletsHub onglet={onglet} setOnglet={changerOnglet} />
         {onglet === 'scenes' && <OngletScenes scenes={scenes} editingSceneId={editingSceneId} onEditerScene={setEditingSceneId} onFermerEditionScene={() => setEditingSceneId('')} onChoisirScene={onChoisirScene} onNouvelleScene={creerNouvelleScene} onModifierScene={onModifierScene} onDupliquerScene={dupliquerScene} onSupprimerScene={onSupprimerScene} />}
         {onglet === 'regles' && <OngletReglesEtHasard scene={scene} campaignProfile={campaignProfile} rulePresetSnapshot={rulePresetSnapshot} ruleTemplates={ruleTemplates} initiativeTextPresets={initiativeTextPresets} randomSystem={randomSystem} onModifierReglesInitiative={onModifierReglesInitiative} onOuvrirProfilCampagne={onOuvrirProfilCampagne} onAppliquerTemplateRegles={onAppliquerTemplateRegles} onEnregistrerTemplateRegles={onEnregistrerTemplateRegles} onEnregistrerPresetInitiativeTextuelle={onEnregistrerPresetInitiativeTextuelle} onDupliquerTemplateRegles={onDupliquerTemplateRegles} onSupprimerTemplateRegles={onSupprimerTemplateRegles} />}
-        {onglet === 'tirages' && <section className="random-system-page"><h2 className="visually-hidden">{t('hub.tabs.random')}</h2><Suspense fallback={<ChargementOnglet texte={t('random.loadingSection')} />}><UsePanel state={randomSystem.state} actions={randomSystem.actions} /></Suspense></section>}
+        {onglet === 'tirages' && <section className="random-system-page"><h2 className="visually-hidden">{t('hub.tabs.random')}</h2><Suspense fallback={<ChargementOnglet texte={t('random.loadingSection')} />}><UsePanel state={randomSystem.state} actions={randomSystem.actions} requiredDefinitionIds={[scene?.initiativeBonusRollDefinitionId].filter(Boolean)} requiredSourceIds={scene?.initiativeTextOrder?.enabled ? [scene.initiativeTextOrder.sourceId || scene.initiativeTextOrder.cardSourceId].filter(Boolean) : []} /></Suspense></section>}
         {onglet === 'campagnes' && <OngletCampagnes campaignName={campaignName} campaignEntries={campaignEntries} fileSaveStatus={fileSaveStatus} performanceState={performanceState} themeState={themeState} randomSystem={randomSystem} ruleTemplates={ruleTemplates} onEnregistrerTemplateRegles={onEnregistrerTemplateRegles} onSupprimerTemplateRegles={onSupprimerTemplateRegles} onRenommerCampagne={onRenommerCampagne} onExporter={onExporter} onImporter={onImporter} onImporterTemplates={onImporterTemplates} onExporterBibliotheque={onExporterBibliotheque} onChargerCampagneTest={onChargerCampagneTest} onReinitialiser={onReinitialiser} onPerformancePreferenceChange={onPerformancePreferenceChange} onThemeModeChange={onThemeModeChange} />}
         {onglet === 'templates' && <Suspense fallback={<ChargementOnglet texte={t('hub.loading.templates')} />}><OngletTemplates categories={templateCategories} templates={templates} trackerTemplates={trackerTemplates} statusTemplates={statusTemplates} sceneCounterTemplates={sceneCounterTemplates} sceneStatusTemplates={sceneStatusTemplates} surpriseImpact={scene?.surpriseImpact} surpriseAdvanceOn={scene?.surpriseAdvanceOn} onAjouterTemplateCategorie={onAjouterTemplateCategorie} onAjouterCategorie={onAjouterCategorieTemplate} onRenommerCategorie={onRenommerCategorieTemplate} onSupprimerCategorie={onSupprimerCategorieTemplate} onDeplacerCategorie={onDeplacerCategorieTemplate} onChangerCategorieTemplate={onChangerCategorieTemplate} onEditerTemplate={onEditerTemplate} onDupliquerTemplate={onDupliquerTemplate} onSupprimerTemplate={onSupprimerTemplate} onAjouterTemplateSuivi={onAjouterTemplateSuivi} onModifierTemplateSuivi={onModifierTemplateSuivi} onDupliquerTemplateSuivi={onDupliquerTemplateSuivi} onSupprimerTemplateSuivi={onSupprimerTemplateSuivi} onAjouterTemplateEtat={onAjouterTemplateEtat} onModifierTemplateEtat={onModifierTemplateEtat} onDupliquerTemplateEtat={onDupliquerTemplateEtat} onSupprimerTemplateEtat={onSupprimerTemplateEtat} onAjouterTemplateCompteurScene={onAjouterTemplateCompteurScene} onModifierTemplateCompteurScene={onModifierTemplateCompteurScene} onDupliquerTemplateCompteurScene={onDupliquerTemplateCompteurScene} onSupprimerTemplateCompteurScene={onSupprimerTemplateCompteurScene} onAjouterTemplateEtatScene={onAjouterTemplateEtatScene} onModifierTemplateEtatScene={onModifierTemplateEtatScene} onDupliquerTemplateEtatScene={onDupliquerTemplateEtatScene} onSupprimerTemplateEtatScene={onSupprimerTemplateEtatScene} templatePersonnageId={templatePersonnageId} templatePersonnageOuvert={templatePersonnageOuvert} onFermerEditionTemplatePersonnage={onFermerEditionTemplatePersonnage} onDemanderChangementDepuisTemplatePersonnage={onDemanderChangementDepuisTemplatePersonnage} onTemplatePanelOpenChange={onTemplatePanelOpenChange} /></Suspense>}
       </main>

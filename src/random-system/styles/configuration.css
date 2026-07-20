@@ -2,4 +2,5 @@
 @import './configuration-definition.css';
 @import './configuration-kits-sources.css';
 @import './configuration-responsive.css';
+@import './tokens.css';
 @import './configuration-code.css';

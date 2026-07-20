@@ -235,6 +235,23 @@ export function makeTestCampaign(){
       ].filter(Boolean),
       ruleTemplates:[],
     },
+    randomSystem:{
+      schemaVersion:17,
+      definitions:[
+        {id:'test-jet-d6',name:'Jet d6 de test',kind:'roll',exposed:true,active:true,visualId:'dice',parameters:[],options:[],components:[{id:'test-jet-d6-component',label:'d6',source:{kind:'fixed',value:'standard-d6'},count:{kind:'fixed',value:1},sourceKind:'random'}],pipeline:[{id:'result',type:'aggregate',operation:'sum',outputId:'result',label:'Résultat'}],primaryAggregateId:'result'},
+        {id:'test-carte-initiative',name:'Carte de test',kind:'roll',exposed:true,active:true,visualId:'cards',parameters:[],options:[],components:[{id:'test-carte-component',label:'Carte',source:{kind:'fixed',value:'standard-54-cards'},count:{kind:'fixed',value:1},sourceKind:'cards',cardMode:'draw'}],pipeline:[{id:'joker-rank',type:'map-value',mappings:[{condition:{type:'marker',markerId:'joker'},value:{kind:'fixed',value:15}}]},{id:'result',type:'aggregate',operation:'values',outputId:'result',label:'Carte'}],primaryAggregateId:'result'},
+      ],
+      tokenTypes:[
+        {id:'token-rouge',name:'Rouge',appearance:{color:'#c94a4a',symbol:'◆',image:''},value:'',tags:['test','danger'],description:'Jeton rouge de la bourse de démonstration.'},
+        {id:'token-bleu',name:'Bleu',appearance:{color:'#3f7cc4',symbol:'●',image:''},value:'',tags:['test'],description:'Jeton bleu de la bourse de démonstration.'},
+        {id:'token-blanc',name:'Blanc',appearance:{color:'#d8d8d8',symbol:'○',image:''},value:'',tags:['test'],description:'Jeton blanc de la bourse de démonstration.'},
+      ],
+      tokenContainers:[
+        {id:'token-sac-principal',name:'Sac principal',contents:{'token-rouge':2,'token-bleu':6,'token-blanc':11},referenceContents:{'token-rouge':4,'token-bleu':8,'token-blanc':12},exposed:true,quickAccess:true},
+        {id:'token-sac-joueur',name:'Sac du joueur',contents:{},referenceContents:null,exposed:false,quickAccess:false},
+        {id:'token-defausse',name:'Défausse',contents:{},referenceContents:null,exposed:false,quickAccess:false},
+      ],
+    },
   });
 }
 function makeEmptyDefaultCampaign(){

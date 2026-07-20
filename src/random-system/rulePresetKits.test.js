@@ -249,6 +249,7 @@ describe('RandomSystem rule preset kits', () => {
       .filter((definition) => definition.exposed !== false && definition.active !== false)
       .map((definition) => definition.id)).toEqual(activeBefore);
     expect(loaded.definitions.find((definition) => definition.id === 'kit-d6-pool-successes')?.active).toBe(false);
+    expect(loaded.definitions.find((definition) => definition.id === 'kit-d6-pool-successes')?.quickAccess).toBe(false);
   });
 
   it('activates exactly one kit and loses that status after a manual change', () => {
@@ -262,6 +263,9 @@ describe('RandomSystem rule preset kits', () => {
       .map((definition) => definition.id);
 
     expect(activeIds).toEqual(expectedActiveIds);
+    expect(activated.definitions
+      .filter((definition) => expectedActiveIds.includes(definition.id))
+      .every((definition) => definition.quickAccess !== false)).toBe(true);
     expect(randomKitIsStrictlyActive(activated, 'kit-d6-pool')).toBe(true);
     expect(randomKitIsStrictlyActive(activated, 'kit-d20-generic')).toBe(false);
 

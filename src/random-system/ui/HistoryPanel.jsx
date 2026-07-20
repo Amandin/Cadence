@@ -3,9 +3,13 @@ import { t } from '../../i18n/index.js';
 import { RandomIcon } from './RandomIcons.jsx';
 
 function historyValue(result) {
+  if (result.kind === 'token-draw') return result.tokens.map((token) => token.name).join(', ') || '—';
   if (result.kind === 'card-draw') return result.cards.map((card) => card.label).join(', ') || '—';
   const value = result.primaryAggregate?.value;
-  return Array.isArray(value) ? value.map((item) => item.label || item.value).join(', ') : String(value ?? '—');
+  if (value != null) return Array.isArray(value) ? value.map((item) => item.label || item.value).join(', ') : String(value);
+  const draws = (result.draws || result.groups?.[result.selectedGroupIndex]?.draws || result.groups?.[0]?.draws || [])
+    .filter((draw) => !draw.rerolled && draw.kept !== false);
+  return draws.map((draw) => draw.outcome?.symbol || draw.outcome?.label || draw.calculatedValue).join(', ') || '—';
 }
 
 export const HistoryPanel = memo(function HistoryPanel({ history, onSelect, onClear }) {

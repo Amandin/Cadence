@@ -487,7 +487,7 @@ export function loadCampaign() {
 }
 
 export function saveCampaign(scenes, dark, campaignName, templates, initiativeRules, rulePresetSnapshot = null, campaignMeta = {}, randomSystemState = null, campaignProfile = null) {
-  writeLocalCampaignPayload(STORAGE_KEY, createCampaignPayload(scenes, dark, campaignName, templates, initiativeRules, rulePresetSnapshot, campaignMeta, randomSystemState, campaignProfile));
+  return writeLocalCampaignPayload(STORAGE_KEY, createCampaignPayload(scenes, dark, campaignName, templates, initiativeRules, rulePresetSnapshot, campaignMeta, randomSystemState, campaignProfile));
 }
 
 export function serializeCampaign(scenes, dark, campaignName, templates, initiativeRules, rulePresetSnapshot = null, campaignMeta = {}, randomSystemState = null, campaignProfile = null) {

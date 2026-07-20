@@ -43,6 +43,12 @@ Avant une modification importante, lancer :
 npm run verify
 ```
 
+Avant une bêta, lancer :
+
+```bash
+npm run validate:beta
+```
+
 Ce script exécute :
 
 ```bash
@@ -50,7 +56,7 @@ npm test
 npm run build
 ```
 
-Une GitHub Action `Quality` lance automatiquement les tests puis le build sur chaque push ou pull request vers `main`.
+Une GitHub Action `Quality` lance automatiquement les tests, la validation UI/UX bloquante puis le build sur chaque push ou pull request vers `main`.
 
 ## Cloudflare Pages
 

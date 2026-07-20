@@ -73,6 +73,14 @@ export function StatisticsPanel({ state, onReset }) {
     }))
     .filter((item) => item.count > 0), [cardSources, state.statistics.bySource]);
 
+  const tokenStats = useMemo(() => (state.tokenContainers || [])
+    .map((container) => ({
+      id: container.id,
+      label: container.name,
+      count: Number(state.statistics.bySource[container.id]?.count) || 0,
+    }))
+    .filter((item) => item.count > 0), [state.statistics.bySource, state.tokenContainers]);
+
   return (
     <div className="rs-statistics">
       <section className="rs-stat-summary">
@@ -99,6 +107,12 @@ export function StatisticsPanel({ state, onReset }) {
           <section>
             <div className="rs-section-head"><div className="rs-heading-with-mark"><span className="rs-heading-mark" aria-hidden="true"><RandomIcon name="cards" /></span><h3>{t('random.stats.cards')}</h3></div></div>
             {cardStats.length ? <UsageBars items={cardStats} /> : <p className="muted">{t('random.stats.empty')}</p>}
+          </section>
+        )}
+        {(state.tokenContainers || []).length > 0 && (
+          <section>
+            <div className="rs-section-head"><div className="rs-heading-with-mark"><span className="rs-heading-mark" aria-hidden="true"><RandomIcon name="roll" /></span><h3>{t('random.stats.tokens')}</h3></div></div>
+            {tokenStats.length ? <UsageBars items={tokenStats} /> : <p className="muted">{t('random.stats.empty')}</p>}
           </section>
         )}
       </div>

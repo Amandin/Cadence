@@ -60,7 +60,7 @@ function legacyD20Definitions() {
 }
 
 describe('RandomSystem state', () => {
-  it('starts with generic sources and no demo definitions outside kits', () => {
+  it('starts with generic sources and the complete inactive catalogue', () => {
     const state = createDefaultRandomSystemState();
     expect(state.sources.map((source) => source.name)).toContain('d20');
     expect(state.sources.find((source) => source.id === 'example-weather-d10')).toMatchObject({
@@ -76,7 +76,8 @@ describe('RandomSystem state', () => {
         10: '💨',
       },
     });
-    expect(state.definitions).toEqual([]);
+    expect(state.definitions.length).toBeGreaterThan(0);
+    expect(state.definitions.every((definition) => definition.active === false && definition.quickAccess === false)).toBe(true);
     const cardSources = state.sources.filter((source) => source.kind === 'cards');
     expect(cardSources.map((source) => [source.name, source.cards.length])).toEqual([
       ['Jeu de 54 cartes', 54],
@@ -285,6 +286,28 @@ describe('RandomSystem state', () => {
     expect(next.statistics.bySource['standard-d20'].outcomes['value-1']).toBe(1);
   });
 
+  it('records token draws in the shared result history and statistics', () => {
+    const state = createDefaultRandomSystemState();
+    const result = {
+      id: 'token-result',
+      kind: 'token-draw',
+      definitionName: 'Deux garder un',
+      sourceId: 'main-bag',
+      sourceName: 'Sac principal',
+      rolledAt: 1,
+      tokens: [
+        { typeId: 'red', name: 'Rouge', kept: true },
+        { typeId: 'blue', name: 'Bleu', kept: false },
+      ],
+    };
+    const next = recordRandomResult(state, result);
+
+    expect(next.lastResult).toBe(result);
+    expect(next.history).toEqual([result]);
+    expect(next.statistics).toMatchObject({ totalUses: 1, totalDraws: 2 });
+    expect(next.statistics.bySource['main-bag'].outcomes).toEqual({ red: 1, blue: 1 });
+  });
+
   it('records large pools in one pass', () => {
     const state = createDefaultRandomSystemState();
     const resources = randomKitResources('kit-d6-pool');
@@ -303,7 +326,7 @@ describe('RandomSystem state', () => {
     expect(next.statistics.bySource['standard-d6'].outcomes['value-6']).toBe(1000);
   });
 
-  it('exports only active campaign rolls and their functional dependencies', () => {
+  it('exports the complete campaign resource catalogue, including inactive resources', () => {
     const resources = randomKitResources('kit-d20-generic');
     const active = resources.definitions.find((item) => item.id === 'kit-d20-check');
     const inactive = resources.definitions.find((item) => item.id === 'kit-d20-damage');
@@ -339,13 +362,13 @@ describe('RandomSystem state', () => {
 
     const exported = exportRandomSystemStateForCampaign(state);
 
-    expect(exported.definitions.map((definition) => definition.id).sort()).toEqual([
-      'campaign-combo',
-      'campaign-internal-damage',
-      'kit-d20-check',
-    ]);
-    expect(exported.sources.map((source) => source.id).sort()).toEqual(['standard-d20', 'standard-d6']);
-    expect(exported.randomKits).toEqual([]);
+    expect(exported.definitions.map((definition) => definition.id).sort()).toEqual(
+      normalizeRandomSystemState(state).definitions.map((definition) => definition.id).sort(),
+    );
+    expect(exported.sources.map((source) => source.id).sort()).toEqual(
+      normalizeRandomSystemState(state).sources.map((source) => source.id).sort(),
+    );
+    expect(exported.randomKits).toEqual(normalizeRandomSystemState(state).randomKits);
     expect(exported.history).toEqual([]);
   });
 });

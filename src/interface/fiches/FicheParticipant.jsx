@@ -10,9 +10,10 @@ import { ChampInitiative } from '../initiative/ChampInitiative.jsx';
 import { EditeurPhasesParticipant, normaliserPhaseActions } from '../initiative/EditeurPhasesParticipant.jsx';
 import { Suivi } from '../suivis/Suivi.jsx';
 import { InfosRapides } from './InfosRapides.jsx';
-import { activeDefinitions } from '../../random-system/definitionAccess.js';
+import { activeDefinitions, exposedTokenContainers, tokenContainerIdFromResourceId } from '../../random-system/definitionAccess.js';
 import { prepareCombinedDefinition } from '../../random-system/combinations.js';
 import { QuickRollResult } from '../dialogues/FenetreLancerDes.jsx';
+import { TokenContainerForm } from '../../random-system/ui/TokenContainerForm.jsx';
 import { initiativeApproachOption, initiativeRollInputs } from '../../random-system/initiativeRoll.js';
 import { IconeJetDes } from '../icones/IconeJetDes.jsx';
 
@@ -24,6 +25,8 @@ function valeurNumerique(valeur, defaut = 0) {
 function FenetreJetInfoRapide({ info, randomSystem, onFermer }) {
   const definitions = useMemo(() => activeDefinitions(randomSystem?.state?.definitions || []), [randomSystem?.state?.definitions]);
   const definition = definitions.find((item) => item.id === info.quickRollDefinitionId);
+  const containers = useMemo(() => exposedTokenContainers(randomSystem?.state?.tokenContainers || []), [randomSystem?.state?.tokenContainers]);
+  const container = containers.find((item) => item.id === tokenContainerIdFromResourceId(info.quickRollDefinitionId));
   const [result, setResult] = useState(null);
   const [rolling] = useState(false);
   const launchedRef = useRef(false);
@@ -35,12 +38,12 @@ function FenetreJetInfoRapide({ info, randomSystem, onFermer }) {
     }, 450);
     return () => window.clearTimeout(timer);
   }, [definition?.id, randomSystem.actions]);
-  if (!definition) return null;
+  if (!definition && !container) return null;
   const resolveDecision = (accepted) => {
     setResult((current) => randomSystem.actions.resolveDefinitionDecision?.(current, accepted) || current);
   };
   return <Fenetre title={`${t('sheet.quickInfo.roll')} — ${info.label}`} onClose={onFermer} className="quick-roll-dialog"><div className="quick-roll-content">
-    <QuickRollResult result={result} rolling={rolling} onDecision={result?.kind === 'random-decision' ? resolveDecision : undefined} />
+    {container ? <TokenContainerForm container={container} containers={containers} tokenTypes={randomSystem.state.tokenTypes || []} actions={randomSystem.actions} /> : <QuickRollResult result={result} rolling={rolling} onDecision={result?.kind === 'random-decision' ? resolveDecision : undefined} />}
   </div></Fenetre>;
 }
 

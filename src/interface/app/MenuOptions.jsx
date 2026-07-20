@@ -1,11 +1,12 @@
+import { useEffect, useState } from 'react';
 import { performancePreferences } from '../../performanceMode.js';
 import { themePreferenceModes } from '../../themePreference.js';
 import { t } from '../../i18n/index.js';
 import { uiGlyphs } from '../../uiAssets.js';
 import { Fenetre } from '../commun/ComposantsCommuns.jsx';
 
-function themeControlMode(themeState) {
-  return themeState?.mode && themeState.mode !== themePreferenceModes.SYSTEM ? 'manual' : 'auto';
+function selectedThemeMode(themeState) {
+  return themeState?.mode && themeState.mode !== themePreferenceModes.SYSTEM ? themeState.mode : 'auto';
 }
 
 function OptionsSection({ title, help, actions, className = '', children }) {
@@ -25,7 +26,7 @@ function OptionsSection({ title, help, actions, className = '', children }) {
 
 export function ThemeModeToggle({ themeState, onThemeModeChange, ariaLabel = t('menu.toggleTheme') }) {
   const dark = !!themeState?.dark;
-  if (themeControlMode(themeState) !== 'manual') return null;
+  if (selectedThemeMode(themeState) === 'auto') return null;
 
   const basculerThemeManuel = () => onThemeModeChange?.(dark ? themePreferenceModes.LIGHT : themePreferenceModes.DARK);
 
@@ -39,11 +40,19 @@ export function ThemeModeToggle({ themeState, onThemeModeChange, ariaLabel = t('
 }
 
 export function OptionsContent({ performanceState, themeState, onPerformancePreferenceChange, onThemeModeChange }) {
-  const themeMode = themeControlMode(themeState);
+  const actualThemeMode = selectedThemeMode(themeState);
+  const [themeMode, setThemeMode] = useState(actualThemeMode);
   const dark = !!themeState?.dark;
+
+  useEffect(() => {
+    if (themeMode !== 'manual') setThemeMode(actualThemeMode);
+  }, [actualThemeMode, themeMode]);
+
   const choisirModeTheme = (value) => {
+    setThemeMode(value);
     if (value === 'manual') onThemeModeChange?.(dark ? themePreferenceModes.DARK : themePreferenceModes.LIGHT);
-    else onThemeModeChange?.(themePreferenceModes.SYSTEM);
+    else if (value === 'auto') onThemeModeChange?.(themePreferenceModes.SYSTEM);
+    else onThemeModeChange?.(value);
   };
 
   return (
@@ -54,6 +63,8 @@ export function OptionsContent({ performanceState, themeState, onPerformancePref
           <select value={themeMode} onChange={(event) => choisirModeTheme(event.target.value)}>
             <option value="auto">{t('options.theme.auto')}</option>
             <option value="manual">{t('options.theme.manual')}</option>
+            <option value={themePreferenceModes.LIGHT}>{t('options.theme.light')}</option>
+            <option value={themePreferenceModes.DARK}>{t('options.theme.dark')}</option>
           </select>
         </label>
       </OptionsSection>

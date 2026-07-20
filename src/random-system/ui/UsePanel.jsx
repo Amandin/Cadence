@@ -4,22 +4,78 @@ import {
   combinationTargetDefinition,
   definitionCombination,
 } from '../combinations.js';
-import { activeDefinitions } from '../definitionAccess.js';
+import { directlyExposedDefinitions, exposedTokenContainers } from '../definitionAccess.js';
 import { randomOptionTypes, randomParameterTypes, randomSourceKinds } from '../engine.js';
 import { ChoiceOptionControl } from './ChoiceOptionControl.jsx';
 import { DefinitionVisual } from './DefinitionVisual.jsx';
 import { HistoryPanel } from './HistoryPanel.jsx';
 import { RandomIcon } from './RandomIcons.jsx';
 import { ResultView } from './ResultView.jsx';
+import { TokenContainerForm } from './TokenContainerForm.jsx';
 import '../styles/base.css';
 import '../styles/choice-controls.css';
 import '../styles/results.css';
+import '../styles/tokens.css';
 
 const resourceKindMeta = {
   definitions: { icon: 'roll', labelKey: 'random.resource.rolls' },
   cards: { icon: 'cards', labelKey: 'random.resource.cards' },
+  tokens: { icon: 'roll', labelKey: 'random.tokens.containers' },
 };
 const emptyInputs = Object.freeze({});
+
+function isCardDefinition(definition, cardSourceIds) {
+  if (cardSourceIds.has(definition.sourceId)) return true;
+  const components = definition.components || [];
+  return components.length > 0 && components.every((component) => (
+    component.sourceKind === 'cards'
+    || (component.source?.kind === 'fixed' && cardSourceIds.has(component.source.value))
+  ));
+}
+
+function resourceAvailability(definition) {
+  return definition.active !== false;
+}
+
+function ResourceList({ resources, resourceKind, selectedId, onSelect }) {
+  const categories = [
+    {
+      id: 'available',
+      title: t('random.use.categoryAvailable'),
+      resources: resources.filter((resource) => resource.available !== false),
+    },
+    {
+      id: 'inactive',
+      title: t('random.use.categoryInactive'),
+      resources: resources.filter((resource) => resource.available === false),
+    },
+  ].filter((category) => category.resources.length > 0);
+
+  if (!categories.length) return <p className="muted">{t('random.use.noResource')}</p>;
+
+  return categories.map((category) => (
+    <section className="rs-resource-category" key={category.id}>
+      <h4>{category.title}<small>{category.resources.length}</small></h4>
+      {category.resources.map((resource) => (
+        <button
+          type="button"
+          className={resource.id === selectedId ? 'selected' : ''}
+          onClick={() => onSelect(resource.id)}
+          disabled={resource.available === false}
+          key={resource.id}
+        >
+          <span className="rs-resource-title">
+            {resourceKind === 'definitions'
+              ? <DefinitionVisual visualId={resource.visualId} className="compact" decorative />
+              : <span aria-hidden="true"><RandomIcon name={resourceKindMeta[resourceKind].icon} /></span>}
+            <span>{resource.name}</span>
+          </span>
+          {resource.note && <small>{resource.note}</small>}
+        </button>
+      ))}
+    </section>
+  ));
+}
 
 function initialInputs(definition, { parameters = {}, options = {} } = {}) {
   return {
@@ -41,6 +97,7 @@ export const DefinitionForm = memo(function DefinitionForm({
   onInputsChange,
   onResult,
   hideRun = false,
+  runAccessory = null,
 }) {
   const [inputs, setInputs] = useState(() => initialInputs(definition, { parameters: initialParameters, options: initialOptions }));
   const [additionalInputs, setAdditionalInputs] = useState([]);
@@ -232,7 +289,7 @@ export const DefinitionForm = memo(function DefinitionForm({
         </button>
       )}
       {error && <p className="rs-error" role="alert">{error}</p>}
-      {!hideRun && <button type="button" className="primary rs-run-button" onClick={run}>{runLabel}</button>}
+      {!hideRun && <div className="rs-run-actions"><button type="button" className="primary rs-run-button" onClick={run}>{runLabel}</button>{runAccessory}</div>}
     </section>
   );
 });
@@ -299,33 +356,66 @@ export function CardSourceForm({ source, sourceState, actions }) {
   );
 }
 
-export function UsePanel({ state, actions }) {
-  const activeRollDefinitions = useMemo(
-    () => activeDefinitions(state.definitions),
-    [state.definitions],
-  );
-  const [resourceKind, setResourceKind] = useState('definitions');
-  const [pendingResult, setPendingResult] = useState(null);
-  const [selectedDefinitionId, setSelectedDefinitionId] = useState(activeRollDefinitions[0]?.id || '');
-  const cardSources = useMemo(
-    () => state.sources.filter((source) => source.kind === randomSourceKinds.CARDS),
+export function UsePanel({ state, actions, requiredDefinitionIds = [], requiredSourceIds = [] }) {
+  const cardSourceIds = useMemo(
+    () => new Set((state.sources || []).filter((source) => source.kind === randomSourceKinds.CARDS).map((source) => source.id)),
     [state.sources],
   );
+  const activeRollDefinitions = useMemo(() => {
+    const requiredIds = new Set(requiredDefinitionIds.filter(Boolean));
+    return (state.definitions || [])
+      .filter((definition) => directlyExposedDefinitions([definition]).length || requiredIds.has(definition.id))
+      .filter((definition) => !isCardDefinition(definition, cardSourceIds))
+      .map((definition) => ({ ...definition, available: resourceAvailability(definition) }));
+  }, [cardSourceIds, requiredDefinitionIds, state.definitions]);
+  const [pendingResult, setPendingResult] = useState(null);
+  const [selectedDefinitionId, setSelectedDefinitionId] = useState(activeRollDefinitions[0]?.id || '');
+  const cardSources = useMemo(() => {
+    const requiredIds = new Set(requiredSourceIds.filter(Boolean));
+    return (state.sources || [])
+      .filter((source) => source.kind === randomSourceKinds.CARDS)
+      .map((source) => {
+        const linkedDefinitions = state.definitions.filter((definition) => (
+          definition.sourceId === source.id || isCardDefinition(definition, new Set([source.id]))
+        ));
+        return {
+          ...source,
+          available: requiredIds.has(source.id) || !linkedDefinitions.length || linkedDefinitions.some(resourceAvailability),
+        };
+      });
+  }, [requiredSourceIds, state.definitions, state.sources]);
+  const [resourceKind, setResourceKind] = useState(() => (
+    activeRollDefinitions.some((definition) => definition.available !== false)
+      ? 'definitions'
+      : cardSources.some((source) => source.available !== false) ? 'cards' : 'definitions'
+  ));
   const [selectedCardSourceId, setSelectedCardSourceId] = useState(cardSources[0]?.id || '');
-  const selectedDefinition = activeRollDefinitions.find((item) => item.id === selectedDefinitionId)
-    || activeRollDefinitions[0];
-  const selectedCardSource = cardSources.find((item) => item.id === selectedCardSourceId)
-    || cardSources[0];
+  const tokenContainers = exposedTokenContainers(state.tokenContainers);
+  const [selectedTokenContainerId, setSelectedTokenContainerId] = useState(tokenContainers[0]?.id || '');
+  const availableRollDefinitions = activeRollDefinitions.filter((definition) => definition.available !== false);
+  const availableCardSources = cardSources.filter((source) => source.available !== false);
+  const selectedDefinition = availableRollDefinitions.find((item) => item.id === selectedDefinitionId)
+    || availableRollDefinitions[0];
+  const selectedCardSource = availableCardSources.find((item) => item.id === selectedCardSourceId)
+    || availableCardSources[0];
+  const selectedTokenContainer = tokenContainers.find((item) => item.id === selectedTokenContainerId) || tokenContainers[0];
 
   useEffect(() => {
-    if (!selectedDefinition && activeRollDefinitions[0]) setSelectedDefinitionId(activeRollDefinitions[0].id);
-  }, [activeRollDefinitions, selectedDefinition]);
+    if (!selectedDefinition && availableRollDefinitions[0]) setSelectedDefinitionId(availableRollDefinitions[0].id);
+  }, [availableRollDefinitions, selectedDefinition]);
   useEffect(() => {
-    if (!selectedCardSource && cardSources[0]) setSelectedCardSourceId(cardSources[0].id);
-  }, [cardSources, selectedCardSource]);
+    if (!selectedCardSource && availableCardSources[0]) setSelectedCardSourceId(availableCardSources[0].id);
+  }, [availableCardSources, selectedCardSource]);
+  useEffect(() => {
+    if (resourceKind === 'definitions' && !availableRollDefinitions.length && availableCardSources.length) setResourceKind('cards');
+    if (resourceKind === 'cards' && !availableCardSources.length && availableRollDefinitions.length) setResourceKind('definitions');
+  }, [availableCardSources.length, availableRollDefinitions.length, resourceKind]);
+  useEffect(() => {
+    if (!selectedTokenContainer && tokenContainers[0]) setSelectedTokenContainerId(tokenContainers[0].id);
+  }, [selectedTokenContainer, tokenContainers]);
 
-  const resources = resourceKind === 'definitions' ? activeRollDefinitions : cardSources;
-  const selectedId = resourceKind === 'definitions' ? selectedDefinition?.id : selectedCardSource?.id;
+  const resources = resourceKind === 'definitions' ? activeRollDefinitions : resourceKind === 'cards' ? cardSources : tokenContainers;
+  const selectedId = resourceKind === 'definitions' ? selectedDefinition?.id : resourceKind === 'cards' ? selectedCardSource?.id : selectedTokenContainer?.id;
   const resolveDecision = (accepted) => {
     const result = actions.resolveDefinitionDecision?.(pendingResult, accepted);
     setPendingResult(result?.kind === 'random-decision' ? result : null);
@@ -337,25 +427,19 @@ export function UsePanel({ state, actions }) {
         <div className="rs-segmented">
           <button type="button" className={resourceKind === 'definitions' ? 'selected' : ''} onClick={() => setResourceKind('definitions')}><span aria-hidden="true"><RandomIcon name={resourceKindMeta.definitions.icon} /></span><span>{t(resourceKindMeta.definitions.labelKey)}</span></button>
           {cardSources.length > 0 && <button type="button" className={resourceKind === 'cards' ? 'selected' : ''} onClick={() => setResourceKind('cards')}><span aria-hidden="true"><RandomIcon name={resourceKindMeta.cards.icon} /></span><span>{t(resourceKindMeta.cards.labelKey)}</span></button>}
+          {tokenContainers.length > 0 && <button type="button" className={resourceKind === 'tokens' ? 'selected' : ''} onClick={() => setResourceKind('tokens')}><span aria-hidden="true"><RandomIcon name={resourceKindMeta.tokens.icon} /></span><span>{t(resourceKindMeta.tokens.labelKey)}</span></button>}
         </div>
         <div className="rs-resource-list">
-          {resources.map((resource) => (
-            <button
-              type="button"
-              className={resource.id === selectedId ? 'selected' : ''}
-              onClick={() => resourceKind === 'definitions' ? setSelectedDefinitionId(resource.id) : setSelectedCardSourceId(resource.id)}
-              key={resource.id}
-            >
-              <span className="rs-resource-title">
-                {resourceKind === 'definitions'
-                  ? <DefinitionVisual visualId={resource.visualId} className="compact" decorative />
-                  : <span aria-hidden="true"><RandomIcon name={resourceKindMeta.cards.icon} /></span>}
-                <span>{resource.name}</span>
-              </span>
-              {resource.note && <small>{resource.note}</small>}
-            </button>
-          ))}
-          {!resources.length && <p className="muted">{t('random.use.noResource')}</p>}
+          <ResourceList
+            resources={resources}
+            resourceKind={resourceKind}
+            selectedId={selectedId}
+            onSelect={(id) => {
+              if (resourceKind === 'definitions') setSelectedDefinitionId(id);
+              else if (resourceKind === 'cards') setSelectedCardSourceId(id);
+              else setSelectedTokenContainerId(id);
+            }}
+          />
         </div>
       </aside>
 
@@ -376,7 +460,8 @@ export function UsePanel({ state, actions }) {
             actions={actions}
           />
         )}
-        <ResultView result={pendingResult || state.lastResult} onDecision={pendingResult ? resolveDecision : undefined} />
+        {resourceKind === 'tokens' && selectedTokenContainer && <TokenContainerForm container={selectedTokenContainer} containers={tokenContainers} tokenTypes={state.tokenTypes || []} actions={actions} result={state.lastResult} />}
+        {resourceKind !== 'tokens' && <ResultView result={pendingResult || state.lastResult} onDecision={pendingResult ? resolveDecision : undefined} />}
       </div>
 
       <HistoryPanel history={state.history} onSelect={actions.selectResult} onClear={actions.clearHistory} />

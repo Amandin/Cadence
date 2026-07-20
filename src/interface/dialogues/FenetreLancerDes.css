@@ -54,6 +54,18 @@
   box-shadow: var(--ui-selected-shadow);
 }
 
+.quick-roll-scope-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.quick-roll-scope-head .small-btn {
+  padding: 6px 9px;
+  font-size: 10px;
+}
+
 .quick-roll-expert-mark {
   display: grid;
   place-items: center;
@@ -67,7 +79,8 @@
 }
 
 .quick-card-form,
-.quick-expert-form {
+.quick-expert-form,
+.quick-adjustment-form {
   display: grid;
   gap: 9px;
   padding-top: 2px;
@@ -81,7 +94,8 @@
   grid-column: 1 / -1;
 }
 
-.quick-expert-form textarea {
+.quick-expert-form textarea,
+.quick-adjustment-form textarea {
   width: 100%;
   resize: vertical;
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
@@ -89,7 +103,9 @@
 }
 
 .quick-expert-form .compact-help,
-.quick-expert-form .rs-error {
+.quick-expert-form .rs-error,
+.quick-adjustment-form .compact-help,
+.quick-adjustment-form .rs-error {
   margin: 0;
 }
 
@@ -108,6 +124,47 @@
 .quick-card-result-list {
   display: grid;
   gap: 6px;
+}
+
+.quick-token-result-list {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+}
+
+.quick-token-result-list article {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--radius-control);
+  background: var(--ui-surface-soft);
+}
+
+.quick-token-result-list article > span:last-child {
+  display: grid;
+  min-width: 0;
+}
+
+.quick-token-result-list small {
+  color: var(--ui-muted);
+}
+
+.quick-token-mark {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-pill);
+  color: var(--ui-primary-contrast);
+}
+
+.quick-token-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .quick-card-result-list article {
@@ -162,6 +219,32 @@
 .quick-roll-form .rs-run-button {
   width: 100%;
   min-height: 42px;
+}
+
+.quick-roll-form .rs-run-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 42px;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.quick-roll-form .rs-run-actions .rs-run-button {
+  margin-top: 0;
+}
+
+.quick-roll-adjust-button {
+  display: grid;
+  place-items: center;
+  align-self: center;
+  width: 42px;
+  min-width: 42px;
+  height: 42px;
+  min-height: 42px;
+  max-height: 42px;
+  padding: 0;
+  border-radius: 24px;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 13px;
 }
 
 .quick-roll-form .rs-error {

@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { FenetreLancerDes, QuickRollResult } from './FenetreLancerDes.jsx';
+import { TokenContainerForm } from '../../random-system/ui/TokenContainerForm.jsx';
 
 function comparisonResult() {
   const group = (index, value, selected) => ({
@@ -64,6 +65,21 @@ describe('QuickRollResult', () => {
     expect(html).toContain('Le Soleil');
     expect(html).toContain('Succès éclatant');
   });
+
+  it('shows selected token destinations in the compact result area', () => {
+    const html = renderToStaticMarkup(<QuickRollResult result={{
+      id: 'tokens-1',
+      kind: 'token-draw',
+      definitionName: 'Deux garder un',
+      sourceName: 'Sac principal',
+      tokens: [{ typeId: 'red', name: 'Rouge', kept: true, destinationName: 'Sac du joueur', appearance: { symbol: '◆', color: '#c94a4a' } }],
+    }} />);
+
+    expect(html).toContain('Deux garder un');
+    expect(html).toContain('Rouge');
+    expect(html).toContain('Sac du joueur');
+    expect(html).toContain('◆');
+  });
 });
 
 describe('FenetreLancerDes', () => {
@@ -88,29 +104,63 @@ describe('FenetreLancerDes', () => {
     expect(html).toContain('visual-dice compact');
     expect(html).toContain('<span>Jet d20</span>');
     expect(html).toContain('<span>Jet percentile</span>');
-    expect(html).toContain('<span>Syntaxe experte</span>');
+    expect(html).toContain('Tous les tirages');
+    expect(html).toContain('aria-label="Ajuster ponctuellement ce tirage"');
+    expect(html).toContain('{ }');
+    expect(html).not.toContain('<span>Syntaxe experte</span>');
     expect(html).not.toContain('<select');
   });
 
-  it('offers direct card draws when a deck is available', () => {
+  it('does not expose raw card sources as standalone draws', () => {
     const deck = { id: 'tarot', name: 'Tarot', kind: 'cards', cards: [{ id: 'sun', label: 'Le Soleil' }] };
     const html = renderToStaticMarkup(
       <FenetreLancerDes
         randomSystem={{
           state: { definitions: [], sources: [deck] },
-          actions: { drawCards: () => null, runAdHocDefinition: () => null },
+          actions: { runAdHocDefinition: () => null },
         }}
         onFermer={() => {}}
       />,
     );
 
-    expect(html).toContain('<span>Tarot</span>');
-    expect(html).toContain('Nombre de cartes');
-    expect(html).toContain('Sans remise');
-    expect(html).toContain('Avec remise');
+    expect(html).not.toContain('<span>Tarot</span>');
+    expect(html).not.toContain('Nombre de cartes');
   });
 
-  it('keeps a free expert expression accessible without saving a definition', () => {
+  it('hides catalogue-only resources from the quick launcher', () => {
+    const html = renderToStaticMarkup(<FenetreLancerDes randomSystem={{
+      state: {
+        definitions: [{ id: 'catalogue', name: 'Jet catalogue', exposed: true, active: true, quickAccess: false, parameters: [], options: [], components: [], pipeline: [] }],
+        sources: [],
+        tokenContainers: [{ id: 'slow-bag', name: 'Sac catalogue', contents: {}, exposed: true, quickAccess: false }],
+      },
+      actions: { runDefinition: () => null },
+    }} onFermer={() => {}} />);
+    expect(html).not.toContain('Jet catalogue');
+    expect(html).not.toContain('Sac catalogue');
+    expect(html).toContain('Tous les tirages');
+  });
+
+  it('exposes token containers instead of predefined token draws', () => {
+    const html = renderToStaticMarkup(
+      <FenetreLancerDes
+        randomSystem={{
+          state: {
+            definitions: [],
+            sources: [],
+            tokenTypes: [{ id: 'red', name: 'Rouge', appearance: {} }],
+            tokenContainers: [{ id: 'bag', name: 'Sac principal', contents: { red: 1 } }],
+          },
+          actions: { runAdHocDefinition: () => null, runTokenContainerDraw: () => null, adjustTokenContents: () => null, moveTokenContents: () => null },
+        }}
+        onFermer={() => {}}
+      />,
+    );
+
+    expect(html).toContain('<span>Sac principal</span>');
+  });
+
+  it('keeps the full roll catalogue accessible when no quick roll exists', () => {
     const html = renderToStaticMarkup(
       <FenetreLancerDes
         randomSystem={{
@@ -121,8 +171,22 @@ describe('FenetreLancerDes', () => {
       />,
     );
 
-    expect(html).toContain('Expression');
-    expect(html).toContain('>1d20</textarea>');
-    expect(html).toContain('Exécute une expression ponctuelle sans créer de nouveau type de tirage.');
+    expect(html).toContain('Tous les tirages');
+    expect(html).not.toContain('>1d20</textarea>');
+  });
+});
+
+describe('TokenContainerForm', () => {
+  it('blocks zero-token draws with a clear message', () => {
+    const container = { id: 'bag', name: 'Sac', contents: {} };
+    const html = renderToStaticMarkup(<TokenContainerForm
+      container={container}
+      containers={[container]}
+      tokenTypes={[]}
+      actions={{ runTokenContainerDraw: () => null, adjustTokenContents: () => null, moveTokenContents: () => null }}
+    />);
+
+    expect(html).toContain('Le conteneur est vide.');
+    expect(html).toContain('Tirer dans Sac');
   });
 });

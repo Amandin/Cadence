@@ -24,7 +24,9 @@ describe('RandomSystem storage', () => {
     expect(raw).toHaveProperty('definitions');
     expect(raw).toHaveProperty('rulePool');
     expect(raw).not.toHaveProperty('scenes');
-    expect(loadRandomSystemState(storage).definitions).toHaveLength(1);
+    expect(loadRandomSystemState(storage).definitions.map((definition) => definition.id)).toContain(
+      state.definitions[0].id,
+    );
   });
 
   it('stores roll details once and restores their convenient aliases', () => {

@@ -39,6 +39,8 @@ La routine UI/UX complète s’exécute avec `npm.cmd run test:uiux`. Elle parco
 - `test-results/uiux/uiux-report.json` : données brutes ;
 - fonctions JavaScript appelées / non appelées dans les fichiers chargés via la couverture précise Chromium.
 
+Elle est bloquante : une erreur console, une action non réalisée, un débordement horizontal ou un contrôle visible sans nom accessible fait échouer la commande. Elle vérifie aussi la conservation immédiate de la campagne et de la vue après rechargement et fermeture simulée.
+
 Une fonction non appelée dans ce rapport ne doit pas être supprimée automatiquement. Elle doit être classée dans une des deux catégories suivantes :
 
 1. scénario manquant dans cette routine ;

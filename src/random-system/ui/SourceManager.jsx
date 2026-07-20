@@ -11,7 +11,7 @@ import { CSV_EXAMPLE, cardRow, cleanDetailMap, ensureSelection, listedEntries, s
 export function SourceManager({ sources, definitions, actions }) {
   const [selectedId, setSelectedId] = useState(sources[0]?.id || '');
   const selected = sources.find((item) => item.id === selectedId) || null;
-  const [draft, setDraft] = useState(() => sourceDraft(selected));
+  const [draft, setDraft] = useState(() => sourceDraft(selected, definitions));
   const [error, setError] = useState('');
   const [selectedFaceValue, setSelectedFaceValue] = useState('');
   const [selectedOutcomeLine, setSelectedOutcomeLine] = useState('0');
@@ -19,12 +19,12 @@ export function SourceManager({ sources, definitions, actions }) {
   const fileInputRef = useRef(null);
 
   useEffect(() => {
-    setDraft(sourceDraft(selected));
+    setDraft(sourceDraft(selected, definitions));
     setError('');
     setSelectedFaceValue('');
     setSelectedOutcomeLine('0');
     setSelectedCardLine('0');
-  }, [selected]);
+  }, [definitions, selected]);
 
   const used = useMemo(() => selected && sourceUsedByDefinitions(selected.id, definitions), [definitions, selected]);
   const totalWeight = useMemo(
@@ -64,11 +64,21 @@ export function SourceManager({ sources, definitions, actions }) {
 
   const createSource = (kind, weightedMode = 'guided') => {
     setSelectedId('');
-    setDraft({ ...sourceDraft(null), kind, weightedMode });
+    setDraft({ ...sourceDraft(null, definitions), kind, weightedMode });
     setError('');
     setSelectedFaceValue('');
     setSelectedOutcomeLine('0');
     setSelectedCardLine('0');
+  };
+
+  const persistSource = (source) => {
+    const result = draft.createSimpleRoll && actions.saveSourceWithSimpleRoll
+      ? actions.saveSourceWithSimpleRoll(source)
+      : actions.saveSource(source);
+    const saved = result?.source || result;
+    setSelectedId(saved.id);
+    setError('');
+    return saved;
   };
 
   const saveUniform = () => {
@@ -76,15 +86,13 @@ export function SourceManager({ sources, definitions, actions }) {
     const symbols = cleanDetailMap(draft.describeFaces, draft.faceSymbols);
     const images = cleanDetailMap(draft.describeFaces, draft.faceImages);
     const texts = cleanDetailMap(draft.describeFaces, draft.faceTexts);
-    const saved = actions.saveSource(createUniformSource({
+    persistSource(createUniformSource({
       ...draft,
       labels,
       symbols,
       images,
       texts,
     }));
-    setSelectedId(saved.id);
-    setError('');
   };
 
   const saveWeighted = () => {
@@ -98,9 +106,7 @@ export function SourceManager({ sources, definitions, actions }) {
         setError(guided.error);
         return;
       }
-      const saved = actions.saveSource(guided.source);
-      setSelectedId(saved.id);
-      setError('');
+      persistSource(guided.source);
       return;
     }
     const parsed = parseRandomSourceCsv(draft.csv, { id: draft.id, name: draft.name, note: draft.note });
@@ -108,9 +114,7 @@ export function SourceManager({ sources, definitions, actions }) {
       setError(parsed.error);
       return;
     }
-    const saved = actions.saveSource(parsed.source);
-    setSelectedId(saved.id);
-    setError('');
+    persistSource(parsed.source);
   };
 
   const saveCards = () => {
@@ -137,15 +141,13 @@ export function SourceManager({ sources, definitions, actions }) {
       setError(t('random.result.deckEmpty'));
       return;
     }
-    const saved = actions.saveSource({
+    persistSource({
       id: draft.id,
       name: draft.name,
       note: draft.note,
       kind: randomSourceKinds.CARDS,
       cards,
     });
-    setSelectedId(saved.id);
-    setError('');
   };
 
   const save = () => {
@@ -179,7 +181,7 @@ export function SourceManager({ sources, definitions, actions }) {
     if (!selected || used) return;
     actions.deleteSource(selected.id);
     setSelectedId('');
-    setDraft(sourceDraft(null));
+    setDraft(sourceDraft(null, definitions));
   };
 
   const updateOutcome = (outcomeIndex, patch) => {
@@ -286,6 +288,18 @@ export function SourceManager({ sources, definitions, actions }) {
             <option value={randomSourceKinds.CARDS}>{t('random.source.cards')}</option>
           </select>
         </label>
+
+        <>
+          <label className={`global-switch rs-source-option-toggle ${draft.createSimpleRoll ? 'active' : ''}`}>
+            <span>{t('random.source.createSimpleRoll')}</span>
+            <input
+              type="checkbox"
+              checked={draft.createSimpleRoll}
+              onChange={(event) => setDraft((current) => ({ ...current, createSimpleRoll: event.target.checked }))}
+            />
+          </label>
+          <p className="muted compact-help">{t('random.source.createSimpleRollHelp')}</p>
+        </>
 
         {draft.kind === randomSourceKinds.UNIFORM && (
           <div className="rs-uniform-editor">

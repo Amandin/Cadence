@@ -102,6 +102,8 @@ function buildComponents(draft, parameters) {
           max: 1000,
         },
       ),
+      cardMode: component.cardMode === 'replacement' ? 'replacement' : 'draw',
+      sourceKind: component.sourceKind === 'cards' ? 'cards' : 'random',
       enabledWhen: enabledWhenFromDraft(component.enabledWhen),
     };
   });
@@ -159,6 +161,7 @@ function buildCombinationDefinition(draft) {
     kind: randomDefinitionKinds.COMBINATION,
     exposed: true,
     active: draft.active !== false,
+    quickAccess: draft.active !== false && draft.quickAccess !== false,
     parameters: [],
     options: [{
       id: 'combination',
@@ -392,6 +395,7 @@ export function buildRandomDefinition(draft) {
     kind: randomDefinitionKinds.ROLL,
     exposed: draft.exposed,
     active: draft.active !== false,
+    quickAccess: draft.active !== false && draft.quickAccess !== false,
     recursive: draft.recursive === true,
     parameters,
     options: buildRollOptions(draft),

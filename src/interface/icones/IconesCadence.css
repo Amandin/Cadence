@@ -27,9 +27,12 @@
 
 .cadence-mask-icon-close,
 .cadence-mask-icon-valid,
-.cadence-mask-icon-remove,
+.cadence-mask-icon-remove {
+  --cadence-icon-size: 1.2em;
+}
+
 .cadence-mask-icon-add {
-  --cadence-icon-size: 1.05em;
+  --cadence-icon-size: 1.8em;
 }
 
 .cadence-mask-icon-menu,
@@ -57,7 +60,7 @@
 }
 
 .cadence-mask-icon-nextStrong {
-  --cadence-icon-size: 1.16em;
+  --cadence-icon-size: 1.8em;
   transform-origin: center;
 }
 
@@ -78,13 +81,13 @@
 }
 
 .bottom-next-action > .cadence-mask-icon {
-  --cadence-icon-size: 1.05em;
+  --cadence-icon-size: 1.55em;
   flex: 0 0 auto;
 }
 
 .bottom-next-action.next-round > .cadence-mask-icon-nextSoft,
 .turn-btn.next-round > .cadence-mask-icon-nextSoft {
-  --cadence-icon-size: 1.22em;
+  --cadence-icon-size: 1.6em;
 }
 
 .flexible-action-icon {

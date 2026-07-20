@@ -1,13 +1,21 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { t } from '../../i18n/index.js';
-import { activeDefinitions } from '../../random-system/definitionAccess.js';
-import { randomSourceKinds } from '../../random-system/engine.js';
+import {
+  activeDefinitions,
+  exposedTokenContainers,
+  quickDefinitions,
+  quickTokenContainers,
+  tokenContainerIdFromResourceId,
+  tokenContainerResourceId,
+} from '../../random-system/definitionAccess.js';
 import { compileRollCode } from '../../random-system/rollCode.js';
+import { definitionToRollCode } from '../../random-system/definitionRollCode.js';
 import { DefinitionVisual } from '../../random-system/ui/DefinitionVisual.jsx';
-import { RandomSourceIcon } from '../../random-system/ui/RandomIcons.jsx';
 import { DefinitionForm } from '../../random-system/ui/UsePanel.jsx';
+import { TokenContainerForm } from '../../random-system/ui/TokenContainerForm.jsx';
 import { Fenetre } from '../commun/ComposantsCommuns.jsx';
 import '../../random-system/styles/choice-controls.css';
+import '../../random-system/styles/tokens.css';
 import './FenetreLancerDes.css';
 
 function drawValue(draw = {}) {
@@ -39,7 +47,14 @@ function signedValue(value) {
 
 function aggregateValue(value) {
   if (!Array.isArray(value)) return String(value ?? '-');
-  return value.map((item) => item?.symbol || item?.label || item?.value || item).join(', ');
+  return value.map((item) => item?.label || item?.symbol || item?.value || item).join(', ');
+}
+
+function fallbackResultValue(result = {}) {
+  const draws = (result.draws || result.groups?.[result.selectedGroupIndex]?.draws || result.groups?.[0]?.draws || [])
+    .filter((draw) => !draw.rerolled && draw.kept !== false);
+  const values = draws.map(drawValue);
+  return values.length === 1 ? values[0] : values;
 }
 
 function DeResultatAnime({ values, delay = 0, className = '' }) {
@@ -97,6 +112,19 @@ export function QuickRollResult({ result, rolling = false, onDecision }) {
       </div>
     </section>;
   }
+  if (result.kind === 'token-draw') {
+    return <section className="quick-roll-result quick-token-result" aria-live="polite">
+      <div className="quick-card-result-head"><strong>{result.definitionName}</strong><span>{result.sourceName}</span></div>
+      <div className="quick-token-result-list">
+        {(result.tokens || []).map((token, index) => <article className={token.kept ? 'is-kept' : 'is-returned'} key={`${token.typeId}-${index}`}>
+          <span className="quick-token-mark" style={token.appearance?.color ? { backgroundColor: token.appearance.color } : undefined} aria-hidden="true">
+            {token.appearance?.image ? <img src={token.appearance.image} alt="" /> : token.appearance?.symbol}
+          </span>
+          <span><strong>{token.name}</strong><small>{token.destinationName}</small></span>
+        </article>)}
+      </div>
+    </section>;
+  }
   if (result.kind === 'random-decision') {
     const matching = new Set(result.pendingDecision?.matchingDrawIds || []);
     return <section className="quick-roll-result" aria-live="polite">
@@ -125,7 +153,7 @@ export function QuickRollResult({ result, rolling = false, onDecision }) {
           })}
         </div>
       )}
-      <TotalAnime aggregate={aggregate} diceCount={dice.length} />
+      <TotalAnime aggregate={aggregate || { value: fallbackResultValue(result) }} diceCount={dice.length} />
       {(aggregate?.adjustments || []).length > 0 && (
         <div className="quick-roll-adjustments">
           {aggregate.adjustments.map((adjustment, index) => (
@@ -140,28 +168,36 @@ export function QuickRollResult({ result, rolling = false, onDecision }) {
 }
 
 export function FenetreLancerDes({ randomSystem, quickRollInfo = null, onFermer }) {
-  const definitions = useMemo(
+  const [showAllRolls, setShowAllRolls] = useState(false);
+  const allDefinitions = useMemo(
     () => activeDefinitions(randomSystem?.state?.definitions || []),
     [randomSystem?.state?.definitions],
+  );
+  const definitions = useMemo(
+    () => (quickRollInfo || showAllRolls ? allDefinitions : quickDefinitions(allDefinitions)),
+    [allDefinitions, quickRollInfo, showAllRolls],
   );
   const sources = useMemo(
     () => randomSystem?.state?.sources || [],
     [randomSystem?.state?.sources],
   );
-  const cardSources = useMemo(
-    () => sources.filter((source) => source.kind === randomSourceKinds.CARDS),
-    [sources],
+  const allTokenContainers = useMemo(
+    () => exposedTokenContainers(randomSystem?.state?.tokenContainers || []),
+    [randomSystem?.state?.tokenContainers],
   );
-  const [selectedId, setSelectedId] = useState(quickRollInfo?.quickRollDefinitionId || definitions[0]?.id || (cardSources[0] ? `card:${cardSources[0].id}` : '__expert__'));
+  const tokenContainers = useMemo(
+    () => (quickRollInfo || showAllRolls ? allTokenContainers : quickTokenContainers(allTokenContainers)),
+    [allTokenContainers, quickRollInfo, showAllRolls],
+  );
+  const [selectedId, setSelectedId] = useState(quickRollInfo?.quickRollDefinitionId || definitions[0]?.id || (tokenContainers[0] ? tokenContainerResourceId(tokenContainers[0].id) : '__expert__'));
   const [expertCode, setExpertCode] = useState('1d20');
-  const [cardCount, setCardCount] = useState(1);
-  const [cardDrawMode, setCardDrawMode] = useState('draw');
+  const [adjustmentCode, setAdjustmentCode] = useState('');
+  const [adjustmentOpen, setAdjustmentOpen] = useState(false);
+  const [selectedInputs, setSelectedInputs] = useState({ parameters: {}, options: {} });
   const [result, setResult] = useState(null);
   const quickRollLaunchedRef = useRef(false);
   const selected = definitions.find((definition) => definition.id === selectedId) || null;
-  const selectedCard = selectedId.startsWith('card:')
-    ? cardSources.find((source) => source.id === selectedId.slice(5)) || null
-    : null;
+  const selectedTokenContainer = tokenContainers.find((container) => container.id === tokenContainerIdFromResourceId(selectedId)) || null;
   const expertMode = selectedId === '__expert__';
   const expertCompilation = useMemo(() => {
     if (!expertMode || !expertCode.trim()) return { definition: null, error: '' };
@@ -178,8 +214,31 @@ export function FenetreLancerDes({ randomSystem, quickRollInfo = null, onFermer 
       return { definition: null, error: error?.message || t('random.error.generic') };
     }
   }, [expertCode, expertMode, sources]);
+  const adjustmentCompilation = useMemo(() => {
+    if (!adjustmentOpen || !adjustmentCode.trim()) return { definition: null, error: '' };
+    try {
+      return {
+        definition: compileRollCode(adjustmentCode, {
+          id: 'adjusted-free-roll',
+          name: selected?.name || t('random.quick.expertName'),
+          sources,
+        }),
+        error: '',
+      };
+    } catch (error) {
+      return { definition: null, error: error?.message || t('random.error.generic') };
+    }
+  }, [adjustmentCode, adjustmentOpen, selected?.name, sources]);
   const chooseDefinition = (definitionId) => {
     setSelectedId(definitionId);
+    setResult(null);
+    setAdjustmentOpen(false);
+    setSelectedInputs({ parameters: {}, options: {} });
+  };
+  const openAdjustment = () => {
+    if (!selected) return;
+    setAdjustmentCode(definitionToRollCode(selected, selectedInputs));
+    setAdjustmentOpen(true);
     setResult(null);
   };
   const run = (definitionId, parameters, options) => {
@@ -187,15 +246,25 @@ export function FenetreLancerDes({ randomSystem, quickRollInfo = null, onFermer 
     setResult(next);
     return next;
   };
+  const toggleRollScope = () => {
+    const nextShowAll = !showAllRolls;
+    setShowAllRolls(nextShowAll);
+    const nextDefinitions = nextShowAll ? allDefinitions : quickDefinitions(allDefinitions);
+    const nextContainers = nextShowAll ? allTokenContainers : quickTokenContainers(allTokenContainers);
+    const selectedStillVisible = nextDefinitions.some((definition) => definition.id === selectedId)
+      || nextContainers.some((container) => tokenContainerResourceId(container.id) === selectedId);
+    if (!selectedStillVisible) setSelectedId(nextDefinitions[0]?.id || (nextContainers[0] ? tokenContainerResourceId(nextContainers[0].id) : '__expert__'));
+    setResult(null);
+  };
   const runExpert = (_definitionId, parameters, options, instances) => {
     if (!expertCompilation.definition) return null;
     const next = randomSystem?.actions?.runAdHocDefinition?.(expertCompilation.definition, parameters, options, instances);
     setResult(next);
     return next;
   };
-  const drawCards = () => {
-    if (!selectedCard) return null;
-    const next = randomSystem?.actions?.drawCards?.(selectedCard.id, cardCount, cardDrawMode);
+  const runAdjustment = (_definitionId, parameters, options, instances) => {
+    if (!adjustmentCompilation.definition) return null;
+    const next = randomSystem?.actions?.runAdHocDefinition?.(adjustmentCompilation.definition, parameters, options, instances);
     setResult(next);
     return next;
   };
@@ -216,10 +285,10 @@ export function FenetreLancerDes({ randomSystem, quickRollInfo = null, onFermer 
   return (
     <Fenetre title={quickRollInfo?.characterName ? `${quickRollInfo.characterName} — ${quickRollInfo.label}` : t('random.quick.title')} onClose={onFermer} className="quick-roll-dialog">
       <div className="quick-roll-content">
-        {(definitions.length > 0 || cardSources.length > 0 || !quickRollInfo) ? (
+        {(definitions.length > 0 || tokenContainers.length > 0 || !quickRollInfo) ? (
           <>
             {!quickRollInfo && <div className="quick-roll-type">
-              <span className="quick-roll-type-label">{t('random.quick.type')}</span>
+              <div className="quick-roll-scope-head"><span className="quick-roll-type-label">{t('random.quick.type')}</span><button type="button" className="small-btn" onClick={toggleRollScope}>{t(showAllRolls ? 'random.quick.showQuick' : 'random.quick.showAll')}</button></div>
               <div className="quick-roll-type-options" role="group" aria-label={t('random.quick.type')}>
                 {definitions.map((definition) => {
                   const selectedDefinition = definition.id === selected?.id;
@@ -236,20 +305,21 @@ export function FenetreLancerDes({ randomSystem, quickRollInfo = null, onFermer 
                     </button>
                   );
                 })}
-                {cardSources.map((source) => {
-                  const selectedSource = selectedId === `card:${source.id}`;
-                  return <button type="button" className={selectedSource ? 'selected' : ''} aria-pressed={selectedSource} onClick={() => chooseDefinition(`card:${source.id}`)} key={`card:${source.id}`}>
-                    <RandomSourceIcon kind={source.kind} />
-                    <span>{source.name}</span>
+                {tokenContainers.map((container) => {
+                  const tokenId = tokenContainerResourceId(container.id);
+                  const selectedContainer = tokenId === selectedId;
+                  return <button type="button" className={selectedContainer ? 'selected' : ''} aria-pressed={selectedContainer} onClick={() => chooseDefinition(tokenId)} key={container.id}>
+                    <span aria-hidden="true">◉</span>
+                    <span>{container.name}</span>
                   </button>;
                 })}
-                <button type="button" className={expertMode ? 'selected' : ''} aria-pressed={expertMode} onClick={() => chooseDefinition('__expert__')}>
+                {showAllRolls && <button type="button" className={expertMode ? 'selected' : ''} aria-pressed={expertMode} onClick={() => chooseDefinition('__expert__')}>
                   <span className="quick-roll-expert-mark" aria-hidden="true">{'{}'}</span>
                   <span>{t('random.quick.expert')}</span>
-                </button>
+                </button>}
               </div>
             </div>}
-            {selected && !quickRollInfo && !selectedCard && !expertMode && (
+            {selected && !quickRollInfo && !expertMode && (
               <DefinitionForm
                 className="quick-roll-form"
                 definition={selected}
@@ -257,20 +327,32 @@ export function FenetreLancerDes({ randomSystem, quickRollInfo = null, onFermer 
                 sources={sources}
                 onRun={run}
                 showHeader={false}
+                onInputsChange={setSelectedInputs}
+                runAccessory={<button type="button" className="small-btn quick-roll-adjust-button" onClick={openAdjustment} aria-label={t('random.quick.adjust')} title={t('random.quick.adjust')}>{'{ }'}</button>}
               />
             )}
-            {selectedCard && !quickRollInfo && <section className="quick-card-form">
-              <label className="field">{t('random.quick.cardCount')}<input type="number" min="1" max="1000" value={cardCount} onChange={(event) => setCardCount(Math.max(1, Number(event.target.value) || 1))} /></label>
-              <label className="field">{t('random.quick.cardMode')}<select value={cardDrawMode} onChange={(event) => setCardDrawMode(event.target.value)}><option value="draw">{t('random.quick.cardWithoutReplacement')}</option><option value="replacement">{t('random.quick.cardWithReplacement')}</option></select></label>
-              <button type="button" className="primary" onClick={drawCards}>{t('random.quick.cardDraw')}</button>
+            {selected && adjustmentOpen && !quickRollInfo && !expertMode && <section className="quick-adjustment-form">
+              <label className="field">{t('random.quick.adjustField')}<textarea rows="3" spellCheck="false" value={adjustmentCode} onChange={(event) => setAdjustmentCode(event.target.value)} /></label>
+              <p className="muted compact-help">{t('random.quick.adjustHelp')}</p>
+              {adjustmentCompilation.error && <p className="rs-error" role="alert">{adjustmentCompilation.error}</p>}
+              {adjustmentCompilation.definition && <DefinitionForm className="quick-roll-form" definition={adjustmentCompilation.definition} definitions={[adjustmentCompilation.definition, ...randomSystem.state.definitions]} sources={sources} onRun={runAdjustment} runLabel={t('random.quick.adjustRun')} showHeader={false} />}
             </section>}
-            {expertMode && !quickRollInfo && <section className="quick-expert-form">
+            {selectedTokenContainer && (
+              <TokenContainerForm
+                container={selectedTokenContainer}
+                containers={tokenContainers}
+                tokenTypes={randomSystem.state.tokenTypes || []}
+                actions={randomSystem.actions}
+                onResult={setResult}
+              />
+            )}
+            {showAllRolls && expertMode && !quickRollInfo && <section className="quick-expert-form">
               <label className="field">{t('random.quick.expertField')}<textarea rows="3" spellCheck="false" value={expertCode} onChange={(event) => setExpertCode(event.target.value)} /></label>
               <p className="muted compact-help">{t('random.quick.expertHelp')}</p>
               {expertCompilation.error && <p className="rs-error" role="alert">{expertCompilation.error}</p>}
               {expertCompilation.definition && <DefinitionForm className="quick-roll-form" definition={expertCompilation.definition} definitions={[expertCompilation.definition, ...randomSystem.state.definitions]} sources={sources} onRun={runExpert} showHeader={false} />}
             </section>}
-            <QuickRollResult result={result} onDecision={result?.kind === 'random-decision' ? resolveDecision : undefined} />
+            {!selectedTokenContainer && <QuickRollResult result={result} onDecision={result?.kind === 'random-decision' ? resolveDecision : undefined} />}
           </>
         ) : <p className="muted">{t('random.quick.noRoll')}</p>}
       </div>

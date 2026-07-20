@@ -1,4 +1,4 @@
-export const APP_VERSION = '0.16.0';
+export const APP_VERSION = '0.17.0';
 export const STORAGE_KEY = 'cadence:campaign:v1';
 export const TEMPLATE_STORAGE_KEY = 'cadence:templates:v1';
 

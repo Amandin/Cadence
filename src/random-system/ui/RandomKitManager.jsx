@@ -1,14 +1,10 @@
 import { useMemo, useState } from 'react';
 import { t } from '../../i18n/index.js';
-import { IconeRepliFichette } from '../../interface/commun/ComposantsCommuns.jsx';
 import { RandomIcon } from './RandomIcons.jsx';
 import {
-  randomKitIsLoaded,
-  randomKitIsStrictlyActive,
   randomKitApplicationPolicies,
   randomKitCatalog,
   randomKitInitiativeModes,
-  randomKitResources,
 } from '../rulePresetKits.js';
 
 function sourceIdsForDefinition(definition) {
@@ -24,14 +20,6 @@ function sourceIdsForDefinition(definition) {
 
 function unique(values) {
   return [...new Set(values.filter(Boolean))];
-}
-
-function policyLabel(policy) {
-  return t(`random.kits.policy.${policy}`);
-}
-
-function initiativeLabel(mode) {
-  return t(`random.kits.initiative.${mode}`);
 }
 
 function referencedDefinitionIds(definition) {
@@ -57,80 +45,31 @@ function collectDefinitionsWithDependencies(selectedDefinitionIds, definitions) 
   return definitions.filter((definition) => selected.has(definition.id));
 }
 
-function kitSummary(kit) {
-  const resources = randomKitResources(kit);
-  const exposedDefinitions = resources.definitions.filter((definition) => definition.exposed !== false);
-  const internalCount = resources.definitions.length - exposedDefinitions.length;
-  return {
-    sourceCount: resources.sources.length,
-    definitionNames: exposedDefinitions.map((definition) => definition.name),
-    description: kit.description || '',
-    internalCount,
-    initiative: initiativeLabel(kit.initiative.mode),
-    policy: policyLabel(kit.applicationPolicy),
-  };
+function AvailabilityRow({ name, kind, exposed, quick, required = false, onExposedChange, onQuickChange }) {
+  const isExposed = exposed || required;
+  return <div className={`rs-roll-availability-row ${isExposed ? 'is-exposed' : ''} ${quick ? 'is-quick' : ''}`}>
+    <span><strong>{name}</strong><small>{kind}{required && ` · ${t('random.kits.requiredForInitiative')}`}</small></span>
+    <label className={`global-switch ${isExposed ? 'active' : ''}`}><span>{t('random.kits.exposed')}</span><input type="checkbox" checked={isExposed} disabled={required} onChange={(event) => onExposedChange(event.target.checked)} /></label>
+    <label className={`global-switch ${quick ? 'active' : ''}`}><span>{t('random.kits.quick')}</span><input type="checkbox" checked={quick} disabled={!isExposed} onChange={(event) => onQuickChange(event.target.checked)} /></label>
+  </div>;
 }
 
-function KitListItem({ kit, state, actions }) {
-  const summary = kitSummary(kit);
-  const loaded = randomKitIsLoaded(state, kit);
-  const active = randomKitIsStrictlyActive(state, kit);
-  return (
-    <div className={`rs-config-list-item rs-kit-list-item ${active ? 'active' : ''}`}>
-      <div className="rs-kit-title-row">
-        <span className="rs-resource-title">
-          <span>{kit.label}</span>
-        </span>
-        <div className="rs-kit-command-row">
-          <button
-            type="button"
-            className="small-btn rs-kit-load-btn"
-            disabled={loaded}
-            onClick={() => actions.loadRandomKit(kit.id)}
-          >
-            {t('random.kits.load')}
-          </button>
-          {active ? (
-            <span className="rs-kit-active-mark" role="img" aria-label={t('random.kits.active')} title={t('random.kits.active')}>
-              <img className="rs-kit-active-logo light-logo" src="/branding/button-cadence-light.svg" alt="" />
-              <img className="rs-kit-active-logo dark-logo" src="/branding/button-cadence-dark.svg" alt="" />
-            </span>
-          ) : (
-            <button type="button" className="small-btn rs-kit-activate-btn" onClick={() => actions.activateRandomKit(kit.id)}>
-              {t('random.kits.activate')}
-            </button>
-          )}
-        </div>
-      </div>
-      <small>{kit.catalog ? t('random.kits.catalog') : t('random.kits.custom')}</small>
-      <p className="rs-kit-description">{summary.description || t('random.kits.noDescription')}</p>
-      <div className="rs-kit-summary">
-        <span>{t('random.kits.summary.sources', { count: summary.sourceCount })}</span>
-        <span>{t('random.kits.summary.definitions', { count: summary.definitionNames.length })}</span>
-        {summary.internalCount > 0 && <span>{t('random.kits.summary.internal', { count: summary.internalCount })}</span>}
-        <span>{summary.initiative}</span>
-        <span>{summary.policy}</span>
-      </div>
-      {!kit.catalog && (
-        <div className="rs-kit-actions">
-          <button type="button" className="danger-btn" onClick={() => actions.deleteRandomKit(kit.id)}>{t('common.delete')}</button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-export function RandomKitManager({ state, actions }) {
-  const exposedDefinitions = useMemo(
+export function RandomKitManager({ state, actions, requiredDefinitionIds = [] }) {
+  const configurableDefinitions = useMemo(
     () => state.definitions.filter((definition) => definition.exposed !== false),
     [state.definitions],
   );
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [selectedKitId, setSelectedKitId] = useState('');
   const customKits = state.randomKits || [];
   const catalogKits = randomKitCatalog.map((kit) => ({ ...kit, catalog: true }));
   const personalKits = customKits.map((kit) => ({ ...kit, catalog: false }));
-  const activeExposedDefinitions = exposedDefinitions.filter((definition) => definition.active !== false);
+  const selectedKit = [...catalogKits, ...personalKits].find((kit) => kit.id === selectedKitId) || null;
+  const activeExposedDefinitions = configurableDefinitions.filter((definition) => definition.active !== false);
+  const exposedContainers = (state.tokenContainers || []).filter((container) => container.exposed !== false);
+  const quickRollCount = activeExposedDefinitions.filter((definition) => definition.quickAccess !== false).length
+    + exposedContainers.filter((container) => container.quickAccess !== false).length;
   const snapshotDefinitions = collectDefinitionsWithDependencies(activeExposedDefinitions.map((definition) => definition.id), state.definitions);
   const internalDefinitionCount = snapshotDefinitions.length - activeExposedDefinitions.length;
   const referencedSourceIds = unique([
@@ -138,7 +77,7 @@ export function RandomKitManager({ state, actions }) {
   ]);
   const selectedSources = state.sources.filter((source) => referencedSourceIds.includes(source.id));
   const canSave = name.trim() && activeExposedDefinitions.length > 0;
-  const activeRollCount = activeExposedDefinitions.length;
+  const activeRollCount = activeExposedDefinitions.length + exposedContainers.length;
 
   const saveKit = () => {
     if (!canSave) return;
@@ -165,38 +104,13 @@ export function RandomKitManager({ state, actions }) {
     }
   };
 
+  const applyKitSelection = () => {
+    if (!selectedKit) return;
+    (actions.applyRandomKitSelection || actions.activateRandomKit)?.(selectedKit.id);
+  };
+
   return (
-    <div className="rs-config-workspace rs-kit-manager">
-      <aside className="rs-config-list">
-        <div className="rs-section-head">
-          <div className="rs-section-copy">
-            <span className="rs-section-kicker">{t('random.config.kits')}</span>
-            <div className="rs-heading-with-mark">
-              <span className="rs-heading-mark" aria-hidden="true"><RandomIcon name="add" /></span>
-              <h3>{t('random.kits.savedGroups')}</h3>
-            </div>
-            <p className="muted compact-help">{t('random.kits.savedGroupsHelp')}</p>
-          </div>
-        </div>
-        <details className="rs-kit-list-group rs-kit-catalog">
-          <summary>
-            <IconeRepliFichette repliee className="rs-kit-catalog-arrow" />
-            <span>{t('random.kits.savedGroupsKicker')}</span>
-            <small>{catalogKits.length}</small>
-          </summary>
-          <div className="rs-kit-list">
-            {catalogKits.map((kit) => <KitListItem kit={kit} state={state} actions={actions} key={kit.id} />)}
-          </div>
-        </details>
-        {personalKits.length > 0 && (
-          <section className="rs-kit-list-group rs-kit-personal">
-            <h4>{t('random.kits.personalGroups')}</h4>
-            <div className="rs-kit-list">
-              {personalKits.map((kit) => <KitListItem kit={kit} state={state} actions={actions} key={kit.id} />)}
-            </div>
-          </section>
-        )}
-      </aside>
+    <div className="rs-config-workspace rs-kit-manager rs-kit-manager-single">
       <section className="rs-config-editor">
         <div className="rs-section-head">
           <div className="rs-section-copy">
@@ -208,25 +122,40 @@ export function RandomKitManager({ state, actions }) {
             <p className="muted compact-help">{t('random.kits.pageHelp')}</p>
           </div>
         </div>
+        <section className="rs-kit-quick-apply">
+          <div>
+            <h3>{t('random.kits.quickApply')}</h3>
+            <p className="muted compact-help">{t('random.kits.quickApplyHelp')}</p>
+          </div>
+          <label className="field">
+            {t('random.kits.savedGroups')}
+            <select value={selectedKitId} onChange={(event) => setSelectedKitId(event.target.value)}>
+              <option value="">{t('random.kits.choose')}</option>
+              <optgroup label={t('random.kits.catalog')}>
+                {catalogKits.map((kit) => <option value={kit.id} key={kit.id}>{kit.label}</option>)}
+              </optgroup>
+              {personalKits.length > 0 && <optgroup label={t('random.kits.personalGroups')}>
+                {personalKits.map((kit) => <option value={kit.id} key={kit.id}>{kit.label}</option>)}
+              </optgroup>}
+            </select>
+          </label>
+          <button type="button" className="small-btn" disabled={!selectedKit} onClick={applyKitSelection}>{t('random.kits.apply')}</button>
+        </section>
         <section className="rs-kit-definition-picker">
-          <h3>{t('random.kits.activeRolls')}</h3>
-          <p className="muted compact-help">{t('random.kits.activeRollsHelp', { count: activeRollCount })}</p>
-          {exposedDefinitions.map((definition) => (
-            <label className={`global-switch ${definition.active !== false ? 'active' : ''}`} key={definition.id}>
-              <span>{definition.name}</span>
-              <input
-                type="checkbox"
-                checked={definition.active !== false}
-                onChange={(event) => actions.setDefinitionActive(definition.id, event.target.checked)}
-              />
-            </label>
-          ))}
+          <h3>{t('random.kits.availabilityTitle')}</h3>
+          <p className="muted compact-help">{t('random.kits.availabilityHelp', { exposed: activeRollCount, quick: quickRollCount })}</p>
+          <div className="rs-roll-availability-list">{configurableDefinitions.map((definition) => {
+            const requiredForInitiative = requiredDefinitionIds.includes(definition.id);
+            return <AvailabilityRow key={definition.id} name={definition.name} kind={t('random.kits.resourceRoll')} exposed={definition.active !== false} quick={definition.active !== false && definition.quickAccess !== false} required={requiredForInitiative} onExposedChange={(value) => actions.setDefinitionActive(definition.id, value)} onQuickChange={(value) => actions.setDefinitionQuickAccess(definition.id, value)} />;
+          })}
+          {(state.tokenContainers || []).map((container) => <AvailabilityRow key={container.id} name={container.name} kind={t('random.kits.resourceContainer')} exposed={container.exposed !== false} quick={container.exposed !== false && container.quickAccess !== false} onExposedChange={(value) => actions.setTokenContainerExposed(container.id, value)} onQuickChange={(value) => actions.setTokenContainerQuickAccess(container.id, value)} />)}
+          </div>
         </section>
         <section className="rs-kit-save-panel">
           <div className="rs-section-head">
             <div>
               <h3>{t('random.kits.saveCurrent')}</h3>
-              <p className="muted compact-help">{t('random.kits.snapshotHelp', { count: activeRollCount })}</p>
+              <p className="muted compact-help">{t('random.kits.snapshotHelp', { count: activeExposedDefinitions.length })}</p>
             </div>
             <button type="button" className="primary rs-save-resource rs-kit-save-button" onClick={saveKit} disabled={!canSave}>{t('random.kits.save')}</button>
           </div>

@@ -15,6 +15,7 @@ import {
 } from './engine.js';
 import { emptyRandomStatistics, normalizeRandomSystemState, recordRandomResult } from './state.js';
 import { loadRandomSystemState, saveRandomSystemState } from './storage.js';
+import { createSimpleRollForSource } from './sourceSimpleRoll.js';
 import {
   essentialRandomRuleIds,
   randomRuleCatalogue,
@@ -24,10 +25,17 @@ import {
   activateRandomKitInState,
   deleteRandomKitFromState,
   ensureRandomKitInState,
-  loadRandomKitInState,
   saveRandomKitToState,
 } from './rulePresetKits.js';
 import { importCadenceLibraryRandomKits } from '../cadLibrary.js';
+import {
+  adjustTokenContents as applyTokenContentAdjustments,
+  applyTokenDraw,
+  changeTokenContents,
+  moveTokenContents as applyTokenContentMove,
+  normalizeTokenContainer,
+  normalizeTokenType,
+} from './tokens.js';
 
 const PERSISTENCE_DELAY_MS = 250;
 
@@ -65,6 +73,40 @@ export function executeDefinitionFromState(state, definitionId, parameters, opti
     options,
     instances,
   });
+}
+
+function executeTokenDrawInState(current, draw, selectedIndexes, drawnTokens) {
+  const applied = applyTokenDraw(current.tokenContainers, draw, selectedIndexes, current.tokenTypes, Math.random, drawnTokens);
+  const selected = new Set(selectedIndexes || []);
+  const typeById = new Map(current.tokenTypes.map((type) => [type.id, type]));
+  const containerById = new Map(current.tokenContainers.map((container) => [container.id, container]));
+  const rolledAt = Date.now();
+  const result = {
+    id: `${rolledAt}-${draw.id}-tokens`,
+    kind: 'token-draw',
+    drawId: draw.id,
+    definitionName: draw.name,
+    sourceId: draw.sourceId,
+    sourceName: containerById.get(draw.sourceId)?.name || '',
+    rolledAt,
+    tokens: applied.drawn.map((typeId, index) => {
+      const type = typeById.get(typeId);
+      const kept = selected.has(index);
+      const destinationId = kept ? draw.selectedDestinationId : draw.otherDestinationId;
+      return {
+        typeId,
+        name: type?.name || typeId,
+        appearance: type?.appearance || {},
+        value: type?.value ?? '',
+        tags: type?.tags || [],
+        description: type?.description || '',
+        kept,
+        destinationId,
+        destinationName: containerById.get(destinationId)?.name || '',
+      };
+    }),
+  };
+  return { result, state: recordRandomResult({ ...current, tokenContainers: applied.containers }, result) };
 }
 
 export function executeAdHocDefinitionFromState(state, definition, parameters, options, instances) {
@@ -169,7 +211,7 @@ export function useRandomSystem(controlled = {}) {
       ...current,
       definitions: current.definitions.map((definition) => (
         definition.id === definitionId && definition.exposed !== false
-          ? { ...definition, active: !!active }
+          ? { ...definition, active: !!active, ...(!active ? { quickAccess: false } : {}) }
           : definition
       )),
     }));
@@ -211,6 +253,23 @@ export function useRandomSystem(controlled = {}) {
     });
     return normalized;
   }, [commitState]);
+
+  const saveSourceWithSimpleRoll = useCallback((source) => {
+    const normalized = normalizeRandomSource(source);
+    const existingDefinition = stateRef.current.definitions.find((definition) => definition.sourceId === normalized.id);
+    const definition = createSimpleRollForSource(normalized, stateRef.current.definitions, existingDefinition);
+    if (normalized.kind === randomSourceKinds.CARDS) {
+      saveSource(normalized);
+      saveDefinition(definition);
+      return { source: normalized, definition };
+    }
+    commitState((current) => ({
+      ...current,
+      sources: upsertById(current.sources, normalized),
+      definitions: upsertById(current.definitions, definition),
+    }));
+    return { source: normalized, definition };
+  }, [commitState, saveSource]);
 
   const deleteSource = useCallback((sourceId) => {
     const current = stateRef.current;
@@ -272,6 +331,115 @@ export function useRandomSystem(controlled = {}) {
     });
   }, [commitState]);
 
+  const setDefinitionQuickAccess = useCallback((definitionId, quickAccess) => {
+    commitState((current) => ({
+      ...current,
+      definitions: current.definitions.map((definition) => (
+        definition.id === definitionId && definition.exposed !== false
+          ? { ...definition, active: quickAccess ? true : definition.active, quickAccess: !!quickAccess }
+          : definition
+      )),
+    }));
+  }, [commitState]);
+
+  const saveTokenType = useCallback((tokenType) => {
+    let saved = null;
+    commitState((current) => {
+      saved = normalizeTokenType(tokenType, current.tokenTypes.length);
+      return { ...current, tokenTypes: upsertById(current.tokenTypes, saved) };
+    });
+    return saved;
+  }, [commitState]);
+
+  const deleteTokenType = useCallback((typeId) => {
+    commitState((current) => ({
+      ...current,
+      tokenTypes: current.tokenTypes.filter((type) => type.id !== typeId),
+      tokenContainers: current.tokenContainers.map((container) => ({
+        ...container,
+        contents: Object.fromEntries(Object.entries(container.contents).filter(([id]) => id !== typeId)),
+        referenceContents: container.referenceContents && Object.fromEntries(Object.entries(container.referenceContents).filter(([id]) => id !== typeId)),
+      })),
+    }));
+  }, [commitState]);
+
+  const saveTokenContainer = useCallback((container) => {
+    let saved = null;
+    commitState((current) => {
+      saved = normalizeTokenContainer(container, current.tokenTypes, current.tokenContainers.length);
+      return { ...current, tokenContainers: upsertById(current.tokenContainers, saved) };
+    });
+    return saved;
+  }, [commitState]);
+
+  const setTokenContainerExposed = useCallback((containerId, exposed) => {
+    commitState((current) => ({
+      ...current,
+      tokenContainers: current.tokenContainers.map((container) => container.id === containerId
+        ? { ...container, exposed: !!exposed, ...(!exposed ? { quickAccess: false } : {}) }
+        : container),
+    }));
+  }, [commitState]);
+
+  const setTokenContainerQuickAccess = useCallback((containerId, quickAccess) => {
+    commitState((current) => ({
+      ...current,
+      tokenContainers: current.tokenContainers.map((container) => container.id === containerId
+        ? { ...container, exposed: quickAccess ? true : container.exposed, quickAccess: !!quickAccess }
+        : container),
+    }));
+  }, [commitState]);
+
+  const deleteTokenContainer = useCallback((containerId) => {
+    commitState((current) => ({
+      ...current,
+      tokenContainers: current.tokenContainers.filter((container) => container.id !== containerId),
+    }));
+  }, [commitState]);
+
+  const updateTokenContents = useCallback((containerId, changes) => {
+    commitState((current) => ({ ...current, tokenContainers: changeTokenContents(current.tokenContainers, containerId, changes, current.tokenTypes) }));
+  }, [commitState]);
+
+  const adjustTokenContents = useCallback((containerId, deltas) => {
+    commitState((current) => ({ ...current, tokenContainers: applyTokenContentAdjustments(current.tokenContainers, containerId, deltas, current.tokenTypes) }));
+  }, [commitState]);
+
+  const moveTokenContents = useCallback((sourceId, destinationId, quantities) => {
+    commitState((current) => ({ ...current, tokenContainers: applyTokenContentMove(current.tokenContainers, sourceId, destinationId, quantities, current.tokenTypes) }));
+  }, [commitState]);
+
+  const resetTokenContainer = useCallback((containerId) => {
+    commitState((current) => ({ ...current, tokenContainers: current.tokenContainers.map((container) => container.id === containerId && container.referenceContents ? { ...container, contents: { ...container.referenceContents } } : container) }));
+  }, [commitState]);
+
+  const saveTokenReference = useCallback((containerId) => {
+    commitState((current) => ({ ...current, tokenContainers: current.tokenContainers.map((container) => container.id === containerId ? { ...container, referenceContents: { ...container.contents } } : container) }));
+  }, [commitState]);
+
+  const runTokenContainerDraw = useCallback((containerId, configuration = {}, selectedIndexes = [], drawnTokens = null) => {
+    let result = null;
+    commitState((current) => {
+      const source = current.tokenContainers.find((container) => container.id === containerId);
+      if (!source) return current;
+      const containerIds = new Set(current.tokenContainers.map((item) => item.id));
+      const selectedDestinationId = containerIds.has(configuration.selectedDestinationId) ? configuration.selectedDestinationId : containerId;
+      const otherDestinationId = containerIds.has(configuration.otherDestinationId) ? configuration.otherDestinationId : containerId;
+      const draw = {
+        id: `container-draw-${containerId}`,
+        name: source.name,
+        sourceId: containerId,
+        count: Math.max(1, Math.floor(Number(configuration.count) || 1)),
+        selectedDestinationId,
+        otherDestinationId,
+      };
+      const executed = executeTokenDrawInState(current, draw, selectedIndexes, drawnTokens);
+      result = executed.result;
+      return executed.state;
+    });
+    return result;
+  }, [commitState]);
+
   const clearHistory = useCallback(() => {
     commitState((current) => ({ ...current, lastResult: null, history: [] }));
   }, [commitState]);
@@ -317,16 +485,7 @@ export function useRandomSystem(controlled = {}) {
     return nextState;
   }, [commitState]);
 
-  const loadRandomKit = useCallback((kitOrId) => {
-    let nextState = null;
-    commitState((current) => {
-      nextState = loadRandomKitInState(current, kitOrId);
-      return nextState;
-    });
-    return nextState;
-  }, [commitState]);
-
-  const activateRandomKit = useCallback((kitOrId) => {
+  const applyRandomKitSelection = useCallback((kitOrId) => {
     let nextState = null;
     commitState((current) => {
       nextState = activateRandomKitInState(current, kitOrId);
@@ -369,12 +528,26 @@ export function useRandomSystem(controlled = {}) {
     resolveDefinitionDecision,
     saveDefinition,
     setDefinitionActive,
+    setDefinitionQuickAccess,
     deleteDefinition,
     saveSource,
+    saveSourceWithSimpleRoll,
     deleteSource,
     drawCards,
     returnCards,
     resetCardSource,
+    saveTokenType,
+    deleteTokenType,
+    saveTokenContainer,
+    setTokenContainerExposed,
+    setTokenContainerQuickAccess,
+    deleteTokenContainer,
+    updateTokenContents,
+    adjustTokenContents,
+    moveTokenContents,
+    resetTokenContainer,
+    saveTokenReference,
+    runTokenContainerDraw,
     clearHistory,
     selectResult,
     resetStatistics,
@@ -382,15 +555,14 @@ export function useRandomSystem(controlled = {}) {
     enableAllRules,
     useEssentialRules,
     ensureRandomKit,
-    loadRandomKit,
-    activateRandomKit,
+    applyRandomKitSelection,
     saveRandomKit,
     deleteRandomKit,
     importRandomLibrary,
     resetModule,
   }), [
     clearHistory,
-    activateRandomKit,
+    applyRandomKitSelection,
     deleteDefinition,
     deleteRandomKit,
     deleteSource,
@@ -398,8 +570,19 @@ export function useRandomSystem(controlled = {}) {
     enableAllRules,
     ensureRandomKit,
     importRandomLibrary,
-    loadRandomKit,
     resetCardSource,
+    saveTokenType,
+    deleteTokenType,
+    saveTokenContainer,
+    setTokenContainerExposed,
+    setTokenContainerQuickAccess,
+    deleteTokenContainer,
+    updateTokenContents,
+    adjustTokenContents,
+    moveTokenContents,
+    resetTokenContainer,
+    saveTokenReference,
+    runTokenContainerDraw,
     resetModule,
     resetStatistics,
     returnCards,
@@ -409,8 +592,10 @@ export function useRandomSystem(controlled = {}) {
     resolveDefinitionDecision,
     saveDefinition,
     setDefinitionActive,
+    setDefinitionQuickAccess,
     saveRandomKit,
     saveSource,
+    saveSourceWithSimpleRoll,
     selectResult,
     setRuleEnabled,
     useEssentialRules,

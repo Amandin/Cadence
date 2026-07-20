@@ -6,7 +6,7 @@ import { makeTestCampaign } from '../../src/logic.js';
 import { createStandardSources, standardSourceIds } from '../../src/random-system/defaults.js';
 import { fixedValue, parameterValue } from '../../src/random-system/core/references.js';
 
-const baseURL = 'http://127.0.0.1:4174/';
+let baseURL = '';
 const STORAGE_KEY = 'cadence:campaign:v1';
 const ONBOARDING_KEY = 'cadence:onboarding:first-run:v1';
 const THEME_KEY = 'cadence:interface:theme-override:v1';
@@ -235,28 +235,17 @@ async function startServer() {
   const server = await createServer({
     configFile: path.resolve('vite.config.js'),
     logLevel: 'error',
-    server: { host: '127.0.0.1', port: 4174, strictPort: true },
+    server: { host: '127.0.0.1', port: 0, strictPort: false },
   });
   await server.listen();
+  baseURL = server.resolvedUrls.local[0];
   return server;
 }
 
 async function seedAndOpen(page, scenario, viewport) {
   await page.setViewportSize(viewport);
   await page.goto(baseURL, { waitUntil: 'domcontentloaded' });
-  await page.evaluate(({ payload, selectedTheme, view, tab, onboardingDone }) => {
-    localStorage.clear();
-    sessionStorage.clear();
-    if (onboardingDone) {
-      localStorage.setItem('cadence:campaign:v1', JSON.stringify(payload));
-      localStorage.setItem('cadence:onboarding:first-run:v1', 'done');
-    }
-    localStorage.setItem('cadence:interface:theme-override:v1', selectedTheme);
-    localStorage.setItem('cadence:performance:preference:v1', 'normal');
-    sessionStorage.setItem('cadence:interface:view:v1', view);
-    sessionStorage.setItem('cadence:interface:scene-index:v1', '0');
-    sessionStorage.setItem('cadence:interface:hub-tab:v1', tab);
-  }, {
+  await page.evaluate((seed) => { window.name = `cadence-uiux-seed:${JSON.stringify(seed)}`; }, {
     payload: scenario.campaign,
     selectedTheme: viewport.width <= 390 ? 'dark' : 'light',
     view: scenario.view,
@@ -314,6 +303,49 @@ async function auditSurface(page, id) {
       horizontalOverflow: document.documentElement.scrollWidth > window.innerWidth + 2,
     };
   }, id);
+}
+
+async function verifyImmediateReloadAndClose(page, report, scenario) {
+  try {
+    const before = await page.evaluate(({ storageKey, viewKey }) => ({
+      campaign: localStorage.getItem(storageKey),
+      view: localStorage.getItem(viewKey),
+    }), { storageKey: STORAGE_KEY, viewKey: VIEW_KEY });
+    if (!before.campaign || !before.view) {
+      report.actions.push({ label: `${scenario.id}: immediate persistence before reload`, status: 'error', reason: 'campaign or current view missing from local storage' });
+      return;
+    }
+
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.locator('.initial-loading-shell').waitFor({ state: 'detached', timeout: 7_500 }).catch(() => {});
+    await page.waitForTimeout(650);
+    const afterReload = await page.evaluate(({ viewKey }) => ({
+      storedView: localStorage.getItem(viewKey),
+      renderedView: document.querySelector('.scene-app') ? 'scene' : document.querySelector('.hub-app') ? 'hub' : 'unknown',
+    }), { viewKey: VIEW_KEY });
+    report.actions.push({
+      label: `${scenario.id}: immediate reload restores campaign and view`,
+      status: afterReload.storedView === before.view && afterReload.renderedView === before.view ? 'ok' : 'error',
+      reason: afterReload.storedView === before.view && afterReload.renderedView === before.view ? undefined : `expected ${before.view}, got storage=${afterReload.storedView} rendered=${afterReload.renderedView}`,
+    });
+
+    await page.goto('about:blank', { waitUntil: 'domcontentloaded' });
+    await page.goto(baseURL, { waitUntil: 'domcontentloaded' });
+    await page.locator('.initial-loading-shell').waitFor({ state: 'detached', timeout: 7_500 }).catch(() => {});
+    await page.waitForTimeout(650);
+    const afterClose = await page.evaluate(({ storageKey, viewKey }) => ({
+      campaign: localStorage.getItem(storageKey),
+      storedView: localStorage.getItem(viewKey),
+      renderedView: document.querySelector('.scene-app') ? 'scene' : document.querySelector('.hub-app') ? 'hub' : 'unknown',
+    }), { storageKey: STORAGE_KEY, viewKey: VIEW_KEY });
+    report.actions.push({
+      label: `${scenario.id}: immediate close restores campaign and view`,
+      status: afterClose.campaign && afterClose.storedView === before.view && afterClose.renderedView === before.view ? 'ok' : 'error',
+      reason: afterClose.campaign && afterClose.storedView === before.view && afterClose.renderedView === before.view ? undefined : `expected ${before.view}, got storage=${afterClose.storedView} rendered=${afterClose.renderedView}`,
+    });
+  } catch (error) {
+    report.actions.push({ label: `${scenario.id}: immediate reload and close persistence`, status: 'error', reason: String(error.message || error).split('\n')[0] });
+  }
 }
 
 async function clickVisibleButton(page, report, label, { text = '', aria = '', selector = 'button', exact = false } = {}) {
@@ -594,7 +626,7 @@ async function runInteractions(page, scenario, report) {
       report.surfaces.push(await auditSurface(page, `${scenario.id}/dice-dialog`));
       await closeDialog(page, report, 'dice');
 
-      await clickVisibleButton(page, report, 'scene menu', { aria: 'Ouvrir le menu', exact: true });
+      await clickFirstVisible(page, report, 'scene menu', '.bottom-menu-btn');
       report.surfaces.push(await auditSurface(page, `${scenario.id}/menu`));
       await clickVisibleButton(page, report, 'scene indicator dialog', { text: 'indicateur' });
       report.surfaces.push(await auditSurface(page, `${scenario.id}/scene-indicator`));
@@ -735,6 +767,14 @@ ${report.coverage.unloadedSourceFiles.length ? report.coverage.unloadedSourceFil
 `;
 }
 
+function blockingFailures(report) {
+  return [
+    ...report.consoleErrors.map((entry) => `console ${entry.type}: ${entry.text}`),
+    ...report.actions.filter((action) => action.status !== 'ok').map((action) => `action ${action.label}: ${action.status}${action.reason ? ` (${action.reason})` : ''}`),
+    ...report.surfaces.flatMap(anomaliesFromSurface).filter((anomaly) => anomaly.level === 'high').map((anomaly) => `UI/UX ${anomaly.surface}: ${anomaly.message}`),
+  ];
+}
+
 async function main() {
   await fs.mkdir(outputDir, { recursive: true });
   const server = await startServer();
@@ -745,6 +785,23 @@ async function main() {
     timezoneId: 'Europe/Paris',
   });
   const page = await context.newPage();
+  await page.addInitScript(() => {
+    const prefix = 'cadence-uiux-seed:';
+    if (!window.name.startsWith(prefix)) return;
+    const seed = JSON.parse(window.name.slice(prefix.length));
+    window.name = '';
+    localStorage.clear();
+    sessionStorage.clear();
+    if (seed.onboardingDone) {
+      localStorage.setItem('cadence:campaign:v1', JSON.stringify(seed.payload));
+      localStorage.setItem('cadence:onboarding:first-run:v1', 'done');
+    }
+    localStorage.setItem('cadence:interface:theme-override:v1', seed.selectedTheme);
+    localStorage.setItem('cadence:performance:preference:v1', 'normal');
+    sessionStorage.setItem('cadence:interface:view:v1', seed.view);
+    sessionStorage.setItem('cadence:interface:scene-index:v1', '0');
+    sessionStorage.setItem('cadence:interface:hub-tab:v1', seed.tab);
+  });
   const client = await context.newCDPSession(page);
   const report = {
     scenarios: scenarios.map(({ campaign, ...scenario }) => scenario),
@@ -771,6 +828,9 @@ async function main() {
         await seedAndOpen(page, scenario, viewport);
         report.surfaces.push(await auditSurface(page, `${scenario.id}/${viewport.width}`));
         await runInteractions(page, scenario, report);
+        if (viewport.width === 390 && ['first-run-onboarding', 'scene-classic'].includes(scenario.id)) {
+          await verifyImmediateReloadAndClose(page, report, scenario);
+        }
       }
     }
   } finally {
@@ -783,6 +843,8 @@ async function main() {
     report.coverage = summarizeCoverage(rawCoverage.result || [], inventory);
     await fs.writeFile(path.join(outputDir, 'uiux-report.json'), JSON.stringify(report, null, 2), 'utf8');
     await fs.writeFile(path.join(outputDir, 'uiux-report.md'), markdownReport(report), 'utf8');
+    const failures = blockingFailures(report);
+    if (failures.length) throw new Error(`Routine UI/UX bloquante : ${failures.length} anomalie(s).\n${failures.slice(0, 20).join('\n')}`);
   }
 }
 

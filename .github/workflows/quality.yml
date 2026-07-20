@@ -25,6 +25,9 @@ jobs:
       - name: Run tests
         run: npm test
 
+      - name: Run blocking UI/UX beta validation
+        run: npm run test:uiux
+
       - name: Build
         run: npm run build
 

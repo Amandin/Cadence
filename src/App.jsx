@@ -19,7 +19,7 @@ import { MenuOptions } from './interface/app/MenuOptions.jsx';
 import { HubCampagne } from './interface/campaign/HubCampagne.jsx';
 import { HUB_TAB_STORAGE_KEY } from './interface/campaign/hubNavigation.js';
 import { getCadenceLogo } from './uiAssets.js';
-import { APP_SKIN, attributsApp, ChargementVue, hardwarePerformanceRisk, INITIAL_LOADING_MIN_MS, initialView, participantsInitiativeIncompatible, storedPerformancePreference } from './interface/app/appSupport.jsx';
+import { APP_SKIN, attributsApp, ChargementVue, hardwarePerformanceRisk, INITIAL_LOADING_MIN_MS, initialView, participantsInitiativeIncompatible, storedPerformancePreference, VIEW_STORAGE_KEY } from './interface/app/appSupport.jsx';
 import { advanceSceneTutorial, readSceneTutorial, resetSceneTutorial, sceneTutorialSteps, writeSceneTutorial } from './sceneTutorial.js';
 import {
   PERFORMANCE_PREFERENCE_STORAGE_KEY,
@@ -133,9 +133,14 @@ export default function App() {
 
   useEffect(() => {
     try {
+      window.localStorage.setItem(VIEW_STORAGE_KEY, currentView);
+    } catch {
+      // La session reste une solution de repli si localStorage est indisponible.
+    }
+    try {
       window.sessionStorage.setItem(VIEW_STORAGE_KEY, currentView);
     } catch {
-      // La navigation reste fonctionnelle si le stockage de session est indisponible.
+      // La navigation reste fonctionnelle sans stockage navigateur.
     }
   }, [currentView]);
 

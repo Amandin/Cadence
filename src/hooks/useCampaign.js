@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createBlankScene, createCampaignActions } from '../actions/campaignActions.js';
 import { createSceneActions } from '../actions/sceneActions.js';
 import { createRestorePoint, pruneRestorePoints } from '../actions/sceneSupport.js';
-import { STORAGE_KEY, TEMPLATE_STORAGE_KEY, defaultCategoryOrder, defaultEqualityRule, defaultInitiativeOrder } from '../constants.js';
+import { STORAGE_KEY, defaultCategoryOrder, defaultEqualityRule, defaultInitiativeOrder } from '../constants.js';
 import { applyInitiativeRules, campaignRulesFromPayload, normalizeCampaignRules, unifyCampaignScenes } from '../domain/campaignRules.js';
 import { normalizeGlobalTracker, stepGlobalTracker } from '../domain/globalTracker.js';
 import { hasCompletedFirstRunOnboarding, markFirstRunOnboardingComplete, resetFirstRunOnboarding, shouldShowFirstRunOnboarding } from '../firstRunOnboarding.js';
@@ -14,7 +14,7 @@ import { createRulePresetSnapshot, rulePresetCatalog } from '../rulePresets.js';
 import { initiativeProfileById, initiativeProfileStatuses, systemProfileById } from '../domain/systemProfiles.js';
 import { enableQuickRollProfilesInState } from '../random-system/quickRollProfiles.js';
 import { DEFAULT_CAMPAIGN_NAME, campaignNameFromPayload, campaignProfileFromPayload, campaignTemplatesFromPayload, createCampaignPayload, loadCampaign, normalizeCampaignPayload, normalizeCampaignScene, normalizeCampaignScenes, rulePresetSnapshotFromPayload, saveCampaign, serializeCampaign } from '../storage.js';
-import { removeLocalCampaignPayload } from '../localCampaignStorage.js';
+import { clearAllCadenceStorage, writeLocalCampaignPayload } from '../localCampaignStorage.js';
 import { campaignEntryFromPayload, copiedCampaignNames, readCadenceFile, writeCadenceFile } from './campaignFilePersistence.js';
 import { normalizeTemplateStore } from '../templates.js';
 import { normalizeRandomSystemState } from '../random-system/state.js';
@@ -94,6 +94,7 @@ export function useCampaign() {
   const lastPersistenceSignatureRef = useRef('');
   const lastPersistenceInputsRef = useRef(null);
   const fileSaveTimerRef = useRef(null);
+  const fileSaveRevisionRef = useRef(0);
   const setManualTheme = useCallback((nextDark) => {
     const value = !!nextDark;
     setThemePreference(value);
@@ -156,15 +157,25 @@ export function useCampaign() {
     lastPersistenceInputsRef.current = inputs;
 
     const timer = window.setTimeout(() => {
-      const signature = JSON.stringify({ scenes: syncedScenes, campaignName, templateStore, campaignRules, campaignProfile, rulePresetSnapshot, randomSystemState, activeCampaignEntryId });
+      const signature = JSON.stringify({ scenes: syncedScenes, dark, campaignName, templateStore, campaignRules, campaignProfile, rulePresetSnapshot, randomSystemState, activeCampaignEntryId });
       if (signature === lastPersistenceSignatureRef.current) return;
       lastPersistenceSignatureRef.current = signature;
 
-      const activeEntry = campaignEntriesRef.current.find((entry) => entry.id === activeCampaignEntryIdRef.current);
-      const meta = activeEntry ? { id: activeEntry.id, name: campaignName, fileName: activeEntry.fileName, folderName: activeEntry.folderName } : {};
-      const content = serializeCampaign(syncedScenes, dark, campaignName, templateStore, campaignRules, rulePresetSnapshot, meta, randomSystemState, campaignProfile);
-      const snapshot = JSON.parse(content);
-      saveCampaign(syncedScenes, dark, campaignName, templateStore, campaignRules, rulePresetSnapshot, meta, randomSystemState, campaignProfile);
+      let activeEntry;
+      let meta;
+      let content;
+      let snapshot;
+      try {
+        activeEntry = campaignEntriesRef.current.find((entry) => entry.id === activeCampaignEntryIdRef.current);
+        meta = activeEntry ? { id: activeEntry.id, name: campaignName, fileName: activeEntry.fileName, folderName: activeEntry.folderName } : {};
+        content = serializeCampaign(syncedScenes, dark, campaignName, templateStore, campaignRules, rulePresetSnapshot, meta, randomSystemState, campaignProfile);
+        snapshot = JSON.parse(content);
+      } catch (error) {
+        setFileSaveStatus({ mode: 'error', message: t('campaign.status.localSaveError', { message: error?.message || t('app.notice.unknownError') }) });
+        return;
+      }
+      const localSave = saveCampaign(syncedScenes, dark, campaignName, templateStore, campaignRules, rulePresetSnapshot, meta, randomSystemState, campaignProfile);
+      if (!localSave?.ok) setFileSaveStatus({ mode: 'error', message: t('campaign.status.localSaveError', { message: localSave?.error?.message || t('app.notice.unknownError') }) });
 
       setCampaignEntries((entries) => entries.map((entry) => entry.id === activeCampaignEntryIdRef.current
         ? { ...entry, name: campaignName, fileName: snapshot.campaign.fileName, folderName: snapshot.campaign.folderName, updatedAt: snapshot.savedAt, snapshot }
@@ -172,18 +183,33 @@ export function useCampaign() {
 
       const handle = fileHandlesRef.current.get(activeCampaignEntryIdRef.current);
       if (!handle || !activeEntry?.autosave) return;
+      const revision = ++fileSaveRevisionRef.current;
       if (fileSaveTimerRef.current) window.clearTimeout(fileSaveTimerRef.current);
       setFileSaveStatus({ mode: 'saving', message: t('campaign.status.saving', { fileName: activeEntry.fileName }) });
       fileSaveTimerRef.current = window.setTimeout(async () => {
         try {
           await writeCadenceFile(handle, content);
+          if (revision !== fileSaveRevisionRef.current) return;
           setFileSaveStatus({ mode: 'saved', message: t('campaign.status.saved', { path: `${activeEntry.folderName}/${activeEntry.fileName}` }) });
         } catch (error) {
+          if (revision !== fileSaveRevisionRef.current) return;
           setFileSaveStatus({ mode: 'error', message: t('campaign.status.saveError', { message: error?.message || t('campaign.error.permissionDenied') }) });
         }
       }, 650);
     }, LOCAL_PERSISTENCE_DEBOUNCE_MS);
     return () => window.clearTimeout(timer);
+  }, [syncedScenes, dark, campaignName, templateStore, campaignRules, campaignProfile, rulePresetSnapshot, randomSystemState, activeCampaignEntryId, persistenceEnabled]);
+
+  useEffect(() => {
+    if (!persistenceEnabled) return undefined;
+    const saveBeforeLeaving = () => {
+      const activeEntry = campaignEntriesRef.current.find((entry) => entry.id === activeCampaignEntryIdRef.current);
+      const meta = activeEntry ? { id: activeEntry.id, name: campaignName, fileName: activeEntry.fileName, folderName: activeEntry.folderName } : {};
+      const result = saveCampaign(syncedScenes, dark, campaignName, templateStore, campaignRules, rulePresetSnapshot, meta, randomSystemState, campaignProfile);
+      if (!result?.ok) setFileSaveStatus({ mode: 'error', message: t('campaign.status.localSaveError', { message: result?.error?.message || t('app.notice.unknownError') }) });
+    };
+    window.addEventListener('pagehide', saveBeforeLeaving);
+    return () => window.removeEventListener('pagehide', saveBeforeLeaving);
   }, [syncedScenes, dark, campaignName, templateStore, campaignRules, campaignProfile, rulePresetSnapshot, randomSystemState, activeCampaignEntryId, persistenceEnabled]);
 
   useEffect(() => { removeLegacyThemePreference(); }, []);
@@ -228,6 +254,14 @@ export function useCampaign() {
     campaignProfile,
   );
 
+  const persistOnboardingCampaign = (snapshot) => {
+    const result = writeLocalCampaignPayload(STORAGE_KEY, snapshot);
+    if (!result.ok) {
+      setFileSaveStatus({ mode: 'error', message: t('campaign.status.localSaveError', { message: result.error?.message || t('app.notice.unknownError') }) });
+    }
+    return result;
+  };
+
   const extraCampaignActions = useMemo(() => ({
     async importCampaign(file, options = {}) {
       try {
@@ -265,11 +299,14 @@ export function useCampaign() {
       fileHandlesRef.current.set(entry.id, pending.handle);
       setCampaignEntries((entries) => entries.map((item) => item.id === entry.id ? { ...item, autosave: true, source: 'fichier' } : item));
       setPendingFileChoice(null);
+      const revision = ++fileSaveRevisionRef.current;
       try {
         await writeCadenceFile(pending.handle, campaignTextForEntry(entry));
+        if (revision !== fileSaveRevisionRef.current) return { ok: true };
         setFileSaveStatus({ mode: 'saved', message: t('campaign.status.directActive', { path: `${entry.folderName}/${entry.fileName}` }) });
         return { ok: true };
       } catch (error) {
+        if (revision !== fileSaveRevisionRef.current) return { ok: false, message: t('campaign.error.writeFailed') };
         setFileSaveStatus({ mode: 'error', message: t('campaign.status.saveError', { message: error?.message || t('campaign.error.permissionDenied') }) });
         return { ok: false, message: t('campaign.error.writeFailed') };
       }
@@ -285,7 +322,9 @@ export function useCampaign() {
         setActiveCampaignEntryId(entry.id);
         setCampaignName(copyName);
         setPendingFileChoice(null);
+        const revision = ++fileSaveRevisionRef.current;
         await writeCadenceFile(handle, campaignTextForEntry(entry, copyName));
+        if (revision !== fileSaveRevisionRef.current) return { ok: true };
         setFileSaveStatus({ mode: 'saved', message: t('campaign.status.copyLinked', { path: `${entry.folderName}/${entry.fileName}` }) });
         return { ok: true };
       } catch (error) {
@@ -307,6 +346,7 @@ export function useCampaign() {
         : enableQuickRollProfilesInState(normalizeRandomSystemState(null), profileSelection.randomQuickRollProfileIds);
       const snapshot = createCampaignPayload([blankScene], dark, DEFAULT_CAMPAIGN_NAME, nextTemplateStore, nextRules, createRulePresetSnapshot(preset, nextRules, profileSelection), {}, nextRandomSystem, profileSelection);
       const entry = campaignEntryFromPayload(snapshot, { source: 'local' });
+      const localSave = persistOnboardingCampaign(snapshot);
       setCampaignRules(nextRules);
       setCampaignProfile(snapshot.campaignProfile);
       setRulePresetSnapshot(snapshot.rulePresetSnapshot || null);
@@ -319,10 +359,10 @@ export function useCampaign() {
       setCampaignEntries([entry]);
       setActiveCampaignEntryId(entry.id);
       setPendingFileChoice(null);
-      setFileSaveStatus({ mode: 'local', message: t('campaign.status.localActive') });
+      if (localSave.ok) setFileSaveStatus({ mode: 'local', message: t('campaign.status.localActive') });
       setRoundEffect(null);
       lastPersistenceSignatureRef.current = '';
-      if (!hasCompletedFirstRunOnboarding()) markFirstRunOnboardingComplete();
+      if (localSave.ok && !hasCompletedFirstRunOnboarding()) markFirstRunOnboardingComplete();
       setFirstRunOnboardingNeeded(false);
       setPersistenceEnabled(true);
       return { ok: true };
@@ -355,6 +395,7 @@ export function useCampaign() {
       const nextRandomSystem = normalizeRandomSystemState(null);
       const snapshot = createCampaignPayload([blankScene], dark, DEFAULT_CAMPAIGN_NAME, nextTemplateStore, nextRules, null, {}, nextRandomSystem, {});
       const entry = campaignEntryFromPayload(snapshot, { source: 'local' });
+      const localSave = persistOnboardingCampaign(snapshot);
       setCampaignRules(nextRules);
       setCampaignProfile(snapshot.campaignProfile);
       setRulePresetSnapshot(null);
@@ -367,10 +408,10 @@ export function useCampaign() {
       setCampaignEntries([entry]);
       setActiveCampaignEntryId(entry.id);
       setPendingFileChoice(null);
-      setFileSaveStatus({ mode: 'local', message: t('campaign.status.localActive') });
+      if (localSave.ok) setFileSaveStatus({ mode: 'local', message: t('campaign.status.localActive') });
       setRoundEffect(null);
       lastPersistenceSignatureRef.current = '';
-      if (!hasCompletedFirstRunOnboarding()) markFirstRunOnboardingComplete();
+      if (localSave.ok && !hasCompletedFirstRunOnboarding()) markFirstRunOnboardingComplete();
       setFirstRunOnboardingNeeded(false);
       setPersistenceEnabled(true);
       return { ok: true };
@@ -391,12 +432,9 @@ export function useCampaign() {
     },
     resetCadence() {
       fileHandlesRef.current.clear();
-      removeLocalCampaignPayload(STORAGE_KEY);
-      try {
-        window.localStorage.removeItem(TEMPLATE_STORAGE_KEY);
-      } catch {
-        // La reinitialisation reste possible si le stockage local est indisponible.
-      }
+      fileSaveRevisionRef.current += 1;
+      if (fileSaveTimerRef.current) window.clearTimeout(fileSaveTimerRef.current);
+      clearAllCadenceStorage();
       resetFirstRunOnboarding();
       setCampaignRules(normalizeCampaignRules({}));
       setCampaignProfile({});

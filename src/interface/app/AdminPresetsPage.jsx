@@ -271,16 +271,10 @@ function DetailEditor({ selected, kitRows, randomSystem, onSaveRuleTemplate, onD
     }
   };
 
-  const loadKit = () => {
+  const applyKitSelection = () => {
     if (!isKit) return;
-    randomSystem?.actions?.loadRandomKit?.(selected.id);
-    setMessage('Kit chargé dans RandomSystem.');
-  };
-
-  const activateKit = () => {
-    if (!isKit) return;
-    randomSystem?.actions?.activateRandomKit?.(selected.id);
-    setMessage('Kit activé dans RandomSystem.');
+    randomSystem?.actions?.applyRandomKitSelection?.(selected.id);
+    setMessage('Sélection du kit appliquée dans RandomSystem.');
   };
 
   return (
@@ -342,8 +336,7 @@ function DetailEditor({ selected, kitRows, randomSystem, onSaveRuleTemplate, onD
       <div className="admin-presets-detail-actions">
         <button type="button" className="primary" onClick={save}>{editable ? 'Enregistrer' : 'Créer une copie locale'}</button>
         <button type="button" className="small-btn" onClick={resetForm}>Réinitialiser</button>
-        {isKit && <button type="button" className="small-btn" onClick={loadKit}>Charger</button>}
-        {isKit && <button type="button" className="small-btn" onClick={activateKit}>Activer</button>}
+        {isKit && <button type="button" className="small-btn" onClick={applyKitSelection}>Appliquer la sélection</button>}
         {editable && <button type="button" className="danger-btn" onClick={remove}>Supprimer local</button>}
       </div>
       {message && <p className="admin-presets-message">{message}</p>}

@@ -122,6 +122,21 @@ body:has(.app[data-mode="dark"]),
   box-shadow: var(--ui-control-shadow);
 }
 
+/* The edit affordance is deliberately text-like, unlike an action button. */
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .template-title-with-action .template-edit-icon,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .template-title-with-action .template-edit-icon:hover,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .template-title-with-action .template-edit-icon:focus-visible {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  color: color-mix(in srgb, var(--ui-text) 62%, var(--ui-muted)) !important;
+}
+
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .template-title-with-action .template-edit-icon:hover,
+:is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .template-title-with-action .template-edit-icon:focus-visible {
+  color: var(--ui-accent) !important;
+}
+
 :is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .primary,
 :is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .turn-btn,
 :is(:root.dark, :root[data-mode="dark"], .app.dark, .app[data-mode="dark"]) .delta button,

@@ -1,5 +1,5 @@
 import React from 'react';
-import { STORAGE_KEY } from '../constants.js';
+import { clearAllCadenceStorage } from '../localCampaignStorage.js';
 import { t } from '../i18n/index.js';
 
 export class ErrorBoundary extends React.Component {
@@ -13,7 +13,7 @@ export class ErrorBoundary extends React.Component {
   }
 
   resetLocalData = () => {
-    localStorage.removeItem(STORAGE_KEY);
+    clearAllCadenceStorage();
     window.location.reload();
   };
 

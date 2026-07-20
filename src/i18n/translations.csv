@@ -1,6 +1,47 @@
 key,fr
 common.add,Ajouter
 common.cancel,Annuler
+random.config.tokens,Jetons
+random.tokens.title,Jetons et conteneurs
+random.tokens.help,"Les jetons sont définis par type ; les sacs, bourses et défausses sont des conteneurs nommés."
+random.tokens.types,Types de jetons
+random.tokens.containers,Conteneurs
+random.tokens.draws,Tirages de jetons
+random.tokens.addType,Ajouter un type
+random.tokens.addContainer,Ajouter un conteneur
+random.tokens.name,Nom
+random.tokens.color,Couleur
+random.tokens.symbol,Symbole
+random.tokens.image,Image
+random.tokens.value,Valeur
+random.tokens.tags,Tags
+random.tokens.description,Description
+random.tokens.contents,Contenu actuel
+random.tokens.resetReference,Réinitialiser
+random.tokens.saveReference,Enregistrer comme référence
+random.tokens.count,Jetons tirés
+random.tokens.keep,Jetons à garder
+random.tokens.selectedDestination,Destination choisie
+random.tokens.otherDestination,Destination des autres
+random.tokens.run,Tirer
+random.tokens.empty,Aucun élément pour le moment.
+random.tokens.selected,Conservés
+random.tokens.others,Autres jetons
+random.tokens.emptySource,Le conteneur est vide.
+random.tokens.container,Conteneur
+random.tokens.containerStates,État des conteneurs
+random.tokens.total,Jetons : {count}
+random.tokens.actions,Actions sur le conteneur
+random.tokens.manage,Gérer
+random.tokens.choose,Sélectionne {count} jeton(s)
+random.tokens.drawFrom,Tirer dans {name}
+random.tokens.type,Type de jeton
+random.tokens.quantity,Quantité
+random.tokens.moveTo,Destination du prélèvement
+random.tokens.outside,Hors des conteneurs
+random.tokens.addDefined,Ajouter
+random.tokens.takeDefined,Prélever
+random.tokens.moveDefined,Déplacer
 common.name,Nom
 common.use,Utiliser
 common.apply,Appliquer
@@ -1206,6 +1247,7 @@ campaign.file.unnamed,sans nom
 campaign.file.unknownType,type inconnu
 campaign.file.prefix,Fichier : {fileName}.
 campaign.status.localActive,Sauvegarde locale active.
+campaign.status.localSaveError,Sauvegarde locale impossible : {message}.
 campaign.status.saving,Enregistrement dans {fileName}...
 campaign.status.saved,Enregistré dans {path}.
 campaign.status.saveError,Enregistrement impossible : {message}.

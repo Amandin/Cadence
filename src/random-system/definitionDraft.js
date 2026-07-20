@@ -78,6 +78,7 @@ export function createDefinitionDraft(sources = [], definitions = []) {
     kind: randomDefinitionKinds.ROLL,
     exposed: true,
     active: true,
+    quickAccess: true,
     recursive: false,
     rollOptions: [],
     components: [{
@@ -279,6 +280,7 @@ export function definitionToDraft(definition, sources = []) {
     kind: normalized.kind,
     exposed: normalized.exposed,
     active: normalized.active,
+    quickAccess: normalized.quickAccess,
     recursive: normalized.recursive,
     rollOptions: normalized.options
       .filter((option) => option.type === 'choice')

@@ -23,9 +23,10 @@ import {
   createDefaultRandomRulePool,
   normalizeRandomRulePool,
 } from './rulePool.js';
-import { normalizeRandomKits, randomKitResources } from './rulePresetKits.js';
+import { normalizeRandomKits, randomKitCatalog, randomKitResources } from './rulePresetKits.js';
+import { normalizeTokenSystem } from './tokens.js';
 
-export const RANDOM_SYSTEM_SCHEMA_VERSION = 14;
+export const RANDOM_SYSTEM_SCHEMA_VERSION = 18;
 export const RANDOM_HISTORY_LIMIT = 20;
 
 const catalogKitDefinitionMigrations = [
@@ -93,19 +94,52 @@ export function emptyRandomStatistics() {
   };
 }
 
+function addBaseKitResources(sources, definitions, customKits = []) {
+  const sourceIds = new Set(sources.map((source) => source.id));
+  const definitionIds = new Set(definitions.map((definition) => definition.id));
+  const nextSources = [...sources];
+  const nextDefinitions = [...definitions];
+  const kits = [...randomKitCatalog, ...customKits];
+
+  for (const kit of kits) {
+    const resources = randomKitResources(kit, customKits);
+    for (const source of resources.sources) {
+      if (sourceIds.has(source.id)) continue;
+      sourceIds.add(source.id);
+      nextSources.push(normalizeRandomSource(source));
+    }
+    for (const definition of resources.definitions) {
+      if (definitionIds.has(definition.id)) continue;
+      definitionIds.add(definition.id);
+      nextDefinitions.push({
+        ...normalizeRandomDefinition(definition),
+        active: false,
+        quickAccess: false,
+      });
+    }
+  }
+  return { sources: nextSources, definitions: nextDefinitions };
+}
+
 export function createDefaultRandomSystemState() {
-  const sources = createStandardSources().map(normalizeRandomSource);
+  const baseline = addBaseKitResources(
+    createStandardSources().map(normalizeRandomSource),
+    normalizeDefinitionCollection(createStarterDefinitions()),
+  );
+  const sources = baseline.sources;
   const cardSources = sources.filter((source) => source.kind === randomSourceKinds.CARDS);
   return {
     schemaVersion: RANDOM_SYSTEM_SCHEMA_VERSION,
     sources,
-    definitions: normalizeDefinitionCollection(createStarterDefinitions()),
+    definitions: baseline.definitions,
     rulePool: createDefaultRandomRulePool(),
     sourceStates: Object.fromEntries(cardSources.map((source) => [source.id, resetCardSource(source)])),
     randomKits: [],
     lastResult: null,
     history: [],
     statistics: emptyRandomStatistics(),
+    tokenTypes: [],
+    tokenContainers: [],
   };
 }
 
@@ -366,6 +400,7 @@ function normalizedStatistics(statistics) {
 
 export function normalizeRandomSystemState(state) {
   if (!state || typeof state !== 'object') return createDefaultRandomSystemState();
+  const randomKits = normalizeRandomKits(state.randomKits);
   const weatherTemplate = createWeatherD10Source();
   const storedSources = (Array.isArray(state.sources) ? state.sources : []).map(normalizeRandomSource);
   const migratedCardSources = (Array.isArray(state.decks) ? state.decks : [])
@@ -415,9 +450,12 @@ export function normalizeRandomSystemState(state) {
   const upgradedBuiltInDefinitions = Number(state.schemaVersion) < 13
     ? upgradeBuiltInD20Definitions(upgradedCombinations)
     : upgradedCombinations;
-  const definitions = Number(state.schemaVersion) < 14
+  const resolvedDefinitions = Number(state.schemaVersion) < 14
     ? upgradeCatalogKitDefinitions(upgradedBuiltInDefinitions, catalogKitUpgrades)
     : upgradedBuiltInDefinitions;
+  const baseline = addBaseKitResources(sources, resolvedDefinitions, randomKits);
+  sources = baseline.sources;
+  const definitions = baseline.definitions;
   const cardSources = sources.filter((source) => source.kind === randomSourceKinds.CARDS);
   const sourceStates = Object.fromEntries(cardSources.map((source) => [
     source.id,
@@ -485,16 +523,18 @@ export function normalizeRandomSystemState(state) {
     .slice(0, RANDOM_HISTORY_LIMIT)
     .map(reviveResult);
   const rulePool = normalizeRandomRulePool(state.rulePool);
+  const tokenSystem = normalizeTokenSystem(state);
   return {
     schemaVersion: RANDOM_SYSTEM_SCHEMA_VERSION,
     sources: sources.length ? sources : createStandardSources(),
     definitions,
     rulePool,
     sourceStates,
-    randomKits: normalizeRandomKits(state.randomKits),
+    randomKits,
     lastResult: reviveResult(state.lastResult) || history[0] || null,
     history,
     statistics: normalizedStatistics(state.statistics),
+    ...tokenSystem,
   };
 }
 
@@ -527,38 +567,18 @@ function referencedDefinitionIds(definition) {
 
 export function exportRandomSystemStateForCampaign(state) {
   const normalized = normalizeRandomSystemState(state);
-  const byId = new Map(normalized.definitions.map((definition) => [definition.id, definition]));
-  const selectedIds = new Set(normalized.definitions
-    .filter((definition) => definition.exposed !== false && definition.active !== false)
-    .map((definition) => definition.id));
-  const visit = (definitionId) => {
-    const definition = byId.get(definitionId);
-    if (!definition) return;
-    referencedDefinitionIds(definition).forEach((dependencyId) => {
-      if (selectedIds.has(dependencyId)) return;
-      selectedIds.add(dependencyId);
-      visit(dependencyId);
-    });
-  };
-  [...selectedIds].forEach(visit);
-
-  const definitions = normalized.definitions.filter((definition) => selectedIds.has(definition.id));
-  const sourceIds = new Set(definitions.flatMap(definitionSourceIds));
-  const sources = normalized.sources.filter((source) => sourceIds.has(source.id));
-  const includedSourceIds = new Set(sources.map((source) => source.id));
-  const sourceStates = Object.fromEntries(Object.entries(normalized.sourceStates)
-    .filter(([sourceId]) => includedSourceIds.has(sourceId)));
-
   return {
     schemaVersion: RANDOM_SYSTEM_SCHEMA_VERSION,
-    sources,
-    definitions,
+    sources: normalized.sources,
+    definitions: normalized.definitions,
     rulePool: normalizeRandomRulePool(normalized.rulePool),
-    sourceStates,
-    randomKits: [],
+    sourceStates: normalized.sourceStates,
+    randomKits: normalized.randomKits,
     lastResult: null,
     history: [],
     statistics: emptyRandomStatistics(),
+    tokenTypes: normalized.tokenTypes,
+    tokenContainers: normalized.tokenContainers,
   };
 }
 

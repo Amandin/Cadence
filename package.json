@@ -1,7 +1,7 @@
 {
   "name": "cadence",
   "private": true,
-  "version": "0.16.0",
+  "version": "0.17.0",
   "type": "module",
   "scripts": {
     "audit": "node scripts/audit-codebase.mjs",
@@ -13,7 +13,8 @@
     "test:uiux": "node tests/uiux/full-uiux-routine.mjs",
     "test:visual": "playwright test",
     "test:visual:update": "playwright test --update-snapshots",
-    "verify": "npm test && npm run build"
+    "verify": "npm test && npm run build",
+    "validate:beta": "npm run verify && npm run test:uiux"
   },
   "dependencies": {
     "@vitejs/plugin-react": "6.0.2",

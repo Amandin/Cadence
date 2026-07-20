@@ -37,6 +37,7 @@ function NouvelleCategorieTemplate({ onAjouterCategorie }) {
 
 function EnteteCategorieTemplate({ groupe, index, total, onAjouterTemplateCategorie, onRenommerCategorie, onSupprimerCategorie, onDeplacerCategorie }) {
   const [renommage, setRenommage] = useState(false);
+  const [suppressionVisible, setSuppressionVisible] = useState(false);
   const [nom, setNom] = useState(groupe.categorie);
 
   useEffect(() => {
@@ -69,7 +70,11 @@ function EnteteCategorieTemplate({ groupe, index, total, onAjouterTemplateCatego
         <BoutonIconeTemplate label={t('templates.personnages.addTemplateAria')} onClick={() => onAjouterTemplateCategorie(groupe.categorie)}><IconeCadence name="add" /></BoutonIconeTemplate>
         <button className="small-btn" onClick={() => onDeplacerCategorie(groupe.categorie, -1)} disabled={index <= 0} aria-label={t('templates.personnages.moveCategoryUp', { name: groupe.categorie })} title={t('templates.personnages.moveCategoryUp', { name: groupe.categorie })}><IconeCadence name="nextStrong" className="up" /></button>
         <button className="small-btn" onClick={() => onDeplacerCategorie(groupe.categorie, 1)} disabled={index >= total - 1} aria-label={t('templates.personnages.moveCategoryDown', { name: groupe.categorie })} title={t('templates.personnages.moveCategoryDown', { name: groupe.categorie })}><IconeCadence name="nextStrong" className="down" /></button>
-        {groupe.templates.length === 0 && <button className="danger-btn mini-danger" onClick={() => onSupprimerCategorie(groupe.categorie)}>{t('common.delete')}</button>}
+        {groupe.templates.length === 0 && (suppressionVisible ? (
+          <button className="danger-btn mini-danger template-delete-confirm" onClick={() => onSupprimerCategorie(groupe.categorie)}>{t('common.delete')}</button>
+        ) : (
+          <button className="small-btn template-delete-reveal" onClick={() => setSuppressionVisible(true)} aria-label={t('templates.personnages.deleteRevealAria', { name: groupe.categorie })} title={t('templates.personnages.deleteRevealAria', { name: groupe.categorie })}><IconeCadence name="remove" /></button>
+        ))}
       </div>
     </div>
   );

@@ -99,7 +99,13 @@ random.quick.expert,Syntaxe experte
 random.quick.expertName,Tirage libre
 random.quick.expertField,Expression
 random.quick.expertHelp,Exécute une expression ponctuelle sans créer de nouveau type de tirage.
+random.quick.adjust,Ajuster ponctuellement ce tirage
+random.quick.adjustField,Expression ajustée
+random.quick.adjustHelp,Modifie uniquement ce lancer. Le tirage enregistré ne sera pas remplacé.
+random.quick.adjustRun,Lancer le tirage ajusté
 random.use.noResource,Aucune ressource configurée
+random.use.categoryAvailable,Disponibles
+random.use.categoryInactive,Désactivés
 random.error.generic,Le tirage n’a pas pu être effectué.
 random.result.title,Résultat
 random.result.empty,Aucun tirage pour le moment
@@ -129,6 +135,16 @@ random.kits.name,Nom de l’ensemble
 random.kits.description,Description
 random.kits.noDescription,Aucune description renseignée.
 random.kits.activeRolls,Choisir les tirages accessibles
+random.kits.availabilityTitle,Accessibilité des tirages
+random.kits.availabilityHelp,"{exposed} tirage(s) exposé(s), dont {quick} en accès rapide."
+random.kits.exposed,Exposé
+random.kits.quick,Rapide
+random.kits.resourceRoll,Lancer
+random.kits.resourceContainer,Sac ou conteneur
+random.quick.showAll,Tous les tirages
+random.quick.showQuick,Tirages rapides
+random.tokens.sheetLinkHelp,Le bouton ouvrira directement le sac « {name} » afin de choisir le tirage et ses destinations.
+random.kits.requiredForInitiative,Utilisé pour l’initiative : change l’initiative avant de le désélectionner.
 random.kits.activeRollsHelp,"{count} tirage(s) actif(s). Active un tirage pour le rendre disponible dans le reste de Cadence."
 random.kits.definitions,Tirages inclus
 random.kits.definitionsHelp,Seuls les tirages exposés sont proposés ici. Les dépendances fonctionnelles internes nécessaires seront incluses discrètement.
@@ -143,10 +159,14 @@ random.kits.save,Enregistrer l’ensemble
 random.kits.libraryName,Ensembles de tirages Cadence
 random.kits.savedGroupsKicker,Prêts à l’emploi
 random.kits.savedGroups,Ensembles enregistrés
-random.kits.savedGroupsHelp,Active un ensemble pour rendre immédiatement ses tirages disponibles dans Cadence.
+random.kits.savedGroupsHelp,Les ensembles mémorisent une sélection réutilisable ; leurs tirages et sources restent disponibles dans la campagne.
 random.kits.personalGroups,Mes ensembles
 random.kits.availableKicker,Accès dans Cadence
-random.kits.pageHelp,Choisis les tirages accessibles puis enregistre cette sélection pour pouvoir la réutiliser.
+random.kits.pageHelp,Choisis les tirages accessibles puis enregistre cette sélection pour pouvoir la réutiliser rapidement.
+random.kits.quickApply,Appliquer une sélection enregistrée
+random.kits.quickApplyHelp,Tous les tirages et sources sont déjà disponibles. Cette action met seulement à jour les tirages accessibles et rapides.
+random.kits.choose,Choisir un ensemble…
+random.kits.apply,Appliquer la sélection
 random.kits.importLibrary,Importer .cadlib
 random.kits.exportLibrary,Exporter .cadlib
 random.kits.libraryImported,"{count} kit(s) importé(s)."
@@ -318,6 +338,8 @@ random.source.newCards,Nouveau paquet
 random.source.importCsv,Importer un CSV
 random.source.type,Distribution
 random.source.note,Commentaire (facultatif)
+random.source.createSimpleRoll,Créer aussi un tirage simple disponible
+random.source.createSimpleRollHelp,Ajoute un tirage actif et exposé utilisant une fois cette source.
 random.source.uniform,Uniforme
 random.source.weighted,Pondérée
 random.source.minimum,Minimum
@@ -417,4 +439,5 @@ random.stats.optionsHelp,Consulte les fréquences observées et l’historique s
 random.stats.definitions,Définitions utilisées
 random.stats.distribution,Fréquences observées
 random.stats.cards,Sources de cartes utilisées
+random.stats.tokens,Conteneurs de jetons utilisés
 random.stats.empty,Pas encore de données

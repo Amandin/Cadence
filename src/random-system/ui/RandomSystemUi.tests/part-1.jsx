@@ -142,7 +142,7 @@ describe('RandomSystem definition UI', () => {
     expect(html).toContain('Cartes');
   });
 
-  it('does not list exposed inactive definitions in direct use', () => {
+  it('keeps exposed inactive definitions visible but unavailable in their own category', () => {
     const state = ensureRandomKitInState(createDefaultRandomSystemState(), 'kit-d6-pool');
     const html = renderToStaticMarkup(
       <UsePanel
@@ -158,11 +158,32 @@ describe('RandomSystem definition UI', () => {
       />,
     );
 
-    expect(html).not.toContain('Pool de d6');
+    expect(html).toContain('Pool de d6');
+    expect(html).toContain('Désactivés');
+    expect(html).toContain('disabled=""');
     expect(html).toContain('d6 cumulés');
   });
 
-  it('saves active rolls as a compact kit snapshot', () => {
+  it('lists card decks in Cartes without duplicating their associated roll in Lancers', () => {
+    const state = createDefaultRandomSystemState();
+    const deck = state.sources.find((source) => source.kind === 'cards');
+    const cardDefinition = {
+      id: 'deck-simple-roll',
+      name: 'Tirage associe au paquet',
+      sourceId: deck.id,
+      exposed: true,
+      active: true,
+      components: [{ id: 'draw', source: fixedValue(deck.id), sourceKind: 'cards', count: fixedValue(1) }],
+      pipeline: [],
+    };
+    const html = renderToStaticMarkup(<UsePanel state={{ ...state, definitions: [cardDefinition] }} actions={actions} />);
+
+    expect(html).toContain('Cartes');
+    expect(html).toContain(deck.name);
+    expect(html).not.toContain('Tirage associe au paquet');
+  });
+
+  it('uses a compact selector to apply saved kit selections', () => {
     const state = ensureRandomKitInState(createDefaultRandomSystemState(), 'kit-d20-generic');
     const html = renderToStaticMarkup(<RandomKitManager state={state} actions={actions} />);
 
@@ -171,13 +192,12 @@ describe('RandomSystem definition UI', () => {
     expect(html).toContain('Enregistrer l’ensemble');
     expect(html).not.toContain('rs-kit-included-rolls');
     expect(html).not.toContain('Tirages inclus');
-    expect(html).toContain('class="small-btn rs-kit-load-btn"');
-    expect(html).toContain('class="small-btn rs-kit-activate-btn"');
-    expect(html).toContain('src="/branding/button-cadence-light.svg"');
-    expect(html).toContain('src="/branding/button-cadence-dark.svg"');
-    expect(html).toContain('class="rs-kit-list-group rs-kit-catalog"');
-    expect(html).toContain('Prêts à l’emploi');
-    expect(html).not.toContain('class="rs-kit-list-group rs-kit-catalog" open');
+    expect(html).toContain('class="rs-kit-quick-apply"');
+    expect(html).toContain('Appliquer une sélection enregistrée');
+    expect(html).toContain('Appliquer la sélection');
+    expect(html).not.toContain('rs-kit-load-btn');
+    expect(html).not.toContain('rs-kit-activate-btn');
+    expect(html).not.toContain('Prêts à l’emploi');
     expect(html).not.toContain('Exporter .cadlib');
     expect(html).not.toContain('Importer .cadlib');
   });
@@ -241,6 +261,7 @@ describe('RandomSystem definition UI', () => {
 
     expect(html).toContain('Nouvelle table');
     expect(html).toContain('Importer un CSV');
+    expect(html).toContain('Créer aussi un tirage simple disponible');
     expect(html).toContain('Décrire les faces');
     expect(html).toContain('Détails d’une face');
     expect(html).toContain('d10 Météo');

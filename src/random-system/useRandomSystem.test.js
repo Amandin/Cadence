@@ -34,6 +34,7 @@ describe('RandomSystem transient execution', () => {
       name: 'Tirage libre',
       sources: state.sources,
     });
+    const definitionsBefore = state.definitions;
     const result = executeAdHocDefinitionFromState(state, definition, { mod: 2 }, {});
 
     expect(result).toMatchObject({
@@ -42,6 +43,7 @@ describe('RandomSystem transient execution', () => {
       parameters: { mod: 2 },
     });
     expect(result.draws).toHaveLength(2);
-    expect(state.definitions).toEqual([]);
+    expect(state.definitions).toBe(definitionsBefore);
+    expect(state.definitions.some((item) => item.id === definition.id)).toBe(false);
   });
 });

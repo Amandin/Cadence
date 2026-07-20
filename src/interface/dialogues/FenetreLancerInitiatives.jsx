@@ -124,6 +124,19 @@ function LibelleBonusInitiative() {
 function defaultRollOptions(definition = {}) {
   return Object.fromEntries((definition.options || []).map((option) => [option.id, option.defaultValue]));
 }
+export function valeurNumeriqueTirageInitiative(result) {
+  const primaryValue = result?.primaryAggregate?.value;
+  const candidates = [
+    primaryValue,
+    ...(Array.isArray(primaryValue) ? primaryValue.map((item) => item?.value) : []),
+    ...(result?.draws || []).filter((draw) => !draw.rerolled && draw.kept !== false).flatMap((draw) => [draw.calculatedValue, draw.outcome?.value]),
+  ];
+  for (const candidate of candidates) {
+    const value = Number(candidate);
+    if (Number.isFinite(value)) return value;
+  }
+  return Number.NaN;
+}
 
 function InitiativeRollButton({ label, card = false, disabled = false, onClick }) {
   return <button className="initiative-dice-roll-btn" type="button" disabled={disabled} onClick={onClick} aria-label={label} title={label}>{card ? <IconeCadence name="cardBack" /> : <IconeJetDes />}</button>;
@@ -283,7 +296,7 @@ export function FenetreLancerInitiatives({ participants = [], reserve = [], init
       const { parameters, options, bonus, bonusInjected } = initiativeRollInputs(prepared.definition, bonusInitiative(participant, bonusInitiatives), baseOptions);
       const result = randomSystem.actions.runDefinition(initiativeRollDefinition.id, parameters, options);
       if (result?.kind === 'random-decision') throw new Error(t('initiative.entry.decisionUnsupported'));
-      const raw = Number(result?.primaryAggregate?.value);
+      const raw = valeurNumeriqueTirageInitiative(result);
       if (!Number.isFinite(raw)) throw new Error(t('initiative.entry.rollUnavailable'));
       const value = bonusInjected ? raw : raw + bonus;
       appliquerValeurLancee(participant, String(value));

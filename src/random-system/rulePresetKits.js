@@ -238,7 +238,7 @@ export function loadRandomKitInState(state, kitOrId) {
     sources: [...currentSources, ...addedSources],
     definitions: [
       ...currentDefinitions,
-      ...addedDefinitions.map((definition) => ({ ...definition, active: false })),
+      ...addedDefinitions.map((definition) => ({ ...definition, active: false, quickAccess: false })),
     ],
     sourceStates,
   };
@@ -256,7 +256,7 @@ export function activateRandomKitInState(state, kitOrId) {
     definitions: loaded.definitions.map((definition) => (
       definition.exposed === false
         ? definition
-        : { ...definition, active: activeDefinitionIds.has(definition.id) }
+        : { ...definition, active: activeDefinitionIds.has(definition.id), quickAccess: activeDefinitionIds.has(definition.id) }
     )),
   };
 }
@@ -272,7 +272,7 @@ export function ensureRandomKitInState(state, kitOrId) {
     ...loaded,
     definitions: loaded.definitions.map((definition) => (
       activatedDefinitionIds.has(definition.id)
-        ? { ...definition, active: true }
+        ? { ...definition, active: true, quickAccess: true }
         : definition
     )),
   };
@@ -292,7 +292,7 @@ export function enableRandomKitDefinitionsInState(state, kitOrId, definitionIds 
     ...loaded,
     definitions: loaded.definitions.map((definition) => (
       activeDefinitionIds.has(definition.id)
-        ? { ...definition, active: true }
+        ? { ...definition, active: true, quickAccess: true }
         : definition
     )),
   };
@@ -300,13 +300,14 @@ export function enableRandomKitDefinitionsInState(state, kitOrId, definitionIds 
 
 export function saveRandomKitToState(state, kit) {
   const normalized = normalizeRandomKit(kit, state?.randomKits?.length || 0);
-  return {
+  const nextState = {
     ...state,
     randomKits: [
       normalized,
       ...(Array.isArray(state?.randomKits) ? state.randomKits : []).filter((item) => item.id !== normalized.id),
     ],
   };
+  return loadRandomKitInState(nextState, normalized);
 }
 
 export function deleteRandomKitFromState(state, kitId) {

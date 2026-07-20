@@ -51,6 +51,15 @@
   min-width: 0;
 }
 
+/* Some compact hub editors use bare controls rather than .field labels. */
+.campaign-hub-page input:not([type='checkbox']):not([type='radio']):not([type='file']),
+.campaign-hub-page select,
+.campaign-hub-page textarea {
+  background: var(--ui-input-bg);
+  border-color: var(--ui-input-border);
+  color: var(--ui-input-text);
+}
+
 .campaign-hub-page:has(.admin-presets-page) {
   gap: 0;
   grid-template-columns: minmax(0, 1fr) !important;

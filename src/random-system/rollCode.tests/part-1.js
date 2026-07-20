@@ -148,11 +148,9 @@ describe('roll code language', () => {
       ...createDefaultRandomSystemState(),
       definitions: [definition],
     });
-    expect(exported.sources.map((source) => source.id).sort()).toEqual([
-      'standard-d10',
-      'standard-d6',
-      'standard-d8',
-    ]);
+    expect(exported.sources.map((source) => source.id).sort()).toEqual(
+      createDefaultRandomSystemState().sources.map((source) => source.id).sort(),
+    );
   });
 
   it('uses brackets to make numeric variables explicit', () => {

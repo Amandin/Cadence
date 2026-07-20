@@ -5,7 +5,7 @@ import { t } from '../../i18n/index.js';
 import { getCadenceLogo } from '../../uiAssets.js';
 import { detectHardwarePerformanceRisk, normalizePerformancePreference, performanceLevels, PERFORMANCE_PREFERENCE_STORAGE_KEY } from '../../performanceMode.js';
 
-const VIEW_STORAGE_KEY = 'cadence:interface:view:v1';
+export const VIEW_STORAGE_KEY = 'cadence:interface:view:v1';
 export const INITIAL_LOADING_MIN_MS = 180;
 export const APP_SKIN = 'cadence';
 
@@ -34,11 +34,20 @@ export function ChargementVue({ dark, texte = t('common.loading'), performanceLe
 }
 
 export function initialView() {
+  let storedView = null;
   try {
-    return window.sessionStorage.getItem(VIEW_STORAGE_KEY) === 'scene' ? 'scene' : 'hub';
+    storedView = window.localStorage.getItem(VIEW_STORAGE_KEY);
   } catch {
-    return 'hub';
+    // La session reste une solution de repli si localStorage est indisponible.
   }
+  if (!storedView) {
+    try {
+      storedView = window.sessionStorage.getItem(VIEW_STORAGE_KEY);
+    } catch {
+      // La vue par défaut reste le Hub sans stockage navigateur.
+    }
+  }
+  return storedView === 'scene' ? 'scene' : 'hub';
 }
 
 export function storedPerformancePreference() {

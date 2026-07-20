@@ -9,6 +9,7 @@ import {
   affectationsCartesInitiative,
   FenetreLancerInitiatives,
   ordreParticipantsAffiches,
+  valeurNumeriqueTirageInitiative,
 } from './FenetreLancerInitiatives.jsx';
 
 const participants = [
@@ -76,6 +77,13 @@ describe('card initiative distribution', () => {
 
     expect(html).toContain('Distribuer à tous');
     expect(html).toContain('Tirer une carte pour chaque personnage dans l’ordre actuellement affiché');
+  });
+
+  it('uses the numeric value of a card-backed definition for numeric initiative', () => {
+    expect(valeurNumeriqueTirageInitiative({
+      primaryAggregate: { value: [{ label: 'Roi de Cœur', value: 13, symbol: '♥' }] },
+      draws: [{ calculatedValue: 13, outcome: { value: 13 }, kept: true, rerolled: false }],
+    })).toBe(13);
   });
 
   it('offers the contextual initiative approach without exposing the whole roll form', () => {
