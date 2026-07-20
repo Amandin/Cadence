@@ -67,9 +67,9 @@ describe('FirstRunOnboarding', () => {
     expect(html).not.toContain('Quatre étapes guidées');
   });
 
-  it('places the no-code setup after the rules summary on first run', () => {
+  it('places the rules summary after the roll setup on first run', () => {
     const steps = questionnaireSteps(onboardingAnswersFromRules(onboardingDefaultRules), true);
-    expect(steps.slice(-2).map((step) => step.id)).toEqual(['summary', 'randomSetup']);
+    expect(steps.slice(-2).map((step) => step.id)).toEqual(['randomSetup', 'summary']);
     expect(questionnaireSteps(onboardingAnswersFromRules(onboardingDefaultRules), false).at(-1).id).toBe('summary');
   });
 

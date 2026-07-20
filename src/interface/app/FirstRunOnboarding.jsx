@@ -14,6 +14,7 @@ import { activeRuleSummary } from '../../domain/ruleCompatibility.js';
 import { t } from '../../i18n/index.js';
 import { getCadenceLogo, uiGlyphs } from '../../uiAssets.js';
 import { DefinitionEditor } from '../../random-system/ui/DefinitionEditor.jsx';
+import { randomKitCatalog } from '../../random-system/rulePresetKits.js';
 import {
   createDnd5DefaultDefinitions,
   dnd5InitiativeDefinitionId,
@@ -138,16 +139,29 @@ function RulesSummary({ rules, answers, definitions = [] }) {
 
 export function OnboardingRandomSetup({ randomSystem, initiativeRequested = false, initiativeRollDefinitionId = '', onSelectInitiative }) {
   const [advanced, setAdvanced] = useState(false);
+  const [selectedKitId, setSelectedKitId] = useState('');
   const definitions = randomSystem?.state?.definitions || [];
   const sources = (randomSystem?.state?.sources || []).filter((source) => source.kind !== 'cards');
   const availableDefinitions = definitions.filter((definition) => definition.exposed !== false);
   const selectableDefinitions = availableDefinitions.filter((definition) => definition.active !== false);
+  const cardSources = (randomSystem?.state?.sources || []).filter((source) => source.kind === 'cards');
+  const savedKits = randomSystem?.state?.randomKits || [];
   return (
     <section className="onboarding-section onboarding-random-setup">
       <div className="onboarding-question-heading">
         <span>{t('onboarding.random.eyebrow')}</span>
         <h2>{t('onboarding.random.title')}</h2>
         <p className="onboarding-section-note">{t('onboarding.random.help')}</p>
+      </div>
+      <div className="onboarding-initiative-roll">
+        <label className="field">{t('random.kits.savedGroups')}
+          <select value={selectedKitId} onChange={(event) => setSelectedKitId(event.target.value)}>
+            <option value="">{t('random.kits.choose')}</option>
+            <optgroup label={t('random.kits.catalog')}>{randomKitCatalog.map((kit) => <option key={kit.id} value={kit.id}>{kit.label}</option>)}</optgroup>
+            {savedKits.length > 0 && <optgroup label={t('random.kits.personalGroups')}>{savedKits.map((kit) => <option key={kit.id} value={kit.id}>{kit.label}</option>)}</optgroup>}
+          </select>
+        </label>
+        <button type="button" className="small-btn" disabled={!selectedKitId} onClick={() => randomSystem?.actions?.applyRandomKitSelection?.(selectedKitId)}>{t('random.kits.apply')}</button>
       </div>
       {initiativeRequested && (
         <div className="onboarding-initiative-roll">
@@ -172,6 +186,12 @@ export function OnboardingRandomSetup({ randomSystem, initiativeRequested = fals
           <label className={`global-switch ${definition.active !== false ? 'active' : ''}`} key={definition.id}>
             <span>{definition.name}</span>
             <input type="checkbox" checked={definition.active !== false} onChange={(event) => randomSystem?.actions?.setDefinitionActive?.(definition.id, event.target.checked)} />
+          </label>
+        ))}
+        {cardSources.map((source) => (
+          <label className={`global-switch ${source.exposed !== false ? 'active' : ''}`} key={source.id}>
+            <span>{source.name}</span>
+            <input type="checkbox" checked={source.exposed !== false} onChange={(event) => randomSystem?.actions?.saveSource?.({ ...source, exposed: event.target.checked })} />
           </label>
         ))}
       </div>
@@ -302,13 +322,12 @@ export function questionnaireSteps(answers, includeRandomSetup = false) {
     });
   }
 
-  return [...steps, { id: 'summary' }, ...(includeRandomSetup ? [{ id: 'randomSetup' }] : [])];
+  return [...steps, ...(includeRandomSetup ? [{ id: 'randomSetup' }] : []), { id: 'summary' }];
 }
 
 export function FirstRunOnboarding({ dark, initialRules = null, randomSystem = null, onToggleTheme, onStartRules, onStartCustomRules, onCancel, showCustomRules = true, offerSceneTutorial = true }) {
   const [answers, setAnswers] = useState(() => onboardingAnswersFromRules(onboardingDefaultRules));
   const [stepIndex, setStepIndex] = useState(0);
-  const [quickConclusion, setQuickConclusion] = useState(false);
   const seededDnd5Rolls = useRef(false);
   useEffect(() => {
     if (!randomSystem || seededDnd5Rolls.current) return;
@@ -324,7 +343,7 @@ export function FirstRunOnboarding({ dark, initialRules = null, randomSystem = n
   const steps = useMemo(() => questionnaireSteps(answers, !!randomSystem), [answers, randomSystem]);
   const safeStepIndex = Math.min(stepIndex, steps.length - 1);
   const step = steps[safeStepIndex];
-  const displayedStep = quickConclusion ? { id: 'summary' } : step;
+  const displayedStep = step;
   const selectableDefinitions = (randomSystem?.state?.definitions || []).filter((definition) => definition.exposed !== false && definition.active !== false);
   const initiativeRequested = answers.initiativeSource === 'roll'
     && onboardingUsesInitiative(answers)
@@ -374,7 +393,7 @@ export function FirstRunOnboarding({ dark, initialRules = null, randomSystem = n
   const start = (tutorial) => onStartRules?.({ rules, randomSystem: randomSystem?.state || null }, tutorial);
   const skipConfiguration = () => {
     setAnswers((current) => ({ ...onboardingAnswersFromRules(onboardingDefaultRules), initiativeRollDefinitionId: dnd5InitiativeDefinitionId, surpriseRound: current.surpriseRound }));
-    setQuickConclusion(true);
+    setStepIndex(Math.max(0, steps.length - 2));
   };
 
   return (
@@ -410,13 +429,11 @@ export function FirstRunOnboarding({ dark, initialRules = null, randomSystem = n
                 : <OnboardingQuestion question={displayedStep} value={value} onChange={setAnswer} answers={answers} onSetAnswer={setNamedAnswer} />}
           </div>
           <div className={`welcome-actions onboarding-step-actions ${displayedStep?.id === 'summary' ? 'onboarding-summary-actions' : ''}`.trim()}>
-            {(safeStepIndex > 0 || quickConclusion) && <button type="button" className="small-btn" onClick={() => quickConclusion ? setQuickConclusion(false) : previous()}>{t('onboarding.back')}</button>}
-            {quickConclusion
-              ? <OnboardingStartActions disabled={!canContinue} onStartDirect={() => start(false)} onStartTutorial={() => start(true)} />
-              : safeStepIndex < steps.length - 1
+            {safeStepIndex > 0 && <button type="button" className="small-btn" onClick={previous}>{t('onboarding.back')}</button>}
+            {safeStepIndex < steps.length - 1
               ? <button type="button" className="primary" onClick={next} disabled={!canContinue}>{t('onboarding.next')}</button>
               : <>{offerSceneTutorial ? <OnboardingStartActions disabled={!canContinue} onStartDirect={() => start(false)} onStartTutorial={() => start(true)} /> : <button type="button" className="primary" disabled={!canContinue} onClick={() => start(false)}>{t('onboarding.apply')}</button>}{onCancel && <button type="button" className="small-btn" onClick={onCancel}>{t('common.cancel')}</button>}</>}
-            {safeStepIndex === 0 && !quickConclusion && (
+            {safeStepIndex === 0 && (
               <div className="onboarding-skip-config">
                 <button type="button" className="small-btn" onClick={skipConfiguration}>{t('onboarding.skip')}</button>
                 <span>{t('onboarding.skipHelp')}</span>

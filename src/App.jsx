@@ -60,6 +60,13 @@ export default function App() {
   const [declarationAdditionTargetId, setDeclarationAdditionTargetId] = useState('');
 
   useEffect(() => {
+    if (!onboardingReplayOpen) return;
+    setOnboardingReplayOpen(false);
+    setSceneTutorial(writeSceneTutorial({ active: true, step: sceneTutorialSteps.ADD_PARTICIPANT }));
+    setCurrentView('scene');
+  }, [onboardingReplayOpen]);
+
+  useEffect(() => {
     const timers = new WeakMap();
     const switchSelector = '.limit-switch-row > input[type="checkbox"], .reset-switch > input[type="checkbox"], .global-switch > input[type="checkbox"]';
     const animateSwitchChange = (event) => {
@@ -674,7 +681,7 @@ export default function App() {
       onClose={fermerOptions}
       onPerformancePreferenceChange={setPerformancePreference}
       onThemeModeChange={actions.setThemeMode}
-      onReplayTutorial={() => { fermerOptions(); setOnboardingReplayOpen(true); }}
+      onReplayTutorial={() => { fermerOptions(); updateSceneTutorial({ active: true, step: sceneTutorialSteps.ADD_PARTICIPANT }); setCurrentView('scene'); }}
       onResetCadence={askResetCadence}
     />
   ) : null;

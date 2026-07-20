@@ -9,21 +9,8 @@
   width: min(100%, 520px);
 }
 
-.welcome-shell.onboarding-random-shell {
-  width: min(100%, 1180px);
-}
-
-.onboarding-random-shell .welcome-panel {
-  min-height: calc(100vh - 44px);
-}
-
 .onboarding-random-setup {
   gap: 14px;
-}
-
-.onboarding-random-setup .rs-config-workspace {
-  min-height: 520px;
-  text-align: left;
 }
 
 .onboarding-initiative-roll {
@@ -43,7 +30,8 @@
 }
 
 .welcome-panel {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 14px;
   padding: 18px;
   min-height: min(670px, calc(100vh - 44px));
@@ -161,9 +149,15 @@
 }
 
 .onboarding-step {
+  flex: 1 1 auto;
   min-height: 0;
   overflow: auto;
   padding-inline: 2px;
+}
+
+.onboarding-step-actions {
+  flex: 0 0 auto;
+  margin-top: auto;
 }
 
 .onboarding-family-switch {
@@ -323,11 +317,13 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.onboarding-step-actions > .primary:only-child {
-  grid-column: 1 / -1;
+.onboarding-step-actions:not(.onboarding-summary-actions) > .primary {
+  grid-column: 2;
 }
 
 .onboarding-skip-config {
+  grid-column: 1;
+  grid-row: 1;
   display: grid;
   gap: 4px;
 }
