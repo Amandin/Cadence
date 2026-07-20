@@ -70,6 +70,7 @@ export function createStandard54CardSource() {
     id: 'standard-54-cards',
     name: 'Jeu de 54 cartes',
     kind: randomSourceKinds.CARDS,
+    exposed: false,
     cards: [
       ...suitedCards(standardRanks),
       joker('rouge'),
@@ -83,6 +84,7 @@ export function createFrenchTarotCardSource() {
     id: 'french-tarot-78-cards',
     name: 'Tarot français',
     kind: randomSourceKinds.CARDS,
+    exposed: false,
     cards: [
       ...suitedCards(tarotRanks),
       ...Array.from({ length: 21 }, (_, index) => {

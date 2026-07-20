@@ -161,7 +161,7 @@ describe('RandomSystem definition UI', () => {
     expect(html).toContain('Pool de d6');
     expect(html).toContain('Désactivés');
     expect(html).toContain('disabled=""');
-    expect(html).toContain('d6 cumulés');
+    expect(html).toContain('Pool de d6 · total additionné');
   });
 
   it('lists card decks in Cartes without duplicating their associated roll in Lancers', () => {

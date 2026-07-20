@@ -346,12 +346,22 @@
 }
 
 .onboarding-summary-actions {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(0, .9fr) minmax(0, 1fr) minmax(0, 1.45fr);
   align-items: start;
 }
 
 .onboarding-summary-actions .onboarding-start-choice {
   display: contents;
+}
+
+.onboarding-summary-actions .onboarding-start-choice > .small-btn {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.onboarding-summary-actions .onboarding-start-choice > .primary {
+  grid-column: 3;
+  grid-row: 1;
 }
 
 .onboarding-summary-actions button {

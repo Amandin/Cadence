@@ -11,7 +11,7 @@ import { standardSourceIds } from './defaults.js';
 export const noCodeExampleCatalog = Object.freeze([
   { id: 'd20-advantage', name: 'd20 avec avantage et désavantage', description: 'Trois modes d20 avec modificateur demandé au lancer.' },
   { id: 'cosmere', name: 'Cosmere', description: 'Avantage ou désavantage et dé d’intrigue activable séparément.' },
-  { id: 'standard-dice', name: 'Dés standards', description: 'Quantité et type de dé demandés avec mode normal explosion ou relance.' },
+  { id: 'standard-dice', name: 'Jet de dés personnalisable', description: 'Choisissez le type et le nombre de dés, puis ajoutez si besoin une explosion ou une relance.' },
   { id: 'shadowrun', name: 'Shadowrun', description: 'Réserve de d6 succès sur 5+ complications sur 1 et jet de chance explosif.' },
   { id: 'l5r', name: 'L5R', description: 'Réserve de d10 explosifs dont on garde les meilleurs résultats.' },
   { id: 'daggerheart', name: 'Daggerheart', description: 'Deux d12 de couleurs distinctes avec un d6 ajouté en avantage ou soustrait en désavantage.' },
@@ -112,9 +112,9 @@ function configureCosmere(draft, sources) {
 function configureStandardDice(draft) {
   draft.visualId = 'dice-pool';
   draft.recursive = true;
-  draft.rollOptions = [option('mode', 'Mode', 'standard', [
-    { value: 'standard', label: 'Standard' },
-    { value: 'explosion', label: 'Explosion' },
+  draft.rollOptions = [option('mode', 'Règle spéciale (une seule)', 'standard', [
+    { value: 'standard', label: 'Jet normal' },
+    { value: 'explosion', label: 'Dés explosifs' },
     { value: 'reroll', label: 'Relance des 1' },
   ])];
   const component = draft.components[0];

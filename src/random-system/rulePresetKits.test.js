@@ -165,7 +165,7 @@ describe('RandomSystem rule preset kits', () => {
       'standard-d100',
     ]));
     expect(resources.definitions.find((definition) => definition.id === 'kit-d20-polyhedral'))
-      .toMatchObject({ name: 'Dés polyédriques', exposed: true, active: true });
+      .toMatchObject({ name: 'Total de dés au choix', exposed: true, active: true });
     expect(resources.definitions.find((definition) => definition.id === 'kit-d20-check').options[0])
       .toMatchObject({
         defaultValue: 'normal',

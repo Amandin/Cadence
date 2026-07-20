@@ -34,6 +34,7 @@ export function normalizeCardSource(source, index = 0) {
     name: String(source?.name || '').trim() || `Source de cartes ${index + 1}`,
     note: String(source?.note || '').trim(),
     kind: randomSourceKinds.CARDS,
+    exposed: source?.exposed === true,
     cards,
   };
 }

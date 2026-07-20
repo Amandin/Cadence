@@ -345,7 +345,7 @@ export const randomKitCatalog = [
     definitions: [
       d20SimpleRollDefinition('kit-d20-check-simple', 'Jet d20 simple'),
       d20RollDefinition('kit-d20-check', 'Jet d20'),
-      mixedDiceTotalDefinition('kit-d20-polyhedral', 'Dés polyédriques', standardSourceIds.D6, standardSourceIds.D4),
+      mixedDiceTotalDefinition('kit-d20-polyhedral', 'Total de dés au choix', standardSourceIds.D6, standardSourceIds.D4),
     ],
     initiative: {
       mode: randomKitInitiativeModes.NUMERIC,
@@ -414,7 +414,7 @@ export const randomKitCatalog = [
         ],
         primaryAggregateId: 'roll',
       },
-      mixedDiceTotalDefinition('kit-d100-polyhedral', 'Dés polyédriques', standardSourceIds.D6, standardSourceIds.D4),
+      mixedDiceTotalDefinition('kit-d100-polyhedral', 'Total de dés au choix', standardSourceIds.D6, standardSourceIds.D4),
     ],
     initiative: {
       mode: randomKitInitiativeModes.MANUAL,
@@ -433,8 +433,8 @@ export const randomKitCatalog = [
     sourceIds: [standardSourceIds.D6],
     sources: [],
     definitions: [
-      poolSuccessDefinition('kit-d6-pool-successes', 'Pool de d6', standardSourceIds.D6, 5),
-      dicePoolTotalDefinition('kit-d6-total', 'd6 cumulés', standardSourceIds.D6),
+      poolSuccessDefinition('kit-d6-pool-successes', 'Pool de d6 · succès comptés', standardSourceIds.D6, 5),
+      dicePoolTotalDefinition('kit-d6-total', 'Pool de d6 · total additionné', standardSourceIds.D6),
     ],
     initiative: {
       mode: randomKitInitiativeModes.NUMERIC,
@@ -469,7 +469,7 @@ export const randomKitCatalog = [
         pipeline: [totalStep(), modifierStep()],
         primaryAggregateId: 'total',
       },
-      poolSuccessDefinition('kit-d10-pool-successes', 'Pool de d10', standardSourceIds.D10, 8),
+      poolSuccessDefinition('kit-d10-pool-successes', 'Pool de d10 · succès comptés', standardSourceIds.D10, 8),
     ],
     initiative: {
       mode: randomKitInitiativeModes.NONE,
@@ -510,7 +510,7 @@ export const randomKitCatalog = [
         pipeline: [valueStep('plot', 'Intrigue')],
         primaryAggregateId: 'plot',
       },
-      mixedDiceTotalDefinition('kit-cosmere-polyhedral', 'Dés polyédriques', standardSourceIds.D6, standardSourceIds.D4),
+      mixedDiceTotalDefinition('kit-cosmere-polyhedral', 'Total de dés au choix', standardSourceIds.D6, standardSourceIds.D4),
     ],
     initiative: {
       mode: randomKitInitiativeModes.LABEL_ORDER,

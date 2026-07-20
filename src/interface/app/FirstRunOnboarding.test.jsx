@@ -112,7 +112,7 @@ describe('FirstRunOnboarding', () => {
     );
 
     expect(html).toContain('d20 avec avantage et désavantage');
-    expect(html).toContain('Dés standards');
+    expect(html).toContain('Jet de dés personnalisable');
     expect(html).toContain(`value="${dnd5InitiativeDefinitionId}" selected=""`);
   });
 });
