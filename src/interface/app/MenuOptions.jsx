@@ -39,7 +39,7 @@ export function ThemeModeToggle({ themeState, onThemeModeChange, ariaLabel = t('
   );
 }
 
-export function OptionsContent({ performanceState, themeState, onPerformancePreferenceChange, onThemeModeChange }) {
+export function OptionsContent({ performanceState, themeState, onPerformancePreferenceChange, onThemeModeChange, onReplayTutorial, onResetCadence }) {
   const actualThemeMode = selectedThemeMode(themeState);
   const [themeMode, setThemeMode] = useState(actualThemeMode);
   const dark = !!themeState?.dark;
@@ -82,14 +82,23 @@ export function OptionsContent({ performanceState, themeState, onPerformancePref
           </select>
         </label>
       </OptionsSection>
+
+      {(onReplayTutorial || onResetCadence) && (
+        <OptionsSection title={t('options.guidance.title')} help={t('options.guidance.help')}>
+          <div className="options-guidance-actions">
+            {onReplayTutorial && <button type="button" className="primary" onClick={onReplayTutorial}>{t('options.guidance.replayTutorial')}</button>}
+            {onResetCadence && <button type="button" className="danger-btn" onClick={onResetCadence}>{t('hub.campaigns.reset')}</button>}
+          </div>
+        </OptionsSection>
+      )}
     </div>
   );
 }
 
-export function MenuOptions({ dark, performanceState, themeState, onClose, onPerformancePreferenceChange, onThemeModeChange }) {
+export function MenuOptions({ dark, performanceState, themeState, onClose, onPerformancePreferenceChange, onThemeModeChange, onReplayTutorial, onResetCadence }) {
   return (
     <Fenetre title={t('options.title')} onClose={onClose} className={`options-menu ${dark ? 'dark menu-dark' : ''}`}>
-      <OptionsContent performanceState={performanceState} themeState={themeState} onPerformancePreferenceChange={onPerformancePreferenceChange} onThemeModeChange={onThemeModeChange} />
+      <OptionsContent performanceState={performanceState} themeState={themeState} onPerformancePreferenceChange={onPerformancePreferenceChange} onThemeModeChange={onThemeModeChange} onReplayTutorial={onReplayTutorial} onResetCadence={onResetCadence} />
     </Fenetre>
   );
 }

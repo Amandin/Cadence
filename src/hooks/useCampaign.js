@@ -25,6 +25,21 @@ import { clearThemePreference, devicePrefersDark, initialThemePreference, persis
 const SCENE_INDEX_STORAGE_KEY = 'cadence:interface:scene-index:v1';
 const LOCAL_PERSISTENCE_DEBOUNCE_MS = 300;
 
+function createDnd5ArrivalScene(rules) {
+  const scene = createBlankScene(rules);
+  return {
+    ...scene,
+    title: 'L’auberge du Pont de pierre',
+    type: 'D&D 5e',
+    notes: 'Point de départ : un messager attend dans la salle commune. Les participants et le compteur peuvent être modifiés ou supprimés.',
+    globalTracker: { enabled: true, name: 'Alerte', mode: 'clock', current: 0, max: 4 },
+    participants: [
+      { id: 'onboarding-dnd5-lyra', name: 'Lyra', type: 'PJ', color: 'blue', symbol: '⚔', initiative: 15, departage: 2, stats: ['CA 15', 'PV 18', 'Perception +4'], statuses: [], trackers: [] },
+      { id: 'onboarding-dnd5-goblin', name: 'Gobelin éclaireur', type: 'Opposant', color: 'red', symbol: '⚑', initiative: 12, departage: 1, stats: ['CA 15', 'PV 7', 'Furtivité +6'], statuses: [], trackers: [] },
+    ],
+  };
+}
+
 function initialSceneIndex() {
   try {
     const value = Number(window.sessionStorage.getItem(SCENE_INDEX_STORAGE_KEY));
@@ -339,7 +354,7 @@ export function useCampaign() {
     startFirstRunCampaign(preset, profileSelection = {}, campaignOptions = {}) {
       if (!preset?.rules) return { ok: false, message: t('campaign.error.presetMissing') };
       const nextRules = normalizeCampaignRules(preset.rules);
-      const blankScene = createBlankScene(nextRules);
+      const blankScene = campaignOptions.onboardingDnd5 ? createDnd5ArrivalScene(nextRules) : createBlankScene(nextRules);
       const nextTemplateStore = addOnboardingTrackerTemplates(templateStore, preset);
       const nextRandomSystem = campaignOptions.randomSystem && typeof campaignOptions.randomSystem === 'object'
         ? normalizeRandomSystemState(campaignOptions.randomSystem)
@@ -386,7 +401,7 @@ export function useCampaign() {
         family: 'personal',
         source: 'onboarding',
         rules,
-      }, {}, { randomSystem });
+      }, {}, { randomSystem, onboardingDnd5: true });
     },
     startFirstRunCustomCampaign() {
       const nextRules = normalizeCampaignRules(campaignRules);

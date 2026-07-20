@@ -39,8 +39,8 @@ describe('FirstRunOnboarding', () => {
     expect(html).toContain('type="checkbox"');
     expect(html).not.toContain('Actions multiples');
     expect(html).toContain('Accéder aux règles avancées');
-    expect(html).toContain('Passer la configuration');
-    expect(html).toContain('Cadence utilisera les règles courantes de D&amp;D 5e');
+    expect(html).toContain('Passer rapidement');
+    expect(html).toContain('Affiche un récapitulatif D&amp;D 5e avant d’appliquer la configuration.');
     expect(html).not.toContain('un prélude distinct');
     expect(html).not.toContain('Choisir une mécanique ou une famille');
     expect(html).toContain('Étape suivante');
@@ -73,7 +73,7 @@ describe('FirstRunOnboarding', () => {
     expect(questionnaireSteps(onboardingAnswersFromRules(onboardingDefaultRules), false).at(-1).id).toBe('summary');
   });
 
-  it('embeds the essential no-code editor and requires a saved initiative roll when requested', () => {
+  it('lists available rolls and keeps advanced configuration optional', () => {
     const state = createDefaultRandomSystemState();
     const html = renderToStaticMarkup(
       <OnboardingRandomSetup
@@ -88,12 +88,10 @@ describe('FirstRunOnboarding', () => {
       />,
     );
 
-    expect(html).toContain('Quels jets veux-tu préparer');
-    expect(html).toContain('Essentiel');
-    expect(html).toContain('Toutes les options');
-    expect(html).toContain('Crée et enregistre d’abord un jet');
+    expect(html).toContain('Tirages disponibles');
+    expect(html).toContain('Activez ou créez d’abord un tirage');
     expect(html).not.toContain('Syntaxe experte');
-    expect(html).not.toContain('Options avancées');
+    expect(html).toContain('Accéder aux réglages avancés');
   });
 
   it('preselects the D&D5 starter rolls and uses the advantage d20 for initiative', () => {

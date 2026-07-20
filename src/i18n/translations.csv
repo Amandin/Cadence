@@ -81,6 +81,9 @@ options.theme.label,Thème
 options.theme.system,Système
 options.theme.light,Clair
 options.theme.dark,Sombre
+options.guidance.title,Accompagnement
+options.guidance.help,Relancez le parcours d’accueil ou réinitialisez les données de Cadence.
+options.guidance.replayTutorial,Relancer le tutoriel
 addons.title,Modules complémentaires
 addons.help,Des outils isolés que l’on peut tester avant de les intégrer au reste de Cadence.
 errors.title,Cadence a rencontré une erreur
@@ -93,7 +96,7 @@ onboarding.family.generic,Génériques
 onboarding.family.system,Systèmes
 onboarding.toggleTheme,Basculer thème clair ou sombre
 onboarding.title,Configurer les règles de la table
-onboarding.description,"Choisissez le déroulement des rounds, l’initiative et les actions. Le profil de départ reprend les règles courantes de D&D 5e."
+onboarding.description,"Configurez le déroulement des rounds, l’initiative et le nombre d’actions. Le profil de départ reprend les règles courantes de D&D 5e."
 onboarding.presets.genericTitle,Presets génériques
 onboarding.presets.systemTitle,Presets systèmes
 onboarding.presets.systemNote,"Configurations compatibles, non officielles."
@@ -132,22 +135,23 @@ onboarding.support.home,Maison / générique
 onboarding.profile.planned,À venir : profil non implémenté
 onboarding.quickRolls.title,Choisir des jets rapides
 onboarding.quickRolls.help,Cadence lancera les dés ou cartes sélectionnés ; la table interprète les effets.
-onboarding.summary.title,Votre table est prête
-onboarding.summary.help,Voici ce que Cadence prépare pour votre première scène.
-onboarding.summary.ready,Cadence prépare
-onboarding.summary.atHand,À portée de main
-onboarding.summary.yourCall,Vous gardez la main
+onboarding.summary.title,Configuration prête à appliquer
+onboarding.summary.help,"Vérifiez les règles, l’initiative et les tirages sélectionnés avant de commencer."
+onboarding.summary.ready,Configuration
+onboarding.summary.atHand,Ressources disponibles
+onboarding.summary.yourCall,Contrôle de la table
+onboarding.summary.rolls,Tirages sélectionnés
 onboarding.progress,Étape {current} sur {total}
 onboarding.back,Retour
 onboarding.next,Étape suivante
-onboarding.startChoice.help,Comment souhaitez-vous découvrir votre première scène ?
+onboarding.startChoice.help,Choisissez le mode de démarrage de la première scène.
 onboarding.startChoice.tutorial,Suivre le tutoriel
 onboarding.startChoice.tutorialHelp,Un parcours guidé directement dans une scène vierge.
 onboarding.startChoice.direct,Commencer directement
 onboarding.apply,Appliquer ces règles
 onboarding.advanced,Accéder aux règles avancées
-onboarding.skip,Passer la configuration
-onboarding.skipHelp,Cadence utilisera les règles courantes de D&D 5e.
+onboarding.skip,Passer rapidement
+onboarding.skipHelp,Affiche un récapitulatif D&D 5e avant d’appliquer la configuration.
 onboarding.resetWarning.title,Les règles actuelles seront remplacées
 onboarding.resetWarning.body,"Ce parcours repart du profil D&D 5e. Si vous le validez, les règles actuelles et les options avancées absentes du questionnaire seront réinitialisées."
 onboarding.resetWarning.cancel,Conserver les règles actuelles
@@ -184,19 +188,19 @@ onboarding.answer.phaseType.checked,Selon les passes cochées
 onboarding.answer.phaseType.checkedHelp,Chaque fiche indique les passes pendant lesquelles le personnage peut agir.
 onboarding.question.phase.count,Nombre de passes par round
 onboarding.question.phase.decrement,Initiative perdue après chaque passe
-onboarding.question.multiple.compact,Actions multiples
+onboarding.question.multiple.compact,Nombre d’actions
 onboarding.question.declaration.compact,Déclaration puis résolution
-onboarding.question.multiple.eyebrow,Actions par round
-onboarding.question.multiple.title,Qui peut agir plusieurs fois ?
-onboarding.question.multiple.help,Autorisez des actions supplémentaires ou limitez chaque personnage à une action.
-onboarding.answer.multiple.never,Une action par round
-onboarding.answer.multiple.neverHelp,Chaque personnage agit une seule fois.
-onboarding.answer.multiple.elites,Plusieurs actions pour les Élites
-onboarding.answer.multiple.elitesHelp,Seuls les profils Élites disposent de créneaux supplémentaires.
-onboarding.answer.multiple.everyone,Plusieurs actions pour tous
-onboarding.answer.multiple.everyoneHelp,Tous les personnages peuvent recevoir plusieurs créneaux.
-onboarding.answer.multiple.automatic,Dépenser de l’initiative pour agir
-onboarding.answer.multiple.automaticHelp,Chaque action réduit le score d’initiative et recalcule l’ordre.
+onboarding.question.multiple.eyebrow,Nombre d’actions
+onboarding.question.multiple.title,Combien d’actions un participant peut-il recevoir par round ?
+onboarding.question.multiple.help,Cette règle définit si Cadence affiche une ou plusieurs actions dans l’ordre du round.
+onboarding.answer.multiple.never,Une action pour chacun
+onboarding.answer.multiple.neverHelp,Chaque participant reçoit une seule action par round.
+onboarding.answer.multiple.elites,Actions supplémentaires pour les Élites
+onboarding.answer.multiple.elitesHelp,Les profils Élites peuvent recevoir des actions supplémentaires.
+onboarding.answer.multiple.everyone,Actions supplémentaires pour tous
+onboarding.answer.multiple.everyoneHelp,Tous les participants peuvent recevoir des actions supplémentaires.
+onboarding.answer.multiple.automatic,Actions selon le coût d’initiative
+onboarding.answer.multiple.automaticHelp,"Après une action, Cadence calcule l’action suivante à partir du coût défini."
 onboarding.answer.multiple.automaticUnavailable,Coût d’initiative — ordre décroissant sans déclaration uniquement
 onboarding.answer.multiple.automaticUnavailableFlexible,Coût d’initiative — incompatible avec les tours libres
 onboarding.question.reroll.eyebrow,Début du round
@@ -235,21 +239,23 @@ onboarding.question.tiebreakerLabel.eyebrow,Critère secondaire
 onboarding.question.tiebreakerLabel.title,Nommer le critère de départage
 onboarding.question.tiebreakerLabel.help,"Exemples : Dextérité, Vitesse, Réflexes."
 onboarding.question.tiebreakerLabel.input,Nom du critère secondaire
-onboarding.question.initiativeSource.eyebrow,Jet d’initiative
-onboarding.question.initiativeSource.title,Comment déterminer l’initiative ?
-onboarding.question.initiativeSource.help,Le dé et les modificateurs seront configurés dans les outils de tirage.
+onboarding.question.initiativeSource.eyebrow,Initiative
+onboarding.question.initiativeSource.title,Comment renseigner l’initiative ?
+onboarding.question.initiativeSource.help,La saisie manuelle reste le fonctionnement standard. Un tirage peut être associé uniquement si la table souhaite l’utiliser.
 onboarding.answer.initiativeSource.fixed,Saisie manuelle
-onboarding.answer.initiativeSource.fixedHelp,Le score est saisi au lancement de la scène.
-onboarding.answer.initiativeSource.roll,Jet de dés
-onboarding.answer.initiativeSource.rollHelp,Le lanceur d’initiative utilisera le tirage choisi pour la campagne.
+onboarding.answer.initiativeSource.fixedHelp,Les valeurs sont renseignées au lancement de la scène.
+onboarding.answer.initiativeSource.roll,Associer un tirage facultatif
+onboarding.answer.initiativeSource.rollHelp,Le tirage choisi est proposé dans la saisie d’initiative ; son utilisation reste à la décision de la table.
 onboarding.random.eyebrow,Tirages de la campagne
-onboarding.random.title,Quels jets veux-tu préparer ?
-onboarding.random.help,Crée les jets qui seront disponibles dès la première scène. Le mode Essentiel suffit pour les jets courants et Toutes les options ouvre la boîte à outils complète sans code.
+onboarding.random.title,Tirages disponibles
+onboarding.random.help,Sélectionnez les tirages accessibles dès la première scène. Les réglages avancés permettent d’en créer ou d’en modifier.
 onboarding.random.initiativeRoll,Jet utilisé pour l’initiative
-onboarding.random.initiativeMissing,Crée et enregistre d’abord un jet
-onboarding.random.initiativeHelp,Ce jet sera proposé directement lors de la saisie de l’initiative.
-onboarding.random.initiativeRequired,Tu as choisi une initiative lancée aux dés. Crée puis enregistre au moins un jet pour continuer.
-onboarding.random.later,Les jets autres que l’initiative sont facultatifs et pourront être ajoutés ou modifiés plus tard dans les règles de campagne.
+onboarding.random.initiativeMissing,Activez ou créez d’abord un tirage
+onboarding.random.initiativeHelp,Ce tirage sera proposé dans la saisie d’initiative ; il ne remplace pas la saisie manuelle.
+onboarding.random.initiativeRequired,Un tirage doit être actif pour pouvoir l’associer à l’initiative.
+onboarding.random.later,Les tirages peuvent être modifiés ultérieurement dans les réglages de campagne.
+onboarding.random.advanced,Accéder aux réglages avancés
+onboarding.random.hideAdvanced,Masquer les réglages avancés
 onboarding.question.summary.eyebrow,Récapitulatif
 onboarding.question.summary.title,Vérifier les règles
 onboarding.question.summary.help,Confirmez ces choix avant de les appliquer à la campagne.
@@ -956,18 +962,18 @@ rules.initiativeBonus.rollNote,La saisie d'initiative utilisera ce tirage pour r
 rules.initiativeBonus.textNote,Les bonus sont conservés mais ne s'appliquent pas aux initiatives par libellés.
 rules.initiativeBonus.hiddenNote,Les anciennes valeurs restent conservées mais sont ignorées et masquées.
 rules.initiativeBonus.noBonusNote,Sans bonus : l’initiative est saisie directement ou définie par le tirage lié.
-rules.multipleActions.title,Actions multiples
-rules.multipleActions.help,Choix exclusif pour les actions multiples dans le round.
-rules.multipleActions.none,Aucune
-rules.multipleActions.noneHelp,Une seule activation d’initiative par personnage.
-rules.multipleActions.manual,Créneaux manuels
-rules.multipleActions.manualHelp,Le MJ saisit plusieurs créneaux au lancement.
-rules.multipleActions.scope,Portée des actions multiples
+rules.multipleActions.title,Nombre d’actions
+rules.multipleActions.help,Définit le nombre d’actions possibles pour chaque participant pendant un round.
+rules.multipleActions.none,Une action par participant
+rules.multipleActions.noneHelp,Chaque participant reçoit un seul créneau d’initiative.
+rules.multipleActions.manual,Actions supplémentaires saisies
+rules.multipleActions.manualHelp,Des créneaux supplémentaires sont renseignés au lancement du round.
+rules.multipleActions.scope,Participants concernés
 rules.multipleActions.scopeAll,Tous les participants
-rules.multipleActions.scopeAllHelp,Tous les Types peuvent recevoir plusieurs créneaux manuels.
-rules.multipleActions.scopeElite,Actions multiples pour les Élites
-rules.multipleActions.scopeEliteHelp,Seuls Élite et les Types personnalisés qui héritent d’Élite peuvent recevoir plusieurs créneaux.
-rules.multipleActions.initiativeCost,Actions multiples avec coût d’initiative
+rules.multipleActions.scopeAllHelp,Tous les participants peuvent recevoir des créneaux supplémentaires.
+rules.multipleActions.scopeElite,Actions supplémentaires pour les Élites
+rules.multipleActions.scopeEliteHelp,Seuls les Élites et les Types personnalisés qui en héritent peuvent recevoir des créneaux supplémentaires.
+rules.multipleActions.initiativeCost,Actions selon le coût d’initiative
 rules.multipleActions.initiativeCostHelp,"Après une action, le coût crée un nouveau créneau plus bas si le seuil le permet."
 rules.multipleActions.threshold,Seuil de fin de round
 rules.multipleActions.thresholdNote,"Si l’initiative après coût est inférieure ou égale à ce seuil, le personnage ne reçoit pas de nouveau créneau ce round."

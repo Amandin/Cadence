@@ -114,7 +114,7 @@ function OnboardingQuestion({ question, value, onChange, answers, onSetAnswer })
   );
 }
 
-function RulesSummary({ rules, answers }) {
+function RulesSummary({ rules, answers, definitions = [] }) {
   const summary = activeRuleSummary(rules);
   return (
     <section className="onboarding-section">
@@ -128,14 +128,20 @@ function RulesSummary({ rules, answers }) {
         {answers.surpriseRound && <span>{t('onboarding.summary.surpriseRound')}</span>}
         {answers.initiativeSource === 'roll' && onboardingUsesInitiative(answers) && answers.initiativeFormat !== onboardingInitiativeFormats.LABELS && <span>{t('onboarding.summary.randomInitiative')}</span>}
       </div>
+      <div className="onboarding-rule-summary">
+        <strong>{t('onboarding.summary.rolls')}</strong>
+        {definitions.filter((definition) => definition.exposed !== false && definition.active !== false).map((definition) => <span key={definition.id}>{definition.name}</span>)}
+      </div>
     </section>
   );
 }
 
 export function OnboardingRandomSetup({ randomSystem, initiativeRequested = false, initiativeRollDefinitionId = '', onSelectInitiative }) {
+  const [advanced, setAdvanced] = useState(false);
   const definitions = randomSystem?.state?.definitions || [];
   const sources = (randomSystem?.state?.sources || []).filter((source) => source.kind !== 'cards');
-  const selectableDefinitions = definitions.filter((definition) => definition.exposed !== false && definition.active !== false);
+  const availableDefinitions = definitions.filter((definition) => definition.exposed !== false);
+  const selectableDefinitions = availableDefinitions.filter((definition) => definition.active !== false);
   return (
     <section className="onboarding-section onboarding-random-setup">
       <div className="onboarding-question-heading">
@@ -161,14 +167,16 @@ export function OnboardingRandomSetup({ randomSystem, initiativeRequested = fals
           </p>
         </div>
       )}
-      <DefinitionEditor
-        definitions={definitions}
-        sources={sources}
-        rulePool={randomSystem?.state?.rulePool}
-        actions={randomSystem?.actions}
-        noCodeOnly
-        initialNoCodeView="essential"
-      />
+      <div className="rs-roll-availability-list onboarding-roll-availability-list">
+        {availableDefinitions.map((definition) => (
+          <label className={`global-switch ${definition.active !== false ? 'active' : ''}`} key={definition.id}>
+            <span>{definition.name}</span>
+            <input type="checkbox" checked={definition.active !== false} onChange={(event) => randomSystem?.actions?.setDefinitionActive?.(definition.id, event.target.checked)} />
+          </label>
+        ))}
+      </div>
+      <button type="button" className="small-btn" onClick={() => setAdvanced((current) => !current)}>{t(advanced ? 'onboarding.random.hideAdvanced' : 'onboarding.random.advanced')}</button>
+      {advanced && <DefinitionEditor definitions={definitions} sources={sources} rulePool={randomSystem?.state?.rulePool} actions={randomSystem?.actions} initialNoCodeView="essential" />}
       <p className="muted compact-help onboarding-random-later">{t('onboarding.random.later')}</p>
     </section>
   );
@@ -300,13 +308,14 @@ export function questionnaireSteps(answers, includeRandomSetup = false) {
 export function FirstRunOnboarding({ dark, initialRules = null, randomSystem = null, onToggleTheme, onStartRules, onStartCustomRules, onCancel, showCustomRules = true, offerSceneTutorial = true }) {
   const [answers, setAnswers] = useState(() => onboardingAnswersFromRules(onboardingDefaultRules));
   const [stepIndex, setStepIndex] = useState(0);
+  const [quickConclusion, setQuickConclusion] = useState(false);
   const seededDnd5Rolls = useRef(false);
   useEffect(() => {
     if (!randomSystem || seededDnd5Rolls.current) return;
     seededDnd5Rolls.current = true;
-    if ((randomSystem.state?.definitions || []).length) return;
     const definitions = createDnd5DefaultDefinitions(randomSystem.state?.sources || []);
-    [...definitions].reverse().forEach((definition) => randomSystem.actions?.saveDefinition(definition));
+    const knownIds = new Set((randomSystem.state?.definitions || []).map((definition) => definition.id));
+    [...definitions].reverse().filter((definition) => !knownIds.has(definition.id)).forEach((definition) => randomSystem.actions?.saveDefinition(definition));
     setAnswers((current) => ({
       ...current,
       initiativeRollDefinitionId: dnd5InitiativeDefinitionId,
@@ -315,6 +324,7 @@ export function FirstRunOnboarding({ dark, initialRules = null, randomSystem = n
   const steps = useMemo(() => questionnaireSteps(answers, !!randomSystem), [answers, randomSystem]);
   const safeStepIndex = Math.min(stepIndex, steps.length - 1);
   const step = steps[safeStepIndex];
+  const displayedStep = quickConclusion ? { id: 'summary' } : step;
   const selectableDefinitions = (randomSystem?.state?.definitions || []).filter((definition) => definition.exposed !== false && definition.active !== false);
   const initiativeRequested = answers.initiativeSource === 'roll'
     && onboardingUsesInitiative(answers)
@@ -326,15 +336,15 @@ export function FirstRunOnboarding({ dark, initialRules = null, randomSystem = n
     ...campaignRulesFromOnboardingAnswers(answers, onboardingDefaultRules),
     initiativeBonusRollDefinitionId: initiativeRequested ? initiativeRollDefinitionId : '',
   }), [answers, initiativeRequested, initiativeRollDefinitionId]);
-  const value = step?.id === 'summary' ? null : answers[step?.id];
-  const inlineTiebreakerComplete = step?.id !== 'tiebreakerVisible' || !answers.tiebreakerVisible || String(answers.tiebreakerLabel || '').trim().length > 0;
+  const value = displayedStep?.id === 'summary' ? null : answers[displayedStep?.id];
+  const inlineTiebreakerComplete = displayedStep?.id !== 'tiebreakerVisible' || !answers.tiebreakerVisible || String(answers.tiebreakerLabel || '').trim().length > 0;
   const phaseValue = Number(answers.phaseType === phaseActionModes.AUTOMATIC ? answers.phaseDecrement : answers.phaseCount);
-  const inlinePhaseNumberComplete = step?.id !== 'phaseType'
+  const inlinePhaseNumberComplete = displayedStep?.id !== 'phaseType'
     || (Number.isInteger(phaseValue) && phaseValue >= 1 && (answers.phaseType !== phaseActionModes.CHECKED || phaseValue <= 20));
   const canContinue = inlineTiebreakerComplete
     && inlinePhaseNumberComplete
-    && (step?.id !== 'randomSetup' || !initiativeRequested || !!initiativeRollDefinitionId)
-    && (['summary', 'randomSetup'].includes(step?.id) || (step?.type === 'text' ? String(value || '').trim().length > 0 : value !== undefined && value !== null));
+    && (displayedStep?.id !== 'randomSetup' || !initiativeRequested || !!initiativeRollDefinitionId)
+    && (['summary', 'randomSetup'].includes(displayedStep?.id) || (displayedStep?.type === 'text' ? String(value || '').trim().length > 0 : value !== undefined && value !== null));
   const setAnswer = (nextValue) => setAnswers((current) => ({
     ...current,
     [step.id]: nextValue,
@@ -363,25 +373,13 @@ export function FirstRunOnboarding({ dark, initialRules = null, randomSystem = n
   const previous = () => setStepIndex((current) => Math.max(current - 1, 0));
   const start = (tutorial) => onStartRules?.({ rules, randomSystem: randomSystem?.state || null }, tutorial);
   const skipConfiguration = () => {
-    const currentRandomState = randomSystem?.state || null;
-    const defaultRandomState = currentRandomState && !(currentRandomState.definitions || []).length
-      ? {
-        ...currentRandomState,
-        definitions: createDnd5DefaultDefinitions(currentRandomState.sources || []),
-      }
-      : currentRandomState;
-    onStartRules?.({
-      rules: {
-        ...onboardingDefaultRules,
-        initiativeBonusRollDefinitionId: dnd5InitiativeDefinitionId,
-      },
-      randomSystem: defaultRandomState,
-    }, false);
+    setAnswers((current) => ({ ...onboardingAnswersFromRules(onboardingDefaultRules), initiativeRollDefinitionId: dnd5InitiativeDefinitionId, surpriseRound: current.surpriseRound }));
+    setQuickConclusion(true);
   };
 
   return (
     <div className={`app welcome-app ${dark ? 'dark' : ''}`} data-skin="cadence" data-mode={dark ? 'dark' : 'light'}>
-      <main className={`welcome-shell ${step?.id === 'randomSetup' ? 'onboarding-random-shell' : ''}`}>
+      <main className={`welcome-shell ${displayedStep?.id === 'randomSetup' ? 'onboarding-random-shell' : ''}`}>
         <section className="panel welcome-panel">
           <div className="welcome-topbar">
             <div className="loading-mark welcome-mark"><img src={getCadenceLogo(dark)} alt="Cadence" /></div>
@@ -404,19 +402,21 @@ export function FirstRunOnboarding({ dark, initialRules = null, randomSystem = n
               {onCancel && <button type="button" className="small-btn" onClick={onCancel}>{t('onboarding.resetWarning.cancel')}</button>}
             </div>
           )}
-          <div className="onboarding-step" key={step?.id}>
-            {step?.id === 'summary'
-              ? <RulesSummary rules={rules} answers={answers} />
-              : step?.id === 'randomSetup'
+          <div className="onboarding-step" key={displayedStep?.id}>
+            {displayedStep?.id === 'summary'
+              ? <RulesSummary rules={rules} answers={answers} definitions={randomSystem?.state?.definitions || []} />
+              : displayedStep?.id === 'randomSetup'
                 ? <OnboardingRandomSetup randomSystem={randomSystem} initiativeRequested={initiativeRequested} initiativeRollDefinitionId={initiativeRollDefinitionId} onSelectInitiative={(definitionId) => setNamedAnswer('initiativeRollDefinitionId', definitionId)} />
-                : <OnboardingQuestion question={step} value={value} onChange={setAnswer} answers={answers} onSetAnswer={setNamedAnswer} />}
+                : <OnboardingQuestion question={displayedStep} value={value} onChange={setAnswer} answers={answers} onSetAnswer={setNamedAnswer} />}
           </div>
-          <div className={`welcome-actions onboarding-step-actions ${step?.id === 'summary' ? 'onboarding-summary-actions' : ''}`.trim()}>
-            {safeStepIndex > 0 && <button type="button" className="small-btn" onClick={previous}>{t('onboarding.back')}</button>}
-            {safeStepIndex < steps.length - 1
+          <div className={`welcome-actions onboarding-step-actions ${displayedStep?.id === 'summary' ? 'onboarding-summary-actions' : ''}`.trim()}>
+            {(safeStepIndex > 0 || quickConclusion) && <button type="button" className="small-btn" onClick={() => quickConclusion ? setQuickConclusion(false) : previous()}>{t('onboarding.back')}</button>}
+            {quickConclusion
+              ? <OnboardingStartActions disabled={!canContinue} onStartDirect={() => start(false)} onStartTutorial={() => start(true)} />
+              : safeStepIndex < steps.length - 1
               ? <button type="button" className="primary" onClick={next} disabled={!canContinue}>{t('onboarding.next')}</button>
               : <>{offerSceneTutorial ? <OnboardingStartActions disabled={!canContinue} onStartDirect={() => start(false)} onStartTutorial={() => start(true)} /> : <button type="button" className="primary" disabled={!canContinue} onClick={() => start(false)}>{t('onboarding.apply')}</button>}{onCancel && <button type="button" className="small-btn" onClick={onCancel}>{t('common.cancel')}</button>}</>}
-            {safeStepIndex === 0 && (
+            {safeStepIndex === 0 && !quickConclusion && (
               <div className="onboarding-skip-config">
                 <button type="button" className="small-btn" onClick={skipConfiguration}>{t('onboarding.skip')}</button>
                 <span>{t('onboarding.skipHelp')}</span>
