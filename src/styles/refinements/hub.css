@@ -32,10 +32,54 @@
   padding-inline: clamp(16px, 3vw, 32px);
 }
 
+.grid4.hub-tabs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+  gap: 8px;
+}
+
 .hub-tabs .choice {
   box-sizing: border-box;
   inline-size: 100%;
   min-block-size: 44px;
+}
+
+.random-system-page-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.random-system-page-header .template-subtabs {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.random-system-page-header.compact {
+  justify-content: flex-end;
+  margin-bottom: -2px;
+}
+
+.random-statistics-btn {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 40px;
+  min-inline-size: 40px;
+  block-size: 40px;
+  min-block-size: 40px;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.random-statistics-btn svg {
+  inline-size: 20px;
+  block-size: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
 }
 
 .campaign-hub-page > .hub-section.panel,
@@ -265,10 +309,14 @@
   }
 
   .hub-tabs .choice {
+    grid-column: span 3;
+  }
+
+  .hub-tabs.has-five-tabs .choice {
     grid-column: span 2;
   }
 
-  .hub-tabs .choice:nth-child(n + 4) {
+  .hub-tabs.has-five-tabs .choice:nth-child(-n + 2) {
     grid-column: span 3;
   }
 }

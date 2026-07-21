@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { phaseActionModes, temporalityModes } from '../../constants.js';
+import { phaseActionModes, randomSystemModes, temporalityModes } from '../../constants.js';
 import {
   campaignRulesFromOnboardingAnswers,
   onboardingAnswersFromRules,
@@ -76,6 +76,7 @@ function CompactFlowOptions({ answers, onSetAnswer }) {
 }
 
 function OnboardingQuestion({ question, value, onChange, answers, onSetAnswer }) {
+  const initiativeQuestion = question.type === 'initiativeAndRandomSystem' && question.showInitiativeSource;
   return (
     <section className="onboarding-section">
       <div className="onboarding-question-heading">
@@ -83,7 +84,24 @@ function OnboardingQuestion({ question, value, onChange, answers, onSetAnswer })
         <h2>{question.title}</h2>
         {question.help && <p className="onboarding-section-note">{question.help}</p>}
       </div>
-      {question.type === 'text'
+      {question.type === 'initiativeAndRandomSystem'
+        ? <div className="stack onboarding-combined-random-options">
+          {initiativeQuestion && <section className="stack">
+            <h3>{t('onboarding.question.initiativeSource.title')}</h3>
+            <p className="onboarding-section-note">{t('onboarding.question.initiativeSource.help')}</p>
+            <div className="stack onboarding-preset-list" role="list" aria-label={t('onboarding.question.initiativeSource.title')}>
+              {question.initiativeOptions.map((option) => <ChoiceCard key={option.value} option={option} selected={option.value === answers.initiativeSource} onSelect={(nextValue) => onSetAnswer('initiativeSource', nextValue)} />)}
+            </div>
+          </section>}
+          <section className="stack">
+            <h3>{t('onboarding.question.randomSystemIntegration.title')}</h3>
+            <p className="onboarding-section-note">{t('onboarding.question.randomSystemIntegration.help')}</p>
+            <div className="stack onboarding-preset-list" role="list" aria-label={t('onboarding.question.randomSystemIntegration.title')}>
+              {question.integrationOptions.map((option) => <ChoiceCard key={option.value} option={option} selected={option.value === answers.randomSystemIntegrated} onSelect={(nextValue) => onSetAnswer('randomSystemIntegrated', nextValue)} />)}
+            </div>
+          </section>
+        </div>
+        : question.type === 'text'
         ? <label className="field onboarding-text-answer"><span>{question.inputLabel}</span><input autoFocus value={value || ''} onChange={(event) => onChange(event.target.value)} /></label>
         : <div className="stack onboarding-preset-list" role="list" aria-label={question.title}>{question.options.map((option) => <ChoiceCard key={option.value} option={option} selected={option.value === value} onSelect={onChange} />)}</div>}
       {question.id === 'organization' && (
@@ -128,6 +146,7 @@ function RulesSummary({ rules, answers, definitions = [] }) {
         {summary.map((item) => <span key={item}>{item}</span>)}
         {answers.surpriseRound && <span>{t('onboarding.summary.surpriseRound')}</span>}
         {answers.initiativeSource === 'roll' && onboardingUsesInitiative(answers) && answers.initiativeFormat !== onboardingInitiativeFormats.LABELS && <span>{t('onboarding.summary.randomInitiative')}</span>}
+        <span>{t(`onboarding.summary.randomSystem.${answers.randomSystemIntegrated ? randomSystemModes.FULL : answers.initiativeSource === 'roll' ? randomSystemModes.INITIATIVE : randomSystemModes.MANUAL}`)}</span>
       </div>
       <div className="onboarding-rule-summary">
         <strong>{t('onboarding.summary.rolls')}</strong>
@@ -137,13 +156,15 @@ function RulesSummary({ rules, answers, definitions = [] }) {
   );
 }
 
-export function OnboardingRandomSetup({ randomSystem, initiativeRequested = false, initiativeRollDefinitionId = '', onSelectInitiative }) {
+export function OnboardingRandomSetup({ randomSystem, initiativeRequested = false, initiativeOnly = false, initiativeRollDefinitionId = '', onSelectInitiative }) {
   const [advanced, setAdvanced] = useState(false);
   const [selectedKitId, setSelectedKitId] = useState('');
   const definitions = randomSystem?.state?.definitions || [];
   const sources = (randomSystem?.state?.sources || []).filter((source) => source.kind !== 'cards');
   const availableDefinitions = definitions.filter((definition) => definition.exposed !== false);
-  const selectableDefinitions = availableDefinitions.filter((definition) => definition.active !== false);
+  const selectableDefinitions = initiativeOnly
+    ? availableDefinitions
+    : availableDefinitions.filter((definition) => definition.active !== false);
   const cardSources = (randomSystem?.state?.sources || []).filter((source) => source.kind === 'cards');
   const savedKits = randomSystem?.state?.randomKits || [];
   return (
@@ -153,7 +174,7 @@ export function OnboardingRandomSetup({ randomSystem, initiativeRequested = fals
         <h2>{t('onboarding.random.title')}</h2>
         <p className="onboarding-section-note">{t('onboarding.random.help')}</p>
       </div>
-      <div className="onboarding-initiative-roll">
+      {!initiativeOnly && <div className="onboarding-initiative-roll">
         <label className="field">{t('random.kits.savedGroups')}
           <select value={selectedKitId} onChange={(event) => setSelectedKitId(event.target.value)}>
             <option value="">{t('random.kits.choose')}</option>
@@ -162,7 +183,7 @@ export function OnboardingRandomSetup({ randomSystem, initiativeRequested = fals
           </select>
         </label>
         <button type="button" className="small-btn" disabled={!selectedKitId} onClick={() => randomSystem?.actions?.applyRandomKitSelection?.(selectedKitId)}>{t('random.kits.apply')}</button>
-      </div>
+      </div>}
       {initiativeRequested && (
         <div className="onboarding-initiative-roll">
           <label className="field">
@@ -170,7 +191,11 @@ export function OnboardingRandomSetup({ randomSystem, initiativeRequested = fals
             <select
               value={initiativeRollDefinitionId}
               disabled={!selectableDefinitions.length}
-              onChange={(event) => onSelectInitiative?.(event.target.value)}
+              onChange={(event) => {
+                const definitionId = event.target.value;
+                if (initiativeOnly) randomSystem?.actions?.setDefinitionActive?.(definitionId, true);
+                onSelectInitiative?.(definitionId);
+              }}
             >
               {!selectableDefinitions.length && <option value="">{t('onboarding.random.initiativeMissing')}</option>}
               {selectableDefinitions.map((definition) => <option value={definition.id} key={definition.id}>{definition.name}</option>)}
@@ -181,7 +206,7 @@ export function OnboardingRandomSetup({ randomSystem, initiativeRequested = fals
           </p>
         </div>
       )}
-      <div className="rs-roll-availability-list onboarding-roll-availability-list">
+      {!initiativeOnly && <div className="rs-roll-availability-list onboarding-roll-availability-list">
         {availableDefinitions.map((definition) => (
           <label className={`global-switch ${definition.active !== false ? 'active' : ''}`} key={definition.id}>
             <span>{definition.name}</span>
@@ -194,9 +219,9 @@ export function OnboardingRandomSetup({ randomSystem, initiativeRequested = fals
             <input type="checkbox" checked={source.exposed !== false} onChange={(event) => randomSystem?.actions?.saveSource?.({ ...source, exposed: event.target.checked })} />
           </label>
         ))}
-      </div>
-      <button type="button" className="small-btn" onClick={() => setAdvanced((current) => !current)}>{t(advanced ? 'onboarding.random.hideAdvanced' : 'onboarding.random.advanced')}</button>
-      {advanced && <DefinitionEditor definitions={definitions} sources={sources} rulePool={randomSystem?.state?.rulePool} actions={randomSystem?.actions} initialNoCodeView="essential" />}
+      </div>}
+      {!initiativeOnly && <button type="button" className="small-btn" onClick={() => setAdvanced((current) => !current)}>{t(advanced ? 'onboarding.random.hideAdvanced' : 'onboarding.random.advanced')}</button>}
+      {!initiativeOnly && advanced && <DefinitionEditor definitions={definitions} sources={sources} rulePool={randomSystem?.state?.rulePool} actions={randomSystem?.actions} initialNoCodeView="essential" />}
       <p className="muted compact-help onboarding-random-later">{t('onboarding.random.later')}</p>
     </section>
   );
@@ -309,20 +334,24 @@ export function questionnaireSteps(answers, includeRandomSetup = false) {
     });
   }
 
-  if (usesInitiative && !labelInitiative) {
-    steps.push({
-      id: 'initiativeSource',
-      eyebrow: t('onboarding.question.initiativeSource.eyebrow'),
-      title: t('onboarding.question.initiativeSource.title'),
-      help: t('onboarding.question.initiativeSource.help'),
-      options: [
-        { value: 'fixed', label: t('onboarding.answer.initiativeSource.fixed'), description: t('onboarding.answer.initiativeSource.fixedHelp') },
-        { value: 'roll', label: t('onboarding.answer.initiativeSource.roll'), description: t('onboarding.answer.initiativeSource.rollHelp') },
-      ],
-    });
-  }
+  steps.push({
+    id: 'initiativeAndRandomSystem',
+    type: 'initiativeAndRandomSystem',
+    eyebrow: t('onboarding.question.randomSystemMode.eyebrow'),
+    title: t('onboarding.question.initiativeAndRandomSystem.title'),
+    help: t('onboarding.question.initiativeAndRandomSystem.help'),
+    showInitiativeSource: usesInitiative && !labelInitiative,
+    initiativeOptions: [
+      { value: 'fixed', label: t('onboarding.answer.initiativeSource.fixed'), description: t('onboarding.answer.initiativeSource.fixedHelp') },
+      { value: 'roll', label: t('onboarding.answer.initiativeSource.roll'), description: t('onboarding.answer.initiativeSource.rollHelp') },
+    ],
+    integrationOptions: [
+      { value: false, label: t('onboarding.answer.randomSystemIntegration.hidden'), description: t('onboarding.answer.randomSystemIntegration.hiddenHelp') },
+      { value: true, label: t('onboarding.answer.randomSystemIntegration.visible'), description: t('onboarding.answer.randomSystemIntegration.visibleHelp') },
+    ],
+  });
 
-  return [...steps, ...(includeRandomSetup ? [{ id: 'randomSetup' }] : []), { id: 'summary' }];
+  return [...steps, ...(includeRandomSetup && (answers.randomSystemIntegrated || answers.initiativeSource === 'roll') ? [{ id: 'randomSetup' }] : []), { id: 'summary' }];
 }
 
 export function FirstRunOnboarding({ dark, initialRules = null, randomSystem = null, onToggleTheme, onStartRules, onStartCustomRules, onCancel, showCustomRules = true, offerSceneTutorial = true }) {
@@ -344,7 +373,10 @@ export function FirstRunOnboarding({ dark, initialRules = null, randomSystem = n
   const safeStepIndex = Math.min(stepIndex, steps.length - 1);
   const step = steps[safeStepIndex];
   const displayedStep = step;
-  const selectableDefinitions = (randomSystem?.state?.definitions || []).filter((definition) => definition.exposed !== false && definition.active !== false);
+  const selectableDefinitions = (randomSystem?.state?.definitions || []).filter((definition) => (
+    definition.exposed !== false
+    && (!answers.randomSystemIntegrated || definition.active !== false)
+  ));
   const initiativeRequested = answers.initiativeSource === 'roll'
     && onboardingUsesInitiative(answers)
     && answers.initiativeFormat !== onboardingInitiativeFormats.LABELS;
@@ -363,7 +395,7 @@ export function FirstRunOnboarding({ dark, initialRules = null, randomSystem = n
   const canContinue = inlineTiebreakerComplete
     && inlinePhaseNumberComplete
     && (displayedStep?.id !== 'randomSetup' || !initiativeRequested || !!initiativeRollDefinitionId)
-    && (['summary', 'randomSetup'].includes(displayedStep?.id) || (displayedStep?.type === 'text' ? String(value || '').trim().length > 0 : value !== undefined && value !== null));
+    && (['summary', 'randomSetup', 'initiativeAndRandomSystem'].includes(displayedStep?.id) || (displayedStep?.type === 'text' ? String(value || '').trim().length > 0 : value !== undefined && value !== null));
   const setAnswer = (nextValue) => setAnswers((current) => ({
     ...current,
     [step.id]: nextValue,
@@ -393,7 +425,7 @@ export function FirstRunOnboarding({ dark, initialRules = null, randomSystem = n
   const start = (tutorial) => onStartRules?.({ rules, randomSystem: randomSystem?.state || null }, tutorial);
   const skipConfiguration = () => {
     setAnswers((current) => ({ ...onboardingAnswersFromRules(onboardingDefaultRules), initiativeRollDefinitionId: dnd5InitiativeDefinitionId, surpriseRound: current.surpriseRound }));
-    setStepIndex(Math.max(0, steps.length - 2));
+    setStepIndex(Math.max(0, steps.findIndex((entry) => entry.id === 'initiativeAndRandomSystem')));
   };
 
   return (
@@ -425,7 +457,7 @@ export function FirstRunOnboarding({ dark, initialRules = null, randomSystem = n
             {displayedStep?.id === 'summary'
               ? <RulesSummary rules={rules} answers={answers} definitions={randomSystem?.state?.definitions || []} />
               : displayedStep?.id === 'randomSetup'
-                ? <OnboardingRandomSetup randomSystem={randomSystem} initiativeRequested={initiativeRequested} initiativeRollDefinitionId={initiativeRollDefinitionId} onSelectInitiative={(definitionId) => setNamedAnswer('initiativeRollDefinitionId', definitionId)} />
+                ? <OnboardingRandomSetup randomSystem={randomSystem} initiativeRequested={initiativeRequested} initiativeOnly={!answers.randomSystemIntegrated} initiativeRollDefinitionId={initiativeRollDefinitionId} onSelectInitiative={(definitionId) => setNamedAnswer('initiativeRollDefinitionId', definitionId)} />
                 : <OnboardingQuestion question={displayedStep} value={value} onChange={setAnswer} answers={answers} onSetAnswer={setNamedAnswer} />}
           </div>
           <div className={`welcome-actions onboarding-step-actions ${displayedStep?.id === 'summary' ? 'onboarding-summary-actions' : ''}`.trim()}>

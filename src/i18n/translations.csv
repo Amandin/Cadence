@@ -84,6 +84,25 @@ options.theme.dark,Sombre
 options.guidance.title,Accompagnement
 options.guidance.help,Relancez le parcours d’accueil ou réinitialisez les données de Cadence.
 options.guidance.replayTutorial,Relancer le tutoriel
+options.randomSystem.title,Outils de tirage
+options.randomSystem.help,Accédez temporairement aux onglets de tirage masqués pour cette campagne.
+options.randomSystem.open,Ouvrir les réglages et les tirages
+options.randomSystem.modeTitle,Gestion des tirages
+options.randomSystem.modeHelp,Choisissez la place occupée par les outils de tirage dans cette campagne.
+options.randomSystem.modeLabel,Niveau d’intégration
+options.randomSystem.initiativeTitle,Initiative
+options.randomSystem.initiativeHelp,Choisissez si Cadence propose un tirage pendant la saisie de l’initiative.
+options.randomSystem.integrationTitle,Tirages dans les scènes
+options.randomSystem.integrationHelp,Choisissez si les tirages disponibles et le lanceur rapide sont affichés dans les scènes.
+presetLibrary.eyebrow,Configuration de campagne
+presetLibrary.title,Bibliothèque de préréglages
+presetLibrary.help,Choisissez une base de règles ou un ensemble de tirages puis ajustez les ressources avec les réglages habituels.
+presetLibrary.code.title,Code du préréglage
+presetLibrary.code.help,Modifiez cette copie JSON puis enregistrez-la dans la campagne. Le préréglage livré reste inchangé.
+presetLibrary.code.invalid,Le code doit être un objet JSON valide.
+presetLibrary.code.saveRules,Enregistrer une copie de règles
+presetLibrary.code.saveKit,Enregistrer une copie d’ensemble
+presetLibrary.kit,Ensemble
 addons.title,Modules complémentaires
 addons.help,Des outils isolés que l’on peut tester avant de les intégrer au reste de Cadence.
 errors.title,Cadence a rencontré une erreur
@@ -141,6 +160,9 @@ onboarding.summary.ready,Configuration
 onboarding.summary.atHand,Ressources disponibles
 onboarding.summary.yourCall,Contrôle de la table
 onboarding.summary.rolls,Tirages sélectionnés
+onboarding.summary.randomSystem.manual,Tirages saisis manuellement
+onboarding.summary.randomSystem.initiative,Tirage d’initiative uniquement
+onboarding.summary.randomSystem.full,Système de tirage complet
 onboarding.progress,Étape {current} sur {total}
 onboarding.back,Retour
 onboarding.next,Étape suivante
@@ -240,12 +262,29 @@ onboarding.question.tiebreakerLabel.title,Nommer le critère de départage
 onboarding.question.tiebreakerLabel.help,"Exemples : Dextérité, Vitesse, Réflexes."
 onboarding.question.tiebreakerLabel.input,Nom du critère secondaire
 onboarding.question.initiativeSource.eyebrow,Initiative
-onboarding.question.initiativeSource.title,Comment renseigner l’initiative ?
-onboarding.question.initiativeSource.help,La saisie manuelle reste le fonctionnement standard. Un tirage peut être associé uniquement si la table souhaite l’utiliser.
-onboarding.answer.initiativeSource.fixed,Saisie manuelle
-onboarding.answer.initiativeSource.fixedHelp,Les valeurs sont renseignées au lancement de la scène.
-onboarding.answer.initiativeSource.roll,Associer un tirage facultatif
-onboarding.answer.initiativeSource.rollHelp,Le tirage choisi est proposé dans la saisie d’initiative ; son utilisation reste à la décision de la table.
+onboarding.question.initiativeSource.title,Comment gérer l’initiative ?
+onboarding.question.initiativeSource.help,Choisissez si Cadence propose un tirage pendant la saisie des initiatives.
+onboarding.question.initiativeAndRandomSystem.title,Initiative et tirages
+onboarding.question.initiativeAndRandomSystem.help,Définissez en une fois la saisie de l’initiative et la place des tirages dans les scènes.
+onboarding.answer.initiativeSource.fixed,Initiative manuelle
+onboarding.answer.initiativeSource.fixedHelp,Les valeurs sont renseignées manuellement au lancement de la scène.
+onboarding.answer.initiativeSource.roll,Initiative automatique
+onboarding.answer.initiativeSource.rollHelp,Cadence propose le tirage choisi dans la fenêtre de saisie des initiatives.
+onboarding.question.randomSystemMode.eyebrow,Gestion des tirages
+onboarding.question.randomSystemMode.title,Quelle place donner aux tirages ?
+onboarding.question.randomSystemMode.help,"Ce choix détermine à la fois la saisie de l’initiative et les outils de tirage affichés au quotidien. Les réglages complets restent accessibles dans l’onglet Tirages du Hub."
+onboarding.answer.randomSystemMode.manual,Aucun tirage
+onboarding.answer.randomSystemMode.manualHelp,"L’initiative et les autres résultats sont saisis manuellement. Aucun lanceur n’est affiché dans la scène."
+onboarding.answer.randomSystemMode.initiative,Initiative uniquement
+onboarding.answer.randomSystemMode.initiativeHelp,"La saisie manuelle reste possible ; le tirage choisi est également proposé dans la fenêtre d’initiative. Les autres lanceurs restent absents de la scène."
+onboarding.answer.randomSystemMode.full,Tous les tirages
+onboarding.answer.randomSystemMode.fullHelp,"Le tirage d’initiative, les tirages disponibles et le lanceur rapide sont proposés dans la scène et le Hub. Leur déclenchement reste manuel."
+onboarding.question.randomSystemIntegration.title,Afficher les tirages dans les scènes ?
+onboarding.question.randomSystemIntegration.help,Les réglages restent toujours accessibles dans l’onglet Tirages du Hub.
+onboarding.answer.randomSystemIntegration.hidden,Non
+onboarding.answer.randomSystemIntegration.hiddenHelp,Les lanceurs restent absents des scènes.
+onboarding.answer.randomSystemIntegration.visible,Oui
+onboarding.answer.randomSystemIntegration.visibleHelp,Les tirages disponibles et le lanceur rapide sont affichés dans les scènes.
 onboarding.random.eyebrow,Tirages de la campagne
 onboarding.random.title,Tirages disponibles
 onboarding.random.help,Sélectionnez les tirages accessibles dès la première scène. Les réglages avancés permettent d’en créer ou d’en modifier.
@@ -276,7 +315,7 @@ sceneTutorial.identity.body,"Le nom et le Type sont essentiels. Le Type pilote l
 sceneTutorial.quickInfo.title,Ajoutez les informations rapides
 sceneTutorial.quickInfo.body,"Ces lignes affichent les valeurs souvent consultées : défense, perception, mouvement ou toute donnée utile à votre table."
 sceneTutorial.indicator.title,Ajoutez un indicateur
-sceneTutorial.indicator.body,Faites défiler jusqu’à Indicateurs puis utilisez le vrai bouton Ajouter un indicateur.
+sceneTutorial.indicator.body,"Les barres de points de vie de Lyra et du gobelin sont déjà visibles dans la scène. Faites défiler jusqu’à Indicateurs puis utilisez le vrai bouton Ajouter un indicateur."
 sceneTutorial.configure.title,Choisissez son fonctionnement
 sceneTutorial.configure.body,"Utilisez un modèle prêt à l’emploi ou choisissez Personnalisé pour créer une barre, des puces, un compteur, une horloge ou des cases."
 sceneTutorial.save.title,Relisez puis validez la fiche

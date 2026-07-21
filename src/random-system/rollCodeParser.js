@@ -17,6 +17,8 @@ class Parser {
     this.inlineSources = new Map();
     this.rolls = [];
     this.choices = [];
+    this.questions = [];
+    this.questionsByName = new Map();
     this.formulas = new Map();
   }
 
@@ -79,6 +81,7 @@ class Parser {
       resultName,
       rolls: this.rolls,
       choices: this.choices,
+      questions: this.questions,
       treatments,
       recursive,
     };

@@ -63,6 +63,18 @@ describe('No-code roll examples', () => {
     expect(definition.components.find((component) => component.id === 'disadvantage-d6')?.multiplier).toBe(-1);
   });
 
+  it('makes the standard dice explosion and reroll independent switches', () => {
+    const definition = buildRandomDefinition(createNoCodeExampleDraft('standard-dice', sources));
+    expect(definition.options).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'exploding', type: 'boolean', defaultValue: false }),
+      expect.objectContaining({ id: 'rerolling', label: 'Relancer les 1', type: 'boolean', defaultValue: false }),
+    ]));
+    expect(definition.pipeline).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: randomPipelineStepTypes.EXPLODE, enabledWhen: { optionId: 'exploding', equals: true } }),
+      expect.objectContaining({ type: randomPipelineStepTypes.REROLL, enabledWhen: { optionId: 'rerolling', equals: true } }),
+    ]));
+  });
+
   it('prepares the D&D5 starter set with the advantage d20 first for initiative', () => {
     const definitions = createDnd5DefaultDefinitions(sources);
     expect(definitions.map((definition) => definition.id)).toEqual([

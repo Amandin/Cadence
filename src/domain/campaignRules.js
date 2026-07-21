@@ -4,6 +4,7 @@ import {
   defaultEqualityRule,
   defaultFlexibleUseInitiative,
   defaultInitiativeBonusEnabled,
+  defaultRandomSystemMode,
   defaultInitiativeOrder,
   defaultInitiativeCostQuickCosts,
   defaultInitiativeCostLimitToCurrent,
@@ -24,6 +25,7 @@ import {
   manualMultipleActionScopes,
   defaultManualMultipleActionScope,
   phaseActionModes,
+  randomSystemModes,
   temporalityModes,
 } from '../constants.js';
 import { normalizeInitiativeCostLimitToCurrent, normalizeInitiativeCostQuickCosts, normalizeInitiativeCostThreshold } from './initiativeCost.js';
@@ -99,6 +101,7 @@ export function normalizeCampaignRules(rules = {}) {
     tiebreakerVisible: rules.tiebreakerVisible ?? defaultTiebreakerVisible,
     tiebreakerLabel: normalizeTiebreakerLabel(rules.tiebreakerLabel),
     initiativeBonusEnabled: rules.initiativeBonusEnabled ?? defaultInitiativeBonusEnabled,
+    randomSystemMode: Object.values(randomSystemModes).includes(rules.randomSystemMode) ? rules.randomSystemMode : defaultRandomSystemMode,
     initiativeBonusRollDefinitionId: cleanId(rules.initiativeBonusRollDefinitionId),
     surpriseImpact: ['limited', 'inactive'].includes(rules.surpriseImpact) ? rules.surpriseImpact : defaultSurpriseImpact,
     surpriseAdvanceOn,
@@ -206,6 +209,7 @@ export function applyInitiativeRules(scene, patch = {}) {
     tiebreakerLabel: next.tiebreakerLabel,
     initiativeBonusEnabled: !!next.initiativeBonusEnabled,
     initiativeBonusRollDefinitionId: next.initiativeBonusRollDefinitionId,
+    randomSystemMode: next.randomSystemMode,
     surpriseImpact: next.surpriseImpact,
     surpriseAdvanceOn: next.surpriseAdvanceOn,
     surpriseDedicatedRound: !!next.surpriseDedicatedRound,

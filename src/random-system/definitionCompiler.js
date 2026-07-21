@@ -111,6 +111,15 @@ function buildComponents(draft, parameters) {
 
 function buildRollOptions(draft) {
   const options = (draft.rollOptions || []).map((option, index) => {
+    if (option.type === randomOptionTypes.BOOLEAN) {
+      return {
+        id: String(option.id || `option-${index + 1}`),
+        label: String(option.label || '').trim() || `Option ${index + 1}`,
+        type: randomOptionTypes.BOOLEAN,
+        defaultValue: !!option.defaultValue,
+        choices: [],
+      };
+    }
     const choices = (option.choices || []).map((choice, choiceIndex) => ({
       value: String(choice.value || `choice-${choiceIndex + 1}`),
       label: String(choice.label || '').trim() || `Choix ${choiceIndex + 1}`,

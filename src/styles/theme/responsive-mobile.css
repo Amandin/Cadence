@@ -770,13 +770,17 @@
   }
 
   .hub-tabs .choice {
-    grid-column: span 2;
+    grid-column: span 3;
     min-height: 44px;
     padding: 9px 5px;
     font-size: 12px;
   }
 
-  .hub-tabs .choice:nth-child(n + 4) {
+  .hub-tabs.has-five-tabs .choice {
+    grid-column: span 2;
+  }
+
+  .hub-tabs.has-five-tabs .choice:nth-child(-n + 2) {
     grid-column: span 3;
   }
 }

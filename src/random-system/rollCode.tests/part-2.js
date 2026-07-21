@@ -8,6 +8,33 @@ import { createCardSourceState } from '.././cardSources.js';
 const sources = createStandardSources();
 
 describe('roll code language', () => {
+  it('offers independent boolean questions for roll operations', () => {
+    const definition = compileRollCode(
+      '1d6! option(explosion, Explosion, oui) r=1 option(relance, Relance)',
+      { id: 'independent-questions', sources },
+    );
+    expect(definition.options).toEqual(expect.arrayContaining([
+      expect.objectContaining({ label: 'Explosion', type: 'boolean', defaultValue: true }),
+      expect.objectContaining({ label: 'Relance', type: 'boolean', defaultValue: false }),
+    ]));
+    const explosionOption = definition.options.find((option) => option.label === 'Explosion');
+    const rerollOption = definition.options.find((option) => option.label === 'Relance');
+    expect(definition.pipeline).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'explode', enabledWhen: { optionId: explosionOption.id, equals: true } }),
+      expect.objectContaining({ type: 'reroll', enabledWhen: { optionId: rerollOption.id, equals: true } }),
+    ]));
+
+    let index = 0;
+    const result = executeRandomDefinition({
+      definition,
+      sources,
+      options: { [explosionOption.id]: false, [rerollOption.id]: true },
+      rng: () => [0, 0.5][index++],
+    });
+    expect(result.draws).toHaveLength(2);
+    expect(result.primaryAggregate.value).toBe(4);
+  });
+
   it('repeats a named formula a calculated number of times without pooling its calls', () => {
     const definition = compileRollCode(
       'simple=2d6kh1; total=[nombre]@simple',

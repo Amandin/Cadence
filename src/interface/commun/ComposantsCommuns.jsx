@@ -120,6 +120,7 @@ function fenetreSuperieure(element) {
 
 export function Fenetre({ title, children, onClose, header, className = '', style, outsideCloseMode = 'single' }) {
   const pointerTypeRef = useRef('');
+  const pointerStartedOutsideRef = useRef(false);
   const sheetRef = useRef(null);
   const previousFocusRef = useRef(null);
   const titleId = useId();
@@ -164,10 +165,12 @@ export function Fenetre({ title, children, onClose, header, className = '', styl
     return () => document.removeEventListener('keydown', gererClavier);
   }, [onClose]);
   const memoriserPointeur = (event) => {
-    if (event.target === event.currentTarget) pointerTypeRef.current = event.pointerType || '';
+    pointerStartedOutsideRef.current = event.target === event.currentTarget;
+    if (pointerStartedOutsideRef.current) pointerTypeRef.current = event.pointerType || '';
   };
   const fermerSurClic = (event) => {
-    if (event.target !== event.currentTarget) return;
+    if (event.target !== event.currentTarget || !pointerStartedOutsideRef.current) return;
+    pointerStartedOutsideRef.current = false;
     if (fermetureExterieureSurClic(outsideCloseMode, typePointeur(event))) onClose?.();
   };
   const fermerSurDoubleClic = (event) => {

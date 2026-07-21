@@ -212,8 +212,6 @@ export function roll(count, source, startToken) {
   this.rolls.push(roll);
   while (this.current().type !== 'eof') {
     const token = this.current();
-    const previous = this.tokens[this.index - 1];
-    if (!this.adjacent(previous, token)) break;
     if (token.value === '!') {
       this.take();
       const optional = this.at('?');
@@ -247,7 +245,13 @@ export function roll(count, source, startToken) {
         }
         break;
       }
-      roll.explode = { optional, trigger, collapse, maxIterations };
+      roll.explode = {
+        optional,
+        trigger,
+        collapse,
+        maxIterations,
+        question: this.at('option') ? this.optionQuestion() : null,
+      };
       continue;
     }
     if (comparisonOperators.has(token.value)) {
@@ -267,12 +271,14 @@ export function roll(count, source, startToken) {
         order: modifier === 'kl' ? randomKeepOrders.LOWEST : randomKeepOrders.HIGHEST,
         count: inline || this.modifierValue('k'),
         optional,
+        question: this.at('option') ? this.optionQuestion() : null,
       };
     } else if (modifier === 'r' || modifier === 'rr') {
       roll.reroll = {
         ...(inline ? { operator: '=', value: inline } : this.condition(modifier)),
         recursive: modifier === 'rr',
         optional,
+        question: this.at('option') ? this.optionQuestion() : null,
       };
     } else {
       if (optional) throw new RollCodeError('Un compteur de succes ne peut pas etre optionnel.', token.start);

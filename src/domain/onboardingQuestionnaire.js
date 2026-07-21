@@ -5,6 +5,7 @@ import {
   manualMultipleActionScopes,
   multipleActionModes,
   phaseActionModes,
+  randomSystemModes,
   temporalityModes,
 } from '../constants.js';
 import { normalizeCampaignRules } from './campaignRules.js';
@@ -46,6 +47,7 @@ export const onboardingDefaultRules = Object.freeze(normalizeCampaignRules({
   tiebreakerVisible: true,
   tiebreakerLabel: defaultTiebreakerLabel,
   initiativeBonusEnabled: true,
+  randomSystemMode: randomSystemModes.INITIATIVE,
   surpriseImpact: 'limited',
   surpriseAdvanceOn: 'activation',
   surpriseDedicatedRound: false,
@@ -106,6 +108,7 @@ export function onboardingAnswersFromRules(source = {}) {
     tiebreakerVisible: !!rules.tiebreakerVisible,
     tiebreakerLabel: rules.tiebreakerLabel || defaultTiebreakerLabel,
     initiativeSource: rules.initiativeBonusEnabled || rules.initiativeBonusRollDefinitionId ? 'roll' : 'fixed',
+    randomSystemIntegrated: rules.randomSystemMode === randomSystemModes.FULL,
   };
 }
 
@@ -190,6 +193,9 @@ export function campaignRulesFromOnboardingAnswers(answers = {}, baseRules = {})
     tiebreakerVisible: usesInitiative ? !!answers.tiebreakerVisible : false,
     tiebreakerLabel: answers.tiebreakerLabel || defaultTiebreakerLabel,
     initiativeBonusEnabled: usesInitiative && !labelInitiative && answers.initiativeSource === 'roll',
+    randomSystemMode: answers.randomSystemIntegrated
+      ? randomSystemModes.FULL
+      : answers.initiativeSource === 'roll' ? randomSystemModes.INITIATIVE : randomSystemModes.MANUAL,
     initiativeBonusRollDefinitionId: '',
     equalityRule: 'strict',
     declarationMode: !!answers.declarationMode && answers.multipleActions !== onboardingMultipleActionModes.AUTOMATIC,

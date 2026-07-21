@@ -34,8 +34,8 @@ function createDnd5ArrivalScene(rules) {
     notes: 'Point de départ : un messager attend dans la salle commune. Les participants et le compteur peuvent être modifiés ou supprimés.',
     globalTracker: { enabled: true, name: 'Alerte', mode: 'clock', current: 0, max: 4 },
     participants: [
-      { id: 'onboarding-dnd5-lyra', name: 'Lyra', type: 'PJ', color: 'blue', symbol: '⚔', initiative: 15, departage: 2, stats: ['CA 15', 'PV 18', 'Perception +4'], statuses: [], trackers: [] },
-      { id: 'onboarding-dnd5-goblin', name: 'Gobelin éclaireur', type: 'Opposant', color: 'red', symbol: '⚑', initiative: 12, departage: 1, stats: ['CA 15', 'PV 7', 'Furtivité +6'], statuses: [], trackers: [] },
+      { id: 'onboarding-dnd5-lyra', name: 'Lyra', kind: 'PJ', color: 'blue', symbol: '⚔', initiative: 15, departage: 2, stats: ['CA 15', 'Perception +4'], statuses: [], trackers: [{ id: 'onboarding-lyra-hp', type: 'bar', name: 'Points de vie', visible: true, current: 18, initial: 18, min: 0, max: 18, step: 1, direction: 'countdown' }] },
+      { id: 'onboarding-dnd5-goblin', name: 'Gobelin éclaireur', kind: 'Opposant', color: 'red', symbol: '⚑', initiative: 12, departage: 1, stats: ['CA 15', 'Furtivité +6'], statuses: [], trackers: [{ id: 'onboarding-goblin-hp', type: 'bar', name: 'Points de vie', visible: true, current: 7, initial: 7, min: 0, max: 7, step: 1, direction: 'countdown' }] },
     ],
   };
 }

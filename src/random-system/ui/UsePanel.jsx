@@ -4,7 +4,7 @@ import {
   combinationTargetDefinition,
   definitionCombination,
 } from '../combinations.js';
-import { directlyExposedDefinitions, exposedTokenContainers } from '../definitionAccess.js';
+import { activeDefinitions, exposedTokenContainers } from '../definitionAccess.js';
 import { randomOptionTypes, randomParameterTypes, randomSourceKinds } from '../engine.js';
 import { ChoiceOptionControl } from './ChoiceOptionControl.jsx';
 import { DefinitionVisual } from './DefinitionVisual.jsx';
@@ -31,10 +31,6 @@ function isCardDefinition(definition, cardSourceIds) {
     component.sourceKind === 'cards'
     || (component.source?.kind === 'fixed' && cardSourceIds.has(component.source.value))
   ));
-}
-
-function resourceAvailability(definition) {
-  return definition.active !== false;
 }
 
 function ResourceList({ resources, resourceKind, selectedId, onSelect }) {
@@ -98,6 +94,7 @@ export const DefinitionForm = memo(function DefinitionForm({
   onResult,
   hideRun = false,
   runAccessory = null,
+  parameterComparator,
 }) {
   const [inputs, setInputs] = useState(() => initialInputs(definition, { parameters: initialParameters, options: initialOptions }));
   const [additionalInputs, setAdditionalInputs] = useState([]);
@@ -187,6 +184,11 @@ export const DefinitionForm = memo(function DefinitionForm({
     )));
   };
   const inputInstances = definition.recursive ? [inputs, ...additionalInputs] : [inputs];
+  const visibleParameters = useMemo(() => (
+    parameterComparator
+      ? [...targetDefinition.parameters].sort(parameterComparator)
+      : targetDefinition.parameters
+  ), [parameterComparator, targetDefinition.parameters]);
   const run = () => {
     try {
       setError('');
@@ -231,8 +233,8 @@ export const DefinitionForm = memo(function DefinitionForm({
                 )}
               </div>
             )}
-            <div className="rs-input-grid">
-              {targetDefinition.parameters.map((parameter) => (
+            <div className={`rs-input-grid rs-input-count-${Math.min(4, visibleParameters.length)}`}>
+              {visibleParameters.map((parameter) => (
                 <label className="field" key={parameter.id}>
                   {parameter.label}
                   {parameter.type === randomParameterTypes.SOURCE ? (
@@ -356,22 +358,19 @@ export function CardSourceForm({ source, sourceState, actions }) {
   );
 }
 
-export function UsePanel({ state, actions, requiredDefinitionIds = [], requiredSourceIds = [] }) {
+export function UsePanel({ state, actions, resourcePickerAccessory = null }) {
   const cardSourceIds = useMemo(
     () => new Set((state.sources || []).filter((source) => source.kind === randomSourceKinds.CARDS).map((source) => source.id)),
     [state.sources],
   );
   const activeRollDefinitions = useMemo(() => {
-    const requiredIds = new Set(requiredDefinitionIds.filter(Boolean));
-    return (state.definitions || [])
-      .filter((definition) => directlyExposedDefinitions([definition]).length || requiredIds.has(definition.id))
+    return activeDefinitions(state.definitions)
       .filter((definition) => !isCardDefinition(definition, cardSourceIds))
-      .map((definition) => ({ ...definition, available: resourceAvailability(definition) }));
-  }, [cardSourceIds, requiredDefinitionIds, state.definitions]);
+      .map((definition) => ({ ...definition, available: true }));
+  }, [cardSourceIds, state.definitions]);
   const [pendingResult, setPendingResult] = useState(null);
   const [selectedDefinitionId, setSelectedDefinitionId] = useState(activeRollDefinitions[0]?.id || '');
   const cardSources = useMemo(() => {
-    const requiredIds = new Set(requiredSourceIds.filter(Boolean));
     return (state.sources || [])
       .filter((source) => source.kind === randomSourceKinds.CARDS)
       .map((source) => {
@@ -380,10 +379,11 @@ export function UsePanel({ state, actions, requiredDefinitionIds = [], requiredS
         ));
         return {
           ...source,
-          available: requiredIds.has(source.id) || !linkedDefinitions.length || linkedDefinitions.some(resourceAvailability),
+          available: !linkedDefinitions.length || linkedDefinitions.some((definition) => definition.active !== false),
         };
-      });
-  }, [requiredSourceIds, state.definitions, state.sources]);
+      })
+      .filter((source) => source.available);
+  }, [state.definitions, state.sources]);
   const [resourceKind, setResourceKind] = useState(() => (
     activeRollDefinitions.some((definition) => definition.available !== false)
       ? 'definitions'
@@ -424,10 +424,13 @@ export function UsePanel({ state, actions, requiredDefinitionIds = [], requiredS
   return (
     <div className="rs-use-layout">
       <aside className="rs-resource-picker">
-        <div className="rs-segmented">
-          <button type="button" className={resourceKind === 'definitions' ? 'selected' : ''} onClick={() => setResourceKind('definitions')}><span aria-hidden="true"><RandomIcon name={resourceKindMeta.definitions.icon} /></span><span>{t(resourceKindMeta.definitions.labelKey)}</span></button>
-          {cardSources.length > 0 && <button type="button" className={resourceKind === 'cards' ? 'selected' : ''} onClick={() => setResourceKind('cards')}><span aria-hidden="true"><RandomIcon name={resourceKindMeta.cards.icon} /></span><span>{t(resourceKindMeta.cards.labelKey)}</span></button>}
-          {tokenContainers.length > 0 && <button type="button" className={resourceKind === 'tokens' ? 'selected' : ''} onClick={() => setResourceKind('tokens')}><span aria-hidden="true"><RandomIcon name={resourceKindMeta.tokens.icon} /></span><span>{t(resourceKindMeta.tokens.labelKey)}</span></button>}
+        <div className="rs-resource-picker-head">
+          <div className="rs-segmented">
+            <button type="button" className={resourceKind === 'definitions' ? 'selected' : ''} onClick={() => setResourceKind('definitions')}><span aria-hidden="true"><RandomIcon name={resourceKindMeta.definitions.icon} /></span><span>{t(resourceKindMeta.definitions.labelKey)}</span></button>
+            {cardSources.length > 0 && <button type="button" className={resourceKind === 'cards' ? 'selected' : ''} onClick={() => setResourceKind('cards')}><span aria-hidden="true"><RandomIcon name={resourceKindMeta.cards.icon} /></span><span>{t(resourceKindMeta.cards.labelKey)}</span></button>}
+            {tokenContainers.length > 0 && <button type="button" className={resourceKind === 'tokens' ? 'selected' : ''} onClick={() => setResourceKind('tokens')}><span aria-hidden="true"><RandomIcon name={resourceKindMeta.tokens.icon} /></span><span>{t(resourceKindMeta.tokens.labelKey)}</span></button>}
+            {resourcePickerAccessory && <span className="rs-resource-picker-accessory">{resourcePickerAccessory}</span>}
+          </div>
         </div>
         <div className="rs-resource-list">
           <ResourceList

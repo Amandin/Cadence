@@ -1,6 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { phasesAttendRelanceInitiative } from './actions/tempoState.js';
-import { temporalityModes } from './constants.js';
+import { randomSystemModes, temporalityModes } from './constants.js';
 import { isInitiativeCostMode, rulesAllowMultipleSlots } from './domain/initiativeCost.js';
 import { initiativeMatchesMode } from './domain/initiativeTextOrder.js';
 import { activeGlobalTrackerThresholds, globalTrackerTimerState } from './domain/globalTracker.js';
@@ -678,11 +678,14 @@ export default function App() {
       dark={dark}
       performanceState={{ preference: performancePreference, level: performanceLevel, automatic: automaticPerformanceLow }}
       themeState={themeState}
+      randomSystemIntegrated={campaignRules.randomSystemMode === randomSystemModes.FULL}
       onClose={fermerOptions}
       onPerformancePreferenceChange={setPerformancePreference}
       onThemeModeChange={actions.setThemeMode}
+      onRandomSystemIntegratedChange={(randomSystemIntegrated) => { const randomSystemMode = randomSystemIntegrated ? randomSystemModes.FULL : campaignRules.initiativeBonusEnabled ? randomSystemModes.INITIATIVE : randomSystemModes.MANUAL; actions.updateCampaignInitiativeRules({ randomSystemMode }); }}
       onReplayTutorial={() => { fermerOptions(); updateSceneTutorial({ active: true, step: sceneTutorialSteps.ADD_PARTICIPANT }); setCurrentView('scene'); }}
       onResetCadence={askResetCadence}
+      onOpenRandomSystem={campaignRules.randomSystemMode !== randomSystemModes.FULL ? () => { try { window.sessionStorage.setItem('cadence:random-system-revealed', '1'); } catch { /* Accès temporaire pour la session courante. */ } window.dispatchEvent(new Event('cadence:random-system-reveal')); fermerOptions(); setCurrentView('hub'); } : undefined}
     />
   ) : null;
 
@@ -741,7 +744,7 @@ export default function App() {
       onModifierNotesReserve={modifierNotesReserve}
       onAjouterParticipant={openAddCharacter}
       onSaisirInitiatives={openInitiativeEntry}
-      onOuvrirLanceurDes={ouvrirLanceurDes}
+      onOuvrirLanceurDes={campaignRules.randomSystemMode === randomSystemModes.FULL ? ouvrirLanceurDes : undefined}
       onOuvrirMenu={ouvrirMenuScene}
       tutorial={{ ...sceneTutorial, onPrevious: () => updateSceneTutorial((current) => ({ active: true, step: Math.max(sceneTutorialSteps.IDENTITY, current.step - 1) })), onNext: () => updateSceneTutorial((current) => ({ active: true, step: Math.min(sceneTutorialSteps.ADD_INDICATOR, current.step + 1) })), onFinish: finishSceneTutorial }}
     />

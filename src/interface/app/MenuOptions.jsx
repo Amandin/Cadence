@@ -39,7 +39,7 @@ export function ThemeModeToggle({ themeState, onThemeModeChange, ariaLabel = t('
   );
 }
 
-export function OptionsContent({ performanceState, themeState, onPerformancePreferenceChange, onThemeModeChange, onReplayTutorial, onResetCadence }) {
+export function OptionsContent({ performanceState, themeState, randomSystemIntegrated, onPerformancePreferenceChange, onThemeModeChange, onRandomSystemIntegratedChange, onReplayTutorial, onResetCadence }) {
   const actualThemeMode = selectedThemeMode(themeState);
   const [themeMode, setThemeMode] = useState(actualThemeMode);
   const dark = !!themeState?.dark;
@@ -83,6 +83,8 @@ export function OptionsContent({ performanceState, themeState, onPerformancePref
         </label>
       </OptionsSection>
 
+      {typeof randomSystemIntegrated === 'boolean' && <OptionsSection title={t('options.randomSystem.integrationTitle')} help={t('options.randomSystem.integrationHelp')}><div className="options-random-mode-actions" role="group" aria-label={t('options.randomSystem.integrationTitle')}><button type="button" className={`choice ${!randomSystemIntegrated ? 'selected' : ''}`} aria-pressed={!randomSystemIntegrated} onClick={() => onRandomSystemIntegratedChange?.(false)}>{t('onboarding.answer.randomSystemIntegration.hidden')}</button><button type="button" className={`choice ${randomSystemIntegrated ? 'selected' : ''}`} aria-pressed={randomSystemIntegrated} onClick={() => onRandomSystemIntegratedChange?.(true)}>{t('onboarding.answer.randomSystemIntegration.visible')}</button></div></OptionsSection>}
+
       {(onReplayTutorial || onResetCadence) && (
         <OptionsSection title={t('options.guidance.title')} help={t('options.guidance.help')}>
           <div className="options-guidance-actions">
@@ -95,10 +97,10 @@ export function OptionsContent({ performanceState, themeState, onPerformancePref
   );
 }
 
-export function MenuOptions({ dark, performanceState, themeState, onClose, onPerformancePreferenceChange, onThemeModeChange, onReplayTutorial, onResetCadence }) {
+export function MenuOptions({ dark, performanceState, themeState, randomSystemIntegrated, onClose, onPerformancePreferenceChange, onThemeModeChange, onRandomSystemIntegratedChange, onReplayTutorial, onResetCadence }) {
   return (
     <Fenetre title={t('options.title')} onClose={onClose} className={`options-menu ${dark ? 'dark menu-dark' : ''}`}>
-      <OptionsContent performanceState={performanceState} themeState={themeState} onPerformancePreferenceChange={onPerformancePreferenceChange} onThemeModeChange={onThemeModeChange} onReplayTutorial={onReplayTutorial} onResetCadence={onResetCadence} />
+      <OptionsContent performanceState={performanceState} themeState={themeState} randomSystemIntegrated={randomSystemIntegrated} onPerformancePreferenceChange={onPerformancePreferenceChange} onThemeModeChange={onThemeModeChange} onRandomSystemIntegratedChange={onRandomSystemIntegratedChange} onReplayTutorial={onReplayTutorial} onResetCadence={onResetCadence} />
     </Fenetre>
   );
 }

@@ -16,6 +16,7 @@ describe('onboarding questionnaire', () => {
       tiebreakerVisible: true,
       tiebreakerLabel: 'Dextérité',
       initiativeSource: 'roll',
+      randomSystemIntegrated: false,
     });
   });
 
@@ -139,5 +140,17 @@ describe('onboarding questionnaire', () => {
     }, onboardingDefaultRules);
 
     expect(onboardingAnswersFromRules(rules).initiativeSource).toBe('roll');
+  });
+
+  it('persists the selected RandomSystem integration level', () => {
+    const rules = campaignRulesFromOnboardingAnswers({
+      organization: 'classique',
+      multipleActions: 'never',
+      initiativeFormat: 'descending',
+      initiativeSource: 'fixed',
+      randomSystemIntegrated: false,
+    });
+    expect(rules.randomSystemMode).toBe('manual');
+    expect(onboardingAnswersFromRules(rules).randomSystemIntegrated).toBe(false);
   });
 });

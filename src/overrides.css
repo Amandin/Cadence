@@ -172,6 +172,17 @@
   gap: 12px;
 }
 
+.options-random-mode-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+}
+
+.options-random-mode-actions .choice {
+  min-height: 44px;
+  padding: 9px 12px;
+}
+
 .tracker-title {
   display: flex;
   align-items: center;

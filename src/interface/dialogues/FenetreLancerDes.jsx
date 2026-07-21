@@ -18,6 +18,44 @@ import '../../random-system/styles/choice-controls.css';
 import '../../random-system/styles/tokens.css';
 import './FenetreLancerDes.css';
 
+const QUICK_ROLL_MEMORY_KEY = 'cadence:quick-roll:last:v1';
+
+function readQuickRollMemory() {
+  try {
+    const value = JSON.parse(window.localStorage.getItem(QUICK_ROLL_MEMORY_KEY) || 'null');
+    return value && typeof value === 'object' ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeQuickRollMemory(value) {
+  try {
+    window.localStorage.setItem(QUICK_ROLL_MEMORY_KEY, JSON.stringify(value));
+  } catch {
+    // La mémorisation du lanceur est optionnelle si le stockage est indisponible.
+  }
+}
+
+function modifierParameterIds(definition = {}) {
+  return ((definition || {}).parameters || [])
+    .filter((parameter) => parameter.id === 'modifier' || /modificateur/i.test(parameter.label || ''))
+    .map((parameter) => parameter.id);
+}
+
+function quickParameterRank(parameter = {}) {
+  const description = `${parameter.id || ''} ${parameter.label || ''}`.toLocaleLowerCase('fr');
+  if (/keep.*count|count.*keep|résultats? gardés?|dés? gardés?/.test(description)) return 3;
+  if (parameter.id === 'modifier' || /modificateur/.test(description)) return 4;
+  if (parameter.type === 'source') return 2;
+  if (/count|quantité|nombre|dés? lancés?/.test(description)) return 1;
+  return 3;
+}
+
+function quickParameterComparator(left, right) {
+  return quickParameterRank(left) - quickParameterRank(right);
+}
+
 function drawValue(draw = {}) {
   return draw.outcome?.symbol || draw.outcome?.label || draw.calculatedValue;
 }
@@ -169,6 +207,7 @@ export function QuickRollResult({ result, rolling = false, onDecision }) {
 
 export function FenetreLancerDes({ randomSystem, quickRollInfo = null, onFermer }) {
   const [showAllRolls, setShowAllRolls] = useState(false);
+  const [lastQuickRoll] = useState(readQuickRollMemory);
   const allDefinitions = useMemo(
     () => activeDefinitions(randomSystem?.state?.definitions || []),
     [randomSystem?.state?.definitions],
@@ -189,14 +228,23 @@ export function FenetreLancerDes({ randomSystem, quickRollInfo = null, onFermer 
     () => (quickRollInfo || showAllRolls ? allTokenContainers : quickTokenContainers(allTokenContainers)),
     [allTokenContainers, quickRollInfo, showAllRolls],
   );
-  const [selectedId, setSelectedId] = useState(quickRollInfo?.quickRollDefinitionId || definitions[0]?.id || (tokenContainers[0] ? tokenContainerResourceId(tokenContainers[0].id) : '__expert__'));
-  const [expertCode, setExpertCode] = useState('1d20');
+  const [selectedId, setSelectedId] = useState(quickRollInfo?.quickRollDefinitionId || lastQuickRoll?.selectedId || definitions[0]?.id || (tokenContainers[0] ? tokenContainerResourceId(tokenContainers[0].id) : '__expert__'));
+  const [expertCode, setExpertCode] = useState(lastQuickRoll?.expertCode || '1d20');
   const [adjustmentCode, setAdjustmentCode] = useState('');
   const [adjustmentOpen, setAdjustmentOpen] = useState(false);
-  const [selectedInputs, setSelectedInputs] = useState({ parameters: {}, options: {} });
+  const [selectedInputs, setSelectedInputs] = useState(lastQuickRoll?.inputs || { parameters: {}, options: {} });
   const [result, setResult] = useState(null);
   const quickRollLaunchedRef = useRef(false);
+  const rememberedRollAppliedRef = useRef(false);
   const selected = definitions.find((definition) => definition.id === selectedId) || null;
+  const modifierIds = useMemo(() => modifierParameterIds(selected), [selected]);
+  const formParameters = useMemo(() => {
+    const parameters = { ...(selectedInputs.parameters || {}) };
+    modifierIds.forEach((id) => {
+      if (!Object.prototype.hasOwnProperty.call(parameters, id)) parameters[id] = '';
+    });
+    return parameters;
+  }, [modifierIds, selectedInputs.parameters]);
   const selectedTokenContainer = tokenContainers.find((container) => container.id === tokenContainerIdFromResourceId(selectedId)) || null;
   const expertMode = selectedId === '__expert__';
   const expertCompilation = useMemo(() => {
@@ -235,6 +283,10 @@ export function FenetreLancerDes({ randomSystem, quickRollInfo = null, onFermer 
     setAdjustmentOpen(false);
     setSelectedInputs({ parameters: {}, options: {} });
   };
+  const rememberQuickRoll = (next = {}) => {
+    if (quickRollInfo) return;
+    writeQuickRollMemory({ selectedId, inputs: selectedInputs, expertCode, ...next });
+  };
   const openAdjustment = () => {
     if (!selected) return;
     setAdjustmentCode(definitionToRollCode(selected, selectedInputs));
@@ -244,6 +296,7 @@ export function FenetreLancerDes({ randomSystem, quickRollInfo = null, onFermer 
   const run = (definitionId, parameters, options) => {
     const next = randomSystem?.actions?.runDefinition?.(definitionId, parameters, options);
     setResult(next);
+    rememberQuickRoll({ selectedId: definitionId, inputs: { parameters, options } });
     return next;
   };
   const toggleRollScope = () => {
@@ -260,6 +313,7 @@ export function FenetreLancerDes({ randomSystem, quickRollInfo = null, onFermer 
     if (!expertCompilation.definition) return null;
     const next = randomSystem?.actions?.runAdHocDefinition?.(expertCompilation.definition, parameters, options, instances);
     setResult(next);
+    rememberQuickRoll({ selectedId: '__expert__', inputs: { parameters, options }, expertCode });
     return next;
   };
   const runAdjustment = (_definitionId, parameters, options, instances) => {
@@ -281,6 +335,21 @@ export function FenetreLancerDes({ randomSystem, quickRollInfo = null, onFermer 
     run(definitionId, quickRollInfo.quickRollParameters || {}, quickRollInfo.quickRollOptions || {});
     return undefined;
   }, [definitions, quickRollInfo]);
+
+  useEffect(() => {
+    if (quickRollInfo || rememberedRollAppliedRef.current || !lastQuickRoll?.selectedId) return;
+    const knownDefinition = allDefinitions.some((definition) => definition.id === lastQuickRoll.selectedId);
+    const knownContainer = allTokenContainers.some((container) => tokenContainerResourceId(container.id) === lastQuickRoll.selectedId);
+    const known = knownDefinition
+      || knownContainer
+      || lastQuickRoll.selectedId === '__expert__';
+    if (!known) return;
+    rememberedRollAppliedRef.current = true;
+    if (!definitions.some((definition) => definition.id === lastQuickRoll.selectedId) && knownDefinition) setShowAllRolls(true);
+    if (!tokenContainers.some((container) => tokenContainerResourceId(container.id) === lastQuickRoll.selectedId) && knownContainer) setShowAllRolls(true);
+    setSelectedId(lastQuickRoll.selectedId);
+    setSelectedInputs(lastQuickRoll.inputs || { parameters: {}, options: {} });
+  }, [allDefinitions, allTokenContainers, definitions, lastQuickRoll, quickRollInfo, tokenContainers]);
 
   return (
     <Fenetre title={quickRollInfo?.characterName ? `${quickRollInfo.characterName} — ${quickRollInfo.label}` : t('random.quick.title')} onClose={onFermer} className="quick-roll-dialog">
@@ -328,6 +397,9 @@ export function FenetreLancerDes({ randomSystem, quickRollInfo = null, onFermer 
                 onRun={run}
                 showHeader={false}
                 onInputsChange={setSelectedInputs}
+                initialParameters={formParameters}
+                initialOptions={selectedInputs.options}
+                parameterComparator={quickParameterComparator}
                 runAccessory={<button type="button" className="small-btn quick-roll-adjust-button" onClick={openAdjustment} aria-label={t('random.quick.adjust')} title={t('random.quick.adjust')}>{'{ }'}</button>}
               />
             )}

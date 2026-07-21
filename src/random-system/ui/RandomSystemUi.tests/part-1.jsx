@@ -142,7 +142,7 @@ describe('RandomSystem definition UI', () => {
     expect(html).toContain('Cartes');
   });
 
-  it('keeps exposed inactive definitions visible but unavailable in their own category', () => {
+  it('keeps disabled rolls out of direct use while retaining active advanced rolls', () => {
     const state = ensureRandomKitInState(createDefaultRandomSystemState(), 'kit-d6-pool');
     const html = renderToStaticMarkup(
       <UsePanel
@@ -151,7 +151,7 @@ describe('RandomSystem definition UI', () => {
           definitions: state.definitions.map((definition) => (
             definition.id === 'kit-d6-pool-successes'
               ? { ...definition, active: false }
-              : definition
+              : definition.id === 'kit-d6-pool-sum' ? { ...definition, quickAccess: false } : definition
           )),
         }}
         actions={actions}
@@ -159,8 +159,8 @@ describe('RandomSystem definition UI', () => {
     );
 
     expect(html).toContain('Pool de d6');
-    expect(html).toContain('Désactivés');
-    expect(html).toContain('disabled=""');
+    expect(html).not.toContain('Désactivés');
+    expect(html).not.toContain('disabled=""');
     expect(html).toContain('Pool de d6 · total additionné');
   });
 

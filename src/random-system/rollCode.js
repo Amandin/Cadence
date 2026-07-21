@@ -148,6 +148,10 @@ function combineEnabledWhen(...values) {
   return conditions.length === 1 ? conditions[0] : conditions;
 }
 
+function questionEnabledWhen(question) {
+  return question ? { optionId: question.optionId, equals: true } : null;
+}
+
 export function compileRollCode(code, { id = 'coded-roll', name = 'Jet code', sources = [], exposed = true, active = true, visualId } = {}) {
   const program = parseRollCode(code);
   const references = collectExpressionReferences(program.expression);
@@ -202,7 +206,13 @@ export function compileRollCode(code, { id = 'coded-roll', name = 'Jet code', so
     type: randomOptionTypes.CHOICE,
     defaultValue: choice.defaultValue,
     choices: choice.choices.map((item) => ({ value: item.value, label: item.label })),
-  }));
+  })).concat((program.questions || []).map((question) => ({
+    id: question.optionId,
+    label: question.label,
+    type: randomOptionTypes.BOOLEAN,
+    defaultValue: question.defaultValue,
+    choices: [],
+  })));
   const pipeline = [];
   const treatmentComponentIds = (treatment) => {
     if (!treatment.targets?.length) return [];
@@ -223,6 +233,7 @@ export function compileRollCode(code, { id = 'coded-roll', name = 'Jet code', so
       label: roll.reroll.recursive ? 'Relancer recursivement' : 'Relancer',
       enabledWhen: combineEnabledWhen(
         roll.enabledWhen,
+        questionEnabledWhen(roll.reroll.question),
       ),
     });
     if (roll.explode) pipeline.push({
@@ -237,6 +248,7 @@ export function compileRollCode(code, { id = 'coded-roll', name = 'Jet code', so
       label: 'Faire exploser',
       enabledWhen: combineEnabledWhen(
         roll.enabledWhen,
+        questionEnabledWhen(roll.explode.question),
       ),
     });
     if (roll.keep) pipeline.push({
@@ -249,7 +261,7 @@ export function compileRollCode(code, { id = 'coded-roll', name = 'Jet code', so
       perRepeat: roll.perRepeat === true,
       decision: roll.keep.optional ? 'after-roll' : undefined,
       label: roll.keep.order === randomKeepOrders.LOWEST ? 'Conserver les plus faibles' : 'Conserver les plus eleves',
-      enabledWhen: roll.enabledWhen || null,
+      enabledWhen: combineEnabledWhen(roll.enabledWhen, questionEnabledWhen(roll.keep.question)),
     });
     roll.successes.forEach((success, index) => pipeline.push({
       id: `success-${roll.id}-${index + 1}`,

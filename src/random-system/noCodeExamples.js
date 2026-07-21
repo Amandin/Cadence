@@ -7,6 +7,7 @@ import {
   createDefinitionDraft,
 } from './definitionBuilder.js';
 import { standardSourceIds } from './defaults.js';
+import { randomOptionTypes } from './engine.js';
 
 export const noCodeExampleCatalog = Object.freeze([
   { id: 'd20-advantage', name: 'd20 avec avantage et désavantage', description: 'Trois modes d20 avec modificateur demandé au lancer.' },
@@ -27,6 +28,10 @@ export const dnd5InitiativeDefinitionId = 'default-dnd5-d20-advantage';
 
 function option(id, label, defaultValue, choices, control = choices.length === 2 ? 'switch' : 'slider') {
   return { id, label, defaultValue, control, choices };
+}
+
+function toggleOption(id, label, defaultValue = false) {
+  return { id, label, type: randomOptionTypes.BOOLEAN, defaultValue };
 }
 
 function condition(optionId, equals) {
@@ -112,11 +117,7 @@ function configureCosmere(draft, sources) {
 function configureStandardDice(draft) {
   draft.visualId = 'dice-pool';
   draft.recursive = true;
-  draft.rollOptions = [option('mode', 'Règle spéciale (une seule)', 'standard', [
-    { value: 'standard', label: 'Jet normal' },
-    { value: 'explosion', label: 'Dés explosifs' },
-    { value: 'reroll', label: 'Relance des 1' },
-  ])];
+  draft.rollOptions = [toggleOption('rerolling', 'Relancer les 1')];
   const component = draft.components[0];
   component.id = 'dice';
   component.label = 'Dés';
@@ -131,14 +132,13 @@ function configureStandardDice(draft) {
     standardSourceIds.D20,
   ];
   component.countMode = builderModes.PROMPT;
-  component.explosionMode = builderExplosionModes.ALWAYS;
-  component.explosionEnabledWhen = condition('mode', 'explosion');
+  component.explosionMode = builderExplosionModes.OPTION;
   component.reroll = {
     enabled: true,
     operator: 'eq',
     value: 1,
     maxIterations: 1,
-    enabledWhen: condition('mode', 'reroll'),
+    enabledWhen: condition('rerolling', true),
   };
   enableRequestedModifier(draft);
 }

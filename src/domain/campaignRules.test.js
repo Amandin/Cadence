@@ -99,6 +99,14 @@ describe('campaign rules', () => {
     });
   });
 
+  it('keeps the Random System scene integration setting', () => {
+    expect(applyInitiativeRules({ participants: [], reserve: [] }, {
+      randomSystemMode: 'initiative',
+    })).toMatchObject({
+      randomSystemMode: 'initiative',
+    });
+  });
+
   it('keeps the flexible mode initiative display preference', () => {
     expect(applyInitiativeRules({ participants: [], reserve: [] }, {
       temporalite: 'souple',

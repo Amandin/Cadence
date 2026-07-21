@@ -69,8 +69,17 @@ describe('FirstRunOnboarding', () => {
 
   it('places the rules summary after the roll setup on first run', () => {
     const steps = questionnaireSteps(onboardingAnswersFromRules(onboardingDefaultRules), true);
+    expect(steps.map((step) => step.id)).toContain('initiativeAndRandomSystem');
+    expect(steps.map((step) => step.id)).not.toContain('initiativeSource');
+    expect(steps.map((step) => step.id)).not.toContain('randomSystemIntegrated');
     expect(steps.slice(-2).map((step) => step.id)).toEqual(['randomSetup', 'summary']);
     expect(questionnaireSteps(onboardingAnswersFromRules(onboardingDefaultRules), false).at(-1).id).toBe('summary');
+  });
+
+  it('skips roll setup when RandomSystem is disabled', () => {
+    const answers = { ...onboardingAnswersFromRules(onboardingDefaultRules), initiativeSource: 'fixed', randomSystemIntegrated: false };
+    expect(questionnaireSteps(answers, true).map((step) => step.id)).not.toContain('randomSetup');
+    expect(questionnaireSteps(answers, true).at(-1).id).toBe('summary');
   });
 
   it('lists available rolls and keeps advanced configuration optional', () => {
@@ -114,5 +123,27 @@ describe('FirstRunOnboarding', () => {
     expect(html).toContain('d20 avec avantage et désavantage');
     expect(html).toContain('Jet de dés personnalisable');
     expect(html).toContain(`value="${dnd5InitiativeDefinitionId}" selected=""`);
+  });
+
+  it('offers inactive rolls for initiative when only initiative rolls are managed', () => {
+    const state = createDefaultRandomSystemState();
+    state.definitions = [
+      { id: 'active-roll', name: 'Jet actif', exposed: true, active: true },
+      { id: 'inactive-roll', name: 'Jet disponible pour initiative', exposed: true, active: false },
+      { id: 'internal-roll', name: 'Jet interne', exposed: false, active: false },
+    ];
+    const html = renderToStaticMarkup(
+      <OnboardingRandomSetup
+        randomSystem={{ state, actions: {} }}
+        initiativeRequested
+        initiativeOnly
+        initiativeRollDefinitionId="inactive-roll"
+      />,
+    );
+
+    expect(html).toContain('Jet actif');
+    expect(html).toContain('Jet disponible pour initiative');
+    expect(html).toContain('value="inactive-roll" selected=""');
+    expect(html).not.toContain('Jet interne');
   });
 });

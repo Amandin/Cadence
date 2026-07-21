@@ -252,6 +252,56 @@
   padding: 12px;
 }
 
+.rs-resource-picker-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.rs-resource-picker-head .rs-segmented {
+  flex: 1 1 auto;
+  min-width: 0;
+  position: relative;
+}
+
+.rs-resource-picker-accessory {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  display: inline-flex;
+  z-index: 2;
+}
+
+.rs-resource-picker .random-statistics-btn {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 30px;
+  min-inline-size: 30px;
+  block-size: 30px;
+  min-block-size: 30px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--ui-primary-contrast) 78%, var(--ui-primary));
+  border-radius: 50%;
+  background: var(--ui-primary);
+  color: var(--ui-primary-contrast);
+  box-shadow: none;
+}
+
+.rs-resource-picker .random-statistics-btn:hover,
+.rs-resource-picker .random-statistics-btn:focus-visible {
+  background: var(--ui-primary-strong);
+}
+
+.rs-resource-picker .random-statistics-btn svg {
+  inline-size: 17px;
+  block-size: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
 .rs-resource-picker .rs-segmented {
   display: grid;
   width: 100%;
@@ -598,6 +648,10 @@
     position: static;
   }
 
+  .rs-resource-picker-head {
+    align-items: flex-start;
+  }
+
   .rs-resource-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -627,6 +681,10 @@
 
   .rs-resource-picker {
     position: static;
+  }
+
+  .rs-resource-picker-head {
+    align-items: flex-start;
   }
 
   .rs-resource-list {

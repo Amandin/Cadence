@@ -315,6 +315,42 @@ export function userChoice() {
   return node;
 }
 
+export function optionQuestion() {
+  const start = this.take();
+  this.expect('(', 'Â« ( Â» attendu apres option.');
+  const name = this.expectIdentifier('Nom de l’option attendu.');
+  const parts = [];
+  let defaultValue = false;
+  while (this.at(',')) {
+    this.take();
+    const part = this.expectIdentifier('Libellé ou valeur par defaut attendu.');
+    parts.push(part);
+  }
+  this.expect(')', 'Â« ) Â» attendu apres option.');
+  const lastPart = parts.at(-1);
+  if (lastPart && ['oui', 'non'].includes(lastPart.value.toLocaleLowerCase('fr'))) {
+    defaultValue = lastPart.value.toLocaleLowerCase('fr') === 'oui';
+    parts.pop();
+  }
+  const label = (parts.length ? parts : [name]).map((part) => part.value.replaceAll('-', ' ')).join(' ');
+  const existing = this.questionsByName.get(name.value);
+  if (existing) {
+    if (existing.label !== label || existing.defaultValue !== defaultValue) {
+      throw new RollCodeError(`Option contradictoire : ${name.value}`, start.start);
+    }
+    return existing;
+  }
+  const question = {
+    optionId: `code-question-${this.questions.length + 1}`,
+    name: name.value,
+    label,
+    defaultValue,
+  };
+  this.questions.push(question);
+  this.questionsByName.set(name.value, question);
+  return question;
+}
+
 export function numericReference() {
   this.expect('[', '« [ » attendu.');
   const token = this.expectIdentifier('Nom de variable numerique attendu.');

@@ -1,4 +1,4 @@
-export const APP_VERSION = '0.17.1';
+export const APP_VERSION = '0.17.25';
 export const STORAGE_KEY = 'cadence:campaign:v1';
 export const TEMPLATE_STORAGE_KEY = 'cadence:templates:v1';
 
@@ -17,6 +17,8 @@ export const defaultCategoryOrder = ['PJ', 'Compagnon', 'Élite', 'Allié', 'Opp
 export const defaultTiebreakerVisible = true;
 export const defaultTiebreakerLabel = 'Dextérité';
 export const defaultInitiativeBonusEnabled = true;
+export const randomSystemModes = { MANUAL: 'manual', INITIATIVE: 'initiative', FULL: 'full' };
+export const defaultRandomSystemMode = randomSystemModes.FULL;
 export const defaultFlexibleUseInitiative = true;
 export const surpriseImpacts = { LIMITED: 'limited', INACTIVE: 'inactive' };
 export const defaultSurpriseImpact = surpriseImpacts.LIMITED;

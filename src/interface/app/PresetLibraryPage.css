@@ -1,0 +1,22 @@
+.preset-library-page { width: min(100% - 32px, 1120px); margin: 24px auto; display: grid; gap: 16px; }
+.preset-library-header { display: flex; align-items: start; justify-content: space-between; gap: 16px; }
+.preset-library-header h2 { margin: 4px 0; font-family: var(--font-title); }
+.preset-library-header p { max-width: 680px; margin: 0; }
+.preset-library-tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+.preset-library-tabs button { min-height: 38px; padding: 8px 12px; border: 1px solid var(--ui-border); border-radius: var(--radius-control); background: var(--ui-surface-soft); color: var(--ui-text); font: 800 13px var(--font-ui); }
+.preset-library-tabs button.selected { border-color: var(--ui-accent); background: color-mix(in srgb, var(--ui-accent) 18%, var(--ui-surface)); }
+.preset-library-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
+.preset-library-card { display: grid; align-content: start; gap: 12px; min-height: 206px; padding: 16px; border: 1px solid var(--ui-border); border-radius: var(--radius-card); background: var(--ui-surface); box-shadow: var(--ui-shadow-surface); }
+.preset-library-card > div:first-child > span { color: var(--ui-accent); font: 900 11px var(--font-ui); letter-spacing: .06em; text-transform: uppercase; }
+.preset-library-card h3 { margin: 5px 0; font: 900 18px/1.1 var(--font-title); }
+.preset-library-card p { margin: 0; color: var(--ui-muted); font: 700 12px/1.4 var(--font-ui); }
+.preset-library-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.preset-library-tags span { padding: 5px 8px; border: 1px solid var(--ui-border); border-radius: 999px; font: 800 11px var(--font-ui); }
+.preset-library-card .small-btn { margin-top: auto; width: 100%; }
+.preset-library-code { display: grid; gap: 8px; }
+.preset-library-code summary { cursor: pointer; color: var(--ui-accent); font: 800 12px var(--font-ui); }
+.preset-library-code p { font-size: 11px; }
+.preset-library-code textarea { min-height: 180px; resize: vertical; font: 12px/1.4 ui-monospace, SFMono-Regular, Consolas, monospace; }
+.preset-library-code .small-btn { margin-top: 0; }
+.preset-library-configuration { min-width: 0; }
+@media (max-width: 600px) { .preset-library-page { width: min(100% - 20px, 1120px); margin-block: 12px; } .preset-library-header { align-items: stretch; flex-direction: column; } }

@@ -141,6 +141,46 @@ describe('FenetreLancerDes', () => {
     expect(html).toContain('Tous les tirages');
   });
 
+  it('orders quick-roll parameters from dice count to modifier', () => {
+    const html = renderToStaticMarkup(<FenetreLancerDes randomSystem={{
+      state: {
+        definitions: [{
+          id: 'ordered-inputs', name: 'Jet ordonné', active: true, exposed: true, options: [], components: [], pipeline: [],
+          parameters: [
+            { id: 'source-dice', label: 'Type de dés', type: 'source', defaultValue: 'standard-d6' },
+            { id: 'count-dice', label: 'Nombre de dés lancés', type: 'integer', defaultValue: 1 },
+            { id: 'keep-count', label: 'Dés gardés', type: 'integer', defaultValue: 1 },
+            { id: 'modifier', label: 'Modificateur', type: 'integer', defaultValue: 0 },
+          ],
+        }],
+        sources: [{ id: 'standard-d6', name: 'd6', kind: 'uniform', outcomes: [] }],
+      },
+      actions: { runDefinition: () => null },
+    }} onFermer={() => {}} />);
+
+    expect(html.indexOf('Nombre de dés lancés')).toBeLessThan(html.indexOf('Type de dés'));
+    expect(html.indexOf('Type de dés')).toBeLessThan(html.indexOf('Dés gardés'));
+    expect(html.indexOf('Dés gardés')).toBeLessThan(html.indexOf('Modificateur'));
+  });
+
+  it('leaves an optional modifier blank and uses the definition default when launched', () => {
+    const html = renderToStaticMarkup(<FenetreLancerDes randomSystem={{
+      state: {
+        definitions: [{
+          id: 'd20-modifier', name: 'Jet d20', active: true, exposed: true,
+          parameters: [{ id: 'modifier', label: 'Modificateur', type: 'integer', defaultValue: 0 }],
+          options: [], components: [], pipeline: [],
+        }],
+        sources: [],
+      },
+      actions: { runDefinition: () => null },
+    }} onFermer={() => {}} />);
+
+    expect(html).toContain('Modificateur');
+    expect(html).toContain('value=""');
+    expect(html).not.toContain('Ajouter un modificateur');
+  });
+
   it('exposes token containers instead of predefined token draws', () => {
     const html = renderToStaticMarkup(
       <FenetreLancerDes

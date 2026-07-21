@@ -57,6 +57,14 @@ choice(normal) {
 }
 ```
 
+`choice` reste exclusif. Pour proposer plusieurs interrupteurs indépendants dans le questionnaire, ajoutez `option(...)` juste après l’opération concernée :
+
+```text
+1d6! option(explosion, Explosion, oui) r=1 option(relance, Relance)
+```
+
+Chaque `option` crée un interrupteur. Son premier mot est son identifiant ; les mots suivants forment son libellé. Le dernier mot facultatif `oui` ou `non` fixe la valeur initiale (`non` par défaut). La même option peut être réutilisée sur plusieurs opérations.
+
 ## Cartes
 
 ```text
