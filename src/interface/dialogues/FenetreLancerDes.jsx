@@ -10,6 +10,16 @@ import {
 } from '../../random-system/definitionAccess.js';
 import { compileRollCode } from '../../random-system/rollCode.js';
 import { definitionToRollCode } from '../../random-system/definitionRollCode.js';
+import { fixedValue, randomAggregateOperations, randomPipelineStepTypes, randomSourceKinds } from '../../random-system/engine.js';
+import {
+  defaultQuickModifiers as sharedDefaultQuickModifiers,
+  modifierParameterIds as sharedModifierParameterIds,
+  newDrawAnimationIds,
+  quickParameterComparator as sharedQuickParameterComparator,
+  readQuickRollMemory as sharedReadQuickRollMemory,
+  settleOptionalDecisions as sharedSettleOptionalDecisions,
+  writeQuickRollMemory as sharedWriteQuickRollMemory,
+} from '../../random-system/quickRollSupport.js';
 import { DefinitionVisual } from '../../random-system/ui/DefinitionVisual.jsx';
 import { DefinitionForm } from '../../random-system/ui/UsePanel.jsx';
 import { TokenContainerForm } from '../../random-system/ui/TokenContainerForm.jsx';
@@ -18,64 +28,82 @@ import '../../random-system/styles/choice-controls.css';
 import '../../random-system/styles/tokens.css';
 import './FenetreLancerDes.css';
 
-const QUICK_ROLL_MEMORY_KEY = 'cadence:quick-roll:last:v1';
-
-function readQuickRollMemory() {
-  try {
-    const value = JSON.parse(window.localStorage.getItem(QUICK_ROLL_MEMORY_KEY) || 'null');
-    return value && typeof value === 'object' ? value : null;
-  } catch {
-    return null;
-  }
-}
-
-function writeQuickRollMemory(value) {
-  try {
-    window.localStorage.setItem(QUICK_ROLL_MEMORY_KEY, JSON.stringify(value));
-  } catch {
-    // La mémorisation du lanceur est optionnelle si le stockage est indisponible.
-  }
-}
-
-function modifierParameterIds(definition = {}) {
-  return ((definition || {}).parameters || [])
-    .filter((parameter) => parameter.id === 'modifier' || /modificateur/i.test(parameter.label || ''))
-    .map((parameter) => parameter.id);
-}
-
-function quickParameterRank(parameter = {}) {
-  const description = `${parameter.id || ''} ${parameter.label || ''}`.toLocaleLowerCase('fr');
-  if (/keep.*count|count.*keep|résultats? gardés?|dés? gardés?/.test(description)) return 3;
-  if (parameter.id === 'modifier' || /modificateur/.test(description)) return 4;
-  if (parameter.type === 'source') return 2;
-  if (/count|quantité|nombre|dés? lancés?/.test(description)) return 1;
-  return 3;
-}
-
-function quickParameterComparator(left, right) {
-  return quickParameterRank(left) - quickParameterRank(right);
-}
-
 function drawValue(draw = {}) {
   return draw.outcome?.symbol || draw.outcome?.label || draw.calculatedValue;
 }
 
-function resultDice(result = {}) {
+export function resultDice(result = {}) {
   const groups = Array.isArray(result.groups) ? result.groups : [];
+  const animatedDrawIds = Array.isArray(result.animationDrawIds) ? new Set(result.animationDrawIds) : null;
   if (!result.combined && groups.length > 1) {
     return groups.map((group) => ({
       id: `group-${group.index}`,
       kept: !!group.selected,
-      values: (group.draws || []).filter((draw) => !draw.rerolled).map(drawValue),
+      history: [(group.draws || []).filter((draw) => !draw.rerolled).map(drawValue)],
+      delay: group.index * 60,
+      animate: !animatedDrawIds || (group.draws || []).some((draw) => animatedDrawIds.has(draw.id)),
+      animateFromStage: 0,
     }));
   }
-  const draws = (result.draws || groups[0]?.draws || []).filter((draw) => !draw.rerolled);
-  const hasDiscarded = draws.some((draw) => draw.kept === false);
-  return draws.map((draw) => ({
-    id: draw.id,
-    kept: hasDiscarded ? draw.kept !== false : null,
-    values: [drawValue(draw)],
-  }));
+  const draws = result.draws || groups[0]?.draws || [];
+  const rerollChildren = new Map();
+  draws.forEach((draw) => {
+    if (!draw.rerollOf) return;
+    const children = rerollChildren.get(draw.rerollOf) || [];
+    children.push(draw);
+    rerollChildren.set(draw.rerollOf, children);
+  });
+  const historyFor = (draw) => {
+    const history = [draw];
+    let current = draw;
+    while (rerollChildren.get(current.id)?.length) {
+      current = rerollChildren.get(current.id)[0];
+      history.push(current);
+    }
+    return history;
+  };
+  const historyDuration = (history) => history.length * 280 + Math.max(0, history.length - 1) * 150;
+  const dice = [];
+  const diceByDrawId = new Map();
+  const addDie = (draw, delay, deferAppearance = false) => {
+    const history = historyFor(draw);
+    const die = {
+      id: draw.id,
+      kept: history.at(-1)?.kept ?? null,
+      history: history.map((item) => [drawValue(item)]),
+      delay,
+      animate: !animatedDrawIds || history.some((item) => animatedDrawIds.has(item.id)),
+      animateFromStage: animatedDrawIds ? Math.max(0, history.findIndex((item) => animatedDrawIds.has(item.id))) : 0,
+      explosionPendingAt: null,
+      explosionPendingUntil: null,
+      deferAppearance,
+    };
+    dice.push(die);
+    history.forEach((item) => diceByDrawId.set(item.id, die));
+  };
+  draws.filter((draw) => !draw.rerollOf && !draw.explodedFrom)
+    .forEach((draw, index) => addDie(draw, index * 60));
+  const explosions = draws.filter((draw) => !draw.rerollOf && draw.explodedFrom);
+  let pending = [...explosions];
+  while (pending.length) {
+    const unresolved = pending.filter((draw) => {
+      const parent = diceByDrawId.get(draw.explodedFrom);
+      if (!parent) return true;
+      const pendingDuration = 150;
+      const childDelay = parent.delay + (parent.animate ? historyDuration(parent.history) : 0) + pendingDuration;
+      parent.explosionPendingAt = childDelay - pendingDuration;
+      parent.explosionPendingUntil = childDelay;
+      addDie(draw, childDelay, true);
+      return false;
+    });
+    if (unresolved.length === pending.length) {
+      unresolved.forEach((draw, index) => addDie(draw, (dice.length + index) * 90));
+      break;
+    }
+    pending = unresolved;
+  }
+  const hasDiscarded = dice.some((die) => die.kept === false);
+  return dice.map((die) => ({ ...die, kept: hasDiscarded ? die.kept !== false : null }));
 }
 
 function signedValue(value) {
@@ -95,30 +123,88 @@ function fallbackResultValue(result = {}) {
   return values.length === 1 ? values[0] : values;
 }
 
-function DeResultatAnime({ values, delay = 0, className = '' }) {
-  const [rolling, setRolling] = useState(true);
-  const [displayed, setDisplayed] = useState(() => values.map(() => '·'));
+function DeResultatAnime({ history, delay = 0, className = '', animate = true, animateFromStage = 0, deferAppearance = false, explosionPendingAt = null, explosionPendingUntil = null }) {
+  const firstAnimatedStage = Math.min(Math.max(0, animateFromStage), Math.max(0, history.length - 1));
+  const startsWithExistingValue = animate && firstAnimatedStage > 0;
+  const [rolling, setRolling] = useState(animate && !startsWithExistingValue);
+  const rollingRef = useRef(animate && !startsWithExistingValue);
+  const [started, setStarted] = useState(() => !animate || !deferAppearance);
+  const [revealedStage, setRevealedStage] = useState(() => animate ? firstAnimatedStage - 1 : history.length - 1);
+  const [displayed, setDisplayed] = useState(() => {
+    if (!animate) return history.at(-1) || [];
+    if (startsWithExistingValue) return history[firstAnimatedStage - 1] || [];
+    return (history[0] || []).map(() => '·');
+  });
+  const [explosionPending, setExplosionPending] = useState(false);
   useEffect(() => {
-    const interval = window.setInterval(() => setDisplayed(values.map((value) => {
+    if (!animate) {
+      rollingRef.current = false;
+      setStarted(true);
+      setRevealedStage(history.length - 1);
+      setRolling(false);
+      setDisplayed(history.at(-1) || []);
+      return undefined;
+    }
+    rollingRef.current = !startsWithExistingValue;
+    setStarted(!deferAppearance);
+    setRevealedStage(firstAnimatedStage - 1);
+    setRolling(!startsWithExistingValue);
+    setDisplayed(startsWithExistingValue ? history[firstAnimatedStage - 1] || [] : (history[0] || []).map(() => '·'));
+    const setAnimationRolling = (value) => {
+      rollingRef.current = value;
+      setRolling(value);
+    };
+    const interval = window.setInterval(() => {
+      if (!rollingRef.current) return;
+      setDisplayed((history[0] || []).map((value) => {
       const maximum = Math.max(2, Number(value) || 20);
       return String(1 + Math.floor(Math.random() * maximum));
-    })), 65);
-    const timeout = window.setTimeout(() => {
-      window.clearInterval(interval);
-      setDisplayed(values);
-      setRolling(false);
-    }, 700 + delay);
-    return () => { window.clearInterval(interval); window.clearTimeout(timeout); };
-  }, [delay, values]);
-  return <div className={`quick-roll-die ${className} ${rolling ? 'is-rolling' : ''}`}>{displayed.map((value, index) => <strong key={index}>{String(value)}</strong>)}</div>;
+      }));
+    }, 65);
+    const timers = history.slice(firstAnimatedStage).flatMap((values, index) => {
+      const stage = firstAnimatedStage + index;
+      const start = delay + (firstAnimatedStage > 0 ? 150 : 0) + index * 430;
+      return [
+        window.setTimeout(() => {
+          setStarted(true);
+          setAnimationRolling(true);
+        }, start),
+        window.setTimeout(() => {
+          setDisplayed(values);
+          setRevealedStage(stage);
+          setAnimationRolling(false);
+          if (stage === history.length - 1) window.clearInterval(interval);
+        }, start + 280),
+      ];
+    });
+    return () => { window.clearInterval(interval); timers.forEach((timer) => window.clearTimeout(timer)); };
+  }, [animate, deferAppearance, delay, firstAnimatedStage, history, startsWithExistingValue]);
+  useEffect(() => {
+    if (!Number.isFinite(explosionPendingAt) || !Number.isFinite(explosionPendingUntil)) {
+      setExplosionPending(false);
+      return undefined;
+    }
+    const start = window.setTimeout(() => setExplosionPending(true), explosionPendingAt);
+    const stop = window.setTimeout(() => setExplosionPending(false), explosionPendingUntil);
+    return () => { window.clearTimeout(start); window.clearTimeout(stop); };
+  }, [explosionPendingAt, explosionPendingUntil]);
+  if (!started) return null;
+  const rerollPending = history.length > 1 && !rolling && revealedStage >= 0 && revealedStage < history.length - 1;
+  const previousValues = history
+    .slice(0, Math.max(0, revealedStage + (rolling ? 1 : 0)))
+    .flat();
+  return <div className={`quick-roll-die ${className} ${rolling ? 'is-rolling' : ''} ${rerollPending ? 'is-reroll-pending' : ''} ${explosionPending ? 'is-explosion-pending' : ''}`} data-roll-stages={history.length}>
+    {previousValues.map((value, index) => <small className="quick-roll-die-previous" key={`previous-${index}`}>{String(value)}</small>)}
+    {displayed.map((value, index) => <strong key={index}>{String(value)}</strong>)}
+  </div>;
 }
 
-function TotalAnime({ aggregate, diceCount }) {
+function TotalAnime({ aggregate, delay = 0 }) {
   const [visible, setVisible] = useState(false);
   useEffect(() => {
-    const timer = window.setTimeout(() => setVisible(true), 500 + Math.max(0, diceCount - 1) * 90);
+    const timer = window.setTimeout(() => setVisible(true), delay + 180);
     return () => window.clearTimeout(timer);
-  }, [diceCount]);
+  }, [delay]);
   return <div className={`quick-roll-total ${visible ? 'is-revealed' : ''}`}>
     <span>{t('random.result.title')}</span>
     <strong>{aggregateValue(aggregate?.value)}</strong>
@@ -134,7 +220,8 @@ function ResultatDefilant() {
   return <section className="quick-roll-result quick-roll-rolling" aria-live="polite"><span>{t('random.use.run')}</span><div className="quick-roll-slot-values">{values.map((value, index) => <strong key={index}>{value}</strong>)}</div></section>;
 }
 
-export function QuickRollResult({ result, rolling = false, onDecision }) {
+export function QuickRollResult({ result, rolling = false, onDecision, onOptionalDecision }) {
+  const dice = useMemo(() => result?.kind === 'random-roll' ? resultDice(result) : [], [result]);
   if (rolling) return <ResultatDefilant />;
   if (!result) return null;
   if (result.kind === 'card-draw') {
@@ -173,12 +260,18 @@ export function QuickRollResult({ result, rolling = false, onDecision }) {
     </section>;
   }
   const aggregate = result.primaryAggregate;
-  const dice = resultDice(result);
+  // Les interrupteurs du formulaire restent modifiables après un jet. Garder
+  // la même description des dés tant que le résultat ne change pas évite de
+  // redémarrer leurs effets à chaque rendu du formulaire.
+  const animationDuration = Math.max(0, ...dice.filter((die) => die.animate).map((die) => {
+    const remainingStages = die.history.length - die.animateFromStage;
+    return die.delay + (die.animateFromStage > 0 ? 150 : 0) + remainingStages * 280 + Math.max(0, remainingStages - 1) * 150;
+  }));
   return (
     <section className="quick-roll-result" aria-live="polite">
       {dice.length > 0 && (
         <div className="quick-roll-dice">
-          {dice.map((die, index) => {
+          {dice.map((die) => {
             const stateClass = die.kept === true ? 'is-kept' : die.kept === false ? 'is-discarded' : '';
             const stateLabel = die.kept === true
               ? t('random.quick.kept')
@@ -186,12 +279,12 @@ export function QuickRollResult({ result, rolling = false, onDecision }) {
                 ? t('random.quick.discarded')
                 : '';
             return (
-              <DeResultatAnime key={die.id} values={die.values.map((value) => String(value ?? '-'))} delay={index * 90} className={stateClass} />
+              <DeResultatAnime key={die.id} history={die.history} delay={die.delay} className={stateClass} animate={die.animate} animateFromStage={die.animateFromStage} deferAppearance={die.deferAppearance} explosionPendingAt={die.explosionPendingAt} explosionPendingUntil={die.explosionPendingUntil} />
             );
           })}
         </div>
       )}
-      <TotalAnime aggregate={aggregate || { value: fallbackResultValue(result) }} diceCount={dice.length} />
+      <TotalAnime aggregate={aggregate || { value: fallbackResultValue(result) }} delay={animationDuration} />
       {(aggregate?.adjustments || []).length > 0 && (
         <div className="quick-roll-adjustments">
           {aggregate.adjustments.map((adjustment, index) => (
@@ -201,13 +294,75 @@ export function QuickRollResult({ result, rolling = false, onDecision }) {
           ))}
         </div>
       )}
+      {(result.optionalDecisions || []).length > 0 && (
+        <div className="quick-roll-optional-actions">
+          <span>{t('random.decision.afterRoll')}</span>
+          {(result.optionalDecisions || []).map((decision) => (
+            <button type="button" className="small-btn" onClick={() => onOptionalDecision?.(decision)} key={decision.id}>
+              {decision.pendingDecision?.label}
+            </button>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
 
-export function FenetreLancerDes({ randomSystem, quickRollInfo = null, onFermer }) {
+export function SupplementalDiceRoller({ sources, preferredSourceId, onRun, resetKey }) {
+  const diceSources = useMemo(() => (sources || []).filter((source) => (
+    source.kind === randomSourceKinds.UNIFORM
+    && Number(source.min) === 1
+    && Number.isInteger(Number(source.max))
+    && Number(source.max) >= 2
+  )), [sources]);
+  const [open, setOpen] = useState(false);
+  const [count, setCount] = useState(1);
+  const [sourceId, setSourceId] = useState(preferredSourceId || diceSources[0]?.id || '');
+  const [extraResult, setExtraResult] = useState(null);
+  const selectedSource = diceSources.find((source) => source.id === sourceId) || diceSources[0] || null;
+  useEffect(() => {
+    setOpen(false);
+    setExtraResult(null);
+  }, [resetKey]);
+  const run = () => {
+    if (!selectedSource) return;
+    const quantity = Math.max(1, Math.min(100, Math.trunc(Number(count) || 1)));
+    const definition = {
+      id: 'quick-supplemental-dice',
+      name: t('random.quick.supplemental.name', { source: selectedSource.name }),
+      components: [{
+        id: 'supplemental-dice',
+        label: selectedSource.name,
+        source: fixedValue(selectedSource.id),
+        count: fixedValue(quantity),
+      }],
+      pipeline: [{
+        id: 'supplemental-total',
+        type: randomPipelineStepTypes.AGGREGATE,
+        operation: randomAggregateOperations.SUM,
+        outputId: 'total',
+        label: 'Résultat supplémentaire',
+      }],
+      primaryAggregateId: 'total',
+    };
+    setExtraResult(onRun?.(definition) || null);
+  };
+  if (!diceSources.length) return null;
+  return <section className="quick-roll-supplemental">
+    <button type="button" className="small-btn" aria-expanded={open} onClick={() => setOpen((value) => !value)}>{t('random.quick.supplemental.open')}</button>
+    {open && <div className="quick-roll-supplemental-form">
+      <label className="field">{t('random.quick.supplemental.count')}<input type="number" min="1" max="100" value={count} onChange={(event) => setCount(event.target.value)} /></label>
+      <label className="field">{t('random.quick.supplemental.die')}<select value={selectedSource?.id || ''} onChange={(event) => setSourceId(event.target.value)}>{diceSources.map((source) => <option value={source.id} key={source.id}>{source.name}</option>)}</select></label>
+      <button type="button" className="primary" onClick={run}>{t('random.use.run')}</button>
+      <small>{t('random.quick.supplemental.help')}</small>
+      {extraResult && <QuickRollResult result={extraResult} />}
+    </div>}
+  </section>;
+}
+
+export function FenetreLancerDes({ randomSystem, quickRollInfo = null, statisticsContext = null, onFermer }) {
   const [showAllRolls, setShowAllRolls] = useState(false);
-  const [lastQuickRoll] = useState(readQuickRollMemory);
+  const [lastQuickRoll] = useState(sharedReadQuickRollMemory);
   const allDefinitions = useMemo(
     () => activeDefinitions(randomSystem?.state?.definitions || []),
     [randomSystem?.state?.definitions],
@@ -237,11 +392,11 @@ export function FenetreLancerDes({ randomSystem, quickRollInfo = null, onFermer 
   const quickRollLaunchedRef = useRef(false);
   const rememberedRollAppliedRef = useRef(false);
   const selected = definitions.find((definition) => definition.id === selectedId) || null;
-  const modifierIds = useMemo(() => modifierParameterIds(selected), [selected]);
+  const modifierIds = useMemo(() => sharedModifierParameterIds(selected), [selected]);
   const formParameters = useMemo(() => {
     const parameters = { ...(selectedInputs.parameters || {}) };
     modifierIds.forEach((id) => {
-      if (!Object.prototype.hasOwnProperty.call(parameters, id)) parameters[id] = '';
+      if (parameters[id] === '' || parameters[id] === null || parameters[id] === undefined) parameters[id] = 0;
     });
     return parameters;
   }, [modifierIds, selectedInputs.parameters]);
@@ -285,7 +440,7 @@ export function FenetreLancerDes({ randomSystem, quickRollInfo = null, onFermer 
   };
   const rememberQuickRoll = (next = {}) => {
     if (quickRollInfo) return;
-    writeQuickRollMemory({ selectedId, inputs: selectedInputs, expertCode, ...next });
+    sharedWriteQuickRollMemory({ selectedId, inputs: selectedInputs, expertCode, ...next });
   };
   const openAdjustment = () => {
     if (!selected) return;
@@ -294,9 +449,11 @@ export function FenetreLancerDes({ randomSystem, quickRollInfo = null, onFermer 
     setResult(null);
   };
   const run = (definitionId, parameters, options) => {
-    const next = randomSystem?.actions?.runDefinition?.(definitionId, parameters, options);
+    const definition = allDefinitions.find((item) => item.id === definitionId) || selected;
+    const normalizedParameters = sharedDefaultQuickModifiers(definition, parameters);
+    const next = settleOptionalDecisions(randomSystem?.actions?.runDefinition?.(definitionId, normalizedParameters, options, undefined, statisticsContext));
     setResult(next);
-    rememberQuickRoll({ selectedId: definitionId, inputs: { parameters, options } });
+    rememberQuickRoll({ selectedId: definitionId, inputs: { parameters: normalizedParameters, options } });
     return next;
   };
   const toggleRollScope = () => {
@@ -311,20 +468,38 @@ export function FenetreLancerDes({ randomSystem, quickRollInfo = null, onFermer 
   };
   const runExpert = (_definitionId, parameters, options, instances) => {
     if (!expertCompilation.definition) return null;
-    const next = randomSystem?.actions?.runAdHocDefinition?.(expertCompilation.definition, parameters, options, instances);
+    const next = settleOptionalDecisions(randomSystem?.actions?.runAdHocDefinition?.(expertCompilation.definition, parameters, options, instances, statisticsContext));
     setResult(next);
     rememberQuickRoll({ selectedId: '__expert__', inputs: { parameters, options }, expertCode });
     return next;
   };
   const runAdjustment = (_definitionId, parameters, options, instances) => {
     if (!adjustmentCompilation.definition) return null;
-    const next = randomSystem?.actions?.runAdHocDefinition?.(adjustmentCompilation.definition, parameters, options, instances);
+    const next = randomSystem?.actions?.runAdHocDefinition?.(adjustmentCompilation.definition, parameters, options, instances, statisticsContext);
     setResult(next);
     return next;
   };
+  const settleOptionalDecisions = (initialResult) => {
+    return sharedSettleOptionalDecisions(initialResult, randomSystem?.actions?.resolveDefinitionDecision);
+  };
   const resolveDecision = (accepted) => {
     const next = randomSystem?.actions?.resolveDefinitionDecision?.(result, accepted);
+    if (accepted && next?.kind === 'random-roll') {
+      const animationDrawIds = newDrawAnimationIds(next, result);
+      setResult({ ...next, animationDrawIds });
+      return;
+    }
     setResult(next);
+  };
+  const activateOptionalDecision = (decision) => {
+    const next = randomSystem?.actions?.resolveDefinitionDecision?.(decision, true);
+    const settled = settleOptionalDecisions(next);
+    if (settled?.kind === 'random-roll') {
+      const animationDrawIds = newDrawAnimationIds(settled, result);
+      setResult({ ...settled, animationDrawIds });
+      return;
+    }
+    setResult(settled);
   };
   useEffect(() => {
     if (!quickRollInfo || quickRollLaunchedRef.current) return;
@@ -399,7 +574,7 @@ export function FenetreLancerDes({ randomSystem, quickRollInfo = null, onFermer 
                 onInputsChange={setSelectedInputs}
                 initialParameters={formParameters}
                 initialOptions={selectedInputs.options}
-                parameterComparator={quickParameterComparator}
+                parameterComparator={sharedQuickParameterComparator}
                 runAccessory={<button type="button" className="small-btn quick-roll-adjust-button" onClick={openAdjustment} aria-label={t('random.quick.adjust')} title={t('random.quick.adjust')}>{'{ }'}</button>}
               />
             )}
@@ -424,7 +599,13 @@ export function FenetreLancerDes({ randomSystem, quickRollInfo = null, onFermer 
               {expertCompilation.error && <p className="rs-error" role="alert">{expertCompilation.error}</p>}
               {expertCompilation.definition && <DefinitionForm className="quick-roll-form" definition={expertCompilation.definition} definitions={[expertCompilation.definition, ...randomSystem.state.definitions]} sources={sources} onRun={runExpert} showHeader={false} />}
             </section>}
-            {!selectedTokenContainer && <QuickRollResult result={result} onDecision={result?.kind === 'random-decision' ? resolveDecision : undefined} />}
+            {!selectedTokenContainer && <QuickRollResult result={result} onDecision={result?.kind === 'random-decision' ? resolveDecision : undefined} onOptionalDecision={activateOptionalDecision} />}
+            {!selectedTokenContainer && result?.kind === 'random-roll' && <SupplementalDiceRoller
+              sources={sources}
+              preferredSourceId={result.draws?.[0]?.sourceId}
+              resetKey={result.id}
+              onRun={(definition) => randomSystem?.actions?.runAdHocDefinition?.(definition, {}, {}, undefined, statisticsContext)}
+            />}
           </>
         ) : <p className="muted">{t('random.quick.noRoll')}</p>}
       </div>

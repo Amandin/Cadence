@@ -15,7 +15,7 @@ function UsageBars({ items }) {
         <div className="rs-stat-row" key={item.id}>
           <span>{item.label}</span>
           <div><i style={{ width: `${(item.count / maximum) * 100}%` }} /></div>
-          <strong>{item.count}</strong>
+          <strong>{item.count}</strong>{item.detail && <small>{item.detail}</small>}
         </div>
       ))}
     </div>
@@ -36,6 +36,20 @@ export function StatisticsPanel({ state, onReset }) {
     || statisticalSources[0]?.id
     || ''
   ));
+  const [contextId, setContextId] = useState('global');
+  const contextOptions = useMemo(() => [
+    { id: 'global', label: t('random.stats.global') },
+    ...Object.entries(state.statistics.byContext || {}).map(([id, context]) => ({ id, label: context.label || id })),
+  ], [state.statistics.byContext]);
+  const selectedContext = contextId === 'global' ? null : state.statistics.byContext?.[contextId];
+  const statistics = selectedContext
+    ? {
+      totalUses: Number(selectedContext.uses) || 0,
+      totalDraws: Number(selectedContext.draws) || 0,
+      byDefinition: selectedContext.byDefinition || {},
+      bySource: selectedContext.bySource || {},
+    }
+    : state.statistics;
   const selectedSource = statisticalSources.find((source) => source.id === sourceId)
     || statisticalSources[0];
   useEffect(() => {
@@ -46,13 +60,13 @@ export function StatisticsPanel({ state, onReset }) {
     .map((definition) => ({
       id: definition.id,
       label: definition.name,
-      count: Number(state.statistics.byDefinition[definition.id]) || 0,
+      count: Number(statistics.byDefinition[definition.id]) || 0,
     }))
-    .filter((item) => item.count > 0), [state.definitions, state.statistics.byDefinition]);
+    .filter((item) => item.count > 0), [state.definitions, statistics.byDefinition]);
 
   const sourceStats = useMemo(() => {
     if (!selectedSource) return [];
-    const observed = state.statistics.bySource[selectedSource.id]?.outcomes || {};
+    const observed = statistics.bySource[selectedSource.id]?.outcomes || {};
     const rows = sourceOutcomes(selectedSource).map((outcome) => ({
       id: outcome.id,
       label: outcome.symbol || outcome.label,
@@ -63,29 +77,30 @@ export function StatisticsPanel({ state, onReset }) {
       .filter((row) => row.count > 0)
       .sort((left, right) => right.count - left.count)
       .slice(0, MAX_HISTOGRAM_ROWS);
-  }, [selectedSource, state.statistics.bySource]);
+  }, [selectedSource, statistics.bySource]);
 
   const cardStats = useMemo(() => cardSources
     .map((source) => ({
       id: source.id,
       label: source.name,
-      count: Number(state.statistics.bySource[source.id]?.count) || 0,
+      count: Number(statistics.bySource[source.id]?.count) || 0,
     }))
-    .filter((item) => item.count > 0), [cardSources, state.statistics.bySource]);
+    .filter((item) => item.count > 0), [cardSources, statistics.bySource]);
 
   const tokenStats = useMemo(() => (state.tokenContainers || [])
     .map((container) => ({
       id: container.id,
       label: container.name,
-      count: Number(state.statistics.bySource[container.id]?.count) || 0,
+      count: Number(statistics.bySource[container.id]?.count) || 0,
     }))
-    .filter((item) => item.count > 0), [state.statistics.bySource, state.tokenContainers]);
+    .filter((item) => item.count > 0), [statistics.bySource, state.tokenContainers]);
 
   return (
     <div className="rs-statistics">
       <section className="rs-stat-summary">
-        <div><span>{t('random.stats.uses')}</span><strong><RandomIcon name="roll" /> {state.statistics.totalUses}</strong></div>
-        <div><span>{t('random.stats.draws')}</span><strong><RandomIcon name="table" /> {state.statistics.totalDraws}</strong></div>
+        <label><span>{t('random.stats.scope')}</span><select value={contextId} onChange={(event) => setContextId(event.target.value)}>{contextOptions.map((context) => <option value={context.id} key={context.id}>{context.label}</option>)}</select></label>
+        <div><span>{t('random.stats.uses')}</span><strong><RandomIcon name="roll" /> {statistics.totalUses}</strong></div>
+        <div><span>{t('random.stats.draws')}</span><strong><RandomIcon name="table" /> {statistics.totalDraws}</strong></div>
         <button type="button" className="small-btn" onClick={onReset}>{t('random.stats.reset')}</button>
       </section>
 

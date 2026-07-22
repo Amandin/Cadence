@@ -30,6 +30,10 @@ export function appliesToDraw(step, draw) {
   return !step.componentIds.length || step.componentIds.includes(draw.componentId);
 }
 
+export function isInExplosionChain(draws, draw) {
+  return Boolean(draw.explodedFrom) || draws.some((candidate) => candidate.explodedFrom === draw.id);
+}
+
 export function isStepEnabled(step, options) {
   if (!step.enabledWhen) return true;
   const conditions = Array.isArray(step.enabledWhen) ? step.enabledWhen : [step.enabledWhen];
@@ -119,7 +123,11 @@ export function rerollDraws(drawState, step, context, rng) {
   const resolvedIterations = Number(resolveValue(step.maxIterations, context.parameters, 1));
   if (!Number.isInteger(resolvedIterations)) throw new RandomSystemError('non-integer-reroll-limit', 'La limite de relances doit etre entiere.');
   const maxIterations = boundedInteger(resolvedIterations, 1, MAX_TRANSFORM_ITERATIONS, 1);
-  const candidates = drawState.draws.filter((draw) => !draw.rerolled && appliesToDraw(step, draw));
+  const candidates = drawState.draws.filter((draw) => (
+    !draw.rerolled
+    && !isInExplosionChain(drawState.draws, draw)
+    && appliesToDraw(step, draw)
+  ));
   for (const original of candidates) {
     let current = original;
     for (let iteration = 0; iteration < maxIterations; iteration += 1) {

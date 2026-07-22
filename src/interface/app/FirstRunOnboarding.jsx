@@ -357,6 +357,7 @@ export function questionnaireSteps(answers, includeRandomSetup = false) {
 export function FirstRunOnboarding({ dark, initialRules = null, randomSystem = null, onToggleTheme, onStartRules, onStartCustomRules, onCancel, showCustomRules = true, offerSceneTutorial = true }) {
   const [answers, setAnswers] = useState(() => onboardingAnswersFromRules(onboardingDefaultRules));
   const [stepIndex, setStepIndex] = useState(0);
+  const [starting, setStarting] = useState(false);
   const seededDnd5Rolls = useRef(false);
   useEffect(() => {
     if (!randomSystem || seededDnd5Rolls.current) return;
@@ -422,7 +423,15 @@ export function FirstRunOnboarding({ dark, initialRules = null, randomSystem = n
   }));
   const next = () => setStepIndex((current) => Math.min(current + 1, steps.length - 1));
   const previous = () => setStepIndex((current) => Math.max(current - 1, 0));
-  const start = (tutorial) => onStartRules?.({ rules, randomSystem: randomSystem?.state || null }, tutorial);
+  const start = async (tutorial) => {
+    if (starting) return null;
+    setStarting(true);
+    try {
+      return await onStartRules?.({ rules, randomSystem: randomSystem?.state || null }, tutorial);
+    } finally {
+      setStarting(false);
+    }
+  };
   const skipConfiguration = () => {
     setAnswers((current) => ({ ...onboardingAnswersFromRules(onboardingDefaultRules), initiativeRollDefinitionId: dnd5InitiativeDefinitionId, surpriseRound: current.surpriseRound }));
     setStepIndex(Math.max(0, steps.findIndex((entry) => entry.id === 'initiativeAndRandomSystem')));
@@ -464,7 +473,7 @@ export function FirstRunOnboarding({ dark, initialRules = null, randomSystem = n
             {safeStepIndex > 0 && <button type="button" className="small-btn" onClick={previous}>{t('onboarding.back')}</button>}
             {safeStepIndex < steps.length - 1
               ? <button type="button" className="primary" onClick={next} disabled={!canContinue}>{t('onboarding.next')}</button>
-              : <>{offerSceneTutorial ? <OnboardingStartActions disabled={!canContinue} onStartDirect={() => start(false)} onStartTutorial={() => start(true)} /> : <button type="button" className="primary" disabled={!canContinue} onClick={() => start(false)}>{t('onboarding.apply')}</button>}{onCancel && <button type="button" className="small-btn" onClick={onCancel}>{t('common.cancel')}</button>}</>}
+              : <>{offerSceneTutorial ? <OnboardingStartActions disabled={!canContinue || starting} onStartDirect={() => start(false)} onStartTutorial={() => start(true)} /> : <button type="button" className="primary" disabled={!canContinue || starting} onClick={() => start(false)}>{t('onboarding.apply')}</button>}{onCancel && <button type="button" className="small-btn" onClick={onCancel}>{t('common.cancel')}</button>}</>}
             {safeStepIndex === 0 && (
               <div className="onboarding-skip-config">
                 <button type="button" className="small-btn" onClick={skipConfiguration}>{t('onboarding.skip')}</button>

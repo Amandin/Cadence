@@ -347,6 +347,56 @@
   color: var(--ui-text);
 }
 
+.quick-roll-optional-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  color: var(--ui-muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.quick-roll-optional-actions .small-btn {
+  min-height: 32px;
+  padding: 5px 9px;
+}
+
+.quick-roll-supplemental {
+  display: grid;
+  justify-items: start;
+  gap: 7px;
+  margin-top: 8px;
+}
+
+.quick-roll-supplemental-form {
+  display: grid;
+  grid-template-columns: 72px minmax(88px, 1fr) auto;
+  align-items: end;
+  gap: 7px;
+  width: min(100%, 360px);
+  padding: 8px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--radius-control);
+  background: var(--ui-surface-soft);
+}
+
+.quick-roll-supplemental-form .field {
+  gap: 3px;
+  font-size: 10px;
+}
+
+.quick-roll-supplemental-form input,
+.quick-roll-supplemental-form select {
+  min-width: 0;
+  min-height: 32px;
+}
+
+.quick-roll-supplemental-form small,
+.quick-roll-supplemental-form .quick-roll-result {
+  grid-column: 1 / -1;
+}
+
 .quick-roll-dice {
   display: grid;
   grid-template-columns: repeat(auto-fit, 48px);
@@ -355,6 +405,7 @@
 }
 
 .quick-roll-die {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -372,6 +423,24 @@
   font-size: 16px;
 }
 
+.quick-roll-die-previous {
+  position: absolute;
+  top: -7px;
+  left: -7px;
+  z-index: 1;
+  display: grid;
+  width: 21px;
+  height: 21px;
+  place-items: center;
+  border: 1px solid var(--ui-border);
+  border-radius: 50%;
+  background: var(--ui-surface);
+  color: var(--ui-muted);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
+
 .quick-roll-die.is-kept {
   border-color: var(--ui-selected-border);
   background: var(--ui-selected-bg);
@@ -386,6 +455,24 @@
 .quick-roll-die.is-rolling strong {
   opacity: .78;
   transform: translateY(-1px);
+}
+
+.quick-roll-die.is-reroll-pending {
+  animation: quick-roll-reroll-warning .15s ease-in-out infinite alternate;
+}
+
+.quick-roll-die.is-explosion-pending {
+  animation: quick-roll-explosion-warning .15s ease-in-out infinite alternate;
+}
+
+@keyframes quick-roll-reroll-warning {
+  from { border-color: var(--ui-danger); box-shadow: 0 0 0 0 color-mix(in srgb, var(--ui-danger) 0%, transparent); }
+  to { border-color: var(--ui-selected-border); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ui-danger) 30%, transparent); }
+}
+
+@keyframes quick-roll-explosion-warning {
+  from { border-color: var(--ui-selected-border); box-shadow: 0 0 0 0 color-mix(in srgb, var(--ui-selected-border) 0%, transparent); }
+  to { border-color: var(--ui-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ui-accent) 30%, transparent); }
 }
 
 @media (max-width: 420px) {

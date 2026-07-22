@@ -164,23 +164,25 @@ export function useRandomSystem(controlled = {}) {
     return executeDefinitionFromState(stateRef.current, definitionId, parameters, options, instances);
   }, []);
 
-  const runDefinition = useCallback((definitionId, parameters, options, instances) => {
+  const runDefinition = useCallback((definitionId, parameters, options, instances, statisticsContext = null) => {
     const result = runDefinitionTransient(definitionId, parameters, options, instances);
     if (!result) return null;
-    if (result.kind === 'random-decision') return result;
+    if (result.kind === 'random-decision') return statisticsContext ? { ...result, statisticsContext } : result;
+    const contextualResult = statisticsContext ? { ...result, statisticsContext } : result;
     const current = stateRef.current;
-    const { sourceStates: nextSourceStates, ...recordedResult } = result;
+    const { sourceStates: nextSourceStates, ...recordedResult } = contextualResult;
     const next = recordRandomResult({ ...current, sourceStates: nextSourceStates || current.sourceStates }, recordedResult);
     commitState(next);
     return recordedResult;
   }, [commitState, runDefinitionTransient]);
 
-  const runAdHocDefinition = useCallback((definition, parameters, options, instances) => {
+  const runAdHocDefinition = useCallback((definition, parameters, options, instances, statisticsContext = null) => {
     const result = executeAdHocDefinitionFromState(stateRef.current, definition, parameters, options, instances);
     if (!result) return null;
-    if (result.kind === 'random-decision') return result;
+    if (result.kind === 'random-decision') return statisticsContext ? { ...result, statisticsContext } : result;
+    const contextualResult = statisticsContext ? { ...result, statisticsContext } : result;
     const current = stateRef.current;
-    const { sourceStates: nextSourceStates, ...recordedResult } = result;
+    const { sourceStates: nextSourceStates, ...recordedResult } = contextualResult;
     commitState(recordRandomResult({
       ...current,
       sourceStates: nextSourceStates || current.sourceStates,
@@ -191,8 +193,9 @@ export function useRandomSystem(controlled = {}) {
   const resolveDefinitionDecision = useCallback((pendingResult, accepted) => {
     const result = resolveRandomDecision(pendingResult, accepted);
     if (!result || result.kind === 'random-decision') return result;
+    const contextualResult = pendingResult.statisticsContext ? { ...result, statisticsContext: pendingResult.statisticsContext } : result;
     const current = stateRef.current;
-    const { sourceStates: nextSourceStates, ...recordedResult } = result;
+    const { sourceStates: nextSourceStates, ...recordedResult } = contextualResult;
     commitState(recordRandomResult({ ...current, sourceStates: nextSourceStates || current.sourceStates }, recordedResult));
     return recordedResult;
   }, [commitState]);

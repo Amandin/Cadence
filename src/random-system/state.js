@@ -26,7 +26,7 @@ import {
 import { normalizeRandomKits, randomKitCatalog, randomKitResources } from './rulePresetKits.js';
 import { normalizeTokenSystem } from './tokens.js';
 
-export const RANDOM_SYSTEM_SCHEMA_VERSION = 18;
+export const RANDOM_SYSTEM_SCHEMA_VERSION = 20;
 export const RANDOM_HISTORY_LIMIT = 20;
 
 const catalogKitDefinitionMigrations = [
@@ -85,12 +85,40 @@ function upgradeCatalogKitDefinitions(definitions, kitIds) {
   return upgraded;
 }
 
+function upgradeDefaultStandardDiceDecisions(definitions) {
+  return definitions.map((definition) => {
+    if (definition.id !== 'default-dnd5-standard-dice') return definition;
+    const pipeline = [...(definition.pipeline || [])];
+    const addAfterRollDecision = (step, optionId) => {
+      if (!step || pipeline.some((item) => item.id === `${step.id}-after-roll`)) return;
+      pipeline.push({
+        ...step,
+        id: `${step.id}-after-roll`,
+        decision: 'after-roll',
+        enabledWhen: { optionId, equals: false },
+      });
+    };
+    addAfterRollDecision(pipeline.find((step) => (
+      step.type === randomPipelineStepTypes.REROLL
+      && step.enabledWhen?.optionId === 'rerolling'
+      && step.enabledWhen?.equals === true
+    )), 'rerolling');
+    addAfterRollDecision(pipeline.find((step) => (
+      step.type === randomPipelineStepTypes.EXPLODE
+      && step.enabledWhen?.optionId === 'exploding'
+      && step.enabledWhen?.equals === true
+    )), 'exploding');
+    return { ...definition, pipeline };
+  });
+}
+
 export function emptyRandomStatistics() {
   return {
     totalUses: 0,
     totalDraws: 0,
     byDefinition: {},
     bySource: {},
+    byContext: {},
   };
 }
 
@@ -395,6 +423,7 @@ function normalizedStatistics(statistics) {
     totalDraws: Math.max(0, Number(source.totalDraws) || 0),
     byDefinition: source.byDefinition && typeof source.byDefinition === 'object' ? source.byDefinition : {},
     bySource,
+    byContext: source.byContext && typeof source.byContext === 'object' ? source.byContext : {},
   };
 }
 
@@ -453,7 +482,10 @@ export function normalizeRandomSystemState(state) {
   const resolvedDefinitions = Number(state.schemaVersion) < 14
     ? upgradeCatalogKitDefinitions(upgradedBuiltInDefinitions, catalogKitUpgrades)
     : upgradedBuiltInDefinitions;
-  const baseline = addBaseKitResources(sources, resolvedDefinitions, randomKits);
+  const upgradedStandardDice = Number(state.schemaVersion) < 19
+    ? upgradeDefaultStandardDiceDecisions(resolvedDefinitions)
+    : resolvedDefinitions;
+  const baseline = addBaseKitResources(sources, upgradedStandardDice, randomKits);
   sources = baseline.sources;
   const definitions = baseline.definitions;
   const cardSources = sources.filter((source) => source.kind === randomSourceKinds.CARDS);
@@ -576,7 +608,7 @@ export function exportRandomSystemStateForCampaign(state) {
     randomKits: normalized.randomKits,
     lastResult: null,
     history: [],
-    statistics: emptyRandomStatistics(),
+    statistics: normalized.statistics,
     tokenTypes: normalized.tokenTypes,
     tokenContainers: normalized.tokenContainers,
   };

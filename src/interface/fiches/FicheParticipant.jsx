@@ -12,7 +12,7 @@ import { Suivi } from '../suivis/Suivi.jsx';
 import { InfosRapides } from './InfosRapides.jsx';
 import { activeDefinitions, exposedTokenContainers, tokenContainerIdFromResourceId } from '../../random-system/definitionAccess.js';
 import { prepareCombinedDefinition } from '../../random-system/combinations.js';
-import { QuickRollResult } from '../dialogues/FenetreLancerDes.jsx';
+import { QuickRollResult, SupplementalDiceRoller } from '../dialogues/FenetreLancerDes.jsx';
 import { TokenContainerForm } from '../../random-system/ui/TokenContainerForm.jsx';
 import { initiativeApproachOption, initiativeRollInputs } from '../../random-system/initiativeRoll.js';
 import { IconeJetDes } from '../icones/IconeJetDes.jsx';
@@ -22,7 +22,7 @@ function valeurNumerique(valeur, defaut = 0) {
   return Number.isFinite(nombre) ? nombre : defaut;
 }
 
-function FenetreJetInfoRapide({ info, randomSystem, onFermer }) {
+function FenetreJetInfoRapide({ info, randomSystem, statisticsContext = null, onFermer }) {
   const definitions = useMemo(() => activeDefinitions(randomSystem?.state?.definitions || []), [randomSystem?.state?.definitions]);
   const definition = definitions.find((item) => item.id === info.quickRollDefinitionId);
   const containers = useMemo(() => exposedTokenContainers(randomSystem?.state?.tokenContainers || []), [randomSystem?.state?.tokenContainers]);
@@ -30,11 +30,22 @@ function FenetreJetInfoRapide({ info, randomSystem, onFermer }) {
   const [result, setResult] = useState(null);
   const [rolling] = useState(false);
   const launchedRef = useRef(false);
+  const settleOptionalDecisions = (initialResult) => {
+    const decisions = [];
+    let current = initialResult;
+    while (current?.kind === 'random-decision') {
+      decisions.push(current);
+      const next = randomSystem.actions.resolveDefinitionDecision?.(current, false);
+      if (!next || next === current) return current;
+      current = next;
+    }
+    return decisions.length && current ? { ...current, optionalDecisions: decisions } : current;
+  };
   useEffect(() => {
     if (!definition || launchedRef.current) return undefined;
     launchedRef.current = true;
     const timer = window.setTimeout(() => {
-      setResult(randomSystem.actions.runDefinition(definition.id, info.quickRollParameters || {}, info.quickRollOptions || {}));
+      setResult(settleOptionalDecisions(randomSystem.actions.runDefinition(definition.id, info.quickRollParameters || {}, info.quickRollOptions || {}, undefined, statisticsContext)));
     }, 450);
     return () => window.clearTimeout(timer);
   }, [definition?.id, randomSystem.actions]);
@@ -42,8 +53,30 @@ function FenetreJetInfoRapide({ info, randomSystem, onFermer }) {
   const resolveDecision = (accepted) => {
     setResult((current) => randomSystem.actions.resolveDefinitionDecision?.(current, accepted) || current);
   };
+  const activateOptionalDecision = (decision) => {
+    const next = settleOptionalDecisions(randomSystem.actions.resolveDefinitionDecision?.(decision, true));
+    if (next?.kind !== 'random-roll') {
+      setResult(next);
+      return;
+    }
+    const previousDrawIds = new Set((result?.draws || []).map((draw) => draw.id));
+    setResult({
+      ...next,
+      animationDrawIds: (next.draws || []).flatMap((draw) => (
+        previousDrawIds.has(draw.id) ? [] : [draw.id]
+      )),
+    });
+  };
   return <Fenetre title={`${t('sheet.quickInfo.roll')} — ${info.label}`} onClose={onFermer} className="quick-roll-dialog"><div className="quick-roll-content">
-    {container ? <TokenContainerForm container={container} containers={containers} tokenTypes={randomSystem.state.tokenTypes || []} actions={randomSystem.actions} /> : <QuickRollResult result={result} rolling={rolling} onDecision={result?.kind === 'random-decision' ? resolveDecision : undefined} />}
+    {container ? <TokenContainerForm container={container} containers={containers} tokenTypes={randomSystem.state.tokenTypes || []} actions={randomSystem.actions} /> : <>
+      <QuickRollResult result={result} rolling={rolling} onDecision={result?.kind === 'random-decision' ? resolveDecision : undefined} onOptionalDecision={activateOptionalDecision} />
+      {result?.kind === 'random-roll' && <SupplementalDiceRoller
+        sources={randomSystem.state.sources || []}
+        preferredSourceId={result.draws?.[0]?.sourceId}
+        resetKey={result.id}
+        onRun={(extraDefinition) => randomSystem.actions.runAdHocDefinition?.(extraDefinition, {}, {}, undefined, statisticsContext)}
+      />}
+    </>}
   </div></Fenetre>;
 }
 
@@ -146,7 +179,7 @@ function MiniCompteurInitiative({ participant, departage, initiativeTextOrder, p
   );
 }
 
-export function FicheParticipant({ participant, enInitiative, initiativeTextOrder, phaseActionMode, phaseCount = defaultPhaseCount, multipleActionSlots = true, utiliserInitiative = true, initiativeBonusEnabled = true, initiativeBonusRollDefinitionId = '', tiebreakerVisible = true, randomSystem = null, onFermer, onModifier, onBasculerDissimule, onChangerInitiatives, onRejoindreInitiative, onQuitterInitiative, onInfoRapide, onSuivi, onSupprimerSuivi, onAjouterEtat, onModifierEtat, onRetirerEtat, onNote }) {
+export function FicheParticipant({ participant, enInitiative, initiativeTextOrder, phaseActionMode, phaseCount = defaultPhaseCount, multipleActionSlots = true, utiliserInitiative = true, initiativeBonusEnabled = true, initiativeBonusRollDefinitionId = '', tiebreakerVisible = true, randomSystem = null, statisticsContext = null, onFermer, onModifier, onBasculerDissimule, onChangerInitiatives, onRejoindreInitiative, onQuitterInitiative, onInfoRapide, onSuivi, onSupprimerSuivi, onAjouterEtat, onModifierEtat, onRetirerEtat, onNote }) {
   multipleActionSlots = typeof multipleActionSlots === 'function' ? multipleActionSlots(participant) : multipleActionSlots;
   const teinteEtat = teinteEtatParticipant(participant);
   const dissimule = !!participant.secret;
@@ -187,7 +220,7 @@ export function FicheParticipant({ participant, enInitiative, initiativeTextOrde
       <h3>{t('sheet.statuses.title')}</h3>
       <div className="statuses">{participant.statuses?.map((etat) => <EtiquetteEtat key={etat.id} etat={etat} onModifier={() => onModifierEtat?.(etat.id)} onRetirer={() => onRetirerEtat(etat.id)} />)}<button className="small-btn sheet-add-status-btn" onClick={onAjouterEtat}>{t('scene.status.add')}</button></div>
       <label className="field">{t('sheet.note')}<textarea value={participant.note || ''} onChange={(event) => onNote(event.target.value)} /></label>
-      {quickRollInfo && <FenetreJetInfoRapide info={quickRollInfo} randomSystem={randomSystem} onFermer={() => setQuickRollInfo(null)} />}
+      {quickRollInfo && <FenetreJetInfoRapide info={quickRollInfo} randomSystem={randomSystem} statisticsContext={statisticsContext} onFermer={() => setQuickRollInfo(null)} />}
     </Fenetre>
   );
 }

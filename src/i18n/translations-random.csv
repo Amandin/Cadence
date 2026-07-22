@@ -103,6 +103,13 @@ random.quick.adjust,Ajuster ponctuellement ce tirage
 random.quick.adjustField,Expression ajustée
 random.quick.adjustHelp,Modifie uniquement ce lancer. Le tirage enregistré ne sera pas remplacé.
 random.quick.adjustRun,Lancer le tirage ajusté
+random.quick.supplemental.open,+ Dé supplémentaire
+random.quick.supplemental.name,Dé supplémentaire · {source}
+random.quick.supplemental.count,Nombre
+random.quick.supplemental.die,Dé
+random.quick.supplemental.help,À utiliser comme dé ajouté ou pour remplacer une valeur oubliée.
+random.stats.global,Toutes les scènes
+random.stats.scope,Portée
 random.use.noResource,Aucune ressource configurée
 random.use.categoryAvailable,Disponibles
 random.use.categoryInactive,Désactivés

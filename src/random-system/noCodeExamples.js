@@ -133,12 +133,14 @@ function configureStandardDice(draft) {
   ];
   component.countMode = builderModes.PROMPT;
   component.explosionMode = builderExplosionModes.OPTION;
+  component.explosionOfferAfterRoll = true;
   component.reroll = {
     enabled: true,
     operator: 'eq',
     value: 1,
     maxIterations: 1,
     enabledWhen: condition('rerolling', true),
+    offerAfterRoll: true,
   };
   enableRequestedModifier(draft);
 }

@@ -99,7 +99,7 @@ function DrawGroups({ draws, resultId }) {
   );
 }
 
-function RollResult({ result }) {
+function RollResult({ result, quickResult = null }) {
   const selectedGroup = result.combined
     ? { draws: result.draws }
     : result.groups[result.selectedGroupIndex] || result.groups[0];
@@ -118,10 +118,10 @@ function RollResult({ result }) {
       : keptDraws.map((draw) => draw.outcome.symbol || draw.outcome.label || draw.calculatedValue).join(', ') || '—';
   return (
     <>
-      <div className="rs-primary-result">
+      {quickResult || <div className="rs-primary-result">
         <span>{result.primaryAggregate?.label || t('random.result.title')}</span>
         <strong>{primaryValue}</strong>
-      </div>
+      </div>}
       {result.primaryAggregate?.outcome?.text && (
         <div className="rs-linked-outcome-note">
           <strong>
@@ -231,7 +231,7 @@ function DecisionResult({ result, onDecision }) {
   );
 }
 
-export const ResultView = memo(function ResultView({ result, onDecision }) {
+export const ResultView = memo(function ResultView({ result, onDecision, quickResult = null }) {
   return (
     <section className="rs-result-view" aria-live="polite">
       <div className="rs-section-head">
@@ -250,7 +250,7 @@ export const ResultView = memo(function ResultView({ result, onDecision }) {
         )}
       </div>
       {!result && <div className="rs-empty-state">{t('random.result.empty')}</div>}
-      {result?.kind === 'random-roll' && <RollResult result={result} />}
+      {result?.kind === 'random-roll' && <RollResult result={result} quickResult={quickResult} />}
       {result?.kind === 'card-draw' && <CardResult result={result} />}
       {result?.kind === 'token-draw' && <TokenResult result={result} />}
       {result?.kind === 'random-decision' && <DecisionResult result={result} onDecision={onDecision} />}

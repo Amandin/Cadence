@@ -423,16 +423,16 @@ export default function App() {
   const loadTestCampaign = () => { actions.loadTestCampaign?.(); setOpenMenu(false); characters.closeCharacterPanels(); setCurrentView('hub'); };
   const updateSceneTutorial = useCallback((next) => setSceneTutorial((current) => writeSceneTutorial(typeof next === 'function' ? next(current) : next)), []);
   const finishSceneTutorial = useCallback(() => updateSceneTutorial({ active: false, step: 0 }), [updateSceneTutorial]);
-  const startFirstRunProfile = (selection, tutorial = false) => {
-    const result = actions.startFirstRunQuestionnaire(selection);
+  const startFirstRunProfile = async (selection, tutorial = false) => {
+    const result = await actions.startFirstRunQuestionnaire(selection);
     if (result?.ok !== false) {
       updateSceneTutorial(tutorial ? { active: true, step: sceneTutorialSteps.ADD_PARTICIPANT } : { active: false, step: 0 });
       setCurrentView('scene');
     }
     return result;
   };
-  const startFirstRunCustomRules = () => {
-    const result = actions.startFirstRunCustomCampaign();
+  const startFirstRunCustomRules = async () => {
+    const result = await actions.startFirstRunCustomCampaign();
     if (result?.ok !== false) {
       finishSceneTutorial();
       try {
@@ -758,7 +758,7 @@ export default function App() {
   }
 
   if (onboardingReplayOpen) {
-    return <>{pwaUpdateBanner}<Suspense fallback={<ChargementVue dark={dark} performanceLevel={performanceLevel} texte={t('app.loading.hub')} />}><FirstRunOnboarding dark={dark} initialRules={campaignRules} randomSystem={randomSystem} onToggleTheme={actions.setDark} onCancel={() => setOnboardingReplayOpen(false)} onStartRules={(selection, tutorial) => { const result = startFirstRunProfile(selection, tutorial); if (result?.ok !== false) setOnboardingReplayOpen(false); return result; }} onStartCustomRules={() => { const result = startFirstRunCustomRules(); if (result?.ok !== false) setOnboardingReplayOpen(false); return result; }} /></Suspense></>;
+    return <>{pwaUpdateBanner}<Suspense fallback={<ChargementVue dark={dark} performanceLevel={performanceLevel} texte={t('app.loading.hub')} />}><FirstRunOnboarding dark={dark} initialRules={campaignRules} randomSystem={randomSystem} onToggleTheme={actions.setDark} onCancel={() => setOnboardingReplayOpen(false)} onStartRules={async (selection, tutorial) => { const result = await startFirstRunProfile(selection, tutorial); if (result?.ok !== false) setOnboardingReplayOpen(false); return result; }} onStartCustomRules={async () => { const result = await startFirstRunCustomRules(); if (result?.ok !== false) setOnboardingReplayOpen(false); return result; }} /></Suspense></>;
   }
 
   if (campaignProfileWizardOpen) {

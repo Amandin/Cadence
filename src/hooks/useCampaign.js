@@ -203,7 +203,8 @@ export function useCampaign() {
       setFileSaveStatus({ mode: 'saving', message: t('campaign.status.saving', { fileName: activeEntry.fileName }) });
       fileSaveTimerRef.current = window.setTimeout(async () => {
         try {
-          await writeCadenceFile(handle, content);
+          const written = await writeCadenceFile(handle, content);
+          if (!written) throw new Error(t('campaign.error.permissionDenied'));
           if (revision !== fileSaveRevisionRef.current) return;
           setFileSaveStatus({ mode: 'saved', message: t('campaign.status.saved', { path: `${activeEntry.folderName}/${activeEntry.fileName}` }) });
         } catch (error) {
@@ -277,6 +278,30 @@ export function useCampaign() {
     return result;
   };
 
+  const createOnboardingCadenceFile = async (snapshot) => {
+    const localEntry = () => ({ snapshot, entry: campaignEntryFromPayload(snapshot, { source: 'local' }) });
+    if (typeof window === 'undefined' || !window.showSaveFilePicker) return localEntry();
+    try {
+      const initialEntry = campaignEntryFromPayload(snapshot, { source: 'local' });
+      const handle = await window.showSaveFilePicker({
+        suggestedName: initialEntry.fileName,
+        types: [{ description: 'Campagne Cadence', accept: { 'application/json': ['.cad'] } }],
+      });
+      const linkedSnapshot = normalizeCampaignPayload({
+        ...snapshot,
+        campaign: { ...snapshot.campaign, fileName: handle?.name || initialEntry.fileName },
+        savedAt: new Date().toISOString(),
+      });
+      const entry = campaignEntryFromPayload(linkedSnapshot, { source: 'fichier', autosave: true });
+      const written = await writeCadenceFile(handle, JSON.stringify(linkedSnapshot, null, 2));
+      if (!written) throw new Error(t('campaign.error.permissionDenied'));
+      return { snapshot: linkedSnapshot, entry, handle };
+    } catch (error) {
+      if (error?.name === 'AbortError') return { ...localEntry(), cancelled: true };
+      return { ...localEntry(), error };
+    }
+  };
+
   const extraCampaignActions = useMemo(() => ({
     async importCampaign(file, options = {}) {
       try {
@@ -316,7 +341,8 @@ export function useCampaign() {
       setPendingFileChoice(null);
       const revision = ++fileSaveRevisionRef.current;
       try {
-        await writeCadenceFile(pending.handle, campaignTextForEntry(entry));
+        const written = await writeCadenceFile(pending.handle, campaignTextForEntry(entry));
+        if (!written) throw new Error(t('campaign.error.permissionDenied'));
         if (revision !== fileSaveRevisionRef.current) return { ok: true };
         setFileSaveStatus({ mode: 'saved', message: t('campaign.status.directActive', { path: `${entry.folderName}/${entry.fileName}` }) });
         return { ok: true };
@@ -338,7 +364,8 @@ export function useCampaign() {
         setCampaignName(copyName);
         setPendingFileChoice(null);
         const revision = ++fileSaveRevisionRef.current;
-        await writeCadenceFile(handle, campaignTextForEntry(entry, copyName));
+        const written = await writeCadenceFile(handle, campaignTextForEntry(entry, copyName));
+        if (!written) throw new Error(t('campaign.error.permissionDenied'));
         if (revision !== fileSaveRevisionRef.current) return { ok: true };
         setFileSaveStatus({ mode: 'saved', message: t('campaign.status.copyLinked', { path: `${entry.folderName}/${entry.fileName}` }) });
         return { ok: true };
@@ -351,7 +378,7 @@ export function useCampaign() {
       setPendingFileChoice(null);
       setFileSaveStatus({ mode: 'local', message: t('campaign.status.loadedNoLinkedFile') });
     },
-    startFirstRunCampaign(preset, profileSelection = {}, campaignOptions = {}) {
+    async startFirstRunCampaign(preset, profileSelection = {}, campaignOptions = {}) {
       if (!preset?.rules) return { ok: false, message: t('campaign.error.presetMissing') };
       const nextRules = normalizeCampaignRules(preset.rules);
       const blankScene = campaignOptions.onboardingDnd5 ? createDnd5ArrivalScene(nextRules) : createBlankScene(nextRules);
@@ -359,8 +386,9 @@ export function useCampaign() {
       const nextRandomSystem = campaignOptions.randomSystem && typeof campaignOptions.randomSystem === 'object'
         ? normalizeRandomSystemState(campaignOptions.randomSystem)
         : enableQuickRollProfilesInState(normalizeRandomSystemState(null), profileSelection.randomQuickRollProfileIds);
-      const snapshot = createCampaignPayload([blankScene], dark, DEFAULT_CAMPAIGN_NAME, nextTemplateStore, nextRules, createRulePresetSnapshot(preset, nextRules, profileSelection), {}, nextRandomSystem, profileSelection);
-      const entry = campaignEntryFromPayload(snapshot, { source: 'local' });
+      const initialSnapshot = createCampaignPayload([blankScene], dark, DEFAULT_CAMPAIGN_NAME, nextTemplateStore, nextRules, createRulePresetSnapshot(preset, nextRules, profileSelection), {}, nextRandomSystem, profileSelection);
+      const file = await createOnboardingCadenceFile(initialSnapshot);
+      const { snapshot, entry } = file;
       const localSave = persistOnboardingCampaign(snapshot);
       setCampaignRules(nextRules);
       setCampaignProfile(snapshot.campaignProfile);
@@ -374,13 +402,16 @@ export function useCampaign() {
       setCampaignEntries([entry]);
       setActiveCampaignEntryId(entry.id);
       setPendingFileChoice(null);
-      if (localSave.ok) setFileSaveStatus({ mode: 'local', message: t('campaign.status.localActive') });
+      if (file.handle) fileHandlesRef.current.set(entry.id, file.handle);
+      if (file.error) setFileSaveStatus({ mode: 'error', message: t('campaign.status.saveError', { message: file.error?.message || t('campaign.error.permissionDenied') }) });
+      else if (file.handle) setFileSaveStatus({ mode: 'saved', message: t('campaign.status.directActive', { path: `${entry.folderName}/${entry.fileName}` }) });
+      else if (localSave.ok) setFileSaveStatus({ mode: 'local', message: t('campaign.status.localActive') });
       setRoundEffect(null);
       lastPersistenceSignatureRef.current = '';
       if (localSave.ok && !hasCompletedFirstRunOnboarding()) markFirstRunOnboardingComplete();
       setFirstRunOnboardingNeeded(false);
       setPersistenceEnabled(true);
-      return { ok: true };
+      return { ok: true, fileCreated: !!file.handle, fileCancelled: !!file.cancelled };
     },
     startFirstRunProfile({ systemProfileId, editionId = '', initiativeProfileId, randomQuickRollProfileIds = [] } = {}) {
       const systemProfile = systemProfileById(systemProfileId);
@@ -403,13 +434,14 @@ export function useCampaign() {
         rules,
       }, {}, { randomSystem, onboardingDnd5: true });
     },
-    startFirstRunCustomCampaign() {
+    async startFirstRunCustomCampaign() {
       const nextRules = normalizeCampaignRules(campaignRules);
       const blankScene = createBlankScene(nextRules);
       const nextTemplateStore = addOnboardingTrackerTemplates(templateStore, null);
       const nextRandomSystem = normalizeRandomSystemState(null);
-      const snapshot = createCampaignPayload([blankScene], dark, DEFAULT_CAMPAIGN_NAME, nextTemplateStore, nextRules, null, {}, nextRandomSystem, {});
-      const entry = campaignEntryFromPayload(snapshot, { source: 'local' });
+      const initialSnapshot = createCampaignPayload([blankScene], dark, DEFAULT_CAMPAIGN_NAME, nextTemplateStore, nextRules, null, {}, nextRandomSystem, {});
+      const file = await createOnboardingCadenceFile(initialSnapshot);
+      const { snapshot, entry } = file;
       const localSave = persistOnboardingCampaign(snapshot);
       setCampaignRules(nextRules);
       setCampaignProfile(snapshot.campaignProfile);
@@ -423,13 +455,16 @@ export function useCampaign() {
       setCampaignEntries([entry]);
       setActiveCampaignEntryId(entry.id);
       setPendingFileChoice(null);
-      if (localSave.ok) setFileSaveStatus({ mode: 'local', message: t('campaign.status.localActive') });
+      if (file.handle) fileHandlesRef.current.set(entry.id, file.handle);
+      if (file.error) setFileSaveStatus({ mode: 'error', message: t('campaign.status.saveError', { message: file.error?.message || t('campaign.error.permissionDenied') }) });
+      else if (file.handle) setFileSaveStatus({ mode: 'saved', message: t('campaign.status.directActive', { path: `${entry.folderName}/${entry.fileName}` }) });
+      else if (localSave.ok) setFileSaveStatus({ mode: 'local', message: t('campaign.status.localActive') });
       setRoundEffect(null);
       lastPersistenceSignatureRef.current = '';
       if (localSave.ok && !hasCompletedFirstRunOnboarding()) markFirstRunOnboardingComplete();
       setFirstRunOnboardingNeeded(false);
       setPersistenceEnabled(true);
-      return { ok: true };
+      return { ok: true, fileCreated: !!file.handle, fileCancelled: !!file.cancelled };
     },
     loadTestCampaign() {
       const snapshot = normalizeCampaignPayload(makeTestCampaign());

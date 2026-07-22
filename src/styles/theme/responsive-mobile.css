@@ -763,7 +763,7 @@
   }
 }
 
-@media (max-width: 520px) {
+@media (max-width: 680px) {
   .grid4.hub-tabs {
     grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 6px;

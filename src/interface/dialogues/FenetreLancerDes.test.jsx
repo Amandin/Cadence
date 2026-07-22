@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { FenetreLancerDes, QuickRollResult } from './FenetreLancerDes.jsx';
+import { FenetreLancerDes, QuickRollResult, resultDice, SupplementalDiceRoller } from './FenetreLancerDes.jsx';
 import { TokenContainerForm } from '../../random-system/ui/TokenContainerForm.jsx';
 
 function comparisonResult() {
@@ -49,6 +49,92 @@ describe('QuickRollResult', () => {
 
   it('renders nothing before the first roll', () => {
     expect(renderToStaticMarkup(<QuickRollResult result={null} />)).toBe('');
+  });
+
+  it('keeps rerolls and exploding dice in the animation sequence', () => {
+    const html = renderToStaticMarkup(<QuickRollResult result={{
+      kind: 'random-roll',
+      draws: [
+        { id: 'first', outcome: { value: 1 }, calculatedValue: 1, rerolled: true },
+        { id: 'rerolled', rerollOf: 'first', outcome: { value: 4 }, calculatedValue: 4, kept: true },
+        { id: 'exploded', explodedFrom: 'rerolled', outcome: { value: 6 }, calculatedValue: 6, kept: true },
+      ],
+      primaryAggregate: { value: 10 },
+    }} />);
+
+    expect(html).toContain('data-roll-stages="2"');
+    expect(html.match(/quick-roll-die/g)).toHaveLength(1);
+  });
+
+  it('only animates dice affected by a decision resolved after the roll', () => {
+    const html = renderToStaticMarkup(<QuickRollResult result={{
+      kind: 'random-roll',
+      animationDrawIds: ['rerolled', 'first'],
+      draws: [
+        { id: 'unchanged', outcome: { value: 3 }, calculatedValue: 3, kept: true },
+        { id: 'first', outcome: { value: 1 }, calculatedValue: 1, rerolled: true },
+        { id: 'rerolled', rerollOf: 'first', outcome: { value: 5 }, calculatedValue: 5, kept: true },
+      ],
+      primaryAggregate: { value: 8 },
+    }} />);
+
+    expect(html.match(/is-rolling/g)).toHaveLength(1);
+    expect(html).toContain('>3</strong>');
+  });
+
+  it('keeps the original die still when only its reroll is added after the roll', () => {
+    const [die] = resultDice({
+      kind: 'random-roll',
+      animationDrawIds: ['rerolled'],
+      draws: [
+        { id: 'first', outcome: { value: 1 }, calculatedValue: 1, rerolled: true },
+        { id: 'rerolled', rerollOf: 'first', outcome: { value: 5 }, calculatedValue: 5, kept: true },
+      ],
+    });
+
+    expect(die).toMatchObject({ animate: true, animateFromStage: 1, history: [[1], [5]] });
+  });
+
+  it('shows the former value as a small corner marker after a reroll', () => {
+    const html = renderToStaticMarkup(<QuickRollResult result={{
+      kind: 'random-roll',
+      animationDrawIds: [],
+      draws: [
+        { id: 'first', outcome: { value: 1 }, calculatedValue: 1, rerolled: true },
+        { id: 'rerolled', rerollOf: 'first', outcome: { value: 5 }, calculatedValue: 5, kept: true },
+      ],
+      primaryAggregate: { value: 5 },
+    }} />);
+
+    expect(html).toContain('quick-roll-die-previous');
+    expect(html).toContain('>1</small>');
+    expect(html).toContain('>5</strong>');
+  });
+
+  it('marks the die that triggers an explosion before adding its extra die', () => {
+    const dice = resultDice({
+      kind: 'random-roll',
+      draws: [
+        { id: 'first', outcome: { value: 6 }, calculatedValue: 6, kept: true },
+        { id: 'exploded', explodedFrom: 'first', outcome: { value: 3 }, calculatedValue: 3, kept: true },
+      ],
+    });
+
+    expect(dice[0]).toMatchObject({ explosionPendingAt: 280, explosionPendingUntil: 430 });
+    expect(dice[1]).toMatchObject({ delay: 430, deferAppearance: true });
+  });
+
+  it('renders after-roll actions as unobtrusive optional buttons', () => {
+    const html = renderToStaticMarkup(<QuickRollResult result={{
+      kind: 'random-roll',
+      draws: [],
+      primaryAggregate: { value: 4 },
+      optionalDecisions: [{ id: 'reroll', pendingDecision: { label: 'Relancer les 1' } }],
+    }} />);
+
+    expect(html).toContain('quick-roll-optional-actions');
+    expect(html).toContain('Relancer les 1');
+    expect(html).not.toContain('Accepter');
   });
 
   it('shows card draws in the same compact result area', () => {
@@ -163,7 +249,7 @@ describe('FenetreLancerDes', () => {
     expect(html.indexOf('Dés gardés')).toBeLessThan(html.indexOf('Modificateur'));
   });
 
-  it('leaves an optional modifier blank and uses the definition default when launched', () => {
+  it('defaults a quick-roll modifier to zero', () => {
     const html = renderToStaticMarkup(<FenetreLancerDes randomSystem={{
       state: {
         definitions: [{
@@ -177,8 +263,18 @@ describe('FenetreLancerDes', () => {
     }} onFermer={() => {}} />);
 
     expect(html).toContain('Modificateur');
-    expect(html).toContain('value=""');
+    expect(html).toContain('value="0"');
     expect(html).not.toContain('Ajouter un modificateur');
+  });
+
+  it('offers the supplemental die launcher for standard dice', () => {
+    const html = renderToStaticMarkup(<SupplementalDiceRoller
+      sources={[{ id: 'standard-d6', name: 'd6', kind: 'uniform', min: 1, max: 6 }]}
+      onRun={() => null}
+    />);
+
+    expect(html).toContain('+ Dé supplémentaire');
+    expect(html).toContain('aria-expanded="false"');
   });
 
   it('exposes token containers instead of predefined token draws', () => {

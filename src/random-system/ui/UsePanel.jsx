@@ -6,12 +6,21 @@ import {
 } from '../combinations.js';
 import { activeDefinitions, exposedTokenContainers } from '../definitionAccess.js';
 import { randomOptionTypes, randomParameterTypes, randomSourceKinds } from '../engine.js';
+import {
+  defaultQuickModifiers,
+  newDrawAnimationIds,
+  quickParameterComparator,
+  readQuickRollMemory,
+  settleOptionalDecisions,
+  writeQuickRollMemory,
+} from '../quickRollSupport.js';
 import { ChoiceOptionControl } from './ChoiceOptionControl.jsx';
 import { DefinitionVisual } from './DefinitionVisual.jsx';
 import { HistoryPanel } from './HistoryPanel.jsx';
 import { RandomIcon } from './RandomIcons.jsx';
 import { ResultView } from './ResultView.jsx';
 import { TokenContainerForm } from './TokenContainerForm.jsx';
+import { QuickRollResult, SupplementalDiceRoller } from '../../interface/dialogues/FenetreLancerDes.jsx';
 import '../styles/base.css';
 import '../styles/choice-controls.css';
 import '../styles/results.css';
@@ -369,6 +378,7 @@ export function UsePanel({ state, actions, resourcePickerAccessory = null }) {
       .map((definition) => ({ ...definition, available: true }));
   }, [cardSourceIds, state.definitions]);
   const [pendingResult, setPendingResult] = useState(null);
+  const [lastQuickRoll] = useState(readQuickRollMemory);
   const [selectedDefinitionId, setSelectedDefinitionId] = useState(activeRollDefinitions[0]?.id || '');
   const cardSources = useMemo(() => {
     return (state.sources || [])
@@ -399,6 +409,11 @@ export function UsePanel({ state, actions, resourcePickerAccessory = null }) {
   const selectedCardSource = availableCardSources.find((item) => item.id === selectedCardSourceId)
     || availableCardSources[0];
   const selectedTokenContainer = tokenContainers.find((item) => item.id === selectedTokenContainerId) || tokenContainers[0];
+  const hubInitialInputs = useMemo(() => (
+    lastQuickRoll && selectedDefinition?.id === lastQuickRoll.selectedId
+      ? lastQuickRoll.inputs || { parameters: {}, options: {} }
+      : { parameters: {}, options: {} }
+  ), [lastQuickRoll, selectedDefinition?.id]);
 
   useEffect(() => {
     if (!selectedDefinition && availableRollDefinitions[0]) setSelectedDefinitionId(availableRollDefinitions[0].id);
@@ -413,12 +428,40 @@ export function UsePanel({ state, actions, resourcePickerAccessory = null }) {
   useEffect(() => {
     if (!selectedTokenContainer && tokenContainers[0]) setSelectedTokenContainerId(tokenContainers[0].id);
   }, [selectedTokenContainer, tokenContainers]);
+  useEffect(() => {
+    setPendingResult(null);
+  }, [resourceKind, selectedDefinition?.id, selectedCardSource?.id, selectedTokenContainer?.id]);
 
   const resources = resourceKind === 'definitions' ? activeRollDefinitions : resourceKind === 'cards' ? cardSources : tokenContainers;
   const selectedId = resourceKind === 'definitions' ? selectedDefinition?.id : resourceKind === 'cards' ? selectedCardSource?.id : selectedTokenContainer?.id;
+  const settleHubOptionalDecisions = (initialResult) => (
+    settleOptionalDecisions(initialResult, actions.resolveDefinitionDecision)
+  );
   const resolveDecision = (accepted) => {
     const result = actions.resolveDefinitionDecision?.(pendingResult, accepted);
     setPendingResult(result?.kind === 'random-decision' ? result : null);
+  };
+  const activateOptionalDecision = (decision) => {
+    const next = settleHubOptionalDecisions(actions.resolveDefinitionDecision?.(decision, true));
+    if (next?.kind !== 'random-roll') {
+      setPendingResult(next || null);
+      return;
+    }
+    setPendingResult({
+      ...next,
+      animationDrawIds: newDrawAnimationIds(next, pendingResult || state.lastResult),
+    });
+  };
+  const displayedResult = pendingResult || state.lastResult;
+  const runHubDefinition = (definitionId, parameters, options, instances) => {
+    const definition = state.definitions.find((item) => item.id === definitionId);
+    const normalizedParameters = defaultQuickModifiers(definition, parameters);
+    writeQuickRollMemory({ selectedId: definitionId, inputs: { parameters: normalizedParameters, options } });
+    return actions.runDefinition(definitionId, normalizedParameters, options, instances, { id: 'hub', label: 'Hub' });
+  };
+  const rememberHubInputs = (inputs) => {
+    if (!selectedDefinition) return;
+    writeQuickRollMemory({ selectedId: selectedDefinition.id, inputs });
   };
 
   return (
@@ -452,8 +495,12 @@ export function UsePanel({ state, actions, resourcePickerAccessory = null }) {
             definition={selectedDefinition}
             definitions={state.definitions}
             sources={state.sources}
-            onRun={actions.runDefinition}
-            onResult={(result) => setPendingResult(result?.kind === 'random-decision' ? result : null)}
+            onRun={runHubDefinition}
+            initialParameters={hubInitialInputs.parameters}
+            initialOptions={hubInitialInputs.options}
+            onInputsChange={rememberHubInputs}
+            parameterComparator={quickParameterComparator}
+            onResult={(result) => setPendingResult(settleHubOptionalDecisions(result) || null)}
           />
         )}
         {resourceKind === 'cards' && selectedCardSource && (
@@ -464,7 +511,17 @@ export function UsePanel({ state, actions, resourcePickerAccessory = null }) {
           />
         )}
         {resourceKind === 'tokens' && selectedTokenContainer && <TokenContainerForm container={selectedTokenContainer} containers={tokenContainers} tokenTypes={state.tokenTypes || []} actions={actions} result={state.lastResult} />}
-        {resourceKind !== 'tokens' && <ResultView result={pendingResult || state.lastResult} onDecision={pendingResult ? resolveDecision : undefined} />}
+        {resourceKind !== 'tokens' && <ResultView
+          result={displayedResult}
+          onDecision={displayedResult?.kind === 'random-decision' ? resolveDecision : undefined}
+          quickResult={displayedResult?.kind === 'random-roll' ? <QuickRollResult result={displayedResult} onOptionalDecision={activateOptionalDecision} /> : null}
+        />}
+        {resourceKind !== 'tokens' && displayedResult?.kind === 'random-roll' && <SupplementalDiceRoller
+          sources={state.sources}
+          preferredSourceId={displayedResult.draws?.[0]?.sourceId}
+          resetKey={displayedResult.id}
+          onRun={(definition) => actions.runAdHocDefinition?.(definition, {}, {}, undefined, { id: 'hub', label: 'Hub' })}
+        />}
       </div>
 
       <HistoryPanel history={state.history} onSelect={actions.selectResult} onClear={actions.clearHistory} />

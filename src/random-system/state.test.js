@@ -107,6 +107,31 @@ describe('RandomSystem state', () => {
     expect(migrated.sources.map((source) => source.id)).toContain('example-weather-d10');
   });
 
+  it('adds after-roll decisions to the existing default standard dice roll', () => {
+    const migrated = normalizeRandomSystemState({
+      schemaVersion: 18,
+      sources: [],
+      definitions: [{
+        id: 'default-dnd5-standard-dice',
+        name: 'Dés standards',
+        options: [
+          { id: 'exploding', label: 'Explosion', type: 'boolean', defaultValue: false },
+          { id: 'rerolling', label: 'Relancer les 1', type: 'boolean', defaultValue: false },
+        ],
+        components: [{ id: 'dice', source: fixedValue('standard-d6'), count: fixedValue(1) }],
+        pipeline: [
+          { id: 'reroll-dice', type: randomPipelineStepTypes.REROLL, enabledWhen: { optionId: 'rerolling', equals: true } },
+          { id: 'explode-dice', type: randomPipelineStepTypes.EXPLODE, enabledWhen: { optionId: 'exploding', equals: true } },
+        ],
+      }],
+    });
+    const definition = migrated.definitions.find((item) => item.id === 'default-dnd5-standard-dice');
+    expect(definition.pipeline).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'reroll-dice-after-roll', decision: 'after-roll', enabledWhen: { optionId: 'rerolling', equals: false } }),
+      expect.objectContaining({ id: 'explode-dice-after-roll', decision: 'after-roll', enabledWhen: { optionId: 'exploding', equals: false } }),
+    ]));
+  });
+
   it('replaces retired initiative-specific kit rolls with generic dice mechanics', () => {
     const current = createDefaultRandomSystemState();
     const migrated = normalizeRandomSystemState({
@@ -284,6 +309,12 @@ describe('RandomSystem state', () => {
       byDefinition: { 'kit-d20-check': 1 },
     });
     expect(next.statistics.bySource['standard-d20'].outcomes['value-1']).toBe(1);
+    expect(next.statistics.byContext.hub).toMatchObject({
+      label: 'Hub',
+      uses: 1,
+      draws: 1,
+      byDefinition: { 'kit-d20-check': 1 },
+    });
   });
 
   it('records token draws in the shared result history and statistics', () => {
@@ -370,5 +401,6 @@ describe('RandomSystem state', () => {
     );
     expect(exported.randomKits).toEqual(normalizeRandomSystemState(state).randomKits);
     expect(exported.history).toEqual([]);
+    expect(exported.statistics).toEqual(state.statistics);
   });
 });

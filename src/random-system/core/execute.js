@@ -17,6 +17,7 @@ import {
   drawInitialComponents,
   appliesToDraw,
   explodeDraws,
+  isInExplosionChain,
   isStepEnabled,
   rerollDraws,
 } from './drawOperations.js';
@@ -33,6 +34,7 @@ function stepHasDecisionCandidate(drawState, step, context) {
   }
   return drawState.draws.some((draw) => (
     !draw.rerolled
+    && (step.type !== randomPipelineStepTypes.REROLL || !isInExplosionChain(drawState.draws, draw))
     && appliesToDraw(step, draw)
     && matchesCondition(draw, step.condition, context)
   ));
@@ -56,6 +58,7 @@ function runGroup(context, steps, rng, groupIndex, decisions) {
             matchingDrawIds: drawState.draws
               .filter((draw) => (
                 !draw.rerolled
+                && (step.type !== randomPipelineStepTypes.REROLL || !isInExplosionChain(drawState.draws, draw))
                 && appliesToDraw(step, draw)
                 && (step.type === randomPipelineStepTypes.KEEP || matchesCondition(draw, step.condition, context))
               ))

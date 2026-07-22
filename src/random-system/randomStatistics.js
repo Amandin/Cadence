@@ -66,15 +66,46 @@ function statisticsForTokens(statistics, result) {
   };
 }
 
+function statisticsForContext(statistics, result) {
+  const context = result.statisticsContext || { id: 'hub', label: 'Hub' };
+  const id = String(context.id || 'hub');
+  const current = statistics.byContext?.[id] || { label: context.label || id, uses: 0, draws: 0, byDefinition: {}, bySource: {} };
+  const scoped = {
+    totalUses: Number(current.uses) || 0,
+    totalDraws: Number(current.draws) || 0,
+    byDefinition: current.byDefinition || {},
+    bySource: current.bySource || {},
+  };
+  const counted = result.kind === 'card-draw'
+    ? statisticsForCards(scoped, result)
+    : result.kind === 'token-draw'
+      ? statisticsForTokens(scoped, result)
+      : statisticsForRoll(scoped, result);
+  return {
+    ...statistics,
+    byContext: {
+      ...(statistics.byContext || {}),
+      [id]: {
+        label: context.label || current.label || id,
+        uses: counted.totalUses,
+        draws: counted.totalDraws,
+        byDefinition: counted.byDefinition,
+        bySource: counted.bySource,
+      },
+    },
+  };
+}
+
 export function recordRandomResult(state, result, { schemaVersion, normalizeState, historyLimit }) {
   const current = state?.schemaVersion === schemaVersion
     ? state
     : normalizeState(state);
-  const statistics = result.kind === 'card-draw'
+  const countedStatistics = result.kind === 'card-draw'
     ? statisticsForCards(current.statistics, result)
     : result.kind === 'token-draw'
       ? statisticsForTokens(current.statistics, result)
       : statisticsForRoll(current.statistics, result);
+  const statistics = statisticsForContext(countedStatistics, result);
   return {
     ...current,
     lastResult: result,

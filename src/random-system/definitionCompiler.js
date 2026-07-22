@@ -51,22 +51,36 @@ function enabledWhenFromDraft(value) {
   return conditions.length === 1 ? conditions[0] : conditions;
 }
 
+function afterRollFallback(step, enabledWhen, enabled) {
+  if (!enabled || Array.isArray(enabledWhen) || typeof enabledWhen?.equals !== 'boolean') return [];
+  return [{
+    ...step,
+    id: `${step.id}-after-roll`,
+    decision: 'after-roll',
+    enabledWhen: { optionId: enabledWhen.optionId, equals: !enabledWhen.equals },
+  }];
+}
+
 function explosionSteps(draft) {
   return draft.components
     .filter((component) => component.explosionMode !== builderExplosionModes.NEVER)
-    .map((component) => ({
-      id: `explode-${component.id}`,
-      type: randomPipelineStepTypes.EXPLODE,
-      componentIds: [component.id],
-      condition: component.explosionTrigger === builderExplosionTriggers.THRESHOLD
-        ? comparisonCondition('gte', Number(component.explosionThreshold) || 0)
-        : { type: 'source-extreme', extreme: 'max' },
-      maxIterations: Math.max(1, Math.min(100, Number(component.explosionLimit) || 100)),
-      enabledWhen: enabledWhenFromDraft(component.explosionEnabledWhen)
+    .flatMap((component) => {
+      const enabledWhen = enabledWhenFromDraft(component.explosionEnabledWhen)
         || (component.explosionMode === builderExplosionModes.OPTION
           ? { optionId: 'exploding', equals: true }
-          : null),
-    }));
+          : null);
+      const step = {
+        id: `explode-${component.id}`,
+        type: randomPipelineStepTypes.EXPLODE,
+        componentIds: [component.id],
+        condition: component.explosionTrigger === builderExplosionTriggers.THRESHOLD
+          ? comparisonCondition('gte', Number(component.explosionThreshold) || 0)
+          : { type: 'source-extreme', extreme: 'max' },
+        maxIterations: Math.max(1, Math.min(100, Number(component.explosionLimit) || 100)),
+        enabledWhen,
+      };
+      return [step, ...afterRollFallback(step, enabledWhen, component.explosionOfferAfterRoll)];
+    });
 }
 
 function buildComponents(draft, parameters) {
@@ -207,14 +221,16 @@ function buildCombinationDefinition(draft) {
 function appendInputTransforms(pipeline, draft) {
   draft.components.forEach((component) => {
     if (!component.reroll?.enabled) return;
-    pipeline.push({
+    const enabledWhen = enabledWhenFromDraft(component.reroll.enabledWhen);
+    const step = {
       id: `reroll-${component.id}`,
       type: randomPipelineStepTypes.REROLL,
       componentIds: [component.id],
       condition: comparisonCondition(component.reroll.operator, component.reroll.value),
       maxIterations: Math.max(1, Number(component.reroll.maxIterations) || 1),
-      enabledWhen: enabledWhenFromDraft(component.reroll.enabledWhen),
-    });
+      enabledWhen,
+    };
+    pipeline.push(step, ...afterRollFallback(step, enabledWhen, component.reroll.offerAfterRoll));
   });
   pipeline.push(...explosionSteps(draft));
   if (draft.customValue.enabled) {

@@ -323,4 +323,75 @@ describe('RandomSystem engine', () => {
     expect(result.draws[1]).toMatchObject({ calculatedValue: 3, markers: [{ id: 'bright', label: 'Brillant' }] });
     expect(result.primaryAggregate.value).toBe(3);
   });
+
+  it('never rerolls dice that are part of an explosion chain', () => {
+    const definition = {
+      id: 'explosion-before-reroll',
+      name: 'Explosion avant relance',
+      components: [{ id: 'dice', source: fixedValue('d6'), count: fixedValue(1) }],
+      pipeline: [
+        {
+          id: 'explode-six',
+          type: randomPipelineStepTypes.EXPLODE,
+          condition: { type: 'source-extreme', extreme: 'max' },
+          maxIterations: 1,
+        },
+        {
+          id: 'reroll-six',
+          type: randomPipelineStepTypes.REROLL,
+          condition: { type: 'compare', field: 'raw', operator: 'eq', value: fixedValue(6) },
+          maxIterations: 1,
+        },
+        {
+          id: 'total',
+          type: randomPipelineStepTypes.AGGREGATE,
+          operation: randomAggregateOperations.SUM,
+          outputId: 'total',
+        },
+      ],
+      primaryAggregateId: 'total',
+    };
+
+    const result = executeRandomDefinition({
+      definition,
+      sources: [d6],
+      rng: sequenceRng([0.999, 0.2]),
+    });
+
+    expect(result.draws).toHaveLength(2);
+    expect(result.draws.map((draw) => draw.outcome.value)).toEqual([6, 2]);
+    expect(result.draws.some((draw) => draw.rerolled)).toBe(false);
+  });
+
+  it('does not offer an optional reroll for dice that have exploded', () => {
+    const definition = {
+      id: 'optional-reroll-after-explosion',
+      name: 'Relance facultative apres explosion',
+      components: [{ id: 'dice', source: fixedValue('d6'), count: fixedValue(1) }],
+      pipeline: [
+        {
+          id: 'explode-six',
+          type: randomPipelineStepTypes.EXPLODE,
+          condition: { type: 'source-extreme', extreme: 'max' },
+          maxIterations: 1,
+        },
+        {
+          id: 'reroll-six',
+          type: randomPipelineStepTypes.REROLL,
+          decision: 'after-roll',
+          condition: { type: 'compare', field: 'raw', operator: 'eq', value: fixedValue(6) },
+          maxIterations: 1,
+        },
+      ],
+    };
+
+    const result = executeRandomDefinition({
+      definition,
+      sources: [d6],
+      rng: sequenceRng([0.999, 0.2]),
+    });
+
+    expect(result.kind).toBe('random-roll');
+    expect(result.draws.map((draw) => draw.outcome.value)).toEqual([6, 2]);
+  });
 });

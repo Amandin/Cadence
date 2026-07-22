@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createStandardSources } from './defaults.js';
 import { buildRandomDefinition } from './definitionBuilder.js';
-import { executeRandomDefinition, randomPipelineStepTypes } from './engine.js';
+import { executeRandomDefinition, randomPipelineStepTypes, resolveRandomDecision } from './engine.js';
 import {
   createDnd5DefaultDefinitions,
   createNoCodeExampleDraft,
@@ -72,7 +72,22 @@ describe('No-code roll examples', () => {
     expect(definition.pipeline).toEqual(expect.arrayContaining([
       expect.objectContaining({ type: randomPipelineStepTypes.EXPLODE, enabledWhen: { optionId: 'exploding', equals: true } }),
       expect.objectContaining({ type: randomPipelineStepTypes.REROLL, enabledWhen: { optionId: 'rerolling', equals: true } }),
+      expect.objectContaining({ type: randomPipelineStepTypes.EXPLODE, decision: 'after-roll', enabledWhen: { optionId: 'exploding', equals: false } }),
+      expect.objectContaining({ type: randomPipelineStepTypes.REROLL, decision: 'after-roll', enabledWhen: { optionId: 'rerolling', equals: false } }),
     ]));
+  });
+
+  it('offers a missed explosion after the standard dice roll', () => {
+    const definition = buildRandomDefinition(createNoCodeExampleDraft('standard-dice', sources));
+    const pending = executeRandomDefinition({
+      definition,
+      sources,
+      parameters: { 'source-dice': 'standard-d6', 'count-dice': 1, modifier: 0 },
+      rng: () => 0.99,
+    });
+    expect(pending.kind).toBe('random-decision');
+    expect(pending.pendingDecision.type).toBe(randomPipelineStepTypes.EXPLODE);
+    expect(resolveRandomDecision(pending, true, () => 0).primaryAggregate.value).toBe(7);
   });
 
   it('prepares the D&D5 starter set with the advantage d20 first for initiative', () => {
