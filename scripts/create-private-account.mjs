@@ -43,7 +43,7 @@ async function hiddenPrompt(label) {
         }
         return;
       }
-      if (!key.ctrl && !key.meta && character) {
+      if (character && character >= ' ') {
         value += character;
         process.stdout.write('*');
       }
