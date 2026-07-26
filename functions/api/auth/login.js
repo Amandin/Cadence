@@ -17,7 +17,10 @@ export async function onRequestPost(context) {
     return await login(context, (nextStage) => { stage = nextStage; });
   } catch (error) {
     console.error('Cadence private login failed', { stage, message: error instanceof Error ? error.message : String(error) });
-    return apiError(500, 'LOGIN_SERVER_ERROR', `La connexion a échoué pendant l’étape « ${stage} ».`);
+    const cryptoDetail = stage === 'vérification du mot de passe'
+      ? ` (${error instanceof Error ? error.name : 'Error'})`
+      : '';
+    return apiError(500, 'LOGIN_SERVER_ERROR', `La connexion a échoué pendant l’étape « ${stage} »${cryptoDetail}.`);
   }
 }
 
