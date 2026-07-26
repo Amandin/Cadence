@@ -1,6 +1,6 @@
 import { pbkdf2Sync, randomBytes, randomUUID } from 'node:crypto';
 
-const ITERATIONS = 310_000;
+const ITERATIONS = 100_000;
 
 function usage() {
   console.error('Usage : npm run account:create -- pseudo "Prénom" [--admin]');
@@ -61,6 +61,7 @@ const [usernameArgument, displayNameArgument, ...flags] = process.argv.slice(2);
 const username = String(usernameArgument || '').trim().normalize('NFKC').toLowerCase();
 const displayName = String(displayNameArgument || '').trim();
 if (!/^[\p{L}\p{N}][\p{L}\p{N}._-]{2,47}$/u.test(username) || !displayName) usage();
+const replace = flags.includes('--replace');
 
 const password = await hiddenPrompt('Mot de passe : ');
 const confirmation = process.env.CADENCE_ACCOUNT_PASSWORD ? password : await hiddenPrompt('Confirmer : ');
@@ -71,17 +72,12 @@ const salt = randomBytes(18);
 const hash = pbkdf2Sync(password, salt, ITERATIONS, 32, 'sha256');
 const now = new Date().toISOString();
 const role = flags.includes('--admin') ? 'admin' : 'member';
-const sql = `INSERT INTO accounts (id, username, email, display_name, password_hash, password_salt, password_iterations, role, created_at) VALUES (${[
-  randomUUID(),
-  username,
-  `${username}@local.invalid`,
-  displayName,
-  hash.toString('base64'),
-  salt.toString('base64'),
-  ITERATIONS,
-  role,
-  now,
-].map(sqlValue).join(', ')});`;
+const values = [hash.toString('base64'), salt.toString('base64'), ITERATIONS, role, displayName];
+const sql = replace
+  ? `UPDATE accounts SET password_hash = ${sqlValue(values[0])}, password_salt = ${sqlValue(values[1])}, password_iterations = ${sqlValue(values[2])}, role = ${sqlValue(values[3])}, display_name = ${sqlValue(values[4])}, disabled = 0, failed_login_count = 0, locked_until = NULL WHERE username = ${sqlValue(username)};`
+  : `INSERT INTO accounts (id, username, email, display_name, password_hash, password_salt, password_iterations, role, created_at) VALUES (${[
+      randomUUID(), username, `${username}@local.invalid`, displayName, ...values, now,
+    ].map(sqlValue).join(', ')});`;
 
 console.log('\nSQL à exécuter sur D1 (aucun mot de passe en clair) :\n');
 console.log(sql);

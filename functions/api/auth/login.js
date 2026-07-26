@@ -1,7 +1,7 @@
 import { constantTimeEqual, passwordHash, randomToken, sha256 } from '../../_lib/crypto.js';
 import { apiError, json, readJson, requireTrustedOrigin, sessionCookie } from '../../_lib/http.js';
 
-const DEFAULT_ITERATIONS = 310_000;
+const DEFAULT_ITERATIONS = 100_000;
 const DUMMY_SALT = 'Y2FkZW5jZS1kdW1teS1zYWx0';
 const DUMMY_HASH = 'h7xqewOCcWQFZ9v1z1h1b2EGkqL3J4pMDV3uYj6lKq4=';
 const LOCK_MINUTES = 15;
