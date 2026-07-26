@@ -72,9 +72,9 @@ const salt = randomBytes(18);
 const hash = pbkdf2Sync(password, salt, ITERATIONS, 32, 'sha256');
 const now = new Date().toISOString();
 const role = flags.includes('--admin') ? 'admin' : 'member';
-const values = [hash.toString('base64'), salt.toString('base64'), ITERATIONS, role, displayName];
+const values = [hash.toString('base64'), salt.toString('base64'), ITERATIONS, role];
 const sql = replace
-  ? `UPDATE accounts SET password_hash = ${sqlValue(values[0])}, password_salt = ${sqlValue(values[1])}, password_iterations = ${sqlValue(values[2])}, role = ${sqlValue(values[3])}, display_name = ${sqlValue(values[4])}, disabled = 0, failed_login_count = 0, locked_until = NULL WHERE username = ${sqlValue(username)};`
+  ? `UPDATE accounts SET password_hash = ${sqlValue(values[0])}, password_salt = ${sqlValue(values[1])}, password_iterations = ${sqlValue(values[2])}, role = ${sqlValue(values[3])}, display_name = ${sqlValue(displayName)}, disabled = 0, failed_login_count = 0, locked_until = NULL WHERE username = ${sqlValue(username)};`
   : `INSERT INTO accounts (id, username, email, display_name, password_hash, password_salt, password_iterations, role, created_at) VALUES (${[
       randomUUID(), username, `${username}@local.invalid`, displayName, ...values, now,
     ].map(sqlValue).join(', ')});`;
