@@ -27,10 +27,11 @@ export async function sha256(value) {
 
 export async function passwordHash(password, saltBase64, iterations) {
   const key = await crypto.subtle.importKey('raw', encoder.encode(password), 'PBKDF2', false, ['deriveBits']);
+  const salt = base64ToBytes(saltBase64);
   const bits = await crypto.subtle.deriveBits({
     name: 'PBKDF2',
-    hash: 'SHA-256',
-    salt: base64ToBytes(saltBase64),
+    hash: { name: 'SHA-256' },
+    salt: salt.buffer,
     iterations,
   }, key, 256);
   return bytesToBase64(new Uint8Array(bits));
