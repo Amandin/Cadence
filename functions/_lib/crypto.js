@@ -27,14 +27,28 @@ export async function sha256(value) {
 
 export async function passwordHash(password, saltBase64, iterations) {
   const passwordBytes = encoder.encode(password);
-  const key = await crypto.subtle.importKey('raw', passwordBytes.buffer, { name: 'PBKDF2' }, false, ['deriveBits']);
+  let key;
+  try {
+    key = await crypto.subtle.importKey('raw', passwordBytes.buffer, { name: 'PBKDF2' }, false, ['deriveBits']);
+  } catch {
+    const error = new Error('PBKDF2 import is unavailable.');
+    error.name = 'PBKDF2ImportError';
+    throw error;
+  }
   const salt = base64ToBytes(saltBase64);
-  const bits = await crypto.subtle.deriveBits({
-    name: 'PBKDF2',
-    hash: { name: 'SHA-256' },
-    salt: salt.buffer,
-    iterations,
-  }, key, 256);
+  let bits;
+  try {
+    bits = await crypto.subtle.deriveBits({
+      name: 'PBKDF2',
+      hash: { name: 'SHA-256' },
+      salt: salt.buffer,
+      iterations,
+    }, key, 256);
+  } catch {
+    const error = new Error('PBKDF2 derivation is unavailable.');
+    error.name = 'PBKDF2DerivationError';
+    throw error;
+  }
   return bytesToBase64(new Uint8Array(bits));
 }
 
