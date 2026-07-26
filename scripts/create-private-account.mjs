@@ -1,5 +1,4 @@
 import { pbkdf2Sync, randomBytes, randomUUID } from 'node:crypto';
-import { emitKeypressEvents } from 'node:readline';
 
 const ITERATIONS = 310_000;
 
@@ -18,42 +17,43 @@ async function hiddenPrompt(label) {
     if (!password) throw new Error('CADENCE_ACCOUNT_PASSWORD est requis hors terminal interactif.');
     return password;
   }
-  emitKeypressEvents(process.stdin);
   process.stdin.setRawMode(true);
   process.stdin.resume();
   process.stdout.write(label);
   return new Promise((resolve, reject) => {
     let value = '';
-    const onKeypress = (character, key = {}) => {
-      if (key.ctrl && key.name === 'c') {
+    const onData = (chunk) => {
+      const input = chunk.toString('utf8');
+      if (input.includes('\u0003')) {
         cleanup();
         reject(new Error('Annulé.'));
         return;
       }
-      if (key.name === 'return' || key.name === 'enter') {
+      if (input.includes('\r') || input.includes('\n')) {
         cleanup();
         process.stdout.write('\n');
         resolve(value);
         return;
       }
-      if (key.name === 'backspace') {
+      if (input.includes('\b') || input.includes('\u007f')) {
         if (value) {
           value = value.slice(0, -1);
           process.stdout.write('\b \b');
         }
         return;
       }
-      if (character && character >= ' ') {
-        value += character;
-        process.stdout.write('*');
+      const printable = [...input].filter((character) => character >= ' ').join('');
+      if (printable) {
+        value += printable;
+        process.stdout.write('*'.repeat([...printable].length));
       }
     };
     const cleanup = () => {
-      process.stdin.off('keypress', onKeypress);
+      process.stdin.off('data', onData);
       process.stdin.setRawMode(false);
       process.stdin.pause();
     };
-    process.stdin.on('keypress', onKeypress);
+    process.stdin.on('data', onData);
   });
 }
 
