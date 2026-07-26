@@ -61,6 +61,7 @@ export function CloudAccountPanel({ cloudSync }) {
             <input type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} />
           </label>
           <button className="primary" type="submit" disabled={submitting || busy}>{t('cloud.login')}</button>
+          {cloudSync.error && <p className="campaign-save-status status-error" role="alert">{cloudSync.error}</p>}
         </form>
       ) : (
         <>
