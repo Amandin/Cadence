@@ -4,7 +4,7 @@ cloud.unavailableHelp,Non configurée sur ce déploiement. La sauvegarde locale 
 cloud.privateHelp,Réservée aux comptes créés manuellement. Il n’existe aucune inscription publique.
 cloud.synced,Synchronisé
 cloud.connected,Compte connecté
-cloud.email,Adresse e-mail
+cloud.username,Pseudo
 cloud.password,Mot de passe
 cloud.login,Se connecter
 cloud.logout,Se déconnecter

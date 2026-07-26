@@ -11,7 +11,7 @@ function remoteDate(remoteCampaign) {
 }
 
 export function CloudAccountPanel({ cloudSync }) {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -31,7 +31,7 @@ export function CloudAccountPanel({ cloudSync }) {
   const connect = async (event) => {
     event.preventDefault();
     setSubmitting(true);
-    const result = await cloudSync.login(email, password);
+    const result = await cloudSync.login(username, password);
     setSubmitting(false);
     if (result.ok) setPassword('');
   };
@@ -53,8 +53,8 @@ export function CloudAccountPanel({ cloudSync }) {
       {!cloudSync.user ? (
         <form className="cloud-login-form" onSubmit={connect}>
           <label className="field">
-            {t('cloud.email')}
-            <input type="email" autoComplete="username" required value={email} onChange={(event) => setEmail(event.target.value)} />
+            {t('cloud.username')}
+            <input type="text" autoComplete="username" required minLength={3} maxLength={48} value={username} onChange={(event) => setUsername(event.target.value)} />
           </label>
           <label className="field">
             {t('cloud.password')}
@@ -67,7 +67,7 @@ export function CloudAccountPanel({ cloudSync }) {
           <div className="cloud-account-summary">
             <div>
               <strong>{cloudSync.user.displayName}</strong>
-              <span className="muted">{cloudSync.user.email}</span>
+              <span className="muted">@{cloudSync.user.username}</span>
             </div>
             <button type="button" className="small-btn" onClick={cloudSync.logout}>{t('cloud.logout')}</button>
           </div>

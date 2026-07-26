@@ -158,11 +158,11 @@ export function useCloudSync({ snapshot, onApplyRemote }) {
     return () => { cancelled = true; };
   }, [loadRemote]);
 
-  const login = useCallback(async (email, password) => {
+  const login = useCallback(async (username, password) => {
     setError('');
     setStatus('loading');
     try {
-      const result = await cloudApi.login(email, password);
+      const result = await cloudApi.login(username, password);
       setAvailability('available');
       userRef.current = result.user;
       csrfRef.current = result.csrfToken;

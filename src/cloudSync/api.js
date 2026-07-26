@@ -44,8 +44,8 @@ export const cloudApi = {
   session(options) {
     return apiRequest('/api/auth/session', options);
   },
-  login(email, password, options) {
-    return apiRequest('/api/auth/login', { ...options, method: 'POST', body: { email, password } });
+  login(username, password, options) {
+    return apiRequest('/api/auth/login', { ...options, method: 'POST', body: { username, password } });
   },
   logout(csrfToken, options) {
     return apiRequest('/api/auth/logout', { ...options, method: 'POST', csrfToken });

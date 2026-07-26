@@ -26,6 +26,8 @@ En ligne de commande, après avoir installé Wrangler :
 npx wrangler d1 migrations apply cadence-private --remote
 ```
 
+La migration `0002_account_usernames.sql` ajoute la colonne de pseudo. Si `0001` a déjà été exécutée, applique uniquement `0002` dans la console D1.
+
 Le fichier [`wrangler.example.toml`](../wrangler.example.toml) montre la configuration attendue. Copier ses valeurs dans la configuration Cloudflare ou créer un `wrangler.toml` local non sensible avec le véritable identifiant D1.
 
 ## 2. Autoriser le domaine
@@ -43,7 +45,7 @@ L’origine courante reste automatiquement acceptée. La variable sert surtout a
 Depuis le dossier du projet :
 
 ```bash
-npm run account:create -- ami@example.com "Prénom"
+npm run account:create -- ami "Prénom"
 ```
 
 Le mot de passe est demandé sans être affiché. Le script produit une instruction SQL ne contenant jamais le mot de passe en clair. Exécuter cette instruction dans la console D1.
@@ -51,7 +53,7 @@ Le mot de passe est demandé sans être affiché. Le script produit une instruct
 Pour ton propre compte administrateur :
 
 ```bash
-npm run account:create -- moi@example.com "Mon prénom" --admin
+npm run account:create -- moi "Mon prénom" --admin
 ```
 
 Le rôle administrateur est préparé pour de futures fonctions d’administration, mais ne donne actuellement accès à aucun écran de création de comptes. Cela maintient volontairement la liste des membres sous contrôle direct de la base.
@@ -85,14 +87,14 @@ Sur le second appareil :
 Pour couper immédiatement un compte :
 
 ```sql
-UPDATE accounts SET disabled = 1 WHERE email = 'ami@example.com';
-DELETE FROM sessions WHERE user_id = (SELECT id FROM accounts WHERE email = 'ami@example.com');
+UPDATE accounts SET disabled = 1 WHERE username = 'ami';
+DELETE FROM sessions WHERE user_id = (SELECT id FROM accounts WHERE username = 'ami');
 ```
 
 Pour le réactiver :
 
 ```sql
-UPDATE accounts SET disabled = 0, failed_login_count = 0, locked_until = NULL WHERE email = 'ami@example.com';
+UPDATE accounts SET disabled = 0, failed_login_count = 0, locked_until = NULL WHERE username = 'ami';
 ```
 
 La suppression d’un compte supprime aussi ses sessions et sa campagne grâce aux clés étrangères. Faire un export `.cad` avant toute suppression définitive.
@@ -100,7 +102,7 @@ La suppression d’un compte supprime aussi ses sessions et sa campagne grâce a
 ## Limites volontaires de cette première version
 
 - une campagne synchronisée par compte ;
-- pas d’inscription, invitation par e-mail, récupération de mot de passe ou partage entre comptes ;
+- pas d’inscription, récupération de mot de passe ou partage entre comptes ;
 - pas de fusion automatique de deux versions divergentes ;
 - la bibliothèque reste incluse dans la campagne synchronisée, comme dans un export `.cad`.
 

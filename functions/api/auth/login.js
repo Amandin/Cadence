@@ -7,8 +7,8 @@ const DUMMY_HASH = 'h7xqewOCcWQFZ9v1z1h1b2EGkqL3J4pMDV3uYj6lKq4=';
 const LOCK_MINUTES = 15;
 const MAX_FAILURES = 8;
 
-function normalizedEmail(value) {
-  return String(value || '').trim().toLowerCase();
+function normalizedUsername(value) {
+  return String(value || '').trim().normalize('NFKC').toLowerCase();
 }
 
 export async function onRequestPost({ request, env }) {
@@ -22,10 +22,10 @@ export async function onRequestPost({ request, env }) {
     return apiError(400, 'INVALID_REQUEST', 'Requête invalide.');
   }
 
-  const email = normalizedEmail(body.email);
+  const username = normalizedUsername(body.username);
   const password = String(body.password || '');
-  if (!email || password.length < 1 || password.length > 256) {
-    return apiError(400, 'INVALID_REQUEST', 'Adresse ou mot de passe invalide.');
+  if (!/^[\p{L}\p{N}][\p{L}\p{N}._-]{2,47}$/u.test(username) || password.length < 1 || password.length > 256) {
+    return apiError(400, 'INVALID_REQUEST', 'Pseudo ou mot de passe invalide.');
   }
 
   const ipHash = await sha256(`ip:${request.headers.get('CF-Connecting-IP') || 'unknown'}`);
@@ -38,12 +38,12 @@ export async function onRequestPost({ request, env }) {
   }
 
   const account = await env.DB.prepare(`
-    SELECT id, email, display_name AS displayName, role, disabled,
+    SELECT id, username, email, display_name AS displayName, role, disabled,
       password_hash AS passwordHash, password_salt AS passwordSalt,
       password_iterations AS passwordIterations,
       failed_login_count AS failedLoginCount, locked_until AS lockedUntil
-    FROM accounts WHERE email = ?
-  `).bind(email).first();
+    FROM accounts WHERE username = ? OR email = ?
+  `).bind(username, username).first();
 
   const iterations = account?.passwordIterations || DEFAULT_ITERATIONS;
   const candidateHash = await passwordHash(password, account?.passwordSalt || DUMMY_SALT, iterations);
@@ -64,7 +64,7 @@ export async function onRequestPost({ request, env }) {
       await env.DB.prepare('UPDATE accounts SET failed_login_count = ?, locked_until = ? WHERE id = ?')
         .bind(failures >= MAX_FAILURES ? 0 : failures, lockedUntil, account.id).run();
     }
-    return apiError(401, 'INVALID_CREDENTIALS', 'Adresse ou mot de passe incorrect.');
+    return apiError(401, 'INVALID_CREDENTIALS', 'Pseudo ou mot de passe incorrect.');
   }
 
   const token = randomToken(32);
@@ -83,7 +83,7 @@ export async function onRequestPost({ request, env }) {
   return json({
     ok: true,
     authenticated: true,
-    user: { id: account.id, email: account.email, displayName: account.displayName, role: account.role },
+    user: { id: account.id, username: account.username || account.email, displayName: account.displayName, role: account.role },
     csrfToken,
   }, { headers: { 'Set-Cookie': sessionCookie(token) } });
 }

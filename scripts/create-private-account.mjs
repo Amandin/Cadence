@@ -4,7 +4,7 @@ import { emitKeypressEvents } from 'node:readline';
 const ITERATIONS = 310_000;
 
 function usage() {
-  console.error('Usage : npm run account:create -- adresse@email.fr "Prénom" [--admin]');
+  console.error('Usage : npm run account:create -- pseudo "Prénom" [--admin]');
   process.exit(1);
 }
 
@@ -57,10 +57,10 @@ async function hiddenPrompt(label) {
   });
 }
 
-const [emailArgument, displayNameArgument, ...flags] = process.argv.slice(2);
-const email = String(emailArgument || '').trim().toLowerCase();
+const [usernameArgument, displayNameArgument, ...flags] = process.argv.slice(2);
+const username = String(usernameArgument || '').trim().normalize('NFKC').toLowerCase();
 const displayName = String(displayNameArgument || '').trim();
-if (!email.includes('@') || !displayName) usage();
+if (!/^[\p{L}\p{N}][\p{L}\p{N}._-]{2,47}$/u.test(username) || !displayName) usage();
 
 const password = await hiddenPrompt('Mot de passe : ');
 const confirmation = process.env.CADENCE_ACCOUNT_PASSWORD ? password : await hiddenPrompt('Confirmer : ');
@@ -71,9 +71,10 @@ const salt = randomBytes(18);
 const hash = pbkdf2Sync(password, salt, ITERATIONS, 32, 'sha256');
 const now = new Date().toISOString();
 const role = flags.includes('--admin') ? 'admin' : 'member';
-const sql = `INSERT INTO accounts (id, email, display_name, password_hash, password_salt, password_iterations, role, created_at) VALUES (${[
+const sql = `INSERT INTO accounts (id, username, email, display_name, password_hash, password_salt, password_iterations, role, created_at) VALUES (${[
   randomUUID(),
-  email,
+  username,
+  `${username}@local.invalid`,
   displayName,
   hash.toString('base64'),
   salt.toString('base64'),

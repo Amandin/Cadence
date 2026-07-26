@@ -14,6 +14,7 @@ export async function currentSession(request, env) {
       sessions.csrf_token AS csrfToken,
       sessions.expires_at AS expiresAt,
       accounts.id AS userId,
+      accounts.username AS username,
       accounts.email AS email,
       accounts.display_name AS displayName,
       accounts.role AS role,
@@ -41,7 +42,7 @@ export function requireCsrf(request, session) {
 export function publicUser(session) {
   return {
     id: session.userId,
-    email: session.email,
+    username: session.username || session.email,
     displayName: session.displayName,
     role: session.role,
   };
