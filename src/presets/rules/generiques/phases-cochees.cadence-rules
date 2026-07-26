@@ -9,6 +9,7 @@
     "phaseActionMode": "checked",
     "phaseCount": 3,
     "initiativeOrder": "desc",
+    "initiativeBonusRollDefinitionId": "kit-d20-check",
     "tiebreakerVisible": true,
     "equalityRule": "strict",
     "multipleActionMode": "none"

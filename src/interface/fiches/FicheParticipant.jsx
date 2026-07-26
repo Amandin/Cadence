@@ -10,7 +10,7 @@ import { ChampInitiative } from '../initiative/ChampInitiative.jsx';
 import { EditeurPhasesParticipant, normaliserPhaseActions } from '../initiative/EditeurPhasesParticipant.jsx';
 import { Suivi } from '../suivis/Suivi.jsx';
 import { InfosRapides } from './InfosRapides.jsx';
-import { activeDefinitions, exposedTokenContainers, tokenContainerIdFromResourceId } from '../../random-system/definitionAccess.js';
+import { definitionsForUse, exposedTokenContainers, tokenContainerIdFromResourceId } from '../../random-system/definitionAccess.js';
 import { prepareCombinedDefinition } from '../../random-system/combinations.js';
 import { QuickRollResult, SupplementalDiceRoller } from '../dialogues/FenetreLancerDes.jsx';
 import { TokenContainerForm } from '../../random-system/ui/TokenContainerForm.jsx';
@@ -23,7 +23,10 @@ function valeurNumerique(valeur, defaut = 0) {
 }
 
 function FenetreJetInfoRapide({ info, randomSystem, statisticsContext = null, onFermer }) {
-  const definitions = useMemo(() => activeDefinitions(randomSystem?.state?.definitions || []), [randomSystem?.state?.definitions]);
+  const definitions = useMemo(
+    () => definitionsForUse(randomSystem?.state?.definitions || [], [initiativeBonusRollDefinitionId]),
+    [initiativeBonusRollDefinitionId, randomSystem?.state?.definitions],
+  );
   const definition = definitions.find((item) => item.id === info.quickRollDefinitionId);
   const containers = useMemo(() => exposedTokenContainers(randomSystem?.state?.tokenContainers || []), [randomSystem?.state?.tokenContainers]);
   const container = containers.find((item) => item.id === tokenContainerIdFromResourceId(info.quickRollDefinitionId));

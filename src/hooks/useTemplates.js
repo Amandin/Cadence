@@ -381,9 +381,11 @@ export function useTemplates(store, setStore) {
         saved = { ...source, id: idToOverwrite, createdAt: currentStore.ruleTemplates.find((template) => template.id === idToOverwrite)?.createdAt || source.createdAt, updatedAt: new Date().toISOString() };
         return {
           ...currentStore,
-          ruleTemplates: currentStore.ruleTemplates
-            .filter((template) => template.id === idToOverwrite || !sameName(template))
-            .map((template) => template.id === idToOverwrite ? saved : template),
+          ruleTemplates: existingTarget
+            ? currentStore.ruleTemplates
+              .filter((template) => template.id === idToOverwrite || !sameName(template))
+              .map((template) => template.id === idToOverwrite ? saved : template)
+            : [...currentStore.ruleTemplates.filter((template) => !sameName(template)), saved],
         };
       }
       saved = source;

@@ -1,3 +1,4 @@
+import { randomSystemModes } from '../../constants.js';
 import { normaliserCreneauxAction } from '../../domain/initiative.js';
 import { isManualMultipleActionMode, rulesAllowMultipleSlots } from '../../domain/initiativeCost.js';
 import { FenetreEtat } from '../dialogues/FenetreEtat.jsx';
@@ -14,7 +15,10 @@ import { FicheParticipant } from '../fiches/FicheParticipant.jsx';
 import { MenuPrincipal } from '../menu/MenuPrincipal.jsx';
 import { FenetreCompteurGlobal } from '../suivis/CompteurGlobal.jsx';
 
-export function FenetresSuperposees({ scene, randomSystem, restorePoints, dark, themeState, onThemeModeChange, characters, templates, actions, etatInterface, commandesInterface, compteurGlobal, resolutionHorloge, templatesUi }) {
+export function FenetresSuperposees({ scene: sourceScene, randomSystem, restorePoints, dark, themeState, onThemeModeChange, characters, templates, actions, etatInterface, commandesInterface, compteurGlobal, resolutionHorloge, templatesUi }) {
+  const scene = sourceScene.randomSystemMode === randomSystemModes.MANUAL
+    ? { ...sourceScene, initiativeBonusRollDefinitionId: '' }
+    : sourceScene;
   const { addSheetOpen, openMenu, notice, globalSheetOpen, clockModalOpen, initiativeEntryOpen, initiativeEntryScopeIds, initiativeEntryInitialLaunch } = etatInterface;
   const { fermerAjoutPersonnage, fermerMenu, fermerNotice, fermerCompteurGlobal, fermerResolutionHorloge, fermerSaisieInitiatives, validerSaisieInitiatives, ouvrirSauvegardeTemplate, creerPersonnageVierge, creerDepuisTemplate, restaurerScene, retourPreparation, retourPreparationAvecOptions, avancerRound, reculerRound, changerRoundAvecAutomatismes, avancerAutomatismes, reculerAutomatismes, resetSuivisScene, effacerEtatsScene, terminerEffetsTemporaires, ouvrirHubCampagne, ouvrirCompteurGlobal, ouvrirEtatScene, ouvrirOptions } = commandesInterface;
   const { templateTarget, templateError, fermerSauvegardeTemplate, enregistrerTemplate } = templatesUi;

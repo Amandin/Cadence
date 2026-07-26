@@ -72,6 +72,8 @@ Le script `build:cloudflare` lance d’abord les tests, puis le build. Si les te
 
 L’application sauvegarde automatiquement en `localStorage`. Le menu permet aussi l’export/import JSON de campagne.
 
+Une synchronisation privée facultative est disponible pour quelques comptes créés manuellement. Elle utilise Cloudflare Pages Functions et D1, sans inscription publique. Voir [Comptes privés et synchronisation](docs/synchronisation-privee.md) pour la mise en place, la création des comptes et le parcours téléphone/ordinateur.
+
 ## Organisation actuelle
 
 ```txt

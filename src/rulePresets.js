@@ -68,7 +68,11 @@ function sortPresets(left, right) {
 }
 
 export function sameCampaignRules(left, right) {
-  return JSON.stringify(normalizeCampaignRules(left || {})) === JSON.stringify(normalizeCampaignRules(right || {}));
+  const normalizedLeft = normalizeCampaignRules(left || {});
+  const normalizedRight = normalizeCampaignRules(right || {});
+  delete normalizedLeft.randomSystemMode;
+  delete normalizedRight.randomSystemMode;
+  return JSON.stringify(normalizedLeft) === JSON.stringify(normalizedRight);
 }
 
 export function normalizeRulePreset(source = {}, path = '') {

@@ -30,6 +30,7 @@ describe('rule preset catalog', () => {
 
     expect(rulePresetCatalog.every((preset) => preset.readOnly)).toBe(true);
     expect(rulePresetCatalog.every((preset) => preset.path.endsWith('.cadence-rules'))).toBe(true);
+    expect(rulePresetCatalog.every((preset) => preset.rules.initiativeBonusRollDefinitionId)).toBe(true);
   });
 
   it('keeps generic and system metadata aligned with the visible catalog', () => {

@@ -201,6 +201,7 @@ function normalizeSceneCounterTemplate(template) {
 function normalizeRuleTemplate(template) {
   if (!template || typeof template !== 'object' || Array.isArray(template)) return null;
   const rules = normalizeCampaignRules(template.rules || template);
+  delete rules.randomSystemMode;
   return {
     id: template.id || uid('rtpl'),
     name: normalizeTemplateName(template.name, t('templates.fallback.rules')),

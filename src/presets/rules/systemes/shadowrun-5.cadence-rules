@@ -10,6 +10,7 @@
     "phaseActionMode": "automatic",
     "phaseDecrement": 10,
     "initiativeOrder": "desc",
+    "initiativeBonusRollDefinitionId": "kit-d6-total",
     "tiebreakerVisible": true,
     "equalityRule": "strict",
     "multipleActionMode": "none"

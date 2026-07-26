@@ -7,6 +7,7 @@
   "rules": {
     "temporalite": "classique",
     "initiativeOrder": "desc",
+    "initiativeBonusRollDefinitionId": "kit-d20-check",
     "tiebreakerVisible": true,
     "equalityRule": "strict",
     "multipleActionMode": "initiative-cost",

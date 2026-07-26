@@ -52,6 +52,9 @@ export function normalizeRandomKit(source = {}, index = 0) {
     .map(normalizeRandomSource);
   const initiativeSourceId = cleanText(source.initiative?.defaultSourceId);
   const initiativeDefinitionId = cleanText(source.initiative?.defaultDefinitionId);
+  const definitionIds = uniqueValues(Array.isArray(source.definitionIds)
+    ? source.definitionIds
+    : definitions.filter((definition) => definition.exposed !== false).map((definition) => definition.id));
   const mode = Object.values(randomKitInitiativeModes).includes(source.initiative?.mode)
     ? source.initiative.mode
     : initiativeSourceId
@@ -75,6 +78,7 @@ export function normalizeRandomKit(source = {}, index = 0) {
     ]),
     sources,
     definitions,
+    definitionIds,
     initiative: {
       mode,
       defaultDefinitionId: initiativeDefinitionId || null,
@@ -171,9 +175,9 @@ export function getDefaultInitiativeRoll(campaignRules = {}, customKits = []) {
 
 function randomKitByReference(kitOrId, customKits = []) {
   const custom = customKitsById(customKits);
-  if (typeof kitOrId === 'string') return kitsById.get(kitOrId) || custom.get(kitOrId) || getRandomKitForRuleset(kitOrId, customKits);
-  if (kitOrId?.id && kitsById.has(kitOrId.id)) return kitsById.get(kitOrId.id);
+  if (typeof kitOrId === 'string') return custom.get(kitOrId) || kitsById.get(kitOrId) || getRandomKitForRuleset(kitOrId, customKits);
   if (kitOrId?.id && custom.has(kitOrId.id)) return custom.get(kitOrId.id);
+  if (kitOrId?.id && kitsById.has(kitOrId.id)) return kitsById.get(kitOrId.id);
   return kitOrId?.id ? normalizeRandomKit(kitOrId) : null;
 }
 
@@ -194,6 +198,13 @@ export function randomKitResources(kitOrId, customKits = []) {
   };
 }
 
+function selectedDefinitionIds(kit, definitions) {
+  const fallbackIds = definitions
+    .filter((definition) => definition.exposed !== false)
+    .map((definition) => definition.id);
+  return uniqueValues(Array.isArray(kit?.definitionIds) ? kit.definitionIds : fallbackIds);
+}
+
 export function randomKitIsLoaded(state, kitOrId) {
   const { kit, sources, definitions } = randomKitResources(kitOrId, state?.randomKits);
   if (!kit) return false;
@@ -208,9 +219,7 @@ export function randomKitIsLoaded(state, kitOrId) {
 export function randomKitIsStrictlyActive(state, kitOrId) {
   const { kit, definitions } = randomKitResources(kitOrId, state?.randomKits);
   if (!kit || !randomKitIsLoaded(state, kit)) return false;
-  const kitDefinitionIds = new Set(definitions
-    .filter((definition) => definition.exposed !== false)
-    .map((definition) => definition.id));
+  const kitDefinitionIds = new Set(selectedDefinitionIds(kit, definitions));
   const activeDefinitionIds = new Set((Array.isArray(state?.definitions) ? state.definitions : [])
     .filter((definition) => definition.exposed !== false && definition.active !== false)
     .map((definition) => definition.id));
@@ -248,9 +257,7 @@ export function activateRandomKitInState(state, kitOrId) {
   const loaded = loadRandomKitInState(state, kitOrId);
   const { kit, definitions } = randomKitResources(kitOrId, loaded?.randomKits);
   if (!kit) return state;
-  const activeDefinitionIds = new Set(definitions
-    .filter((definition) => definition.exposed !== false)
-    .map((definition) => definition.id));
+  const activeDefinitionIds = new Set(selectedDefinitionIds(kit, definitions));
   return {
     ...loaded,
     definitions: loaded.definitions.map((definition) => (
@@ -265,9 +272,7 @@ export function ensureRandomKitInState(state, kitOrId) {
   const loaded = loadRandomKitInState(state, kitOrId);
   const { kit, definitions } = randomKitResources(kitOrId, loaded?.randomKits);
   if (!kit) return state;
-  const activatedDefinitionIds = new Set(definitions
-    .filter((definition) => definition.exposed !== false)
-    .map((definition) => definition.id));
+  const activatedDefinitionIds = new Set(selectedDefinitionIds(kit, definitions));
   return {
     ...loaded,
     definitions: loaded.definitions.map((definition) => (

@@ -464,6 +464,30 @@
   padding-inline: 8px;
 }
 
+@media (max-width: 767px) {
+  .hub-scene-summary {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "title actions"
+      "type actions";
+    gap: 4px 8px;
+  }
+
+  .hub-scene-title {
+    grid-area: title;
+  }
+
+  .hub-scene-type {
+    grid-area: type;
+    justify-self: start;
+    max-width: min(190px, 100%);
+  }
+
+  .hub-scene-delete-actions {
+    grid-area: actions;
+  }
+}
+
 @media (max-width: 520px) {
   .reserve-card {
     border-radius: 22px;

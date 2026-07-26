@@ -278,6 +278,34 @@ describe('RandomSystem rule preset kits', () => {
     expect(randomKitIsStrictlyActive(changed, 'kit-d6-pool')).toBe(false);
   });
 
+  it('uses the explicit exposure selection saved on a random kit', () => {
+    const initial = ensureRandomKitInState(createDefaultRandomSystemState(), 'kit-d20-generic');
+    const availableIds = initial.definitions
+      .filter((definition) => definition.exposed !== false)
+      .map((definition) => definition.id);
+    const selectedId = availableIds[0];
+    const legacyInitiativeId = availableIds[1];
+    const saved = saveRandomKitToState(initial, {
+      id: 'kit-exposure-selection',
+      label: 'Exposition ciblée',
+      sourceIds: [],
+      sources: [],
+      definitions: [],
+      definitionIds: [selectedId],
+      initiative: { mode: randomKitInitiativeModes.MANUAL, defaultDefinitionId: legacyInitiativeId },
+      applicationPolicy: randomKitApplicationPolicies.MANUAL_ONLY,
+    });
+    const activated = activateRandomKitInState(saved, 'kit-exposure-selection');
+    const activeIds = activated.definitions
+      .filter((definition) => definition.exposed !== false && definition.active !== false)
+      .map((definition) => definition.id);
+
+    expect(saved.randomKits[0].definitionIds).toEqual([selectedId]);
+    expect(saved.randomKits[0].definitionIds).not.toContain(legacyInitiativeId);
+    expect(activeIds).toEqual([selectedId]);
+    expect(randomKitIsStrictlyActive(activated, 'kit-exposure-selection')).toBe(true);
+  });
+
   it('activates exposed kit rolls without activating hidden dependencies', () => {
     const initial = createDefaultRandomSystemState();
     const [inactiveD20, inactiveBase] = customCombinationDefinitions();

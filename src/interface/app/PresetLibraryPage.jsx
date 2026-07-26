@@ -1,76 +1,55 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { t } from '../../i18n/index.js';
-import { rulePresetCatalog, rulePresetFamilies } from '../../rulePresets.js';
-import { randomKitCatalog } from '../../random-system/rulePresetKits.js';
+import { normalizeCampaignRules } from '../../domain/campaignRules.js';
+import { rulePresetCatalog } from '../../rulePresets.js';
 import { ConfigurationPanel } from '../../random-system/ui/ConfigurationPanel.jsx';
 import { IconeCadence } from '../icones/IconeCadence.jsx';
-import '../../random-system/styles/configuration.css';
+import { RngAdminTables } from './RngAdminTables.jsx';
+import { RulePresetAdminTable } from './RulePresetAdminTable.jsx';
 import './PresetLibraryPage.css';
 
-const sections = [
-  { id: 'rules', label: 'Règles d’initiative' },
-  { id: 'kits', label: 'Ensembles de tirages' },
-  { id: 'definitions', label: 'Tirages disponibles' },
-  { id: 'sources', label: 'Sources et paquets' },
-];
-
-function PresetCodeEditor({ value, onSave, saveLabel }) {
-  const [draft, setDraft] = useState(() => JSON.stringify(value, null, 2));
-  const [error, setError] = useState('');
-  useEffect(() => {
-    setDraft(JSON.stringify(value, null, 2));
-    setError('');
-  }, [value]);
-  const save = () => {
-    try {
-      const parsed = JSON.parse(draft);
-      if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object') throw new Error();
-      onSave?.(parsed);
-      setError('');
-    } catch {
-      setError(t('presetLibrary.code.invalid'));
-    }
+function exportAdminPresets(presets, randomState) {
+  const rulePresets = presets.map(({ id, name, rules }) => {
+    const presetRules = normalizeCampaignRules(rules);
+    delete presetRules.randomSystemMode;
+    return { id, name, rules: presetRules };
+  });
+  const payload = {
+    format: 'cadence-admin-presets',
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    rulePresets,
+    rng: randomState,
   };
-  return <details className="preset-library-code">
-    <summary>{t('presetLibrary.code.title')}</summary>
-    <p>{t('presetLibrary.code.help')}</p>
-    <textarea value={draft} spellCheck="false" onChange={(event) => setDraft(event.target.value)} aria-label={t('presetLibrary.code.title')} />
-    {error && <p className="rule-warning" role="alert">{error}</p>}
-    <button type="button" className="small-btn" onClick={save}>{saveLabel}</button>
-  </details>;
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' }));
+  link.download = 'cadence-presets-rng.json';
+  link.click();
+  URL.revokeObjectURL(link.href);
 }
 
-function RuleCard({ preset, onSave }) {
-  const rules = preset.rules || {};
-  return <article className="preset-library-card">
-    <div><span>{rulePresetFamilies[preset.family] || preset.family || 'Configuration'}</span><h3>{preset.name}</h3><p>{preset.description}</p></div>
-    <div className="preset-library-tags"><span>{rules.temporalite || 'classique'}</span><span>{rules.initiativeValueType || 'numérique'}</span><span>{rules.multipleActionsMode || 'une action'}</span></div>
-    <button type="button" className="small-btn" onClick={() => onSave?.(preset.rules, { name: preset.name, confirmDuplicate: true })}>Créer une copie modifiable</button>
-    <PresetCodeEditor value={rules} saveLabel={t('presetLibrary.code.saveRules')} onSave={(nextRules) => onSave?.(nextRules, { name: `${preset.name} — modifié`, confirmDuplicate: true })} />
-  </article>;
-}
-
-function KitCard({ kit, onApply, onSave }) {
-  return <article className="preset-library-card">
-    <div><span>{t('presetLibrary.kit')}</span><h3>{kit.label}</h3><p>{kit.description}</p></div>
-    <div className="preset-library-tags"><span>{kit.definitions?.length || 0} tirages</span><span>{kit.sources?.length || kit.sourceIds?.length || 0} sources</span></div>
-    <button type="button" className="small-btn" onClick={() => onApply?.(kit.id)}>Appliquer la sélection</button>
-    <PresetCodeEditor value={kit} saveLabel={t('presetLibrary.code.saveKit')} onSave={(nextKit) => onSave?.({ ...nextKit, id: nextKit.id === kit.id ? `custom-${kit.id}-${Date.now()}` : nextKit.id })} />
-  </article>;
-}
-
-export function PresetLibraryPage({ randomSystem, ruleTemplates = [], onBack, onSaveRuleTemplate }) {
-  const [section, setSection] = useState('rules');
-  const catalogRules = useMemo(() => [...rulePresetCatalog, ...ruleTemplates.map((template) => ({ ...template, family: 'local', description: 'Préréglage enregistré dans cette campagne.' }))], [ruleTemplates]);
-  const kits = useMemo(() => [...randomKitCatalog, ...(randomSystem?.state?.randomKits || [])], [randomSystem?.state?.randomKits]);
+export function PresetLibraryPage({ randomSystem, ruleTemplates = [], onBack, onSaveRuleTemplate, onDeleteRuleTemplate }) {
+  const catalogRules = useMemo(() => {
+    const savedById = new Map(ruleTemplates.map((template) => [template.id, template]));
+    const catalogIds = new Set(rulePresetCatalog.map((preset) => preset.id));
+    const catalog = rulePresetCatalog.map((preset) => ({ ...preset, ...(savedById.get(preset.id) || {}), persisted: savedById.has(preset.id), readOnly: false }));
+    const personal = ruleTemplates.filter((template) => !catalogIds.has(template.id)).map((template) => ({ ...template, persisted: true, readOnly: false }));
+    return [...catalog, ...personal];
+  }, [ruleTemplates]);
+  const createPreset = () => onSaveRuleTemplate?.(normalizeCampaignRules({}), { name: `${t('presetLibrary.table.new')} ${catalogRules.length + 1}`, confirmDuplicate: true });
   return <div className="preset-library-page">
-    <header className="preset-library-header">
-      <div><span className="style-reference-eyebrow">{t('presetLibrary.eyebrow')}</span><h2>{t('presetLibrary.title')}</h2><p className="muted">{t('presetLibrary.help')}</p></div>
-      <button type="button" className="small-btn" onClick={onBack}><IconeCadence name="return" /> {t('styleReference.back')}</button>
-    </header>
-    <nav className="preset-library-tabs" aria-label={t('presetLibrary.title')}>{sections.map((item) => <button type="button" className={section === item.id ? 'selected' : ''} onClick={() => setSection(item.id)} key={item.id}>{item.label}</button>)}</nav>
-    {section === 'rules' && <section className="preset-library-grid">{catalogRules.map((preset) => <RuleCard key={preset.catalogId || preset.id} preset={preset} onSave={onSaveRuleTemplate} />)}</section>}
-    {section === 'kits' && <section className="preset-library-grid">{kits.map((kit) => <KitCard key={kit.id} kit={kit} onApply={randomSystem?.actions?.applyRandomKitSelection} onSave={randomSystem?.actions?.saveRandomKit} />)}</section>}
-    {['definitions', 'sources'].includes(section) && <section className="random-system-page preset-library-configuration"><ConfigurationPanel state={randomSystem?.state || {}} actions={randomSystem?.actions || {}} section={section} /></section>}
+    <header className="preset-library-header"><button type="button" className="small-btn" onClick={onBack}><IconeCadence name="return" /> {t('styleReference.back')}</button></header>
+    <section className="preset-library-rules"><RulePresetAdminTable presets={catalogRules} onSave={onSaveRuleTemplate} onDelete={onDeleteRuleTemplate} onCreate={createPreset} rollDefinitions={randomSystem?.state?.definitions || []} randomSources={randomSystem?.state?.sources || []} /></section>
+    <section className="preset-rng-settings">
+      <header className="preset-rng-heading"><div><h2>{t('presetLibrary.rng.title')}</h2><p className="muted compact-help">{t('presetLibrary.rng.help')}</p></div></header>
+      <RngAdminTables randomSystem={randomSystem} />
+      <details className="preset-rng-advanced">
+        <summary>{t('presetLibrary.rng.advanced')}</summary>
+        <div className="preset-rng-advanced-panels">
+          {['definitions', 'sources'].map((section) => <details key={section}><summary>{t(`presetLibrary.rng.${section}`)}</summary><ConfigurationPanel state={randomSystem?.state || { sources: [], definitions: [], rulePool: {}, tokenContainers: [] }} actions={randomSystem?.actions || {}} section={section} /></details>)}
+        </div>
+      </details>
+    </section>
+    <footer className="preset-library-export"><button type="button" className="primary" onClick={() => exportAdminPresets(catalogRules, randomSystem?.state || {})}>{t('presetLibrary.export')}</button></footer>
   </div>;
 }

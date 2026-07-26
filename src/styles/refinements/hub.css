@@ -235,6 +235,17 @@
   justify-content: flex-end;
 }
 
+.hub-scene-actions.confirming {
+  flex-wrap: nowrap;
+}
+
+.hub-scene-actions.confirming button {
+  flex: 1 1 0;
+  min-width: 0;
+  padding-inline: 6px;
+  white-space: nowrap;
+}
+
 .hub-scene-edit textarea {
   min-height: 72px;
   resize: vertical;
@@ -300,6 +311,11 @@
 
   .hub-scene-actions button {
     flex: 1;
+  }
+
+  .hub-scene-actions.confirming button {
+    padding-inline: 4px;
+    font-size: 11px;
   }
 }
 

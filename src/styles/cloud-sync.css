@@ -1,0 +1,73 @@
+.cloud-account-panel {
+  margin-top: 2px;
+}
+
+.advanced-options .cloud-account-panel {
+  margin: 12px 0;
+  padding: 14px;
+  box-shadow: none;
+}
+
+.cloud-login-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: end;
+}
+
+.cloud-login-form .field {
+  margin: 0;
+}
+
+.cloud-login-form .primary {
+  min-height: 42px;
+}
+
+.cloud-account-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--ui-border);
+  border-radius: 18px;
+  background: var(--ui-surface-soft);
+}
+
+.cloud-account-summary div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.cloud-account-summary span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cloud-sync-choice {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.cloud-sync-choice p {
+  grid-column: 1 / -1;
+  margin: 2px 0 0;
+}
+
+.status-conflict {
+  color: var(--ui-danger);
+  border-color: color-mix(in srgb, var(--ui-danger) 35%, var(--ui-border));
+}
+
+@media (max-width: 620px) {
+  .cloud-login-form,
+  .cloud-sync-choice {
+    grid-template-columns: 1fr;
+  }
+
+  .cloud-sync-choice p {
+    grid-column: auto;
+  }
+}

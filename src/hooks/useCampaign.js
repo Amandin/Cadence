@@ -21,6 +21,7 @@ import { normalizeRandomSystemState } from '../random-system/state.js';
 import { loadRandomSystemState } from '../random-system/storage.js';
 import { t } from '../i18n/index.js';
 import { clearThemePreference, devicePrefersDark, initialThemePreference, persistThemePreference, removeLegacyThemePreference, storedThemePreference, themeModeFromPreference, themePreferenceModes } from '../themePreference.js';
+import { useCloudSync } from '../cloudSync/useCloudSync.js';
 
 const SCENE_INDEX_STORAGE_KEY = 'cadence:interface:scene-index:v1';
 const LOCAL_PERSISTENCE_DEBOUNCE_MS = 300;
@@ -243,7 +244,7 @@ export function useCampaign() {
   const sceneActions = useMemo(() => createSceneActions({ scene, sceneIndex, blocked, restorePoints, setScenes, setRestorePoints, setRoundEffect }), [blocked, scene, restorePoints, sceneIndex]);
   const campaignActions = useMemo(() => createCampaignActions({ scenes: syncedScenes, campaignRules, campaignProfile, rulePresetSnapshot, setCampaignRules, setCampaignProfile, setRulePresetSnapshot, sceneIndex, dark, campaignName, templateStore, randomSystemState, setScenes, setSceneIndex, setDark: setManualTheme, setCampaignNameState: setCampaignName, setTemplateStore, setRandomSystemState }), [campaignName, campaignRules, campaignProfile, rulePresetSnapshot, dark, sceneIndex, setManualTheme, syncedScenes, templateStore, randomSystemState]);
 
-  const loadCampaignIntoState = (payload) => {
+  const loadCampaignIntoState = useCallback((payload) => {
     const campaign = normalizeCampaignPayload(payload);
     setCampaignRules(campaign.initiativeRules);
     setCampaignProfile(campaign.campaignProfile);
@@ -256,7 +257,29 @@ export function useCampaign() {
     setRestorePoints(initialRestorePoints(campaign.scenes));
     lastPersistenceSignatureRef.current = '';
     return campaign;
-  };
+  }, []);
+
+  const applyCloudCampaign = useCallback((payload) => {
+    const campaign = loadCampaignIntoState(payload);
+    const entry = campaignEntryFromPayload(campaign, { source: 'cloud' });
+    setCampaignEntries((entries) => [entry, ...entries.filter((item) => item.id !== entry.id)]);
+    setActiveCampaignEntryId(entry.id);
+    setPendingFileChoice(null);
+    setFileSaveStatus({ mode: 'saved', message: t('cloud.loadedLocal') });
+  }, [loadCampaignIntoState]);
+
+  const cloudSnapshot = useMemo(() => {
+    const activeEntry = campaignEntries.find((entry) => entry.id === activeCampaignEntryId);
+    const meta = activeEntry ? {
+      id: activeEntry.id,
+      name: campaignName,
+      fileName: activeEntry.fileName,
+      folderName: activeEntry.folderName,
+    } : {};
+    return createCampaignPayload(syncedScenes, dark, campaignName, templateStore, campaignRules, rulePresetSnapshot, meta, randomSystemState, campaignProfile);
+  }, [activeCampaignEntryId, campaignEntries, campaignName, campaignProfile, campaignRules, dark, randomSystemState, rulePresetSnapshot, syncedScenes, templateStore]);
+
+  const cloudSync = useCloudSync({ snapshot: cloudSnapshot, onApplyRemote: applyCloudCampaign });
 
   const campaignTextForEntry = (entry, name = campaignName) => serializeCampaign(
     syncedScenes,
@@ -481,6 +504,7 @@ export function useCampaign() {
       return { ok: true, campaign: snapshot };
     },
     resetCadence() {
+      void cloudSync.logout();
       fileHandlesRef.current.clear();
       fileSaveRevisionRef.current += 1;
       if (fileSaveTimerRef.current) window.clearTimeout(fileSaveTimerRef.current);
@@ -503,7 +527,7 @@ export function useCampaign() {
       setPersistenceEnabled(false);
       lastPersistenceSignatureRef.current = '';
     },
-  }), [campaignName, campaignRules, campaignProfile, dark, pendingFileChoice, syncedScenes, templateStore, randomSystemState]);
+  }), [campaignName, campaignRules, campaignProfile, cloudSync.logout, dark, pendingFileChoice, syncedScenes, templateStore, randomSystemState]);
 
   const extraSceneActions = useMemo(() => ({
     updateSceneField(key, value) {
@@ -548,6 +572,7 @@ export function useCampaign() {
     campaignEntries,
     pendingFileChoice,
     fileSaveStatus,
+    cloudSync,
     scene,
     sceneIndex,
     restorePoints: restorePoints[scene.id] || [],

@@ -8,6 +8,7 @@
   "rules": {
     "temporalite": "classique",
     "initiativeOrder": "desc",
+    "initiativeBonusRollDefinitionId": "kit-d100-check",
     "tiebreakerVisible": false,
     "equalityRule": "never",
     "multipleActionMode": "none"

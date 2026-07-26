@@ -10,6 +10,7 @@
     "phaseRerollEachRound": true,
     "initiativeValueType": "label",
     "initiativeOrder": "desc",
+    "initiativeBonusRollDefinitionId": "kit-cosmere-d20-check",
     "tiebreakerVisible": false,
     "equalityRule": "never",
     "multipleActionMode": "none",

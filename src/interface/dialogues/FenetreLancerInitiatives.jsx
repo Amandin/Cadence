@@ -6,7 +6,7 @@ import { t } from '../../i18n/index.js';
 import { IconeJetDes } from '../icones/IconeJetDes.jsx';
 import { IconeCadence } from '../icones/IconeCadence.jsx';
 import { prepareCombinedDefinition } from '../../random-system/combinations.js';
-import { activeDefinitions } from '../../random-system/definitionAccess.js';
+import { definitionsForUse } from '../../random-system/definitionAccess.js';
 import { drawRandomSource, randomSourceKinds } from '../../random-system/engine.js';
 import { initiativeApproachOption, initiativeRollInputs } from '../../random-system/initiativeRoll.js';
 import { Fenetre } from '../commun/ComposantsCommuns.jsx';
@@ -237,7 +237,10 @@ export function FenetreLancerInitiatives({ participants = [], reserve = [], init
   const changerDepartage = (id, valeur) => setDepartages((courant) => ({ ...courant, [id]: valeur }));
   const changerBonus = (id, valeur) => setBonusInitiatives((courant) => ({ ...courant, [id]: valeur }));
   const bonusSwitchVisible = initiativeBonusEnabled && !initiativeTextOrderEnabled(textConfig);
-  const initiativeRollDefinitions = useMemo(() => activeDefinitions(randomSystem?.state?.definitions || []), [randomSystem?.state?.definitions]);
+  const initiativeRollDefinitions = useMemo(
+    () => definitionsForUse(randomSystem?.state?.definitions || [], [initiativeBonusRollDefinitionId]),
+    [initiativeBonusRollDefinitionId, randomSystem?.state?.definitions],
+  );
   const initiativeRollDefinition = initiativeRollDefinitions.find((definition) => definition.id === initiativeBonusRollDefinitionId) || null;
   const initiativeApproach = useMemo(() => initiativeApproachOption(initiativeRollDefinition), [initiativeRollDefinition]);
   const [initiativeApproaches, setInitiativeApproaches] = useState({});

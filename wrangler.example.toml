@@ -1,0 +1,12 @@
+name = "cadence"
+pages_build_output_dir = "./dist"
+compatibility_date = "2026-07-26"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "cadence-private"
+database_id = "REMPLACER_PAR_ID_D1"
+preview_database_id = "DB"
+
+[vars]
+ALLOWED_ORIGINS = "https://votre-domaine.example"

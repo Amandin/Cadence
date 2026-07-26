@@ -8,6 +8,7 @@ import { IconeCadence } from '../icones/IconeCadence.jsx';
 import { activeDefinitions, directlyExposedDefinitions } from '../../random-system/definitionAccess.js';
 import { randomSourceKinds } from '../../random-system/engine.js';
 import { HUB_TAB_STORAGE_KEY } from './hubNavigation.js';
+import { CloudAccountPanel } from './CloudAccountPanel.jsx';
 
 const OngletRegles = lazy(() => import('./OngletRegles.jsx').then((module) => ({ default: module.OngletRegles })));
 const OngletTemplates = lazy(() => import('./OngletTemplates.jsx').then((module) => ({ default: module.OngletTemplates })));
@@ -105,20 +106,16 @@ function CarteScene({ scene, index, canDelete, editing, onEditer, onFermerEditio
             <span className="hub-scene-type">{scene.type || t('hub.scene.defaultType')}</span>
             {canDelete && (
               <div className={`hub-scene-delete-actions ${suppressionVisible ? 'confirming' : ''}`}>
-                {suppressionVisible && <button className="small-btn scene-delete-cancel" onClick={() => setSuppressionVisible(false)}>{t('common.cancel')}</button>}
-                {suppressionVisible ? (
-                  <button className="danger-btn mini-danger scene-delete-confirm" onClick={() => onSupprimerScene(index)}>{t('common.delete')}</button>
-                ) : (
-                  <button className="small-btn scene-delete-reveal" onClick={() => setSuppressionVisible(true)} aria-label={t('hub.scene.deleteRevealAria', { title: scene.title || t('hub.scene.defaultTitle') })}><IconeCadence name="remove" /></button>
-                )}
+                <button className="small-btn scene-delete-reveal" onClick={() => setSuppressionVisible((visible) => !visible)} aria-label={suppressionVisible ? t('common.cancel') : t('hub.scene.deleteRevealAria', { title: scene.title || t('hub.scene.defaultTitle') })}><IconeCadence name={suppressionVisible ? 'close' : 'remove'} /></button>
               </div>
             )}
           </div>
           {scene.notes && <p className="muted compact-help hub-scene-notes">{scene.notes}</p>}
-          <div className="hub-scene-actions explicit">
+          <div className={`hub-scene-actions explicit ${suppressionVisible ? 'confirming' : ''}`}>
             <button className="primary" onClick={() => onChoisirScene(index)}>{t('hub.scene.open')}</button>
             <button className="small-btn" onClick={() => onEditer(scene.id)}>{t('hub.scene.edit')}</button>
             <button className="small-btn" onClick={() => onDupliquerScene(index)}>{t('hub.scene.duplicate')}</button>
+            {suppressionVisible && <button className="danger-btn mini-danger scene-delete-confirm" onClick={() => onSupprimerScene(index)}>{t('common.delete')}</button>}
           </div>
         </>
       )}
@@ -265,12 +262,11 @@ function OngletTirages({ scene, randomSystem, includeConfiguration = false }) {
   );
 }
 
-function OngletCampagnes({ campaignName, campaignEntries = [], fileSaveStatus, performanceState, themeState, randomSystemIntegrated, randomSystem, ruleTemplates, onEnregistrerTemplateRegles, onSupprimerTemplateRegles, onRenommerCampagne, onExporter, onImporter, onImporterTemplates, onExporterBibliotheque, onChargerCampagneTest, onReinitialiser, onRejouerTutoriel, onPerformancePreferenceChange, onThemeModeChange, onRandomSystemIntegratedChange }) {
+function OngletCampagnes({ campaignName, campaignEntries = [], fileSaveStatus, cloudSync, performanceState, themeState, randomSystemIntegrated, onOuvrirAdminPresets, onRenommerCampagne, onExporter, onImporter, onImporterTemplates, onExporterBibliotheque, onChargerCampagneTest, onReinitialiser, onRejouerTutoriel, onPerformancePreferenceChange, onThemeModeChange, onRandomSystemIntegratedChange }) {
   const inputImportRef = useRef(null);
   const inputLibraryRef = useRef(null);
   const importEnCoursRef = useRef(false);
   const [styleReferenceOpen, setStyleReferenceOpen] = useState(false);
-  const [adminPresetsOpen, setAdminPresetsOpen] = useState(false);
   const statutVisible = fileSaveStatus?.mode !== 'local' || (fileSaveStatus?.message && fileSaveStatus.message !== t('hub.campaigns.status.local'));
 
   const ouvrirImport = async () => {
@@ -307,13 +303,6 @@ function OngletCampagnes({ campaignName, campaignEntries = [], fileSaveStatus, p
     return (
       <Suspense fallback={<ChargementOnglet texte={t('styleReference.loading')} />}>
         <StyleReferencePage themeState={themeState} onThemeModeChange={onThemeModeChange} onBack={() => setStyleReferenceOpen(false)} />
-      </Suspense>
-    );
-  }
-  if (adminPresetsOpen) {
-    return (
-      <Suspense fallback={<ChargementOnglet texte="Chargement de l’admin presets..." />}>
-        <AdminPresetsPage ruleTemplates={ruleTemplates} randomSystem={randomSystem} onSaveRuleTemplate={onEnregistrerTemplateRegles} onDeleteRuleTemplate={onSupprimerTemplateRegles} onBack={() => setAdminPresetsOpen(false)} />
       </Suspense>
     );
   }
@@ -362,7 +351,8 @@ function OngletCampagnes({ campaignName, campaignEntries = [], fileSaveStatus, p
         <input ref={inputLibraryRef} className="import-file-input" type="file" aria-label={t('hub.files.importLibrary')} accept=".cadlib,application/json,text/json,text/plain,application/octet-stream,*/*" onChange={importerBibliotheque} />
         <details className="advanced-options">
           <summary>{t('hub.campaigns.advanced')}</summary>
-          <button className="small-btn" type="button" onPointerEnter={loadAdminPresetsPage} onFocus={loadAdminPresetsPage} onClick={() => setAdminPresetsOpen(true)}>{t('hub.campaigns.adminPresets')}</button>
+          <CloudAccountPanel cloudSync={cloudSync} />
+          <button className="small-btn" type="button" onPointerEnter={loadAdminPresetsPage} onFocus={loadAdminPresetsPage} onClick={onOuvrirAdminPresets}>{t('hub.campaigns.adminPresets')}</button>
           <button className="small-btn" type="button" onPointerEnter={loadStyleReferencePage} onFocus={loadStyleReferencePage} onClick={() => setStyleReferenceOpen(true)}>{t('hub.campaigns.styleReference')}</button>
           <button className="small-btn" onClick={onChargerCampagneTest}>{t('hub.campaigns.loadTest')}</button>
         </details>
@@ -371,11 +361,12 @@ function OngletCampagnes({ campaignName, campaignEntries = [], fileSaveStatus, p
   );
 }
 
-export function HubCampagne({ campaignName, scene, scenes, templates, trackerTemplates, statusTemplates, sceneCounterTemplates, sceneStatusTemplates, ruleTemplates, initiativeTextPresets, campaignProfile, rulePresetSnapshot, randomSystem, templateCategories, campaignEntries, fileSaveStatus, dark, performanceState, themeState, onChoisirScene, onNouvelleScene, onModifierScene, onDupliquerScene, onSupprimerScene, onModifierReglesInitiative, onOuvrirProfilCampagne, onRenommerCampagne, onExporter, onImporter, onChargerCampagneTest, onReinitialiser, onRejouerTutoriel, onAjouterTemplateCategorie, onAjouterCategorieTemplate, onRenommerCategorieTemplate, onSupprimerCategorieTemplate, onDeplacerCategorieTemplate, onChangerCategorieTemplate, onEditerTemplate, onDupliquerTemplate, onSupprimerTemplate, onAjouterTemplateSuivi, onModifierTemplateSuivi, onDupliquerTemplateSuivi, onSupprimerTemplateSuivi, onAjouterTemplateEtat, onModifierTemplateEtat, onDupliquerTemplateEtat, onSupprimerTemplateEtat, onAjouterTemplateCompteurScene, onModifierTemplateCompteurScene, onDupliquerTemplateCompteurScene, onSupprimerTemplateCompteurScene, onAjouterTemplateEtatScene, onModifierTemplateEtatScene, onDupliquerTemplateEtatScene, onSupprimerTemplateEtatScene, onAppliquerTemplateRegles, onEnregistrerTemplateRegles, onEnregistrerPresetInitiativeTextuelle, onDupliquerTemplateRegles, onSupprimerTemplateRegles, onImporterTemplates, onExporterBibliotheque, onFermerEditeursTemplates, templatePersonnageId, templatePersonnageOuvert, onFermerEditionTemplatePersonnage, onDemanderChangementDepuisTemplatePersonnage, onTemplatePanelOpenChange, onPerformancePreferenceChange, onThemeModeChange }) {
+export function HubCampagne({ campaignName, scene, scenes, templates, trackerTemplates, statusTemplates, sceneCounterTemplates, sceneStatusTemplates, ruleTemplates, initiativeTextPresets, campaignProfile, rulePresetSnapshot, randomSystem, templateCategories, campaignEntries, fileSaveStatus, cloudSync, dark, performanceState, themeState, onChoisirScene, onNouvelleScene, onModifierScene, onDupliquerScene, onSupprimerScene, onModifierReglesInitiative, onOuvrirProfilCampagne, onRenommerCampagne, onExporter, onImporter, onChargerCampagneTest, onReinitialiser, onRejouerTutoriel, onAjouterTemplateCategorie, onAjouterCategorieTemplate, onRenommerCategorieTemplate, onSupprimerCategorieTemplate, onDeplacerCategorieTemplate, onChangerCategorieTemplate, onEditerTemplate, onDupliquerTemplate, onSupprimerTemplate, onAjouterTemplateSuivi, onModifierTemplateSuivi, onDupliquerTemplateSuivi, onSupprimerTemplateSuivi, onAjouterTemplateEtat, onModifierTemplateEtat, onDupliquerTemplateEtat, onSupprimerTemplateEtat, onAjouterTemplateCompteurScene, onModifierTemplateCompteurScene, onDupliquerTemplateCompteurScene, onSupprimerTemplateCompteurScene, onAjouterTemplateEtatScene, onModifierTemplateEtatScene, onDupliquerTemplateEtatScene, onSupprimerTemplateEtatScene, onAppliquerTemplateRegles, onEnregistrerTemplateRegles, onEnregistrerPresetInitiativeTextuelle, onDupliquerTemplateRegles, onSupprimerTemplateRegles, onImporterTemplates, onExporterBibliotheque, onFermerEditeursTemplates, templatePersonnageId, templatePersonnageOuvert, onFermerEditionTemplatePersonnage, onDemanderChangementDepuisTemplatePersonnage, onTemplatePanelOpenChange, onPerformancePreferenceChange, onThemeModeChange }) {
   const [onglet, setOnglet] = useState(initialHubTab);
   const [, setRandomSystemRevealed] = useState(() => { try { return window.sessionStorage.getItem('cadence:random-system-revealed') === '1'; } catch { return false; } });
   const [editingSceneId, setEditingSceneId] = useState('');
   const [editCreatedSceneWhenReady, setEditCreatedSceneWhenReady] = useState(false);
+  const [adminPresetsOpen, setAdminPresetsOpen] = useState(false);
   const randomSystemMode = scene?.randomSystemMode || randomSystemModes.FULL;
   const showRandomSystem = randomSystemMode === randomSystemModes.FULL;
   const showRandomSystemTab = true;
@@ -413,6 +404,8 @@ export function HubCampagne({ campaignName, scene, scenes, templates, trackerTem
   const creerNouvelleScene = () => { onNouvelleScene(); setEditCreatedSceneWhenReady(true); };
   const dupliquerScene = (index) => { onDupliquerScene(index); setEditCreatedSceneWhenReady(true); };
 
+  if (adminPresetsOpen) return <Suspense fallback={<ChargementOnglet texte="Chargement de l’admin presets..." />}><AdminPresetsPage randomSystem={randomSystem} ruleTemplates={ruleTemplates} onSaveRuleTemplate={onEnregistrerTemplateRegles} onDeleteRuleTemplate={onSupprimerTemplateRegles} onBack={() => setAdminPresetsOpen(false)} /></Suspense>;
+
   return (
     <div className="campaign-page shell">
       <EnteteHub campaignName={campaignName} sombre={dark} themeState={themeState} onThemeModeChange={onThemeModeChange} />
@@ -421,7 +414,7 @@ export function HubCampagne({ campaignName, scene, scenes, templates, trackerTem
         {onglet === 'scenes' && <OngletScenes scenes={scenes} editingSceneId={editingSceneId} onEditerScene={setEditingSceneId} onFermerEditionScene={() => setEditingSceneId('')} onChoisirScene={onChoisirScene} onNouvelleScene={creerNouvelleScene} onModifierScene={onModifierScene} onDupliquerScene={dupliquerScene} onSupprimerScene={onSupprimerScene} />}
         {onglet === 'regles' && <OngletReglesEtHasard scene={scene} campaignProfile={campaignProfile} rulePresetSnapshot={rulePresetSnapshot} ruleTemplates={ruleTemplates} initiativeTextPresets={initiativeTextPresets} randomSystem={randomSystem} showRandomSystem={showRandomSystem} onModifierReglesInitiative={onModifierReglesInitiative} onOuvrirProfilCampagne={onOuvrirProfilCampagne} onAppliquerTemplateRegles={onAppliquerTemplateRegles} onEnregistrerTemplateRegles={onEnregistrerTemplateRegles} onEnregistrerPresetInitiativeTextuelle={onEnregistrerPresetInitiativeTextuelle} onDupliquerTemplateRegles={onDupliquerTemplateRegles} onSupprimerTemplateRegles={onSupprimerTemplateRegles} />}
         {onglet === 'tirages' && showRandomSystemTab && <OngletTirages scene={scene} randomSystem={randomSystem} includeConfiguration={randomSystemMode !== randomSystemModes.FULL} />}
-        {onglet === 'campagnes' && <OngletCampagnes campaignName={campaignName} campaignEntries={campaignEntries} fileSaveStatus={fileSaveStatus} performanceState={performanceState} themeState={themeState} randomSystemIntegrated={randomSystemMode === randomSystemModes.FULL} randomSystem={randomSystem} ruleTemplates={ruleTemplates} onEnregistrerTemplateRegles={onEnregistrerTemplateRegles} onSupprimerTemplateRegles={onSupprimerTemplateRegles} onRenommerCampagne={onRenommerCampagne} onExporter={onExporter} onImporter={onImporter} onImporterTemplates={onImporterTemplates} onExporterBibliotheque={onExporterBibliotheque} onChargerCampagneTest={onChargerCampagneTest} onReinitialiser={onReinitialiser} onRejouerTutoriel={onRejouerTutoriel} onPerformancePreferenceChange={onPerformancePreferenceChange} onThemeModeChange={onThemeModeChange} onRandomSystemIntegratedChange={(randomSystemIntegrated) => onModifierReglesInitiative({ randomSystemMode: randomSystemIntegrated ? randomSystemModes.FULL : (scene?.initiativeBonusEnabled !== false || scene?.initiativeBonusRollDefinitionId) ? randomSystemModes.INITIATIVE : randomSystemModes.MANUAL })} />}
+        {onglet === 'campagnes' && <OngletCampagnes campaignName={campaignName} campaignEntries={campaignEntries} fileSaveStatus={fileSaveStatus} cloudSync={cloudSync} performanceState={performanceState} themeState={themeState} randomSystemIntegrated={randomSystemMode === randomSystemModes.FULL} onOuvrirAdminPresets={() => setAdminPresetsOpen(true)} onRenommerCampagne={onRenommerCampagne} onExporter={onExporter} onImporter={onImporter} onImporterTemplates={onImporterTemplates} onExporterBibliotheque={onExporterBibliotheque} onChargerCampagneTest={onChargerCampagneTest} onReinitialiser={onReinitialiser} onRejouerTutoriel={onRejouerTutoriel} onPerformancePreferenceChange={onPerformancePreferenceChange} onThemeModeChange={onThemeModeChange} onRandomSystemIntegratedChange={(randomSystemIntegrated) => onModifierReglesInitiative({ randomSystemMode: randomSystemIntegrated ? randomSystemModes.FULL : (scene?.initiativeBonusEnabled !== false || scene?.initiativeBonusRollDefinitionId) ? randomSystemModes.INITIATIVE : randomSystemModes.MANUAL })} />}
         {onglet === 'templates' && <Suspense fallback={<ChargementOnglet texte={t('hub.loading.templates')} />}><OngletTemplates categories={templateCategories} templates={templates} trackerTemplates={trackerTemplates} statusTemplates={statusTemplates} sceneCounterTemplates={sceneCounterTemplates} sceneStatusTemplates={sceneStatusTemplates} surpriseImpact={scene?.surpriseImpact} surpriseAdvanceOn={scene?.surpriseAdvanceOn} onAjouterTemplateCategorie={onAjouterTemplateCategorie} onAjouterCategorie={onAjouterCategorieTemplate} onRenommerCategorie={onRenommerCategorieTemplate} onSupprimerCategorie={onSupprimerCategorieTemplate} onDeplacerCategorie={onDeplacerCategorieTemplate} onChangerCategorieTemplate={onChangerCategorieTemplate} onEditerTemplate={onEditerTemplate} onDupliquerTemplate={onDupliquerTemplate} onSupprimerTemplate={onSupprimerTemplate} onAjouterTemplateSuivi={onAjouterTemplateSuivi} onModifierTemplateSuivi={onModifierTemplateSuivi} onDupliquerTemplateSuivi={onDupliquerTemplateSuivi} onSupprimerTemplateSuivi={onSupprimerTemplateSuivi} onAjouterTemplateEtat={onAjouterTemplateEtat} onModifierTemplateEtat={onModifierTemplateEtat} onDupliquerTemplateEtat={onDupliquerTemplateEtat} onSupprimerTemplateEtat={onSupprimerTemplateEtat} onAjouterTemplateCompteurScene={onAjouterTemplateCompteurScene} onModifierTemplateCompteurScene={onModifierTemplateCompteurScene} onDupliquerTemplateCompteurScene={onDupliquerTemplateCompteurScene} onSupprimerTemplateCompteurScene={onSupprimerTemplateCompteurScene} onAjouterTemplateEtatScene={onAjouterTemplateEtatScene} onModifierTemplateEtatScene={onModifierTemplateEtatScene} onDupliquerTemplateEtatScene={onDupliquerTemplateEtatScene} onSupprimerTemplateEtatScene={onSupprimerTemplateEtatScene} templatePersonnageId={templatePersonnageId} templatePersonnageOuvert={templatePersonnageOuvert} onFermerEditionTemplatePersonnage={onFermerEditionTemplatePersonnage} onDemanderChangementDepuisTemplatePersonnage={onDemanderChangementDepuisTemplatePersonnage} onTemplatePanelOpenChange={onTemplatePanelOpenChange} /></Suspense>}
       </main>
     </div>

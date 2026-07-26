@@ -1,4 +1,30 @@
 key,fr
+cloud.title,Synchronisation privée
+cloud.unavailableHelp,Non configurée sur ce déploiement. La sauvegarde locale continue de fonctionner.
+cloud.privateHelp,Réservée aux comptes créés manuellement. Il n’existe aucune inscription publique.
+cloud.synced,Synchronisé
+cloud.connected,Compte connecté
+cloud.email,Adresse e-mail
+cloud.password,Mot de passe
+cloud.login,Se connecter
+cloud.logout,Se déconnecter
+cloud.remoteMeta,Dernière version en ligne : {date} · révision {revision}
+cloud.pull,Récupérer la version en ligne
+cloud.replace,Remplacer par cette campagne
+cloud.push,Envoyer cette campagne
+cloud.choiceHelp,Le choix remplace la campagne sur l’autre appareil. Les exports .cad restent disponibles comme sauvegarde de secours.
+cloud.loadedLocal,Campagne en ligne chargée et conservée localement.
+cloud.status.checking,Vérification du compte…
+cloud.status.signedOut,La campagne reste enregistrée uniquement sur cet appareil.
+cloud.status.loading,Chargement de la sauvegarde en ligne…
+cloud.status.readyEmpty,Ce compte ne contient pas encore de campagne.
+cloud.status.remoteAvailable,Une campagne en ligne est disponible.
+cloud.status.synced,Campagne synchronisée.
+cloud.status.saving,Synchronisation en cours…
+cloud.status.conflict,Deux versions différentes existent. Choisis celle à conserver.
+cloud.status.offline,Hors ligne : les modifications restent sauvegardées sur cet appareil.
+cloud.status.unavailable,La synchronisation n’est pas configurée sur ce déploiement.
+cloud.status.error,La synchronisation a échoué.
 common.add,Ajouter
 common.cancel,Annuler
 random.config.tokens,Jetons
@@ -103,6 +129,117 @@ presetLibrary.code.invalid,Le code doit être un objet JSON valide.
 presetLibrary.code.saveRules,Enregistrer une copie de règles
 presetLibrary.code.saveKit,Enregistrer une copie d’ensemble
 presetLibrary.kit,Ensemble
+presetLibrary.table.preset,Préréglage
+presetLibrary.table.actions,Actions
+presetLibrary.table.presetName,Nom du préréglage
+presetLibrary.table.help,"Modifiez les réglages directement dans le tableau, puis enregistrez la ligne. Les préréglages du catalogue sont recopiés dans vos préréglages personnels au premier enregistrement."
+presetLibrary.table.manage,Gérer
+presetLibrary.table.createCopy,Créer une copie
+presetLibrary.table.new,Nouveau préréglage
+presetLibrary.rng.title,RNG
+presetLibrary.rng.help,Configurez les ensembles et les ressources de tirage associées aux préréglages.
+presetLibrary.rng.kits,Ensembles de tirages
+presetLibrary.rng.rules,Règles de tirage
+presetLibrary.rng.definitions,Tirages disponibles
+presetLibrary.rng.sources,Sources et paquets
+presetLibrary.rng.tokens,Jetons et bourses
+presetLibrary.rng.mode,Mode
+presetLibrary.rng.policy,Application
+presetLibrary.rng.definition,Tirage
+presetLibrary.rng.source,Source
+presetLibrary.rng.newKit,Nouvel ensemble
+presetLibrary.rng.ruleSet,Ensemble de règles
+presetLibrary.rng.newDefinition,Nouveau tirage
+presetLibrary.rng.type,Type
+presetLibrary.rng.active,Actif
+presetLibrary.rng.quick,Accès rapide
+presetLibrary.rng.components,Composants
+presetLibrary.rng.steps,Étapes
+presetLibrary.rng.newSource,Nouvelle source
+presetLibrary.rng.minimum,Minimum
+presetLibrary.rng.maximum,Maximum
+presetLibrary.rng.step,Pas
+presetLibrary.rng.outcomes,Issues
+presetLibrary.rng.newToken,Nouveau jeton
+presetLibrary.rng.newContainer,Nouvelle bourse
+presetLibrary.rng.reference,Mémoriser
+presetLibrary.rng.reset,Rétablir
+presetLibrary.rng.advanced,Réglages avancés des tirages et des sources
+presetLibrary.rng.mode.numeric,Numérique
+presetLibrary.rng.mode.random-order,Ordre aléatoire
+presetLibrary.rng.mode.cards,Cartes
+presetLibrary.rng.mode.label-order,Ordre textuel
+presetLibrary.rng.mode.manual,Manuel
+presetLibrary.rng.mode.none,Aucun
+presetLibrary.rng.policy.fill-empty,Compléter
+presetLibrary.rng.policy.replace-all,Remplacer
+presetLibrary.rng.policy.ask,Demander
+presetLibrary.rng.policy.manual-only,Manuel uniquement
+presetLibrary.rng.definitionKind.roll,Tirage
+presetLibrary.rng.definitionKind.combination,Combinaison
+presetLibrary.rng.sourceKind.uniform,Uniforme
+presetLibrary.rng.sourceKind.weighted,Pondérée
+presetLibrary.rng.sourceKind.cards,Cartes
+presetLibrary.rng.containers,Bourses
+presetLibrary.rng.total,Total
+presetLibrary.rng.exposeDraw,Exposer {name}
+presetLibrary.rng.requiredDraw,Tirage requis pour l’initiative
+presetLibrary.rules.flow,Déroulement
+presetLibrary.rules.temporality,Temporalité
+presetLibrary.rules.declaration,Déclaration
+presetLibrary.rules.declarationText,Texte obligatoire
+presetLibrary.rules.activationAdvance,Avance automatique
+presetLibrary.rules.phases,Phases
+presetLibrary.rules.phaseMode,Mode
+presetLibrary.rules.phaseCount,Nombre
+presetLibrary.rules.phaseDecrement,Décrément
+presetLibrary.rules.phaseOnce,Une activation par round
+presetLibrary.rules.surprise,Surprise
+presetLibrary.rules.impact,Impact
+presetLibrary.rules.advance,Fin de l’état
+presetLibrary.rules.dedicatedRound,Round dédié
+presetLibrary.rules.initiative,Initiative
+presetLibrary.rules.initiativeRoll,Tirage Cadence lié
+presetLibrary.rules.useInitiative,Utiliser l’initiative
+presetLibrary.rules.order,Ordre
+presetLibrary.rules.reroll,Relancer par round
+presetLibrary.rules.format,Format de saisie
+presetLibrary.rules.valueType,Valeur
+presetLibrary.rules.textFormat,Préréglage
+presetLibrary.rules.source,Source liée
+presetLibrary.rules.unknown,Libellés inconnus
+presetLibrary.rules.separator,Séparateur
+presetLibrary.rules.separators,Séparateurs successifs
+presetLibrary.rules.separatorsPlaceholder,∅ | de | /
+presetLibrary.rules.parts,Parties et valeurs
+presetLibrary.rules.partsPlaceholder,"Valeur: As, Roi, Dame"
+presetLibrary.rules.legacyLabels,Libellés simples
+presetLibrary.rules.bonusTiebreaker,Bonus et départage
+presetLibrary.rules.bonus,Bonus d’initiative
+presetLibrary.rules.bonusRoll,Tirage lié
+presetLibrary.rules.tiebreaker,Départage visible
+presetLibrary.rules.tiebreakerLabel,Nom du départage
+presetLibrary.rules.actions,Actions
+presetLibrary.rules.multipleActions,Actions multiples
+presetLibrary.rules.mode,Mode
+presetLibrary.rules.scope,Participants
+presetLibrary.rules.threshold,Seuil
+presetLibrary.rules.quickCosts,Coûts rapides
+presetLibrary.rules.limitCost,Limiter au créneau
+presetLibrary.rules.organization,Organisation
+presetLibrary.rules.equality,Égalités
+presetLibrary.rules.rounding,Arrondi
+presetLibrary.rules.categories,Ordre des types
+presetLibrary.rules.moveTypeUp,Remonter {name}
+presetLibrary.rules.moveTypeDown,Descendre {name}
+presetLibrary.rules.customTypes,Types personnalisés
+presetLibrary.rules.typesPlaceholder,Invocateur: Élite
+presetLibrary.rules.cloneBehavior,Comportement de
+presetLibrary.rules.newCustomType,Nouveau type
+presetLibrary.rules.noCustomTypes,Aucun type personnalisé.
+presetLibrary.rules.randomSystem,Système de tirages
+presetLibrary.rules.types,Types et catégories
+presetLibrary.export,Exporter les préréglages et le RNG
 addons.title,Modules complémentaires
 addons.help,Des outils isolés que l’on peut tester avant de les intégrer au reste de Cadence.
 errors.title,Cadence a rencontré une erreur

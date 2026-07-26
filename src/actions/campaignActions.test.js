@@ -242,7 +242,9 @@ describe('campaign actions export/import', () => {
   });
 
   it('applies an available campaign profile explicitly and keeps random rolls additive', () => {
-    const { actions, state } = createHarness();
+    const { actions, state } = createHarness({
+      rules: { temporalite: 'classique', randomSystemMode: 'manual' },
+    });
 
     expect(actions.applyCampaignProfile({
       systemProfileId: 'system/shadowrun',
@@ -251,7 +253,12 @@ describe('campaign actions export/import', () => {
       randomQuickRollProfileIds: ['quick-roll/d6-pool'],
     })).toBe(true);
 
-    expect(state().rules).toMatchObject({ temporalite: 'phases', phaseDecrement: 10 });
+    expect(state().rules).toMatchObject({
+      temporalite: 'phases',
+      phaseDecrement: 10,
+      initiativeBonusRollDefinitionId: 'kit-d6-total',
+      randomSystemMode: 'manual',
+    });
     expect(state().campaignProfile).toEqual({
       systemProfileId: 'system/shadowrun',
       editionId: 'sr-5',
@@ -265,6 +272,28 @@ describe('campaign actions export/import', () => {
       randomQuickRollProfileIds: ['quick-roll/d6-pool'],
     });
     expect(state().randomSystem.definitions.find((definition) => definition.id === 'kit-d6-pool-successes')?.active).toBe(true);
+  });
+
+  it('applies a rule preset without changing the user random-system setting', () => {
+    const { actions, state } = createHarness({
+      rules: { temporalite: 'classique', randomSystemMode: 'initiative' },
+    });
+
+    actions.applyCampaignRulePreset({
+      id: 'preset-test',
+      name: 'Preset test',
+      rules: {
+        temporalite: 'phases',
+        randomSystemMode: 'full',
+        initiativeBonusRollDefinitionId: 'initiative-test',
+      },
+    });
+
+    expect(state().rules).toMatchObject({
+      temporalite: 'phases',
+      initiativeBonusRollDefinitionId: 'initiative-test',
+      randomSystemMode: 'initiative',
+    });
   });
 
   it('applies questionnaire rules without pretending they belong to a system profile', () => {

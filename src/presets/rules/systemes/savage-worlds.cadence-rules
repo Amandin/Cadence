@@ -9,6 +9,7 @@
     "temporalite": "classique",
     "initiativeValueType": "label",
     "initiativeOrder": "desc",
+    "initiativeBonusRollDefinitionId": "kit-savage-step",
     "tiebreakerVisible": false,
     "equalityRule": "never",
     "multipleActionMode": "none",

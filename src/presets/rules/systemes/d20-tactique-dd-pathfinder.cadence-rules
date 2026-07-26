@@ -9,6 +9,7 @@
     "temporalite": "classique",
     "declarationMode": false,
     "initiativeOrder": "desc",
+    "initiativeBonusRollDefinitionId": "kit-d20-check",
     "tiebreakerVisible": true,
     "equalityRule": "strict",
     "multipleActionMode": "none"

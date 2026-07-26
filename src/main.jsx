@@ -24,6 +24,7 @@ import './styles/theme/responsive-mobile.css';
 import './styles/theme/responsive-wide.css';
 import './styles/theme/dark-compatibility.css';
 import './styles/performance-low.css';
+import './styles/cloud-sync.css';
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>

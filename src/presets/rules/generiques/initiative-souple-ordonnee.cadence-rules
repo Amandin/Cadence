@@ -8,6 +8,7 @@
     "temporalite": "souple",
     "flexibleUseInitiative": true,
     "initiativeOrder": "desc",
+    "initiativeBonusRollDefinitionId": "kit-d20-check",
     "tiebreakerVisible": false,
     "equalityRule": "never",
     "multipleActionMode": "none",

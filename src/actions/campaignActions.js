@@ -99,7 +99,10 @@ export function createCampaignActions({ scenes, campaignRules, campaignProfile =
     const availableQuickRollProfileIds = new Set(quickRollProfilesForSystem(systemProfile.id, initiativeProfile.id).map((profile) => profile.id));
     const selectedQuickRollProfileIds = (Array.isArray(randomQuickRollProfileIds) ? randomQuickRollProfileIds : [])
       .filter((profileId) => availableQuickRollProfileIds.has(profileId));
-    const nextRules = normalizeCampaignRules(preset.rules);
+    const nextRules = normalizeCampaignRules({
+      ...preset.rules,
+      randomSystemMode: campaignRules.randomSystemMode,
+    });
     setCampaignRules(nextRules);
     setCampaignProfile({ systemProfileId: systemProfile.id, editionId, initiativeProfileId: initiativeProfile.id, randomQuickRollProfileIds: selectedQuickRollProfileIds });
     setRulePresetSnapshot(createRulePresetSnapshot(preset, nextRules, {
@@ -180,7 +183,10 @@ export function createCampaignActions({ scenes, campaignRules, campaignProfile =
     },
     applyCampaignRulePreset(preset) {
       if (!preset?.rules) return;
-      const nextRules = normalizeCampaignRules(preset.rules);
+      const nextRules = normalizeCampaignRules({
+        ...preset.rules,
+        randomSystemMode: campaignRules.randomSystemMode,
+      });
       setCampaignRules(nextRules);
       setCampaignProfile({});
       setRulePresetSnapshot(createRulePresetSnapshot(preset, nextRules));

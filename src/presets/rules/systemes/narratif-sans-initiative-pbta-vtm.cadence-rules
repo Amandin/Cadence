@@ -8,6 +8,7 @@
   "rules": {
     "temporalite": "souple",
     "flexibleUseInitiative": false,
+    "initiativeBonusRollDefinitionId": "kit-2d6-mod",
     "declarationMode": false,
     "multipleActionMode": "none",
     "categoryOrder": ["PJ", "Opposant", "Allié", "Environnement"]
