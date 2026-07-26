@@ -11,7 +11,18 @@ function normalizedUsername(value) {
   return String(value || '').trim().normalize('NFKC').toLowerCase();
 }
 
-export async function onRequestPost({ request, env }) {
+export async function onRequestPost(context) {
+  let stage = 'initialisation';
+  try {
+    return await login(context, (nextStage) => { stage = nextStage; });
+  } catch (error) {
+    console.error('Cadence private login failed', { stage, message: error instanceof Error ? error.message : String(error) });
+    return apiError(500, 'LOGIN_SERVER_ERROR', `La connexion a échoué pendant l’étape « ${stage} ».`);
+  }
+}
+
+async function login({ request, env }, setStage) {
+  setStage('validation de la requête');
   const originError = requireTrustedOrigin(request, env);
   if (originError) return originError;
 
@@ -28,8 +39,10 @@ export async function onRequestPost({ request, env }) {
     return apiError(400, 'INVALID_REQUEST', 'Pseudo ou mot de passe invalide.');
   }
 
+  setStage('empreinte de connexion');
   const ipHash = await sha256(`ip:${request.headers.get('CF-Connecting-IP') || 'unknown'}`);
   const fifteenMinutesAgo = new Date(Date.now() - LOCK_MINUTES * 60_000).toISOString();
+  setStage('lecture des tentatives');
   const attempt = await env.DB.prepare('SELECT attempt_count AS attemptCount, window_started AS windowStarted FROM login_attempts WHERE fingerprint = ?')
     .bind(ipHash)
     .first();
@@ -37,6 +50,7 @@ export async function onRequestPost({ request, env }) {
     return apiError(429, 'TOO_MANY_ATTEMPTS', 'Trop de tentatives. Réessaie dans quelques minutes.');
   }
 
+  setStage('lecture du compte');
   const account = await env.DB.prepare(`
     SELECT id, username, email, display_name AS displayName, role, disabled,
       password_hash AS passwordHash, password_salt AS passwordSalt,
@@ -45,6 +59,7 @@ export async function onRequestPost({ request, env }) {
     FROM accounts WHERE username = ? OR email = ?
   `).bind(username, username).first();
 
+  setStage('vérification du mot de passe');
   const iterations = account?.passwordIterations || DEFAULT_ITERATIONS;
   const candidateHash = await passwordHash(password, account?.passwordSalt || DUMMY_SALT, iterations);
   const passwordValid = !!account && constantTimeEqual(candidateHash, account.passwordHash || DUMMY_HASH);
@@ -52,6 +67,7 @@ export async function onRequestPost({ request, env }) {
 
   if (!passwordValid || account?.disabled || locked) {
     const now = new Date().toISOString();
+    setStage('enregistrement de la tentative');
     if (!attempt || attempt.windowStarted <= fifteenMinutesAgo) {
       await env.DB.prepare('INSERT INTO login_attempts (fingerprint, window_started, attempt_count) VALUES (?, ?, 1) ON CONFLICT(fingerprint) DO UPDATE SET window_started = excluded.window_started, attempt_count = 1')
         .bind(ipHash, now).run();
@@ -67,6 +83,7 @@ export async function onRequestPost({ request, env }) {
     return apiError(401, 'INVALID_CREDENTIALS', 'Pseudo ou mot de passe incorrect.');
   }
 
+  setStage('création de session');
   const token = randomToken(32);
   const csrfToken = randomToken(24);
   const tokenHash = await sha256(token);
