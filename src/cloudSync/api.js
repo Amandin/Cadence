@@ -8,7 +8,7 @@ export class CloudApiError extends Error {
   }
 }
 
-async function apiRequest(path, { method = 'GET', body, csrfToken, fetchImpl = globalThis.fetch } = {}) {
+async function apiRequest(path, { method = 'GET', body, csrfToken, keepalive = false, fetchImpl = globalThis.fetch } = {}) {
   let response;
   try {
     response = await fetchImpl(path, {
@@ -19,6 +19,7 @@ async function apiRequest(path, { method = 'GET', body, csrfToken, fetchImpl = g
         ...(body ? { 'Content-Type': 'application/json' } : {}),
         ...(csrfToken ? { 'X-Cadence-CSRF': csrfToken } : {}),
       },
+      keepalive,
       ...(body ? { body: JSON.stringify(body) } : {}),
     });
   } catch (error) {
@@ -53,11 +54,22 @@ export const cloudApi = {
   campaign(options) {
     return apiRequest('/api/campaign', options);
   },
-  saveCampaign(payload, baseRevision, csrfToken, options) {
+  campaignMeta(options) {
+    return apiRequest('/api/campaign?meta=1', options);
+  },
+  saveCampaign(payload, baseRevision, csrfToken, options = {}) {
     return apiRequest('/api/campaign', {
       ...options,
       method: 'PUT',
       body: { payload, baseRevision },
+      csrfToken,
+    });
+  },
+  patchCampaign(patch, baseRevision, baseHash, resultHash, csrfToken, options = {}) {
+    return apiRequest('/api/campaign', {
+      ...options,
+      method: 'PATCH',
+      body: { patch, baseRevision, baseHash, resultHash },
       csrfToken,
     });
   },

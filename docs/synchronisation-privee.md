@@ -5,12 +5,15 @@ Cadence conserve toujours la campagne dans le navigateur. La synchronisation est
 ## Architecture
 
 - Cloudflare Pages sert l’application React et les fonctions de `functions/`.
-- D1 contient les comptes, les sessions et une campagne par compte.
-- Le navigateur garde la copie locale et envoie les changements après 1,5 seconde d’inactivité.
+- D1 contient les comptes, les sessions, une base de campagne par compte et les petits patchs incrémentaux qui suivent.
+- Le navigateur garde la copie locale et envoie les changements après 30 secondes d’inactivité.
+- Les contrôles périodiques ne récupèrent que la révision et le hash SHA-256. Le `.cad` complet n’est téléchargé que si les hashes divergent.
+- Les modifications courantes sont envoyées sous forme de patchs ciblés. Une sauvegarde complète consolide la campagne après 100 patchs, lors du premier envoi ou d’un remplacement explicite.
 - Chaque sauvegarde distante porte une révision. Deux appareils qui ont modifié la même campagne ne s’écrasent pas silencieusement : l’interface demande quelle version conserver.
-- Une version distante plus récente est vérifiée au retour dans l’application et toutes les 45 secondes.
+- Une version distante plus récente est vérifiée au retour dans l’application et toutes les 5 minutes.
+- Quand l’onglet passe en arrière-plan, un petit patch en attente est envoyé avec `keepalive`. L’avertissement natif de fermeture n’apparaît que si la requête dépasse 48 Kio.
 
-Les mots de passe sont dérivés par PBKDF2-SHA-256 avec un sel propre au compte et 310 000 itérations. Les sessions utilisent un cookie `HttpOnly`, `Secure` et `SameSite=Strict`. Les écritures exigent aussi un jeton CSRF et une origine autorisée.
+Les mots de passe sont dérivés par PBKDF2-SHA-256 avec un sel propre au compte et 100 000 itérations, limite compatible avec le runtime Cloudflare. Les sessions utilisent un cookie `HttpOnly`, `Secure` et `SameSite=Strict`. Les écritures exigent aussi un jeton CSRF et une origine autorisée.
 
 ## 1. Créer la base D1
 
@@ -26,7 +29,7 @@ En ligne de commande, après avoir installé Wrangler :
 npx wrangler d1 migrations apply cadence-private --remote
 ```
 
-La migration `0002_account_usernames.sql` ajoute la colonne de pseudo. Si `0001` a déjà été exécutée, applique uniquement `0002` dans la console D1.
+La migration `0002_account_usernames.sql` ajoute la colonne de pseudo. La migration `0003_incremental_campaign_sync.sql` ajoute les hashes et les patchs de synchronisation. Si `0001` et `0002` ont déjà été exécutées, applique uniquement `0003` dans la console D1 avant de déployer cette version.
 
 Le fichier [`wrangler.example.toml`](../wrangler.example.toml) montre la configuration attendue. Copier ses valeurs dans la configuration Cloudflare ou créer un `wrangler.toml` local non sensible avec le véritable identifiant D1.
 
@@ -59,6 +62,12 @@ npm run account:create -- moi "Mon prénom" --admin
 Le rôle administrateur est préparé pour de futures fonctions d’administration, mais ne donne actuellement accès à aucun écran de création de comptes. Cela maintient volontairement la liste des membres sous contrôle direct de la base.
 
 Dans un environnement non interactif, le script accepte aussi la variable temporaire `CADENCE_ACCOUNT_PASSWORD`. Ne jamais l’enregistrer dans un fichier, une commande partagée ou un journal CI.
+
+Pour renouveler le mot de passe d’un compte sans supprimer sa campagne :
+
+```bash
+npm run account:create -- ami "Prénom" --replace
+```
 
 ## 4. Déployer
 

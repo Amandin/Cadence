@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { cloudApi, CloudApiError } from './api.js';
-import { campaignSyncSignature } from './useCloudSync.js';
+import { campaignSyncSignature } from '../../shared/cloud-sync-protocol.js';
 
 function response(data, status = 200, contentType = 'application/json') {
   return {
@@ -18,7 +18,25 @@ describe('cloudApi', () => {
     expect(fetchImpl).toHaveBeenCalledWith('/api/campaign', expect.objectContaining({
       method: 'PUT',
       credentials: 'include',
+      keepalive: false,
       headers: expect.objectContaining({ 'X-Cadence-CSRF': 'csrf-test' }),
+    }));
+  });
+
+  it('checks metadata without downloading the campaign payload', async () => {
+    const fetchImpl = vi.fn(async () => response({ ok: true, campaign: { revision: 2, hash: 'a'.repeat(64) } }));
+    await cloudApi.campaignMeta({ fetchImpl });
+    expect(fetchImpl).toHaveBeenCalledWith('/api/campaign?meta=1', expect.objectContaining({ method: 'GET' }));
+  });
+
+  it('sends incremental patches with keepalive support', async () => {
+    const fetchImpl = vi.fn(async () => response({ ok: true, campaign: { revision: 3 } }));
+    const patch = { version: 1, operations: [{ op: 'set', path: ['name'], value: 'Après' }] };
+    await cloudApi.patchCampaign(patch, 2, 'a'.repeat(64), 'b'.repeat(64), 'csrf', { fetchImpl, keepalive: true });
+    expect(fetchImpl).toHaveBeenCalledWith('/api/campaign', expect.objectContaining({
+      method: 'PATCH',
+      keepalive: true,
+      body: JSON.stringify({ patch, baseRevision: 2, baseHash: 'a'.repeat(64), resultHash: 'b'.repeat(64) }),
     }));
   });
 
