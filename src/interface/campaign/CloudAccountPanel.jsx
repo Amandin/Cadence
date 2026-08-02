@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { t } from '../../i18n/index.js';
+import { SCENE_STREAM_INACTIVITY_TTL_MS } from '../../../shared/scene-stream-protocol.js';
 
 function remoteDate(remoteCampaign) {
   if (!remoteCampaign?.updatedAt) return '';
@@ -10,7 +11,72 @@ function remoteDate(remoteCampaign) {
   }
 }
 
-export function CloudAccountPanel({ cloudSync }) {
+function streamExpiryDate(stream) {
+  const updatedAt = Date.parse(stream?.updatedAt || '');
+  if (!Number.isFinite(updatedAt)) return '';
+  return new Intl.DateTimeFormat('fr-FR', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(new Date(updatedAt + SCENE_STREAM_INACTIVITY_TTL_MS));
+}
+
+function SceneStreamPanel({ sceneStream }) {
+  const [copied, setCopied] = useState(false);
+  if (!sceneStream) return null;
+  const busy = ['creating', 'revoking'].includes(sceneStream?.status);
+  const copyLink = async () => {
+    if (!sceneStream?.shareUrl) return;
+    try {
+      await navigator.clipboard.writeText(sceneStream.shareUrl);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1_800);
+    } catch {
+      setCopied(false);
+    }
+  };
+
+  return (
+    <section className="scene-stream-panel">
+      <div className="hub-section-head">
+        <div>
+          <h4>{t('stream.owner.title')}</h4>
+          <p className="muted compact-help">{t('stream.owner.help')}</p>
+        </div>
+        {sceneStream?.active && <span className="chip hot">{t('stream.owner.active')}</span>}
+      </div>
+      {!sceneStream?.active ? (
+        <div className="stack">
+          {sceneStream?.status === 'expired' && (
+            <p className="campaign-save-status status-ready" role="status">{t('stream.owner.expired')}</p>
+          )}
+          <button className="primary" type="button" onClick={sceneStream?.generate} disabled={busy}>
+            {t('stream.owner.generate')}
+          </button>
+        </div>
+      ) : (
+        <div className="stack">
+          {sceneStream.shareUrl ? (
+            <div className="scene-stream-link-row">
+              <input aria-label={t('stream.owner.link')} value={sceneStream.shareUrl} readOnly />
+              <button className="small-btn" type="button" onClick={copyLink}>{copied ? t('stream.owner.copied') : t('stream.owner.copy')}</button>
+            </div>
+          ) : <p className="muted compact-help">{t('stream.owner.linkUnavailable')}</p>}
+          <p className="muted compact-help">{t('stream.owner.privateWarning')}</p>
+          <p className="muted compact-help" role="status">
+            {t('stream.owner.expiryNotice', { date: streamExpiryDate(sceneStream.stream) })}
+          </p>
+          <div className="scene-stream-actions">
+            <button className="small-btn" type="button" onClick={sceneStream.generate} disabled={busy}>{t('stream.owner.regenerate')}</button>
+            <button className="danger-btn mini-danger" type="button" onClick={sceneStream.revoke} disabled={busy}>{t('stream.owner.revoke')}</button>
+          </div>
+        </div>
+      )}
+      {sceneStream?.error && <p className="campaign-save-status status-error" role="alert">{sceneStream.error}</p>}
+    </section>
+  );
+}
+
+export function CloudAccountPanel({ cloudSync, sceneStream }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -85,6 +151,7 @@ export function CloudAccountPanel({ cloudSync }) {
               {needsChoice && <p className="muted compact-help">{t('cloud.choiceHelp')}</p>}
             </div>
           )}
+          <SceneStreamPanel sceneStream={sceneStream} />
         </>
       )}
     </section>

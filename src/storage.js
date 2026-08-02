@@ -192,6 +192,7 @@ function normalizeTracker(tracker) {
     type,
     name: stringOr(tracker.name, type === 'clock' ? 'Horloge' : 'Suivi'),
     visible: tracker.visible !== false,
+    streamEditable: booleanOr(tracker.streamEditable),
   };
 
   if (type === 'boxes') {

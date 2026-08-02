@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.jsx';
 import { ErrorBoundary } from './components/ErrorBoundary.jsx';
+import StreamGuestApp from './stream/StreamGuestApp.jsx';
+import { streamRouteRequested, streamTokenFromLocation } from './stream/api.js';
 import './styles.css';
 import './overrides.css';
 import './styles/skins/cadence.css';
@@ -26,10 +28,23 @@ import './styles/theme/dark-compatibility.css';
 import './styles/performance-low.css';
 import './styles/cloud-sync.css';
 
+function RootRouter() {
+  const [, setRouteRevision] = useState(0);
+  useEffect(() => {
+    const updateRoute = () => setRouteRevision((revision) => revision + 1);
+    window.addEventListener('hashchange', updateRoute);
+    return () => window.removeEventListener('hashchange', updateRoute);
+  }, []);
+
+  const guestRoute = streamRouteRequested(window.location);
+  const guestToken = guestRoute ? streamTokenFromLocation(window.location) : '';
+  return guestRoute ? <StreamGuestApp token={guestToken} /> : <App />;
+}
+
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <ErrorBoundary>
-      <App />
+      <RootRouter />
     </ErrorBoundary>
   </React.StrictMode>,
 );

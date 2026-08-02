@@ -22,6 +22,7 @@ import { loadRandomSystemState } from '../random-system/storage.js';
 import { t } from '../i18n/index.js';
 import { clearThemePreference, devicePrefersDark, initialThemePreference, persistThemePreference, removeLegacyThemePreference, storedThemePreference, themeModeFromPreference, themePreferenceModes } from '../themePreference.js';
 import { useCloudSync } from '../cloudSync/useCloudSync.js';
+import { applyStreamValueToTracker } from '../../shared/scene-stream-protocol.js';
 
 const SCENE_INDEX_STORAGE_KEY = 'cadence:interface:scene-index:v1';
 const LOCAL_PERSISTENCE_DEBOUNCE_MS = 300;
@@ -548,6 +549,20 @@ export function useCampaign() {
         const participantsAjustes = (s.participants || []).map((participant) => participant.id === participantId ? participantAvecInitiativeAjustee(participant, clean, slotId, options) : participant);
         return { ...s, participants: trierParInitiative(participantsAjustes, options) };
       }));
+    },
+    applyStreamIndicatorValue({ sceneId, participantId, indicatorId, value }) {
+      if (!sceneId || !participantId || !indicatorId || !value) return;
+      const updateParticipant = (participant) => participant.id !== participantId ? participant : {
+        ...participant,
+        trackers: (participant.trackers || []).map((tracker) => (
+          tracker.id === indicatorId ? applyStreamValueToTracker(tracker, value) : tracker
+        )),
+      };
+      setScenes((list) => list.map((item) => item.id !== sceneId ? item : ({
+        ...item,
+        participants: (item.participants || []).map(updateParticipant),
+        reserve: (item.reserve || []).map(updateParticipant),
+      })));
     },
   }), [sceneIndex]);
 
