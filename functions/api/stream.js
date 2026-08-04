@@ -25,6 +25,18 @@ function unavailable() {
   return apiError(404, 'STREAM_UNAVAILABLE', 'Cette diffusion n’est pas disponible.');
 }
 
+function paused(stream) {
+  return json({
+    ok: false,
+    error: { code: 'STREAM_PAUSED', message: 'Cette diffusion est temporairement sur off.' },
+    stream: {
+      revision: Number(stream?.revision || 0),
+      paused: true,
+      serverTime: new Date().toISOString(),
+    },
+  }, { status: 423 });
+}
+
 function writeOutcome(result) {
   if (result.kind === 'invalid') {
     return { ok: false, status: 400, error: { code: 'STREAM_VALUE_INVALID', message: 'La valeur proposée est invalide.' } };
@@ -56,6 +68,7 @@ async function guestStream(request, env) {
 export async function onRequestGet({ request, env }) {
   const stream = await guestStream(request, env);
   if (!stream) return unavailable();
+  if (stream.pausedAt) return paused(stream);
   const searchParams = new URL(request.url).searchParams;
   const since = Number(searchParams.get('since'));
   if (searchParams.has('since') && Number.isInteger(since) && since === Number(stream.revision || 0)) {
@@ -71,6 +84,7 @@ export async function onRequestPatch({ request, env }) {
   if (originError) return originError;
   const stream = await guestStream(request, env);
   if (!stream) return unavailable();
+  if (stream.pausedAt) return paused(stream);
 
   let body;
   try {

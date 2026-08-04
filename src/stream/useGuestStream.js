@@ -169,7 +169,14 @@ export function useGuestStream(token) {
       };
     } catch (requestError) {
       if (!mountedRef.current || tokenRef.current !== token) return { ok: false, stale: true };
-      if (requestError.status === 404) {
+      if (requestError.status === 423 && requestError.code === 'STREAM_PAUSED') {
+        terminalRef.current = true;
+        revisionRef.current = Number(requestError.data?.stream?.revision || 0);
+        viewRef.current = null;
+        setView(null);
+        setStatus('paused');
+        setMessage('');
+      } else if (requestError.status === 404) {
         terminalRef.current = true;
         revisionRef.current = null;
         viewRef.current = null;
@@ -179,7 +186,7 @@ export function useGuestStream(token) {
       } else {
         setStatus('offline');
       }
-      return { ok: false, terminal: requestError.status === 404, error: requestError };
+      return { ok: false, terminal: [404, 423].includes(requestError.status), error: requestError };
     }
   }, [mergePendingValues, token]);
   refreshRef.current = refresh;

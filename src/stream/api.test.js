@@ -165,6 +165,20 @@ describe('streamApi guest requests', () => {
 });
 
 describe('streamApi owner publication', () => {
+  it('toggles the current link without creating a new token', async () => {
+    const fetchImpl = vi.fn(async () => response({ ok: true, stream: { id: 'stream-1', paused: true } }));
+
+    await streamApi.setLinkEnabled('stream-1', false, 'csrf-1', { fetchImpl });
+
+    const [, init] = fetchImpl.mock.calls[0];
+    expect(init).toMatchObject({
+      method: 'PATCH',
+      credentials: 'include',
+      headers: expect.objectContaining({ 'X-Cadence-CSRF': 'csrf-1' }),
+    });
+    expect(JSON.parse(init.body)).toEqual({ streamId: 'stream-1', enabled: false });
+  });
+
   it('binds a publication to the current link identifier', async () => {
     const fetchImpl = vi.fn(async () => response({ ok: true, stream: { id: 'stream-1' } }));
     const scene = { id: 'scene-1', participants: [] };

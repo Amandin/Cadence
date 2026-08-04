@@ -28,6 +28,10 @@ cloud.status.error,La synchronisation a échoué.
 stream.owner.title,Diffusion privée
 stream.owner.help,Partage la scène courante sans compte. Seules les données publiques filtrées par le serveur sont envoyées.
 stream.owner.active,Active
+stream.owner.paused,Off
+stream.owner.pause,Mettre sur off
+stream.owner.resume,Rallumer
+stream.owner.pausedHelp,Le même lien refonctionnera après réactivation. Les invités déjà présents devront vérifier à nouveau ou recharger la page.
 stream.owner.generate,Générer un lien
 stream.owner.link,Lien de diffusion
 stream.owner.copy,Copier
@@ -43,6 +47,8 @@ stream.tracker.editableHelp,Droit distinct de la visibilité. Il ne s’applique
 stream.guest.brand,Diffusion Cadence
 stream.guest.loading,Connexion à la scène…
 stream.guest.unavailable,Cette diffusion n’est pas disponible ou son lien a été révoqué.
+stream.guest.paused,Le propriétaire a temporairement mis cette diffusion sur off. Le lien reste valable.
+stream.guest.retry,Vérifier si la diffusion a repris
 stream.guest.waiting,Le propriétaire n’a pas encore publié de scène.
 stream.guest.offline,Connexion interrompue. La dernière vue reçue reste affichée et la reconnexion est automatique.
 stream.guest.live,En direct

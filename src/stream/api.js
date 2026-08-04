@@ -92,6 +92,14 @@ export const streamApi = {
   revokeLink(csrfToken, options = {}) {
     return streamRequest('/api/stream/link', { ...options, method: 'DELETE', csrfToken });
   },
+  setLinkEnabled(streamId, enabled, csrfToken, options = {}) {
+    return streamRequest('/api/stream/link', {
+      ...options,
+      method: 'PATCH',
+      body: { streamId, enabled },
+      csrfToken,
+    });
+  },
   owner(since, options = {}) {
     const query = Number.isInteger(since) ? `?since=${since}` : '';
     return streamRequest(`/api/stream/owner${query}`, options);

@@ -203,6 +203,24 @@ describe('createIndicatorWriteBatcher', () => {
     expect(batcher.pendingCount()).toBe(0);
   });
 
+  it('discards queued writes when the owner has put the stream on off', async () => {
+    const paused = Object.assign(new Error('Diffusion sur off'), {
+      status: 423,
+      code: 'STREAM_PAUSED',
+    });
+    const sendBatch = vi.fn().mockRejectedValue(paused);
+    const onConflict = vi.fn();
+    const { batcher } = createBatcher({ sendBatch, onConflict });
+    batcher.enqueue('health', payload('health', 2));
+
+    await vi.advanceTimersByTimeAsync(450);
+    expect(sendBatch).toHaveBeenCalledOnce();
+    expect(onConflict).toHaveBeenCalledWith(payload('health', 2), paused);
+    expect(batcher.pendingCount()).toBe(0);
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(sendBatch).toHaveBeenCalledOnce();
+  });
+
   it('honors Retry-After for a rate-limited batch', async () => {
     const error = Object.assign(new Error('Trop de requêtes'), {
       status: 429,

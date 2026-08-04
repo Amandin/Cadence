@@ -153,6 +153,19 @@ describe('public scene stream route', () => {
     });
   });
 
+  it('reports a temporary pause without reading or exposing the shared view', async () => {
+    const DB = fakeD1({ stream: streamRow({ pausedAt: '2026-08-04T10:00:00.000Z' }) });
+    const response = await onRequestGet({ request: getRequest(), env: { DB } });
+
+    expect(response.status).toBe(423);
+    expect(await response.json()).toMatchObject({
+      ok: false,
+      error: { code: 'STREAM_PAUSED' },
+      stream: { revision: 12, paused: true, serverTime: expect.any(String) },
+    });
+    expect(DB.calls.filter((call) => call.method === 'all')).toHaveLength(0);
+  });
+
   it('expires an inactive link with the same generic response as an invalid link', async () => {
     const DB = fakeD1({
       stream: streamRow({ updatedAt: new Date(Date.now() - STREAM_INACTIVITY_TTL_MS - 1).toISOString() }),

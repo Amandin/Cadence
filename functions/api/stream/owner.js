@@ -67,6 +67,9 @@ export async function onRequestPut({ request, env }) {
       ? apiError(404, 'STREAM_EXPIRED', 'La diffusion a expiré après deux heures sans modification.')
       : apiError(404, 'STREAM_NOT_ACTIVE', 'Aucun lien de diffusion actif.');
   }
+  if (row.pausedAt) {
+    return apiError(409, 'STREAM_PAUSED', 'La diffusion est actuellement sur off.');
+  }
   if (typeof body?.streamId !== 'string' || body.streamId !== row.id) {
     return apiError(409, 'STREAM_LINK_CHANGED', 'Le lien de diffusion a changé pendant la synchronisation.');
   }
@@ -79,6 +82,9 @@ export async function onRequestPut({ request, env }) {
     }
     if (requestError.code === 'STREAM_REVOKED') {
       return apiError(404, requestError.code, 'Le lien de diffusion a été révoqué.');
+    }
+    if (requestError.code === 'STREAM_PAUSED') {
+      return apiError(409, requestError.code, 'La diffusion est actuellement sur off.');
     }
     if (requestError.code === 'STREAM_CONCURRENT_UPDATE') {
       return apiError(409, requestError.code, 'Une modification simultanée empêche temporairement la synchronisation.');

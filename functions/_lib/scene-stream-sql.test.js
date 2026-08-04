@@ -15,6 +15,7 @@ function database() {
     );
   `);
   db.exec(readFileSync(new URL('../../migrations/0004_private_scene_stream.sql', import.meta.url), 'utf8'));
+  db.exec(readFileSync(new URL('../../migrations/0005_pause_scene_stream.sql', import.meta.url), 'utf8'));
   db.prepare('INSERT INTO accounts (id, disabled) VALUES (?, 0)').run('owner-1');
   db.prepare(`
     INSERT INTO scene_streams (
@@ -68,6 +69,20 @@ afterEach(() => {
 });
 
 describe('scene stream D1 reconciliation SQL', () => {
+  it('does not publish indicator values while the stream is paused', () => {
+    const db = database();
+    db.prepare("UPDATE scene_streams SET paused_at = '2026-08-04T10:00:00.000Z' WHERE id = 'stream-1'").run();
+
+    upsert(db, [{
+      participantId: 'hero-1',
+      indicatorId: 'health',
+      value: { current: 8 },
+      writable: true,
+    }]);
+
+    expect(db.prepare('SELECT COUNT(*) AS count FROM scene_stream_indicators').get().count).toBe(0);
+  });
+
   it('preserves a pending guest value, acknowledges it, and lets a newer owner value win', () => {
     const db = database();
     upsert(db, [{

@@ -3,6 +3,7 @@ import {
   activeOwnerStreamState,
   bearerStreamToken,
   reconcileOwnerIndicatorState,
+  setOwnerStreamPaused,
   STREAM_INACTIVITY_TTL_MS,
   streamIsExpired,
 } from './scene-stream.js';
@@ -40,6 +41,49 @@ describe('scene stream inactivity expiration', () => {
       stream: null,
       expired: true,
     });
+  });
+});
+
+describe('scene stream pause control', () => {
+  it('switches the same stream off and on without replacing its identifier', async () => {
+    let row = {
+      id: 'stream-1',
+      sceneId: 'scene-1',
+      revision: 4,
+      createdAt: '2026-08-04T09:00:00.000Z',
+      updatedAt: new Date().toISOString(),
+      pausedAt: null,
+    };
+    const DB = {
+      prepare(sql) {
+        const normalized = sql.replace(/\s+/g, ' ').trim().toLowerCase();
+        return {
+          bindings: [],
+          bind(...bindings) { this.bindings = bindings; return this; },
+          async first() {
+            if (normalized.includes('from scene_streams')) return row;
+            throw new Error(`Unexpected SQL: ${normalized}`);
+          },
+          async run() {
+            if (!normalized.startsWith('update scene_streams') || !normalized.includes('set paused_at = ?')) {
+              throw new Error(`Unexpected SQL: ${normalized}`);
+            }
+            row = {
+              ...row,
+              pausedAt: this.bindings[0],
+              updatedAt: this.bindings[1],
+              revision: row.revision + 1,
+            };
+            return { meta: { changes: 1 } };
+          },
+        };
+      },
+    };
+
+    const paused = await setOwnerStreamPaused({ DB }, 'owner-1', 'stream-1', true);
+    expect(paused.stream).toMatchObject({ id: 'stream-1', revision: 5, pausedAt: expect.any(String) });
+    const resumed = await setOwnerStreamPaused({ DB }, 'owner-1', 'stream-1', false);
+    expect(resumed.stream).toMatchObject({ id: 'stream-1', revision: 6, pausedAt: null });
   });
 });
 

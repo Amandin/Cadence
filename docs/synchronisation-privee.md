@@ -29,7 +29,7 @@ En ligne de commande, après avoir installé Wrangler :
 npx wrangler d1 migrations apply cadence-private --remote
 ```
 
-La migration `0002_account_usernames.sql` ajoute la colonne de pseudo. La migration `0003_incremental_campaign_sync.sql` ajoute les hashes et les patchs de synchronisation. La migration `0004_private_scene_stream.sql` ajoute la [diffusion privée d’une scène](./diffusion-privee.md). Appliquer toutes les migrations encore absentes avant de déployer cette version.
+La migration `0002_account_usernames.sql` ajoute la colonne de pseudo. La migration `0003_incremental_campaign_sync.sql` ajoute les hashes et les patchs de synchronisation. Les migrations `0004_private_scene_stream.sql` et `0005_pause_scene_stream.sql` ajoutent la [diffusion privée d’une scène](./diffusion-privee.md) et sa suspension réversible. Appliquer toutes les migrations encore absentes avant de déployer cette version.
 
 Le fichier [`wrangler.example.toml`](../wrangler.example.toml) montre la configuration attendue. Copier ses valeurs dans la configuration Cloudflare ou créer un `wrangler.toml` local non sensible avec le véritable identifiant D1.
 

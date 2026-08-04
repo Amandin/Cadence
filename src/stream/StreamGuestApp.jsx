@@ -439,6 +439,9 @@ export default function StreamGuestApp({ token }) {
   if (stream.status === 'unavailable') {
     return <main className={`stream-app ${dark ? 'dark' : ''}`}><div className="panel stream-state"><img src={getCadenceLogo(dark)} alt="Cadence" /><h1>{t('stream.guest.brand')}</h1><p>{t('stream.guest.unavailable')}</p></div></main>;
   }
+  if (stream.status === 'paused') {
+    return <main className={`stream-app ${dark ? 'dark' : ''}`}><div className="panel stream-state"><img src={getCadenceLogo(dark)} alt="Cadence" /><h1>{t('stream.guest.brand')}</h1><p>{t('stream.guest.paused')}</p><button className="primary" type="button" onClick={() => window.location.reload()}>{t('stream.guest.retry')}</button></div></main>;
+  }
   if (!scene) {
     return <main className={`stream-app ${dark ? 'dark' : ''}`}><div className="panel stream-state"><img src={getCadenceLogo(dark)} alt="Cadence" /><h1>{t('stream.guest.brand')}</h1><p>{stream.status === 'offline' ? t('stream.guest.offline') : t('stream.guest.waiting')}</p></div></main>;
   }

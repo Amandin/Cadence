@@ -13,7 +13,7 @@ export function streamWriteBatchBytes(payloads) {
 function terminalWriteError(error) {
   return error?.status === 409
     || error?.code === 'INDICATOR_VERSION_CONFLICT'
-    || [400, 403, 404].includes(error?.status);
+    || [400, 403, 404, 423].includes(error?.status);
 }
 
 function oversizedWriteError() {
@@ -194,6 +194,13 @@ export function createIndicatorWriteBatcher({
         return response;
       } catch (error) {
         if (!disposed) {
+          if (terminalWriteError(error)) {
+            snapshot.forEach((sent) => {
+              entries.delete(sent.key);
+              onConflict(sent.payload, error);
+            });
+            return { ok: false, terminal: true, results: [] };
+          }
           if (error?.status === 413) {
             if (snapshot.length > 1) {
               adaptiveBatchSize = Math.max(1, Math.floor(snapshot.length / 2));

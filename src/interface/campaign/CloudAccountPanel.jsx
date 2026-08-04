@@ -23,7 +23,7 @@ function streamExpiryDate(stream) {
 function SceneStreamPanel({ sceneStream }) {
   const [copied, setCopied] = useState(false);
   if (!sceneStream) return null;
-  const busy = ['creating', 'revoking'].includes(sceneStream?.status);
+  const busy = ['creating', 'revoking', 'pausing', 'resuming'].includes(sceneStream?.status);
   const copyLink = async () => {
     if (!sceneStream?.shareUrl) return;
     try {
@@ -43,8 +43,9 @@ function SceneStreamPanel({ sceneStream }) {
           <p className="muted compact-help">{t('stream.owner.help')}</p>
         </div>
         {sceneStream?.active && <span className="chip hot">{t('stream.owner.active')}</span>}
+        {sceneStream?.paused && <span className="chip">{t('stream.owner.paused')}</span>}
       </div>
-      {!sceneStream?.active ? (
+      {!sceneStream?.available ? (
         <div className="stack">
           {sceneStream?.status === 'expired' && (
             <p className="campaign-save-status status-ready" role="status">{t('stream.owner.expired')}</p>
@@ -62,10 +63,14 @@ function SceneStreamPanel({ sceneStream }) {
             </div>
           ) : <p className="muted compact-help">{t('stream.owner.linkUnavailable')}</p>}
           <p className="muted compact-help">{t('stream.owner.privateWarning')}</p>
+          {sceneStream.paused && <p className="campaign-save-status status-ready" role="status">{t('stream.owner.pausedHelp')}</p>}
           <p className="muted compact-help" role="status">
             {t('stream.owner.expiryNotice', { date: streamExpiryDate(sceneStream.stream) })}
           </p>
           <div className="scene-stream-actions">
+            <button className={sceneStream.paused ? 'primary' : 'small-btn'} type="button" onClick={() => sceneStream.setEnabled(sceneStream.paused)} disabled={busy}>
+              {sceneStream.paused ? t('stream.owner.resume') : t('stream.owner.pause')}
+            </button>
             <button className="small-btn" type="button" onClick={sceneStream.generate} disabled={busy}>{t('stream.owner.regenerate')}</button>
             <button className="danger-btn mini-danger" type="button" onClick={sceneStream.revoke} disabled={busy}>{t('stream.owner.revoke')}</button>
           </div>

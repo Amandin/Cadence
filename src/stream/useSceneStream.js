@@ -8,6 +8,10 @@ import { useAdaptiveStreamPolling } from './useAdaptiveStreamPolling.js';
 
 const OWNER_PUBLISH_DEBOUNCE_MS = 550;
 
+function ownerStreamStatus(stream) {
+  return stream?.paused ? 'paused' : stream ? 'active' : 'inactive';
+}
+
 function storedShareLink(userId, streamId) {
   try {
     const value = JSON.parse(window.sessionStorage.getItem('cadence:scene-stream-link:v1'));
@@ -97,7 +101,7 @@ export function useSceneStream({ scene, cloudSync, onGuestChange }) {
   const publish = useCallback(async ({ force = false, keepalive = false } = {}) => {
     const currentStream = streamRef.current;
     const currentScene = sceneRef.current;
-    if (!currentStream || !currentScene || !csrfRef.current) return { ok: false, skipped: true };
+    if (!currentStream || currentStream.paused || !currentScene || !csrfRef.current) return { ok: false, skipped: true };
     const operationEpoch = operationEpochRef.current;
     const streamId = currentStream.id;
     const signature = sceneStreamSignature(currentScene);
@@ -171,7 +175,7 @@ export function useSceneStream({ scene, cloudSync, onGuestChange }) {
 
   const refresh = useCallback(async ({ publishFirst = true } = {}) => {
     if (!streamRef.current) return { ok: false, disabled: true };
-    if (publishFirst && sceneStreamSignature(sceneRef.current) !== lastPublishedSignatureRef.current) {
+    if (!streamRef.current?.paused && publishFirst && sceneStreamSignature(sceneRef.current) !== lastPublishedSignatureRef.current) {
       const publication = await publish();
       if (!publication.ok) return publication;
     }
@@ -185,7 +189,7 @@ export function useSceneStream({ scene, cloudSync, onGuestChange }) {
       if (operationEpoch !== operationEpochRef.current || streamRef.current?.id !== streamId) return;
       if (result.unchanged) {
         if (mountedRef.current) {
-          setStatus('active');
+          setStatus(ownerStreamStatus(streamRef.current));
           setError('');
         }
         return { ok: true, unchanged: true, revision: result.revision };
@@ -208,7 +212,7 @@ export function useSceneStream({ scene, cloudSync, onGuestChange }) {
       revisionRef.current = nextRevision;
       if (mountedRef.current) {
         setStream(result.stream);
-        setStatus(result.stream ? 'active' : 'inactive');
+        setStatus(ownerStreamStatus(result.stream));
         setError('');
         setLastUpdateAt((current) => result.stream?.updatedAt || current);
       }
@@ -237,7 +241,7 @@ export function useSceneStream({ scene, cloudSync, onGuestChange }) {
   }, [applyGuestChanges, publish]);
 
   const polling = useAdaptiveStreamPolling({
-    enabledKey: stream?.id || '',
+    enabledKey: stream?.id && !stream.paused ? stream.id : '',
     refresh,
     onPause: () => {
       if (!streamRef.current || sceneStreamSignature(sceneRef.current) === lastPublishedSignatureRef.current) return;
@@ -272,7 +276,7 @@ export function useSceneStream({ scene, cloudSync, onGuestChange }) {
         setStream(result.stream);
         setShareUrl(recoveredUrl);
         if (!recoveredUrl) storeShareLink('', '', '');
-        setStatus(result.stream ? 'active' : result.expired ? 'expired' : 'inactive');
+        setStatus(result.stream ? ownerStreamStatus(result.stream) : result.expired ? 'expired' : 'inactive');
         setError('');
       } catch (requestError) {
         if (cancelled || operationEpoch !== operationEpochRef.current) return;
@@ -284,12 +288,12 @@ export function useSceneStream({ scene, cloudSync, onGuestChange }) {
   }, [user?.id]);
 
   useEffect(() => {
-    if (!stream?.id) return undefined;
+    if (!stream?.id || stream.paused) return undefined;
     const sceneChanged = previousSceneIdRef.current && previousSceneIdRef.current !== scene?.id;
     previousSceneIdRef.current = scene?.id || '';
     const timer = window.setTimeout(() => publish({ force: sceneChanged }), sceneChanged ? 0 : OWNER_PUBLISH_DEBOUNCE_MS);
     return () => window.clearTimeout(timer);
-  }, [publish, scene, stream?.id]);
+  }, [publish, scene, stream?.id, stream?.paused]);
 
   useEffect(() => {
     const flush = () => {
@@ -362,14 +366,45 @@ export function useSceneStream({ scene, cloudSync, onGuestChange }) {
     }
   }, [user]);
 
+  const setEnabled = useCallback(async (enabled) => {
+    const current = streamRef.current;
+    if (!user || !csrfRef.current || !current || current.paused === !enabled) return { ok: !!current };
+    if (!enabled) await publish({ force: true });
+    const operationEpoch = operationEpochRef.current + 1;
+    operationEpochRef.current = operationEpoch;
+    setStatus(enabled ? 'resuming' : 'pausing');
+    setError('');
+    try {
+      const result = await streamApi.setLinkEnabled(current.id, enabled, csrfRef.current);
+      if (operationEpoch !== operationEpochRef.current) return { ok: false, stale: true };
+      streamRef.current = result.stream;
+      revisionRef.current = Number(result.stream?.revision || revisionRef.current);
+      setStream(result.stream);
+      setStatus(ownerStreamStatus(result.stream));
+      setLastUpdateAt(result.stream?.updatedAt || new Date().toISOString());
+      if (enabled) await publish({ force: true });
+      return { ok: true };
+    } catch (requestError) {
+      if (operationEpoch !== operationEpochRef.current) return { ok: false, stale: true };
+      streamRef.current = current;
+      setStream(current);
+      setStatus(requestError.status === 0 ? 'offline' : ownerStreamStatus(current));
+      setError(requestError.message);
+      return { ok: false, message: requestError.message };
+    }
+  }, [publish, user]);
+
   return {
-    active: !!stream,
+    active: !!stream && !stream.paused,
+    available: !!stream,
+    paused: !!stream?.paused,
     stream,
     shareUrl,
     status,
     error,
     lastUpdateAt,
     generate,
+    setEnabled,
     revoke,
     refresh,
     publish,

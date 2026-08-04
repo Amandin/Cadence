@@ -37,6 +37,7 @@ function streamMetadata(row) {
     id: row.id,
     sceneId: row.sceneId || '',
     revision: Number(row.revision || 0),
+    paused: !!row.pausedAt,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
     serverTime: new Date().toISOString(),
@@ -126,6 +127,7 @@ async function rawStreamById(env, streamId) {
       revision,
       view_json AS viewJson,
       config_hash AS configHash,
+      paused_at AS pausedAt,
       created_at AS createdAt,
       updated_at AS updatedAt
     FROM scene_streams
@@ -156,6 +158,7 @@ export async function activeOwnerStreamState(env, ownerId) {
       revision,
       view_json AS viewJson,
       config_hash AS configHash,
+      paused_at AS pausedAt,
       created_at AS createdAt,
       updated_at AS updatedAt
     FROM scene_streams
@@ -190,6 +193,7 @@ export async function publicStream(env, token) {
       scene_streams.scene_id AS sceneId,
       scene_streams.revision,
       scene_streams.view_json AS viewJson,
+      scene_streams.paused_at AS pausedAt,
       scene_streams.created_at AS createdAt,
       scene_streams.updated_at AS updatedAt
     FROM scene_streams
@@ -217,9 +221,9 @@ export async function createOwnerStream(env, ownerId) {
     env.DB.prepare(`
       INSERT INTO scene_streams (
         id, owner_id, token_hash, scene_id, revision, view_json, config_hash,
-        created_at, updated_at, revoked_at
+        created_at, updated_at, revoked_at, paused_at
       )
-      VALUES (?, ?, ?, NULL, 0, NULL, NULL, ?, ?, NULL)
+      VALUES (?, ?, ?, NULL, 0, NULL, NULL, ?, ?, NULL, NULL)
     `).bind(id, ownerId, tokenHash, now, now),
   ]);
   return {
@@ -230,8 +234,35 @@ export async function createOwnerStream(env, ownerId) {
       revision: 0,
       createdAt: now,
       updatedAt: now,
+      paused: false,
     },
   };
+}
+
+export async function setOwnerStreamPaused(env, ownerId, streamId, paused) {
+  const state = await activeOwnerStreamState(env, ownerId);
+  const current = state.stream;
+  if (!current) return { stream: null, expired: state.expired };
+  if (current.id !== streamId) return { stream: null, changed: true, expired: false };
+  if (!!current.pausedAt === paused) return { stream: current, expired: false };
+
+  const now = new Date().toISOString();
+  const result = await env.DB.prepare(`
+    UPDATE scene_streams
+    SET paused_at = ?, revision = revision + 1, updated_at = ?
+    WHERE id = ?
+      AND owner_id = ?
+      AND revoked_at IS NULL
+      AND paused_at IS ?
+  `).bind(
+    paused ? now : null,
+    now,
+    streamId,
+    ownerId,
+    current.pausedAt || null,
+  ).run();
+  if (resultChanges(result) === 0) return { stream: null, changed: true, expired: false };
+  return { stream: await rawStreamById(env, streamId), expired: false };
 }
 
 export async function revokeOwnerStreams(env, ownerId) {
@@ -297,7 +328,7 @@ export const BULK_OWNER_INDICATOR_UPSERT_SQL = `
   WHERE EXISTS (
     SELECT 1
     FROM scene_streams
-    WHERE id = ? AND revoked_at IS NULL
+    WHERE id = ? AND revoked_at IS NULL AND paused_at IS NULL
   )
   ON CONFLICT(stream_id, scene_id, participant_id, indicator_id)
   DO UPDATE SET
@@ -379,6 +410,7 @@ const DELETE_STALE_INDICATORS_SQL = `
       FROM scene_streams
       WHERE id = scene_stream_indicators.stream_id
         AND revoked_at IS NULL
+        AND paused_at IS NULL
     )
 `;
 
@@ -443,12 +475,14 @@ export async function publishOwnerScene(env, stream, scene) {
         ELSE 0
       END,
       updated_at = ?
-    WHERE id = ? AND revoked_at IS NULL
+    WHERE id = ? AND revoked_at IS NULL AND paused_at IS NULL
   `).bind(sceneId, viewJson, configHash, sceneId, configHash, now, stream.id));
   const results = await env.DB.batch(statements);
   if (resultChanges(results.at(-1)) === 0) {
-    const error = new Error('STREAM_REVOKED');
-    error.code = 'STREAM_REVOKED';
+    const current = await rawStreamById(env, stream.id);
+    const code = current?.pausedAt ? 'STREAM_PAUSED' : 'STREAM_REVOKED';
+    const error = new Error(code);
+    error.code = code;
     throw error;
   }
 
@@ -533,7 +567,7 @@ export async function updateGuestIndicator(env, stream, body) {
       AND EXISTS (
         SELECT 1
         FROM scene_streams
-        WHERE id = ? AND revoked_at IS NULL
+        WHERE id = ? AND revoked_at IS NULL AND paused_at IS NULL
       )
   `).bind(
     valueJson,
