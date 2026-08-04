@@ -272,7 +272,8 @@ export function useSceneStream({ scene, cloudSync, onGuestChange }) {
         if (cancelled || operationEpoch !== operationEpochRef.current) return;
         streamRef.current = result.stream;
         revisionRef.current = Number(result.stream?.revision || 0);
-        const recoveredUrl = storedShareLink(user.id, result.stream?.id);
+        const recoveredUrl = streamShareUrl(result.token)
+          || storedShareLink(user.id, result.stream?.id);
         setStream(result.stream);
         setShareUrl(recoveredUrl);
         if (!recoveredUrl) storeShareLink('', '', '');

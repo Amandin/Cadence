@@ -25,6 +25,7 @@ function database() {
   `);
   db.exec(readFileSync(new URL('../../migrations/0004_private_scene_stream.sql', import.meta.url), 'utf8'));
   db.exec(readFileSync(new URL('../../migrations/0005_pause_scene_stream.sql', import.meta.url), 'utf8'));
+  db.exec(readFileSync(new URL('../../migrations/0006_recoverable_scene_stream_link.sql', import.meta.url), 'utf8'));
   db.prepare('INSERT INTO accounts (id, disabled) VALUES (?, 0)').run('owner-1');
   db.prepare(`
     INSERT INTO scene_streams (

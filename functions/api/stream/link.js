@@ -27,7 +27,7 @@ export async function onRequestGet({ request, env }) {
   if (error) return error;
   const state = await activeOwnerStreamState(env, session.userId);
   const snapshot = await ownerStreamSnapshot(env, state.stream);
-  return json({ ok: true, stream: snapshot.stream, expired: state.expired });
+  return json({ ok: true, stream: snapshot.stream, token: snapshot.token, expired: state.expired });
 }
 
 export async function onRequestPost({ request, env }) {

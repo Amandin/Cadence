@@ -127,6 +127,7 @@ async function rawStreamById(env, streamId) {
       revision,
       view_json AS viewJson,
       config_hash AS configHash,
+      share_token AS shareToken,
       paused_at AS pausedAt,
       created_at AS createdAt,
       updated_at AS updatedAt
@@ -158,6 +159,7 @@ export async function activeOwnerStreamState(env, ownerId) {
       revision,
       view_json AS viewJson,
       config_hash AS configHash,
+      share_token AS shareToken,
       paused_at AS pausedAt,
       created_at AS createdAt,
       updated_at AS updatedAt
@@ -220,11 +222,11 @@ export async function createOwnerStream(env, ownerId) {
     env.DB.prepare('DELETE FROM scene_streams WHERE owner_id = ?').bind(ownerId),
     env.DB.prepare(`
       INSERT INTO scene_streams (
-        id, owner_id, token_hash, scene_id, revision, view_json, config_hash,
+        id, owner_id, token_hash, share_token, scene_id, revision, view_json, config_hash,
         created_at, updated_at, revoked_at, paused_at
       )
-      VALUES (?, ?, ?, NULL, 0, NULL, NULL, ?, ?, NULL, NULL)
-    `).bind(id, ownerId, tokenHash, now, now),
+      VALUES (?, ?, ?, ?, NULL, 0, NULL, NULL, ?, ?, NULL, NULL)
+    `).bind(id, ownerId, tokenHash, token, now, now),
   ]);
   return {
     token,
@@ -555,10 +557,11 @@ export async function publishOwnerScene(env, stream, scene) {
 }
 
 export async function ownerStreamSnapshot(env, row) {
-  if (!row) return { stream: null, changes: [] };
+  if (!row) return { stream: null, token: null, changes: [] };
   const states = row.sceneId ? await allIndicatorStates(env, row.id, row.sceneId) : [];
   return {
     stream: streamMetadata(row),
+    token: typeof row.shareToken === 'string' ? row.shareToken : null,
     changes: states.filter((state) => state.pending).map((state) => ({
       sceneId: state.sceneId,
       participantId: state.participantId,
