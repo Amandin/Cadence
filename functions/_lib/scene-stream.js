@@ -63,6 +63,16 @@ function stateFromRow(row) {
   };
 }
 
+function pendingIndicatorChanges(states) {
+  return states.filter((state) => state.pending).map((state) => ({
+    sceneId: state.sceneId,
+    participantId: state.participantId,
+    indicatorId: state.indicatorId,
+    version: state.version,
+    value: state.value,
+  }));
+}
+
 export function reconcileOwnerIndicatorState(state, incomingJson, writable) {
   const next = {
     valueJson: state.valueJson,
@@ -119,7 +129,8 @@ export function streamIsExpired(row, now = Date.now()) {
   return Number.isFinite(updatedAt) && now - updatedAt >= STREAM_INACTIVITY_TTL_MS;
 }
 
-async function rawStreamById(env, streamId) {
+async function rawStreamById(env, streamId, { includeToken = false } = {}) {
+  const tokenColumn = includeToken ? 'share_token AS shareToken,' : '';
   return env.DB.prepare(`
     SELECT
       id,
@@ -127,7 +138,7 @@ async function rawStreamById(env, streamId) {
       revision,
       view_json AS viewJson,
       config_hash AS configHash,
-      share_token AS shareToken,
+      ${tokenColumn}
       paused_at AS pausedAt,
       created_at AS createdAt,
       updated_at AS updatedAt
@@ -137,7 +148,7 @@ async function rawStreamById(env, streamId) {
   `).bind(streamId).first();
 }
 
-async function expireInactiveStream(env, row, now = new Date()) {
+async function expireInactiveStream(env, row, now = new Date(), { includeToken = false } = {}) {
   if (!row || !streamIsExpired(row, now.getTime())) return { stream: row || null, expired: false };
   const cutoff = new Date(now.getTime() - STREAM_INACTIVITY_TTL_MS).toISOString();
   const result = await env.DB.prepare(`
@@ -147,11 +158,12 @@ async function expireInactiveStream(env, row, now = new Date()) {
   `).bind(now.toISOString(), row.id, row.updatedAt, cutoff).run();
   if (resultChanges(result) > 0) return { stream: null, expired: true };
 
-  const refreshed = await rawStreamById(env, row.id);
+  const refreshed = await rawStreamById(env, row.id, { includeToken });
   return { stream: refreshed, expired: false };
 }
 
-export async function activeOwnerStreamState(env, ownerId) {
+export async function activeOwnerStreamState(env, ownerId, { includeToken = false } = {}) {
+  const tokenColumn = includeToken ? 'share_token AS shareToken,' : '';
   const row = await env.DB.prepare(`
     SELECT
       id,
@@ -159,7 +171,7 @@ export async function activeOwnerStreamState(env, ownerId) {
       revision,
       view_json AS viewJson,
       config_hash AS configHash,
-      share_token AS shareToken,
+      ${tokenColumn}
       paused_at AS pausedAt,
       created_at AS createdAt,
       updated_at AS updatedAt
@@ -168,7 +180,7 @@ export async function activeOwnerStreamState(env, ownerId) {
     ORDER BY created_at DESC
     LIMIT 1
   `).bind(ownerId).first();
-  if (row) return expireInactiveStream(env, row);
+  if (row) return expireInactiveStream(env, row, new Date(), { includeToken });
 
   // Manual revocation and regeneration delete rows. A retained revoked row is
   // therefore an expiration tombstone, allowing another client to notify the owner.
@@ -180,10 +192,6 @@ export async function activeOwnerStreamState(env, ownerId) {
     LIMIT 1
   `).bind(ownerId).first();
   return { stream: null, expired: !!expiration };
-}
-
-export async function activeOwnerStream(env, ownerId) {
-  return (await activeOwnerStreamState(env, ownerId)).stream;
 }
 
 export async function publicStream(env, token) {
@@ -239,6 +247,10 @@ export async function createOwnerStream(env, ownerId) {
       paused: false,
     },
   };
+}
+
+export function recoverableStreamToken(row) {
+  return SCENE_STREAM_TOKEN_PATTERN.test(row?.shareToken || '') ? row.shareToken : null;
 }
 
 export async function setOwnerStreamPaused(env, ownerId, streamId, paused) {
@@ -544,31 +556,15 @@ export async function publishOwnerScene(env, stream, scene) {
     throw error;
   }
   const states = await allIndicatorStates(env, stream.id, sceneId);
-  return {
-    stream: streamMetadata(refreshed),
-    changes: states.filter((state) => state.pending).map((state) => ({
-      sceneId,
-      participantId: state.participantId,
-      indicatorId: state.indicatorId,
-      version: state.version,
-      value: state.value,
-    })),
-  };
+  return { stream: streamMetadata(refreshed), changes: pendingIndicatorChanges(states) };
 }
 
 export async function ownerStreamSnapshot(env, row) {
-  if (!row) return { stream: null, token: null, changes: [] };
+  if (!row) return { stream: null, changes: [] };
   const states = row.sceneId ? await allIndicatorStates(env, row.id, row.sceneId) : [];
   return {
     stream: streamMetadata(row),
-    token: typeof row.shareToken === 'string' ? row.shareToken : null,
-    changes: states.filter((state) => state.pending).map((state) => ({
-      sceneId: state.sceneId,
-      participantId: state.participantId,
-      indicatorId: state.indicatorId,
-      version: state.version,
-      value: state.value,
-    })),
+    changes: pendingIndicatorChanges(states),
   };
 }
 

@@ -36,7 +36,7 @@ stream.owner.generate,Générer un lien
 stream.owner.link,Lien de diffusion
 stream.owner.copy,Copier
 stream.owner.copied,Copié
-stream.owner.linkUnavailable,Un lien est actif mais son secret n’est plus disponible sur cet onglet. Régénère-le pour obtenir une nouvelle URL.
+stream.owner.linkUnavailable,Ce lien ancien reste actif mais ne peut pas être récupéré en ligne. Régénère-le pour obtenir une nouvelle URL récupérable.
 stream.owner.privateWarning,Toute personne disposant du lien possède les mêmes droits invités. Garde-le privé et révoque-le après la partie.
 stream.owner.expiryNotice,Ce lien se ferme automatiquement après 2 h sans modification. Échéance actuelle : {date}.
 stream.owner.expired,La diffusion a été fermée automatiquement après 2 h sans modification. Génère un nouveau lien pour reprendre.

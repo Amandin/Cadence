@@ -24,7 +24,7 @@ Le propriétaire connecté crée ou révoque le lien dans **Campagnes → Synchr
 - `PUT/GET /api/stream/owner` : publication de la scène et réception des changements invités ;
 - `GET/PATCH /api/stream` : lecture et écriture invitées avec le jeton Bearer.
 
-Le jeton aléatoire de 256 bits est placé dans le fragment `#/stream/<jeton>`. Le fragment n’est pas envoyé dans l’URL HTTP, le Referer ou les journaux d’accès. Seul son SHA-256 est conservé dans D1. Le jeton brut reste dans la mémoire React et le `sessionStorage` de l’onglet qui l’a créé ; après fermeture de cet onglet, il faut régénérer le lien pour le recopier.
+Le jeton aléatoire de 256 bits est placé dans le fragment `#/stream/<jeton>`. Le fragment n’est pas envoyé dans l’URL HTTP, le Referer ou les journaux d’accès. Son SHA-256 sert à reconnaître les requêtes invitées. Le jeton brut est également conservé dans D1 afin que son propriétaire authentifié puisse récupérer le même lien sur un autre appareil ; il n’est renvoyé que par la route propriétaire dédiée `/api/stream/link`.
 
 La mise sur off conserve le stream, son token et ses indicateurs : le même lien refonctionne après réactivation. Pendant la pause, aucune vue ni écriture n’est servie aux invités et aucune publication propriétaire n’est envoyée. Une page invitée déjà ouverte s’arrête sur un écran de pause sans polling et propose une vérification manuelle. La régénération et la révocation définitive suppriment immédiatement l’ancien stream et ses indicateurs. Le schéma conserve néanmoins un identifiant de stream distinct du propriétaire afin de permettre plusieurs liens dans une version future.
 
@@ -68,10 +68,10 @@ Si `since` correspond à la révision courante, la Function renvoie `204` sans l
 Appliquer les migrations D1, notamment :
 
 ```bash
-npx wrangler d1 migrations apply cadence-private --remote
+npx wrangler d1 migrations apply cadence-prive --remote
 ```
 
-La migration [`0004_private_scene_stream.sql`](../migrations/0004_private_scene_stream.sql) ajoute les streams, les états versionnés et le trigger de révision. La migration [`0005_pause_scene_stream.sql`](../migrations/0005_pause_scene_stream.sql) ajoute la suspension réversible du même lien. Déployer ensuite avec la commande habituelle `npm run build:cloudflare`.
+La migration [`0004_private_scene_stream.sql`](../migrations/0004_private_scene_stream.sql) ajoute les streams, les états versionnés et le trigger de révision. La migration [`0005_pause_scene_stream.sql`](../migrations/0005_pause_scene_stream.sql) ajoute la suspension réversible du même lien. La migration [`0006_recoverable_scene_stream_link.sql`](../migrations/0006_recoverable_scene_stream_link.sql) conserve le jeton récupérable par le propriétaire. Déployer ensuite avec la commande habituelle `npm run build:cloudflare`.
 
 `public/_routes.json` limite l’exécution des Pages Functions à `/api/*`; les ressources statiques ne consomment donc pas le quota Workers.
 

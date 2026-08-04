@@ -1,4 +1,5 @@
 import { apiError, json, readJson, requireTrustedOrigin } from '../_lib/http.js';
+import { streamUnchangedResponse } from '../_lib/scene-stream-http.js';
 import { SCENE_STREAM_MAX_BATCH_CHANGES } from '../../shared/scene-stream-protocol.js';
 import {
   bearerStreamToken,
@@ -10,16 +11,6 @@ import {
   streamById,
   updateGuestIndicator,
 } from '../_lib/scene-stream.js';
-
-function noChange(revision) {
-  return new Response(null, {
-    status: 204,
-    headers: {
-      'Cache-Control': 'no-store',
-      'X-Cadence-Stream-Revision': String(revision),
-    },
-  });
-}
 
 function unavailable() {
   return apiError(404, 'STREAM_UNAVAILABLE', 'Cette diffusion n’est pas disponible.');
@@ -72,7 +63,7 @@ export async function onRequestGet({ request, env }) {
   const searchParams = new URL(request.url).searchParams;
   const since = Number(searchParams.get('since'));
   if (searchParams.has('since') && Number.isInteger(since) && since === Number(stream.revision || 0)) {
-    return noChange(stream.revision);
+    return streamUnchangedResponse(stream.revision);
   }
   const snapshot = await publicStreamSnapshot(env, stream);
   if (!snapshot) return apiError(500, 'STREAM_INVALID', 'La diffusion est temporairement incohérente.');

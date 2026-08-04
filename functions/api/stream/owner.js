@@ -1,5 +1,5 @@
-import { requireCsrf, requireSession } from '../../_lib/auth.js';
-import { apiError, json, readJson, requireTrustedOrigin } from '../../_lib/http.js';
+import { apiError, json, readJson } from '../../_lib/http.js';
+import { ownerStreamContext, streamUnchangedResponse } from '../../_lib/scene-stream-http.js';
 import {
   activeOwnerStreamState,
   MAX_STREAM_OWNER_BYTES,
@@ -7,32 +7,8 @@ import {
   publishOwnerScene,
 } from '../../_lib/scene-stream.js';
 
-function noChange(revision) {
-  return new Response(null, {
-    status: 204,
-    headers: {
-      'Cache-Control': 'no-store',
-      'X-Cadence-Stream-Revision': String(revision),
-    },
-  });
-}
-
-async function ownerContext(request, env, { write = false } = {}) {
-  if (write) {
-    const originError = requireTrustedOrigin(request, env);
-    if (originError) return { error: originError };
-  }
-  const session = await requireSession(request, env);
-  if (session instanceof Response) return { error: session };
-  if (write) {
-    const csrfError = requireCsrf(request, session);
-    if (csrfError) return { error: csrfError };
-  }
-  return { session };
-}
-
 export async function onRequestGet({ request, env }) {
-  const { session, error } = await ownerContext(request, env);
+  const { session, error } = await ownerStreamContext(request, env);
   if (error) return error;
   const state = await activeOwnerStreamState(env, session.userId);
   const row = state.stream;
@@ -40,14 +16,14 @@ export async function onRequestGet({ request, env }) {
   const searchParams = new URL(request.url).searchParams;
   const since = Number(searchParams.get('since'));
   if (searchParams.has('since') && Number.isInteger(since) && since === Number(row.revision || 0)) {
-    return noChange(row.revision);
+    return streamUnchangedResponse(row.revision);
   }
   const snapshot = await ownerStreamSnapshot(env, row);
   return json({ ok: true, ...snapshot });
 }
 
 export async function onRequestPut({ request, env }) {
-  const { session, error } = await ownerContext(request, env, { write: true });
+  const { session, error } = await ownerStreamContext(request, env, { write: true });
   if (error) return error;
 
   let body;

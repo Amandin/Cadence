@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   activeOwnerStreamState,
   bearerStreamToken,
+  ownerStreamSnapshot,
   reconcileOwnerIndicatorState,
+  recoverableStreamToken,
   setOwnerStreamPaused,
   STREAM_INACTIVITY_TTL_MS,
   streamIsExpired,
@@ -182,5 +184,21 @@ describe('scene stream bearer token', () => {
       headers: { Authorization: 'Bearer too-short' },
     }))).toBe('');
     expect(bearerStreamToken(new Request('https://cadence.test/api/stream?token=secret'))).toBe('');
+  });
+
+  it('returns a stored token only through the dedicated recovery helper', async () => {
+    const token = 'b'.repeat(43);
+    const row = {
+      id: 'stream-1',
+      sceneId: '',
+      revision: 1,
+      shareToken: token,
+      createdAt: '2026-08-04T10:00:00.000Z',
+      updatedAt: '2026-08-04T10:01:00.000Z',
+    };
+
+    expect(recoverableStreamToken(row)).toBe(token);
+    expect(recoverableStreamToken({ shareToken: 'invalid' })).toBeNull();
+    await expect(ownerStreamSnapshot({}, row)).resolves.not.toHaveProperty('token');
   });
 });

@@ -1,37 +1,29 @@
-import { requireCsrf, requireSession } from '../../_lib/auth.js';
-import { apiError, json, readJson, requireTrustedOrigin } from '../../_lib/http.js';
+import { apiError, json, readJson } from '../../_lib/http.js';
+import { ownerStreamContext } from '../../_lib/scene-stream-http.js';
 import {
   activeOwnerStreamState,
   createOwnerStream,
+  recoverableStreamToken,
   ownerStreamSnapshot,
   revokeOwnerStreams,
   setOwnerStreamPaused,
 } from '../../_lib/scene-stream.js';
 
-async function ownerContext(request, env, { write = false } = {}) {
-  if (write) {
-    const originError = requireTrustedOrigin(request, env);
-    if (originError) return { error: originError };
-  }
-  const session = await requireSession(request, env);
-  if (session instanceof Response) return { error: session };
-  if (write) {
-    const csrfError = requireCsrf(request, session);
-    if (csrfError) return { error: csrfError };
-  }
-  return { session };
-}
-
 export async function onRequestGet({ request, env }) {
-  const { session, error } = await ownerContext(request, env);
+  const { session, error } = await ownerStreamContext(request, env);
   if (error) return error;
-  const state = await activeOwnerStreamState(env, session.userId);
+  const state = await activeOwnerStreamState(env, session.userId, { includeToken: true });
   const snapshot = await ownerStreamSnapshot(env, state.stream);
-  return json({ ok: true, stream: snapshot.stream, token: snapshot.token, expired: state.expired });
+  return json({
+    ok: true,
+    stream: snapshot.stream,
+    token: recoverableStreamToken(state.stream),
+    expired: state.expired,
+  });
 }
 
 export async function onRequestPost({ request, env }) {
-  const { session, error } = await ownerContext(request, env, { write: true });
+  const { session, error } = await ownerStreamContext(request, env, { write: true });
   if (error) return error;
   try {
     const created = await createOwnerStream(env, session.userId);
@@ -43,7 +35,7 @@ export async function onRequestPost({ request, env }) {
 }
 
 export async function onRequestPatch({ request, env }) {
-  const { session, error } = await ownerContext(request, env, { write: true });
+  const { session, error } = await ownerStreamContext(request, env, { write: true });
   if (error) return error;
   let body;
   try {
@@ -70,7 +62,7 @@ export async function onRequestPatch({ request, env }) {
 }
 
 export async function onRequestDelete({ request, env }) {
-  const { session, error } = await ownerContext(request, env, { write: true });
+  const { session, error } = await ownerStreamContext(request, env, { write: true });
   if (error) return error;
   try {
     await revokeOwnerStreams(env, session.userId);
