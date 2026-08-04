@@ -398,6 +398,7 @@ export function useCloudSync({ snapshot, onApplyRemote }) {
   return {
     availability,
     user,
+    csrfToken,
     status,
     message: statusMessage(status, error),
     error,

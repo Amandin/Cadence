@@ -1,5 +1,6 @@
 import { constantTimeEqual, passwordHash, randomToken, sha256 } from '../../_lib/crypto.js';
 import { apiError, json, readJson, requireTrustedOrigin, sessionCookie } from '../../_lib/http.js';
+import { pauseExpiredOwnerStreams } from '../../_lib/scene-stream.js';
 
 const DEFAULT_ITERATIONS = 100_000;
 const DUMMY_SALT = 'Y2FkZW5jZS1kdW1teS1zYWx0';
@@ -92,6 +93,9 @@ async function login({ request, env }, setStage) {
   const tokenHash = await sha256(token);
   const now = new Date().toISOString();
   const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60_000).toISOString();
+  setStage('mise sur off des sessions expirées');
+  await pauseExpiredOwnerStreams(env, new Date(now));
+  setStage('création de session');
   await env.DB.batch([
     env.DB.prepare('UPDATE accounts SET failed_login_count = 0, locked_until = NULL, last_login_at = ? WHERE id = ?').bind(now, account.id),
     env.DB.prepare('DELETE FROM login_attempts WHERE fingerprint = ?').bind(ipHash),

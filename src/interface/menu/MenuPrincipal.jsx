@@ -87,6 +87,44 @@ function ActionsScene({ onAjouterParticipant, onSaisirInitiatives, onOuvrirDupli
   );
 }
 
+function DiffusionSceneMenu({ sceneStream }) {
+  const [copied, setCopied] = useState(false);
+  if (!sceneStream) return null;
+  const busy = ['creating', 'pausing', 'resuming', 'revoking'].includes(sceneStream.status);
+  const copyLink = async () => {
+    if (!sceneStream.shareUrl) return;
+    try {
+      await navigator.clipboard.writeText(sceneStream.shareUrl);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1_800);
+    } catch {
+      setCopied(false);
+    }
+  };
+
+  return (
+    <div className="scene-options compact-options menu-scene-stream">
+      <div className="compact-option-title">
+        <h3>{t('stream.owner.title')}</h3>
+        {sceneStream.active && <span className="chip hot">{t('stream.owner.active')}</span>}
+        {sceneStream.paused && <span className="chip">{t('stream.owner.paused')}</span>}
+      </div>
+      {!sceneStream.available ? (
+        <button className="primary" type="button" onClick={sceneStream.generate} disabled={busy}>{t('stream.owner.generate')}</button>
+      ) : (
+        <div className="menu-action-grid">
+          <button className="small-btn" type="button" onClick={copyLink} disabled={busy || !sceneStream.shareUrl}>{copied ? t('stream.owner.copied') : t('stream.owner.copy')}</button>
+          <button className={sceneStream.paused ? 'primary' : 'small-btn'} type="button" onClick={() => sceneStream.setEnabled(sceneStream.paused)} disabled={busy}>
+            {sceneStream.paused ? t('stream.owner.resume') : t('stream.owner.pause')}
+          </button>
+        </div>
+      )}
+      {sceneStream.available && !sceneStream.shareUrl && <p className="muted compact-help">{t('stream.owner.linkUnavailable')}</p>}
+      {sceneStream.error && <p className="campaign-save-status status-error" role="alert">{sceneStream.error}</p>}
+    </div>
+  );
+}
+
 function personnagesScene(scene = {}) {
   return [
     ...(scene.participants || []).map((participant) => ({ ...participant, placement: t('menu.characters.inInitiative') })),
@@ -302,7 +340,7 @@ function FenetreRetourPreparation({ onFermer, onValider }) {
   );
 }
 
-export function MenuPrincipal({ scene, restorePoints = [], onRestore, onReturnToPreparation, onReturnToPreparationWithOptions, onAdvanceRound, onDecreaseRound, onChangeRoundWithAutomations, onAdvanceAutomations, onRewindAutomations, onResetTrackers, onClearStatuses, onEndTemporaryEffects, onClose, dark, themeState, onThemeModeChange, onOpenOptions, onAddParticipant, onDuplicateParticipant, onOpenInitiativeRoller, onOpenCampaignHub, onGlobalTracker, onStepGlobalTracker, onAddSceneStatus, onEditSceneStatus, onRemoveSceneStatus, onUpdateSceneNotes }) {
+export function MenuPrincipal({ scene, sceneStream, restorePoints = [], onRestore, onReturnToPreparation, onReturnToPreparationWithOptions, onAdvanceRound, onDecreaseRound, onChangeRoundWithAutomations, onAdvanceAutomations, onRewindAutomations, onResetTrackers, onClearStatuses, onEndTemporaryEffects, onClose, dark, themeState, onThemeModeChange, onOpenOptions, onAddParticipant, onDuplicateParticipant, onOpenInitiativeRoller, onOpenCampaignHub, onGlobalTracker, onStepGlobalTracker, onAddSceneStatus, onEditSceneStatus, onRemoveSceneStatus, onUpdateSceneNotes }) {
   const pointsRestauration = [...restorePoints].sort((a, b) => a.round - b.round);
   const [pointRestaurationId, setPointRestaurationId] = useState(pointsRestauration.at(-1)?.id || '');
   const [editionIndicateurOuverte, setEditionIndicateurOuverte] = useState(false);
@@ -332,6 +370,7 @@ export function MenuPrincipal({ scene, restorePoints = [], onRestore, onReturnTo
         <div className="main-menu-primary">
           <button className="primary hub-menu-main-action" onClick={onOpenCampaignHub}>{t('menu.returnHub')}</button>
           <ActionsScene onAjouterParticipant={onAddParticipant} onOuvrirDuplicationPersonnage={onDuplicateParticipant ? () => setDuplicationPersonnageOuverte(true) : null} onSaisirInitiatives={onOpenInitiativeRoller} />
+          <DiffusionSceneMenu sceneStream={sceneStream} />
           <ElementsSceneMenu scene={scene} onIndicateurScene={onGlobalTracker} onModifierIndicateurScene={() => setEditionIndicateurOuverte(true)} onAjouterEtatScene={onAddSceneStatus} onModifierEtatScene={onEditSceneStatus} onRetirerEtatScene={onRemoveSceneStatus} onEffacerEtats={onClearStatuses} />
           <OptionsDerouleSceneMenu scene={scene} points={pointsRestauration} pointActif={pointRestaurationId} onChoisirPoint={setPointRestaurationId} onRestaurer={onRestore} onDemanderRetourPreparation={() => setRetourPreparationOuvert(true)} onAvancerRound={onAdvanceRound} onReculerRound={onDecreaseRound} onChangerRoundAvecAutomatismes={onChangeRoundWithAutomations} onAvancerAutomatismes={onAdvanceAutomations} onReculerAutomatismes={onRewindAutomations} onResetSuivis={onResetTrackers} />
         </div>

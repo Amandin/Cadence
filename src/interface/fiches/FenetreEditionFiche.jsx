@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { colorNames, defaultPhaseCount, participantKinds, phaseActionModes, tacticalRoles, trackerTypeLabels } from '../../constants.js';
 import { normalizeInitiativeTextOrder } from '../../domain/initiativeTextOrder.js';
+import { resolveParticipantBehavior } from '../../domain/participantTypes.js';
 import { t } from '../../i18n/index.js';
 import { boxBlocks, boxVisualRank, clone, colors, cycleBoxMark, isBoxesTracker, isNumericTracker, isPointsTracker, isVisible, newTracker, resetTracker, sortBoxBlocks, symbols, thresholdValue, uid } from '../../logic.js';
 import { instantiateTrackerCopy, instantiateTrackerTemplate, numberedCopyInsertIndex, numberedCopyName } from '../../templates.js';
@@ -313,7 +314,7 @@ function OptionsParType({ suivi, onChange, allowActivationAutomation = true }) {
   return null;
 }
 
-export function EditeurSuivi({ suivi, onChange, onDuplicate, onDelete, onSaveTemplate, allowActivationAutomation = true }) {
+export function EditeurSuivi({ suivi, onChange, onDuplicate, onDelete, onSaveTemplate, allowActivationAutomation = true, allowStreamEditing = false }) {
   const modifierSuivi = (valeur) => onChange({ ...suivi, ...valeur });
   const estCases = isBoxesTracker(suivi);
   const estNumerique = isNumericTracker(suivi);
@@ -357,7 +358,7 @@ export function EditeurSuivi({ suivi, onChange, onDuplicate, onDelete, onSaveTem
           </div>
         </div>
         <input value={suivi.name} onChange={(e) => modifierSuivi({ name: e.target.value })} aria-label={t('sheet.tracker.nameAria')} />
-        <select value={suivi.type} aria-label={t('sheet.tracker.typeAria')} onChange={(e) => onChange({ ...nouveauSuiviPourMode(e.target.value, allowActivationAutomation), id: suivi.id, name: suivi.name })}>
+        <select value={suivi.type} aria-label={t('sheet.tracker.typeAria')} onChange={(e) => onChange({ ...nouveauSuiviPourMode(e.target.value, allowActivationAutomation), id: suivi.id, name: suivi.name, streamEditable: suivi.streamEditable === true })}>
           {Object.entries(trackerTypeLabels).map(([valeur, label]) => <option value={valeur} key={valeur}>{label}</option>)}
         </select>
       </div>
@@ -365,6 +366,7 @@ export function EditeurSuivi({ suivi, onChange, onDuplicate, onDelete, onSaveTem
         <button className="quick-reset-btn text" onClick={() => onChange(resetTracker(suivi, 'initial'))} title={t('sheet.tracker.resetTitle')}>{t('sheet.tracker.reset')}</button>
         {valeurActuelle !== null && <span className="threshold-warning tracker-current-value">{t('sheet.currentValue', { value: valeurActuelle })}</span>}
         {suivi.type === 'number' && <ChampNombre className="compact-step-field" label={t('trackers.step.label')} valeur={suivi.step ?? 1} onChange={(valeur) => modifierSuivi({ step: valeur })} />}
+        {allowStreamEditing && <label className={`reset-switch tracker-stream-editable ${suivi.streamEditable ? 'active' : ''}`} title={t('stream.tracker.editableHelp')}><span>{t('stream.tracker.editable')}</span><input type="checkbox" checked={!!suivi.streamEditable} onChange={(event) => modifierSuivi({ streamEditable: event.target.checked })} /></label>}
       </div>
       {templateMessage && <p className="export-feedback">{templateMessage}</p>}
       {suiviAvecEtatDefautNumerique(suivi) ? <div className="bar-main-fields"><SelectEtatDefautNumerique suivi={suivi} onChange={modifierSuivi} /><div className="grid2"><ChampNombre label={t('sheet.counters.min')} valeur={suivi.min ?? 0} onChange={(valeur) => modifierSuivi({ min: valeur })} /><ChampNombre label={t('dialogs.sceneIndicator.maximum')} valeur={suivi.max ?? 1} onChange={(valeur) => modifierSuivi({ max: valeur })} /></div></div> : estNumerique && suivi.type !== 'number' ? <div className="grid2">
@@ -377,7 +379,7 @@ export function EditeurSuivi({ suivi, onChange, onDuplicate, onDelete, onSaveTem
   );
 }
 
-export function FenetreEditionFiche({ participant, initiativeTextOrder, phaseActionMode, phaseCount = defaultPhaseCount, multipleActionSlots = true, utiliserInitiative = true, initiativeBonusEnabled = true, allowActivationAutomation = true, categoryOrder = participantKinds, tiebreakerVisible = true, tiebreakerLabel = t('sheet.tiebreaker.default'), trackerTemplates = [], randomSystem = null, title = t('sheet.edit.defaultTitle'), templateCategory = '', templateCategories = [], saveTemplateVisible = true, deleteLabel = t('sheet.edit.deleteCharacter'), className = 'character-edit-sheet', templateSwitchRequest = null, onAnnulerChangementTemplate, onAbandonnerChangementTemplate, onValiderChangementTemplate, onClose, onSave, onDelete, onSaveTemplate, onSaveTrackerTemplate }) {
+export function FenetreEditionFiche({ participant, initiativeTextOrder, phaseActionMode, phaseCount = defaultPhaseCount, multipleActionSlots = true, utiliserInitiative = true, initiativeBonusEnabled = true, allowActivationAutomation = true, categoryOrder = participantKinds, participantTypes = [], tiebreakerVisible = true, tiebreakerLabel = t('sheet.tiebreaker.default'), trackerTemplates = [], randomSystem = null, title = t('sheet.edit.defaultTitle'), templateCategory = '', templateCategories = [], saveTemplateVisible = true, deleteLabel = t('sheet.edit.deleteCharacter'), className = 'character-edit-sheet', templateSwitchRequest = null, onAnnulerChangementTemplate, onAbandonnerChangementTemplate, onValiderChangementTemplate, onClose, onSave, onDelete, onSaveTemplate, onSaveTrackerTemplate }) {
   multipleActionSlots = typeof multipleActionSlots === 'function' ? multipleActionSlots(participant) : multipleActionSlots;
   const textConfig = normalizeInitiativeTextOrder(initiativeTextOrder);
   const modePhasesCochees = phaseActionMode === phaseActionModes.CHECKED;
@@ -391,6 +393,7 @@ export function FenetreEditionFiche({ participant, initiativeTextOrder, phaseAct
   const [trackerPersonnaliseNom, setTrackerPersonnaliseNom] = useState('');
   const [ajoutIndicateurOuvert, setAjoutIndicateurOuvert] = useState(false);
   const [confirmationSuppression, setConfirmationSuppression] = useState(false);
+  const allowStreamEditing = resolveParticipantBehavior(brouillon.kind, participantTypes).behaviorType === 'PJ';
   const categoriesTemplateDisponibles = [...new Set([templateCategory, ...(templateCategories || [])].filter(Boolean))];
   const [categorieTemplate, setCategorieTemplate] = useState(templateCategory || categoriesTemplateDisponibles[0] || '');
   const symboleCourant = typeof brouillon.symbol === 'string' ? brouillon.symbol : '';
@@ -495,7 +498,7 @@ export function FenetreEditionFiche({ participant, initiativeTextOrder, phaseAct
         <div className="quick-info-editor"><EditeurInfosRapides stats={brouillon.stats || []} definitions={quickRollDefinitions} containers={quickRollContainers} sources={quickRollSources} onChange={(stats) => modifierChamp('stats', stats)} /></div>
         <h3 className="sheet-section-title">{t('sheet.trackers.title')}</h3>
         <div className="stack tracker-list">
-          {(brouillon.trackers || []).map((suivi) => <EditeurSuivi key={suivi.id} suivi={suivi} onChange={(suivant) => modifierSuivi(suivi.id, suivant)} onDuplicate={() => dupliquerSuivi(suivi.id)} onDelete={() => setBrouillon((courant) => ({ ...courant, trackers: (courant.trackers || []).filter((item) => item.id !== suivi.id) }))} onSaveTemplate={onSaveTrackerTemplate} allowActivationAutomation={allowActivationAutomation} />)}
+          {(brouillon.trackers || []).map((suivi) => <EditeurSuivi key={suivi.id} suivi={suivi} onChange={(suivant) => modifierSuivi(suivi.id, suivant)} onDuplicate={() => dupliquerSuivi(suivi.id)} onDelete={() => setBrouillon((courant) => ({ ...courant, trackers: (courant.trackers || []).filter((item) => item.id !== suivi.id) }))} onSaveTemplate={onSaveTrackerTemplate} allowActivationAutomation={allowActivationAutomation} allowStreamEditing={allowStreamEditing} />)}
           {!ajoutIndicateurOuvert && <button className="primary add-tracker-btn" onClick={() => setAjoutIndicateurOuvert(true)}>{t('sheet.trackers.add')}</button>}
           {ajoutIndicateurOuvert && <div className="stack tracker-add-panel">
             <div className="template-picker-row">
