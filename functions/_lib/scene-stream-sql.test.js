@@ -1,7 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 import { afterEach, describe, expect, it } from 'vitest';
-import { BULK_OWNER_INDICATOR_UPSERT_SQL } from './scene-stream.js';
+import {
+  BULK_OWNER_INDICATOR_UPSERT_SQL,
+  pauseExpiredOwnerStreams,
+  pauseOwnerStreamsAfterDisconnect,
+} from './scene-stream.js';
 
 const databases = [];
 
@@ -12,6 +16,11 @@ function database() {
     CREATE TABLE accounts (
       id TEXT PRIMARY KEY,
       disabled INTEGER NOT NULL DEFAULT 0
+    );
+    CREATE TABLE sessions (
+      token_hash TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      expires_at TEXT NOT NULL
     );
   `);
   db.exec(readFileSync(new URL('../../migrations/0004_private_scene_stream.sql', import.meta.url), 'utf8'));
@@ -24,6 +33,22 @@ function database() {
     VALUES (?, ?, ?, 0, ?, ?)
   `).run('stream-1', 'owner-1', 'hash-1', '2026-07-31T10:00:00.000Z', '2026-07-31T10:00:00.000Z');
   return db;
+}
+
+function d1Adapter(db) {
+  return {
+    prepare(sql) {
+      const statement = db.prepare(sql);
+      return {
+        bindings: [],
+        bind(...bindings) { this.bindings = bindings; return this; },
+        run() {
+          const result = statement.run(...this.bindings);
+          return { meta: { changes: result.changes } };
+        },
+      };
+    },
+  };
 }
 
 function upsert(db, entries, now = '2026-07-31T10:01:00.000Z') {
@@ -69,6 +94,27 @@ afterEach(() => {
 });
 
 describe('scene stream D1 reconciliation SQL', () => {
+  it('pauses only after the owner no longer has an active session', async () => {
+    const db = database();
+    const DB = d1Adapter(db);
+    const now = new Date('2026-08-04T12:00:00.000Z');
+    db.prepare('INSERT INTO sessions (token_hash, user_id, expires_at) VALUES (?, ?, ?)')
+      .run('expired', 'owner-1', '2026-08-04T11:00:00.000Z');
+
+    await expect(pauseExpiredOwnerStreams({ DB }, now)).resolves.toBe(1);
+    expect(db.prepare("SELECT paused_at AS pausedAt FROM scene_streams WHERE id = 'stream-1'").get().pausedAt).toBe(now.toISOString());
+
+    db.prepare("UPDATE scene_streams SET paused_at = NULL WHERE id = 'stream-1'").run();
+    db.prepare('INSERT INTO sessions (token_hash, user_id, expires_at) VALUES (?, ?, ?)')
+      .run('active', 'owner-1', '2026-08-04T13:00:00.000Z');
+    await expect(pauseExpiredOwnerStreams({ DB }, now)).resolves.toBe(0);
+    expect(db.prepare("SELECT paused_at AS pausedAt FROM scene_streams WHERE id = 'stream-1'").get().pausedAt).toBeNull();
+
+    db.prepare("DELETE FROM sessions WHERE token_hash = 'active'").run();
+    await expect(pauseOwnerStreamsAfterDisconnect({ DB }, 'owner-1', now)).resolves.toBe(1);
+    expect(db.prepare("SELECT paused_at AS pausedAt FROM scene_streams WHERE id = 'stream-1'").get().pausedAt).toBe(now.toISOString());
+  });
+
   it('does not publish indicator values while the stream is paused', () => {
     const db = database();
     db.prepare("UPDATE scene_streams SET paused_at = '2026-08-04T10:00:00.000Z' WHERE id = 'stream-1'").run();

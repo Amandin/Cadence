@@ -28,6 +28,8 @@ Le jeton aléatoire de 256 bits est placé dans le fragment `#/stream/<jeton>`. 
 
 La mise sur off conserve le stream, son token et ses indicateurs : le même lien refonctionne après réactivation. Pendant la pause, aucune vue ni écriture n’est servie aux invités et aucune publication propriétaire n’est envoyée. Une page invitée déjà ouverte s’arrête sur un écran de pause sans polling et propose une vérification manuelle. La régénération et la révocation définitive suppriment immédiatement l’ancien stream et ses indicateurs. Le schéma conserve néanmoins un identifiant de stream distinct du propriétaire afin de permettre plusieurs liens dans une version future.
 
+Quand le propriétaire est connecté, le menu de la scène permet aussi de générer le lien, de le copier et de basculer la diffusion entre on et off. Une déconnexion met automatiquement le lien sur off après la fermeture de la dernière session active du propriétaire ; elle ne le révoque jamais. Les sessions expirées et les comptes désactivés suivent la même règle.
+
 Un stream est également fermé après 2 heures sans modification publique, propriétaire ou invitée. Les lectures, réponses `204` et écritures refusées ne prolongent pas cette durée. L’expiration est paresseuse : la première requête suivante révoque conditionnellement le stream, sans cron ni Function maintenue active. Si une modification concurrente vient de le rafraîchir, la révocation échoue et la requête relit la version récente. Un tombstone léger est conservé jusqu’au prochain lien afin que le propriétaire voie l’échéance courante puis un message de fermeture, même si un invité a constaté l’expiration en premier.
 
 ## Écritures et conflits

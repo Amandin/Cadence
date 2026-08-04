@@ -606,6 +606,7 @@ export default function App() {
     <Suspense fallback={null}>
       <AppOverlays
         campaignName={campaignName}
+        sceneStream={cloudSync.user ? sceneStream : null}
         scene={scene}
         randomSystem={randomSystem}
         restorePoints={restorePoints}

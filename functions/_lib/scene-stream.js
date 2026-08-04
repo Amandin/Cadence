@@ -265,6 +265,55 @@ export async function setOwnerStreamPaused(env, ownerId, streamId, paused) {
   return { stream: await rawStreamById(env, streamId), expired: false };
 }
 
+export async function pauseOwnerStreamsAfterDisconnect(env, ownerId, now = new Date()) {
+  const timestamp = now.toISOString();
+  const result = await env.DB.prepare(`
+    UPDATE scene_streams
+    SET paused_at = ?, revision = revision + 1, updated_at = ?
+    WHERE owner_id = ?
+      AND revoked_at IS NULL
+      AND paused_at IS NULL
+      AND NOT EXISTS (
+        SELECT 1
+        FROM sessions
+        WHERE user_id = ? AND expires_at > ?
+      )
+  `).bind(timestamp, timestamp, ownerId, ownerId, timestamp).run();
+  return resultChanges(result);
+}
+
+export async function pauseExpiredOwnerStreams(env, now = new Date()) {
+  const timestamp = now.toISOString();
+  const result = await env.DB.prepare(`
+    UPDATE scene_streams
+    SET paused_at = ?, revision = revision + 1, updated_at = ?
+    WHERE revoked_at IS NULL
+      AND paused_at IS NULL
+      AND EXISTS (
+        SELECT 1
+        FROM sessions AS expired
+        WHERE expired.user_id = scene_streams.owner_id
+          AND expired.expires_at <= ?
+          AND NOT EXISTS (
+            SELECT 1
+            FROM sessions AS active
+            WHERE active.user_id = expired.user_id AND active.expires_at > ?
+          )
+      )
+  `).bind(timestamp, timestamp, timestamp, timestamp).run();
+  return resultChanges(result);
+}
+
+export async function pauseDisabledOwnerStreams(env, ownerId, now = new Date()) {
+  const timestamp = now.toISOString();
+  const result = await env.DB.prepare(`
+    UPDATE scene_streams
+    SET paused_at = ?, revision = revision + 1, updated_at = ?
+    WHERE owner_id = ? AND revoked_at IS NULL AND paused_at IS NULL
+  `).bind(timestamp, timestamp, ownerId).run();
+  return resultChanges(result);
+}
+
 export async function revokeOwnerStreams(env, ownerId) {
   const result = await env.DB.prepare('DELETE FROM scene_streams WHERE owner_id = ?').bind(ownerId).run();
   return resultChanges(result);
