@@ -17,6 +17,37 @@ export function libraryExportFileName(libraryName) {
   return `${slugifyFilePart(libraryName || 'bibliotheque-cadence')}-${dateFrPourFichier()}.cadlib`;
 }
 
+export function prefersStandardFileInput(matchMedia) {
+  if (typeof matchMedia !== 'function') return false;
+  return matchMedia('(max-width: 767px)').matches || matchMedia('(pointer: coarse)').matches;
+}
+
+export async function openCampaignFile({ picker, fallbackInput, description = 'Campagne Cadence', onFile }) {
+  if (typeof picker !== 'function') {
+    fallbackInput?.click();
+    return { method: 'input' };
+  }
+
+  let handle;
+  let file;
+  try {
+    [handle] = await picker({ multiple: false, types: [{ description, accept: { 'application/json': ['.cad'] } }] });
+    file = await handle?.getFile();
+  } catch (error) {
+    if (error?.name === 'AbortError') return { cancelled: true };
+    fallbackInput?.click();
+    return { method: 'input', fallback: true };
+  }
+
+  if (!file) {
+    fallbackInput?.click();
+    return { method: 'input', fallback: true };
+  }
+
+  await onFile(file, { handle });
+  return { method: 'picker' };
+}
+
 function downloadBlob(blob, fileName) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');

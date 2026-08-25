@@ -7,6 +7,7 @@ import { Fenetre } from '../commun/ComposantsCommuns.jsx';
 import { IconeCadence } from '../icones/IconeCadence.jsx';
 import { activeDefinitions, directlyExposedDefinitions } from '../../random-system/definitionAccess.js';
 import { randomSourceKinds } from '../../random-system/engine.js';
+import { openCampaignFile, prefersStandardFileInput } from '../../campaignFileIO.js';
 import { HUB_TAB_STORAGE_KEY } from './hubNavigation.js';
 import { CloudAccountPanel } from './CloudAccountPanel.jsx';
 
@@ -272,21 +273,16 @@ function OngletCampagnes({ campaignName, campaignEntries = [], fileSaveStatus, c
   const ouvrirImport = async () => {
     if (importEnCoursRef.current) return;
     importEnCoursRef.current = true;
-    if (window.showOpenFilePicker) {
-      try {
-        const [handle] = await window.showOpenFilePicker({ multiple: false, types: [{ description: t('hub.campaigns.filePickerDescription'), accept: { 'application/json': ['.cad'] } }] });
-        const file = await handle?.getFile();
-        if (file) await onImporter(file, { handle });
-        return;
-      } catch (error) {
-        if (error?.name === 'AbortError') return;
-        return;
-      } finally {
-        importEnCoursRef.current = false;
-      }
+    try {
+      await openCampaignFile({
+        picker: prefersStandardFileInput(window.matchMedia?.bind(window)) ? null : window.showOpenFilePicker?.bind(window),
+        fallbackInput: inputImportRef.current,
+        description: t('hub.campaigns.filePickerDescription'),
+        onFile: onImporter,
+      });
+    } finally {
+      importEnCoursRef.current = false;
     }
-    importEnCoursRef.current = false;
-    inputImportRef.current?.click();
   };
 
   const importerFichier = async (event) => {
