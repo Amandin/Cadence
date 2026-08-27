@@ -56,6 +56,61 @@
   margin: 2px 0 0;
 }
 
+.scene-stream-panel {
+  display: grid;
+  gap: 10px;
+  margin-top: 4px;
+  padding-top: 14px;
+  border-top: 1px solid var(--ui-border);
+}
+
+.scene-stream-panel h4,
+.scene-stream-panel p {
+  margin: 0;
+}
+
+.scene-stream-link-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.scene-stream-link-row input {
+  min-width: 0;
+}
+
+.scene-stream-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.owner-stream-polling-indicator {
+  position: fixed;
+  right: max(12px, env(safe-area-inset-right));
+  bottom: max(12px, env(safe-area-inset-bottom));
+  z-index: 950;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--ui-border);
+  border-radius: 50%;
+  color: var(--ui-muted);
+  background: var(--ui-surface);
+  box-shadow: var(--ui-shadow-surface);
+}
+
+.owner-stream-polling-indicator.is-suspended {
+  color: var(--ui-warning-text);
+}
+
+.owner-stream-polling-indicator.is-waking {
+  outline: 2px solid color-mix(in srgb, var(--ui-accent) 45%, transparent);
+  outline-offset: 2px;
+}
+
 .status-conflict {
   color: var(--ui-danger);
   border-color: color-mix(in srgb, var(--ui-danger) 35%, var(--ui-border));
@@ -69,5 +124,9 @@
 
   .cloud-sync-choice p {
     grid-column: auto;
+  }
+
+  .scene-stream-link-row {
+    grid-template-columns: 1fr;
   }
 }

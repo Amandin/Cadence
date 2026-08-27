@@ -811,8 +811,13 @@ async function main() {
     coverage: {},
   };
   page.on('console', (message) => {
+    const sourceUrl = message.location()?.url || '';
+    const expectedUnavailableCloudProbe = message.type() === 'error'
+      && message.text().includes('404')
+      && sourceUrl.includes('/api/auth/session');
+    if (expectedUnavailableCloudProbe) return;
     if (['error', 'warning'].includes(message.type())) {
-      report.consoleErrors.push({ type: message.type(), text: message.text() });
+      report.consoleErrors.push({ type: message.type(), text: message.text(), sourceUrl });
     }
   });
   page.on('pageerror', (error) => {
